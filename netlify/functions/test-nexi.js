@@ -278,7 +278,7 @@ exports.handler = async (event) => {
                         currency: 'EUR',
                         description: 'Test Payment - DR7 Empire',
                         orderId: \`TEST-\${Date.now()}\`,
-                        customerEmail: 'test@dr7empire.com',
+                        customerEmail: 'test@dr7.app',
                         customerName: 'Test User'
                     })
                 });

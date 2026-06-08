@@ -87,7 +87,7 @@ While in Netlify environment variables, you can remove these old Stripe variable
 
 ### Test with Small Amount First
 
-1. Visit: `https://dr7empire.com/.netlify/functions/test-nexi`
+1. Visit: `https://dr7.app/.netlify/functions/test-nexi`
 2. Enter amount: **€1.00** (or €5.00)
 3. Click "Create Payment"
 4. You should be redirected to Nexi payment page
@@ -213,7 +213,7 @@ Monitor these closely:
 ### Redirect URLs not working
 
 **Cause:** Incorrect site URL  
-**Solution:** Verify `URL` environment variable is `https://dr7empire.com`
+**Solution:** Verify `URL` environment variable is `https://dr7.app`
 
 ---
 

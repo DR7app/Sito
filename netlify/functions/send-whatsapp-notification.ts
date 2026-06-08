@@ -365,7 +365,7 @@ const handler: Handler = async (event) => {
   // Strip zero-width / invisible Unicode characters that often hitchhike
   // when admins paste template bodies from rich-text sources. They're
   // visually invisible but break WhatsApp's URL auto-linking — a clean
-  // "www.dr7empire.com" suddenly becomes a non-clickable string because
+  // "www.dr7.app" suddenly becomes a non-clickable string because
   // a Word Joiner (U+2060) or Zero-Width Space (U+200B) sits next to it.
   // Stripping these has no visible side effect on legitimate text.
   message = message.replace(/[\u200B-\u200D\u2060\uFEFF\u180E]/g, '');

@@ -40,11 +40,11 @@ const params = {
     divisa: 'EUR',
     codTrans: orderId,
     descrizione: 'Test Payment - DR7 Empire',
-    mail: 'test@dr7empire.com',
+    mail: 'test@dr7.app',
     languageId: 'ITA',
-    urlpost: 'https://dr7empire.com/.netlify/functions/nexi-callback',
-    url: 'https://dr7empire.com/payment-success',
-    urlback: 'https://dr7empire.com/payment-cancel',
+    urlpost: 'https://dr7.app/.netlify/functions/nexi-callback',
+    url: 'https://dr7.app/payment-success',
+    urlback: 'https://dr7.app/payment-cancel',
 };
 
 console.log('\n🧪 Testing Nexi Configuration\n');

@@ -46,7 +46,7 @@
 ## 🧪 Testing Checklist
 
 ### Test 1: Car Wash Booking (Happy Path)
-- [ ] Go to dr7empire.com/car-wash-services
+- [ ] Go to dr7.app/car-wash-services
 - [ ] Select "LAVAGGIO COMPLETO" (€25)
 - [ ] Fill in booking details
 - [ ] Use Stripe test card: `4242 4242 4242 4242`

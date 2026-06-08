@@ -2,7 +2,7 @@
 
 ## Current System Status
 
-The main website (`dr7empire.com`) **has updated durations**:
+The main website (`dr7.app`) **has updated durations**:
 - ✅ LAVAGGIO COMPLETO (€25) = 45 minutes
 - ✅ LAVAGGIO TOP (€49) = 1.5 hours
 - ✅ LAVAGGIO VIP (€75) = 2 hours
@@ -41,7 +41,7 @@ ORDER BY price;
 
 ### 2. How Duration Blocking Works
 
-**Main Website (`dr7empire.com`):**
+**Main Website (`dr7.app`):**
 - File: `pages/CarWashBookingPage.tsx`
 - Function: `getServiceDurationInHours(price)` - Line 69
 - Slot blocking: Lines 296-310 (checks if time slots overlap with existing bookings)

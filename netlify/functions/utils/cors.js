@@ -4,17 +4,14 @@
  */
 
 const ALLOWED_ORIGINS = [
-  // 2026-06-05: migrazione dominio. Nuovi domini aggiunti A FIANCO dei vecchi
-  // così entrambi funzionano durante la transizione (dr7empire.com -> dr7.app,
-  // admin -> platform.dr7.app). I vecchi verranno rimossi a bascula completata.
+  // Migrazione dominio completata (giugno 2026): vecchio dominio dismesso.
+  // Domini correnti: dr7.app (sito) e platform.dr7.app (admin).
   'https://dr7.app',
   'https://www.dr7.app',
   'https://platform.dr7.app',
   'https://platform.dr7ai.com',
   'https://dr7ai.com',
   'https://www.dr7ai.com',
-  'https://dr7empire.com',
-  'https://www.dr7empire.com',
 ];
 
 function getCorsOrigin(requestOrigin) {

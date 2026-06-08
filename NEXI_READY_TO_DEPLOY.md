@@ -68,7 +68,7 @@ git push
 
 Once deployed, visit:
 ```
-https://dr7empire.com/test-nexi-payment.html
+https://dr7.app/test-nexi-payment.html
 ```
 
 Use these test cards in sandbox mode:

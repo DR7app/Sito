@@ -106,7 +106,7 @@ export const handler: Handler = async (event) => {
     } else if (address && typeof address === 'string' && address.trim().length >= 3) {
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address.trim())}&format=json&limit=1&countrycodes=it`,
-        { headers: { 'User-Agent': 'DR7Empire/1.0', 'Accept-Language': 'it' } }
+        { headers: { 'User-Agent': 'DR7/1.0', 'Accept-Language': 'it' } }
       )
       const geoData = await geoRes.json()
       if (!geoData || geoData.length === 0) {

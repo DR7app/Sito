@@ -12,9 +12,6 @@ const ALLOWED_ORIGINS = [
     'https://platform.dr7.app',
     'https://dr7ai.com',
     'https://www.dr7ai.com',
-    'https://dr7empire.com',
-    'https://www.dr7empire.com',
-    'https://admin.dr7empire.com',
     'http://localhost:5173',
     'http://localhost:8888',
 ]

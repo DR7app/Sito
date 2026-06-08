@@ -1,5 +1,5 @@
 -- Unified Real-Time Slot System Using ONLY Bookings Table
--- Both DR7Empire.com and admin.dr7.com will use the same bookings table
+-- Both dr7.app and admin.dr7.com will use the same bookings table
 
 -- 1. Add fields for hold/pre-booking and source tracking
 ALTER TABLE public.bookings
@@ -316,7 +316,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_carwash ON bookings(appointment_date, ap
 -- 13. Add comments
 COMMENT ON COLUMN bookings.hold_expires_at IS 'Timestamp when the hold/pre-booking expires. Automatically released by cron job.';
 COMMENT ON COLUMN bookings.held_by IS 'Identifier of who created the hold (user ID, admin name, or system)';
-COMMENT ON COLUMN bookings.booking_source IS 'Source of the booking: website (DR7Empire.com), admin (admin.dr7.com), or api';
+COMMENT ON COLUMN bookings.booking_source IS 'Source of the booking: website (dr7.app), admin (admin.dr7.com), or api';
 COMMENT ON FUNCTION release_expired_holds() IS 'Automatically releases expired holds. Runs every minute via cron.';
 COMMENT ON FUNCTION check_unified_vehicle_availability IS 'Checks if a vehicle is available across website and admin bookings';
 COMMENT ON FUNCTION check_unified_carwash_availability IS 'Checks if a car wash slot is available across website and admin bookings';

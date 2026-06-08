@@ -15,7 +15,7 @@ Go to your Supabase Dashboard:
 ```
 https://your-production-domain.com
 ```
-(Replace with your actual Netlify domain, e.g., `https://dr7empire.netlify.app` or your custom domain)
+(Replace with your actual Netlify domain, e.g., `https://dr7.app` or your custom domain)
 
 **Redirect URLs (add ALL of these):**
 ```

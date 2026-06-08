@@ -4,7 +4,7 @@
  * Usage:
  * 1. Find the booking ID using find_missing_carwash_booking.sql
  * 2. Replace BOOKING_ID_HERE with the actual booking ID
- * 3. Run this script in the browser console on dr7empire.com
+ * 3. Run this script in the browser console on dr7.app
  * 
  * This will manually trigger the email and WhatsApp notifications
  */
@@ -18,7 +18,7 @@ async function sendMissingBookingNotifications() {
         // Fetch the booking from Supabase
         const { createClient } = window.supabase || {};
         if (!createClient) {
-            console.error('❌ Supabase client not available. Please run this on dr7empire.com');
+            console.error('❌ Supabase client not available. Please run this on dr7.app');
             return;
         }
 

@@ -91,7 +91,7 @@ netlify deploy --prod
 
 ### 1. Chrome Vehicle Display Test
 
-**URL:** `https://dr7empire.com/urban-cars`
+**URL:** `https://dr7.app/urban-cars`
 
 **Expected Results:**
 - ✅ Vehicles load within 2 seconds
@@ -107,7 +107,7 @@ netlify deploy --prod
 
 ### 2. Safari Compatibility Test
 
-**URL:** `https://dr7empire.com/urban-cars`
+**URL:** `https://dr7.app/urban-cars`
 
 **Expected Results:**
 - ✅ Vehicles load (same as Chrome)

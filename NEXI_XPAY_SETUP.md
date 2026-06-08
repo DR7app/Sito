@@ -187,7 +187,7 @@ paid_at TIMESTAMP, -- When payment was completed
 
 #### 4. Redirect URLs Not Working
 - **Cause**: Incorrect site URL configuration
-- **Solution**: Verify `URL` environment variable in Netlify is set to `https://dr7empire.com`
+- **Solution**: Verify `URL` environment variable in Netlify is set to `https://dr7.app`
 
 ### Debugging
 

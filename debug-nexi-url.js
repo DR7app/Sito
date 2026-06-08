@@ -22,7 +22,7 @@ const nexiConfig = {
 };
 
 const baseUrl = 'https://xpaysandboxdb.nexigroup.com';
-const siteUrl = 'https://dr7empire.com';
+const siteUrl = 'https://dr7.app';
 
 const params = {
     alias: nexiConfig.alias,
@@ -30,7 +30,7 @@ const params = {
     divisa: 'EUR',
     codTrans: `TEST-${Date.now()}`,
     descrizione: 'Test Payment - DR7 Empire',
-    mail: 'test@dr7empire.com',
+    mail: 'test@dr7.app',
     languageId: 'ITA',
     urlpost: `${siteUrl}/.netlify/functions/nexi-callback`,
     url: `${siteUrl}/payment-success`,

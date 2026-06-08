@@ -2,7 +2,7 @@
 
 ## Quick Answer
 
-When a user registers on **dr7empire.com**, their data is stored in **3 different locations**:
+When a user registers on **dr7.app**, their data is stored in **3 different locations**:
 
 1. **`auth.users`** table (Supabase Auth) - Email, password, basic metadata
 2. **`customers_extended`** table - Full customer profile (name, CF, address, license info, etc.)
@@ -13,7 +13,7 @@ When a user registers on **dr7empire.com**, their data is stored in **3 differen
 ## 📋 Complete Registration Flow
 
 ```
-User visits dr7empire.com/signup
+User visits dr7.app/signup
           ↓
 Fills out SignUpPage.tsx form (name, CF, address, license, etc.)
           ↓

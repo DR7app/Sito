@@ -28,7 +28,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // ❌ UNDEFI
 # Dans Netlify Dashboard → Site Settings → Environment Variables
 SUPABASE_URL=https://ahpmzjgkfxrrgxyirasa.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=[YOUR_SERVICE_KEY_HERE]
-ALLOWED_ORIGIN=https://dr7empire.com
+ALLOWED_ORIGIN=https://dr7.app
 ```
 
 ### FIX #2 : VÉRIFIER SUPABASE RLS POLICIES

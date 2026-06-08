@@ -59,7 +59,7 @@ const fetchPromise = query.then(({ data, error }) => {
 ```
 SUPABASE_URL=https://ahpmzjgkfxrrgxyirasa.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=[OBTENIR DANS SUPABASE DASHBOARD]
-ALLOWED_ORIGIN=https://dr7empire.com
+ALLOWED_ORIGIN=https://dr7.app
 ```
 
 ### Pour obtenir SERVICE_ROLE_KEY :

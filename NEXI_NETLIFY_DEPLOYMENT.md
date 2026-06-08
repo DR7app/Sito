@@ -35,7 +35,7 @@ NEXI_ENVIRONMENT=sandbox
 VITE_NEXI_ENVIRONMENT=sandbox
 
 # Site URL (should already be set)
-URL=https://dr7empire.com
+URL=https://dr7.app
 ```
 
 ## Getting Your API Keys
@@ -135,7 +135,7 @@ supabase db push
 
 ### Callback Not Received
 - Check `nexi-callback` function logs
-- Verify webhook URL is accessible: `https://dr7empire.com/.netlify/functions/nexi-callback`
+- Verify webhook URL is accessible: `https://dr7.app/.netlify/functions/nexi-callback`
 - Check Nexi Backoffice webhook configuration
 
 ### Database Not Updating

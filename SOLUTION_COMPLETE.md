@@ -29,7 +29,7 @@ git push origin main
 ```
 SUPABASE_URL=https://ahpmzjgkfxrrgxyirasa.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=[OBTENIR_DANS_SUPABASE_DASHBOARD]  
-ALLOWED_ORIGIN=https://dr7empire.com
+ALLOWED_ORIGIN=https://dr7.app
 ```
 
 **Pour obtenir SERVICE_ROLE_KEY :**
@@ -56,12 +56,12 @@ SELECT COUNT(*) FROM vehicles WHERE category = 'urban';
 ## 🧪 TESTS DE VALIDATION
 
 ### TEST 1 : Chrome Urban Cars
-1. Ouvrir Chrome → https://dr7empire.com
+1. Ouvrir Chrome → https://dr7.app
 2. Naviguer vers section "Urban Cars" 
 3. **Attendu :** Véhicules urbains s'affichent
 
 ### TEST 2 : Safari Booking  
-1. Ouvrir Safari → https://dr7empire.com
+1. Ouvrir Safari → https://dr7.app
 2. Cliquer "Prenota Ora" sur n'importe quel véhicule
 3. **Attendu :** Booking wizard s'ouvre (pas de page noire)
 

@@ -63,7 +63,7 @@
 ## EMERGENCY CONTACTS:
 - Supabase Dashboard: https://supabase.com/dashboard
 - Netlify Dashboard: https://app.netlify.com
-- DR7 Site: https://dr7empire.com
+- DR7 Site: https://dr7.app
 
 ---
 **All fixes are ready. Execute steps in order. Site will be operational in 15 minutes max.**

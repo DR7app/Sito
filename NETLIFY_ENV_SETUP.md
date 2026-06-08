@@ -67,7 +67,7 @@ After adding all variables:
 ⚠️ **Production Environment - Use Real Cards**
 
 Once deployed, test at:
-- **https://dr7empire.com/.netlify/functions/test-nexi**
+- **https://dr7.app/.netlify/functions/test-nexi**
 
 **Start with a small amount (€1-5) to verify:**
 1. Payment creation works

@@ -1,5 +1,5 @@
 -- Unified Real-Time Slot Availability System
--- This ensures DR7Empire.com and admin.dr7.com share availability in real-time
+-- This ensures dr7.app and admin.dr7.com share availability in real-time
 
 -- 1. Add status fields for hold/pre-booking functionality to bookings table
 ALTER TABLE public.bookings

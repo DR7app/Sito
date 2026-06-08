@@ -30,7 +30,7 @@ Here are the correct source values:
 
 | Source Value | Meaning | How Created |
 |--------------|---------|-------------|
-| `website_registration` | User registered via dr7empire.com | SignUpPage.tsx → register-customer.js |
+| `website_registration` | User registered via dr7.app | SignUpPage.tsx → register-customer.js |
 | `website` | Customer created via admin panel | NewClientModal.tsx |
 | `booking_auto_created` | Auto-created from booking | Trigger: auto_create_customer_from_booking |
 | `backfill_registration` | ❌ Old migration (incorrect) | Old backfill script |

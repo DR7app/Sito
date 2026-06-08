@@ -58,7 +58,7 @@ async function testNexiPayment() {
         currency: 'EUR',
         orderId: `TEST-${Date.now()}`,
         description: 'Test Payment - DR7 Empire',
-        customerEmail: 'test@dr7empire.com',
+        customerEmail: 'test@dr7.app',
     };
 
     console.log('\n📝 Test Payment Details:');
@@ -71,7 +71,7 @@ async function testNexiPayment() {
     const baseUrl = nexiConfig.environment === 'production'
         ? 'https://xpay.nexigroup.com'
         : 'https://xpaysandboxdb.nexigroup.com';
-    const siteUrl = 'https://dr7empire.com';
+    const siteUrl = 'https://dr7.app';
 
     const params = {
         alias: nexiConfig.alias,

@@ -1,7 +1,7 @@
 # Unified Real-Time Booking System
 
 ## Overview
-DR7Empire.com and admin.dr7.com now use the **SAME `bookings` table** for all reservations (car rentals, car wash, jets, etc.). This ensures real-time synchronization between both platforms.
+dr7.app and admin.dr7.com now use the **SAME `bookings` table** for all reservations (car rentals, car wash, jets, etc.). This ensures real-time synchronization between both platforms.
 
 ## Database Structure
 
@@ -25,8 +25,8 @@ DR7Empire.com and admin.dr7.com now use the **SAME `bookings` table** for all re
 
 ### 1. Real-Time Synchronization
 - Both platforms connect to the same `bookings` table
-- Changes made in admin.dr7.com instantly appear on DR7Empire.com
-- Changes made on DR7Empire.com instantly appear in admin.dr7.com
+- Changes made in admin.dr7.com instantly appear on dr7.app
+- Changes made on dr7.app instantly appear in admin.dr7.com
 - Uses Supabase Realtime for instant updates
 
 ### 2. Slot Blocking
@@ -70,7 +70,7 @@ These add-ons don't affect slot availability - only the main appointment time ma
 
 ## Implementation
 
-### For DR7Empire.com (Already Working)
+### For dr7.app (Already Working)
 
 ```typescript
 import { useRealtimeBookings, useCarWashAvailability } from '../hooks/useRealtimeBookings';
@@ -172,12 +172,12 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 ### Test 1: Admin → Website Blocking
 1. In admin.dr7.com, create a car wash booking for 14/11/2025 at 16:00
-2. Go to DR7Empire.com
+2. Go to dr7.app
 3. Select car wash and date 14/11/2025
 4. **Result:** 16:00 slot should show with RED BORDER and "Occupato"
 
 ### Test 2: Website → Admin Blocking
-1. On DR7Empire.com, book a car wash for 14/11/2025 at 09:30
+1. On dr7.app, book a car wash for 14/11/2025 at 09:30
 2. Go to admin.dr7.com
 3. Try to create another booking for same date/time
 4. **Result:** Should show error "Time slot already occupied"
@@ -189,7 +189,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 4. **Result:** Slot automatically becomes available again
 
 ### Test 4: Real-Time Updates
-1. Open DR7Empire.com in one browser
+1. Open dr7.app in one browser
 2. Open admin.dr7.com in another browser
 3. Create a booking in admin
 4. **Result:** Website should update instantly (within 1 second)

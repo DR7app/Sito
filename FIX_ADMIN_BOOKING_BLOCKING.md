@@ -1,7 +1,7 @@
 # Fix: Admin Bookings Not Blocking Website Slots
 
 ## Problem
-When creating a booking in the admin panel (admin.dr7.com), the slot is not blocked on the main website (DR7Empire.com), allowing double-bookings.
+When creating a booking in the admin panel (admin.dr7.com), the slot is not blocked on the main website (dr7.app), allowing double-bookings.
 
 ## Root Cause
 The database triggers that prevent double-booking may not be applied or there's an issue with:
@@ -102,7 +102,7 @@ SELECT * FROM cron.job WHERE jobname = 'release-expired-holds';
    - Set status to "confirmed"
    - Save
 
-2. **In main website (DR7Empire.com):**
+2. **In main website (dr7.app):**
    - Go to Car Wash booking page
    - Select tomorrow's date
    - Check if 16:00 slot shows as "Occupato" (blocked) with red border
@@ -141,7 +141,7 @@ SELECT * FROM cron.job WHERE jobname = 'release-expired-holds';
 Open both sites side-by-side:
 
 1. **Browser 1:** admin.dr7.com (Reservations tab)
-2. **Browser 2:** DR7Empire.com (Car Wash page, select a date)
+2. **Browser 2:** dr7.app (Car Wash page, select a date)
 
 3. **Create booking in admin panel**
 

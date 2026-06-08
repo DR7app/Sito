@@ -38,7 +38,7 @@ VITE_NEXI_ENVIRONMENT=production
 
 ### 3. Test
 
-Visit: `https://dr7empire.com/.netlify/functions/test-nexi`
+Visit: `https://dr7.app/.netlify/functions/test-nexi`
 
 Create a test payment for **€1.00**
 

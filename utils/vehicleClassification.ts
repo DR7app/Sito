@@ -55,6 +55,7 @@ const BRAND_MAXI_PATTERNS: [string, RegExp][] = [
 
 const ALWAYS_MAXI_BRANDS = new Set([
   'land_rover', 'maserati', 'ferrari', 'lamborghini', 'jaguar', 'infiniti',
+  'jeep', // Jeep only builds SUVs/crossovers — always MAXI (incl. Avenger, Renegade)
 ])
 
 // ── Model DB ────────────────────────────────────────────────────────────────
@@ -146,8 +147,8 @@ const VEHICLE_DB: Record<string, { models: string[]; category: VehicleCategory }
     { models: ['s60', 'v60', 'xc40', 'xc60', 'xc90', 'v90', 's90', 'ex90', 'v70', 'xc70'], category: 'maxi' },
   ],
   jeep: [
-    { models: ['renegade', 'avenger'], category: 'urban' },
-    { models: ['compass', 'cherokee', 'grand cherokee', 'wrangler', 'gladiator', 'commander', 'patriot'], category: 'maxi' },
+    // Every Jeep is an SUV/crossover → MAXI (also enforced via ALWAYS_MAXI_BRANDS).
+    { models: ['renegade', 'avenger', 'compass', 'cherokee', 'grand cherokee', 'wrangler', 'gladiator', 'commander', 'patriot'], category: 'maxi' },
   ],
   land_rover: [
     { models: ['freelander', 'evoque', 'discovery sport', 'range rover', 'range rover sport', 'range rover velar', 'defender', 'discovery'], category: 'maxi' },

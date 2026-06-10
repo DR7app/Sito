@@ -10,43 +10,50 @@ const AuthCallbackPage: React.FC = () => {
 
   useEffect(() => {
     const run = async () => {
-      console.log('[OAuth] Starting authentication callback...');
+      console.log('[Auth] Starting authentication callback...');
 
-      // 1) Exchange the OAuth code in the URL for a session
-      const { data, error } = await supabase.auth.exchangeCodeForSession();
-      if (error) {
-        console.error('[OAuth] exchangeCodeForSession failed:', error);
-        console.error('[OAuth] Error details:', {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        });
-        navigate('/signin', {
-          replace: true,
-          state: {
-            error: `Authentication failed: ${error.message}. Please check your Supabase OAuth configuration.`
-          }
-        });
+      // L'app usa il flow IMPLICIT (default di supabase-js): la CONFERMA EMAIL
+      // torna a /auth/callback con la sessione nello HASH (#access_token=...),
+      // gestita in automatico da `detectSessionInUrl` (attivo di default). Solo
+      // OAuth/PKCE torna con ?code= e va scambiato esplicitamente.
+      // BUG (2026-06): qui si chiamava SEMPRE exchangeCodeForSession() (solo
+      // PKCE). Con la conferma email (hash) falliva → l'utente finiva su
+      // /signin "Authentication failed" pur avendo una sessione valida =
+      // "il link di verifica non funziona".
+      const hasCode = new URLSearchParams(window.location.search).has('code');
+
+      if (hasCode) {
+        // OAuth / PKCE: scambia il code per una sessione.
+        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        if (error) {
+          console.error('[Auth] exchangeCodeForSession failed:', error);
+          navigate('/signin', {
+            replace: true,
+            state: { error: `Authentication failed: ${error.message}` },
+          });
+          return;
+        }
+      }
+
+      // Sessione impostata da exchangeCodeForSession (code) OPPURE da
+      // detectSessionInUrl (hash della conferma email). Piccolo retry per dare
+      // tempo al parsing dello hash prima di leggere l'utente.
+      let freshUser = null;
+      for (let i = 0; i < 6; i++) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) { freshUser = user; break; }
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      if (!freshUser) {
+        console.error('[Auth] No session after callback');
+        navigate('/signin', { replace: true, state: { error: 'Verifica non riuscita. Prova ad accedere.' } });
         return;
       }
 
-      console.log('[OAuth] Session exchange successful');
-
-      // 2) Get fresh user data and redirect based on role
-      const { data: { user: freshUser }, error: userError } = await supabase.auth.getUser();
-
-      if (userError || !freshUser) {
-        console.error('[OAuth] Failed to get user:', userError);
-        navigate('/signin', { replace: true, state: { error: 'Failed to retrieve user data.' } });
-        return;
-      }
-
-      console.log('[OAuth] User retrieved:', freshUser.email, 'Role:', freshUser.user_metadata?.role);
-
+      console.log('[Auth] User retrieved:', freshUser.email, 'Role:', freshUser.user_metadata?.role);
       const destination =
         freshUser?.user_metadata?.role === 'business' ? '/partner/dashboard' : '/account';
-
-      console.log('[OAuth] Redirecting to:', destination);
       navigate(destination, { replace: true });
     };
 

@@ -2756,7 +2756,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!formData.lastName) newErrors.lastName = "Il cognome è obbligatorio.";
       if (!formData.email) newErrors.email = "L'email è obbligatoria.";
       if (!formData.phone) newErrors.phone = "Il telefono è obbligatorio.";
-      if (!formData.codiceFiscale) newErrors.codiceFiscale = "Il codice fiscale è obbligatorio per la fatturazione.";
+      // Il codice fiscale è italiano: non richiederlo a chi ha la residenza
+      // all'estero (indirizzo selezionato fuori dall'Italia).
+      const isForeignResidence = !!residenzaCountryCode && residenzaCountryCode !== 'it';
+      if (!formData.codiceFiscale && !isForeignResidence) newErrors.codiceFiscale = "Il codice fiscale è obbligatorio per la fatturazione.";
       // Residenza must be a COMPLETE Italian address — the SDI rejects
       // (scarta) the fattura without a valid CAP + city. Either the
       // customer picked a Nominatim suggestion (always well-formatted) OR

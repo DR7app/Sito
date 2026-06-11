@@ -8,6 +8,8 @@ export interface TargaResult {
   carMake: string;
   carModel: string;
   description: string;
+  version?: string;
+  bodyType?: string;
   registrationYear: string;
   fuelType: string;
 }

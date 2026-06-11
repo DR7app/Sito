@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
-import { classifyVehicle, type VehicleCategory } from '../utils/vehicleClassification';
+import { type VehicleCategory } from '../utils/vehicleClassification';
+import { classifyVehicle as classifyWashVehicle } from '../utils/classifyWashVehicle';
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../utils/lookupTarga';
 import { useCarWashServices } from '../hooks/useCarWashServices';
 import SEOHead from '../components/seo/SEOHead';
@@ -142,15 +143,16 @@ const CarWashServicesPage: React.FC = () => {
     try {
       const result = await lookupTarga(plate);
       setTargaResult(result);
-      // Feed into classifyVehicle
+      // Deterministic Urban-vs-Maxi classification (brand+model+version+bodyType).
+      const washClass = classifyWashVehicle({
+        brand: result.carMake,
+        model: result.carModel,
+        version: result.version || result.description,
+        bodyType: result.bodyType,
+      });
       const makeModel = `${result.carMake} ${result.carModel}`.trim();
-      const classification = classifyVehicle(makeModel);
-      setDetectedCategory(classification.category);
-      setDetectedModel(
-        classification.matchedBrand
-          ? `${classification.matchedBrand.charAt(0).toUpperCase() + classification.matchedBrand.slice(1)}${classification.matchedModel ? ' ' + classification.matchedModel.charAt(0).toUpperCase() + classification.matchedModel.slice(1) : ''}`
-          : null
-      );
+      setDetectedCategory(washClass.toLowerCase() as VehicleCategory);
+      setDetectedModel(makeModel || null);
     } catch (err: any) {
       setTargaError(err.message || (lang === 'it' ? 'Errore nella ricerca.' : 'Search error.'));
     } finally {

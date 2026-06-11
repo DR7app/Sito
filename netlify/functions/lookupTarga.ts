@@ -126,6 +126,11 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         }
 
         const { CarMake, CarModel, Description, RegistrationYear, FuelType } = json.data;
+        // Body type / version help the Urban-vs-Maxi wash classifier. OpenAPI field
+        // names vary, so probe the common ones defensively (empty if absent — harmless).
+        const bodyType = json.data.BodyType || json.data.CarBodyType || json.data.Bodywork
+            || json.data.VehicleType || json.data.Body || '';
+        const version = json.data.Version || json.data.Setup || json.data.Trim || Description || '';
 
         return {
             statusCode: 200,
@@ -135,6 +140,8 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 carMake: CarMake || '',
                 carModel: CarModel || '',
                 description: Description || '',
+                version: version || '',
+                bodyType: bodyType || '',
                 registrationYear: RegistrationYear || '',
                 fuelType: FuelType || '',
             }),

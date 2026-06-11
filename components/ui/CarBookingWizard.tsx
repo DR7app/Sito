@@ -34,7 +34,7 @@ import { roundToTwoDecimals, eurosToCents } from '../../utils/pricing';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { useCarWashServices } from '../../hooks/useCarWashServices';
 import type { WashService } from '../../pages/CarWashServicesPage';
-import { classifyVehicle } from '../../utils/vehicleClassification';
+import { classifyVehicle as classifyWashVehicle } from '../../utils/classifyWashVehicle';
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../../utils/lookupTarga';
 import CalcolaCFButton from './CalcolaCFButton';
 import { useCentralinaProOverlay } from '../../hooks/useCentralinaProConfig';
@@ -4548,10 +4548,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     try {
       const result = await lookupTarga(plate);
       setUpsellTargaResult(result);
-      setUpsellCarInput(`${result.carMake} ${result.carModel}`.trim());
-      const classification = classifyVehicle(`${result.carMake} ${result.carModel}`.trim());
-      setUpsellCarCategory(classification.category);
-      setUpsellCarModel(classification.matchedModel || null);
+      const makeModel = `${result.carMake} ${result.carModel}`.trim();
+      setUpsellCarInput(makeModel);
+      const washClass = classifyWashVehicle({
+        brand: result.carMake,
+        model: result.carModel,
+        version: result.version || result.description,
+        bodyType: result.bodyType,
+      });
+      setUpsellCarCategory(washClass.toLowerCase() as 'urban' | 'maxi');
+      setUpsellCarModel(makeModel || null);
     } catch (err: any) {
       setUpsellTargaError(err.message || 'Errore nella ricerca.');
     } finally {

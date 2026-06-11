@@ -344,6 +344,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // il resto (altre province IT, estero 'EE') = non residente. Vuoto = residente
   // (default sicuro, non sovra-addebita chi non ha la provincia in profilo).
   const [customerProvinciaResidenza, setCustomerProvinciaResidenza] = useState<string>('');
+  // ISO country code (lowercase) dell'indirizzo di residenza scelto dall'elenco.
+  // Serve SOLO a non bloccare i clienti esteri (il CAP italiano a 5 cifre non si
+  // applica fuori dall'Italia). NON cambia la cauzione: quella resta gestita da
+  // Centralina Pro / provincia profilo come prima.
+  const [residenzaCountryCode, setResidenzaCountryCode] = useState<string>('');
   const today = useMemo(() => {
     // Get today's date in Italy timezone (Europe/Rome)
     const italyDate = new Date().toLocaleString('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -2766,10 +2771,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // always include one (e.g. "Via Roma, 09100 Cagliari, Sardegna") and
       // requiring it was rejecting valid dropdown picks.
       const residenzaTrim = (formData.residenza || formData.address || '').trim();
+      // Indirizzo estero scelto dall'elenco: niente CAP italiano a 5 cifre
+      // (il codice postale estero arriva già con la selezione).
+      const isForeignAddress = !!residenzaCountryCode && residenzaCountryCode !== 'it';
       const hasCap = /\b\d{5}\b/.test(residenzaTrim);
       const hasStreetWord = /[A-Za-zÀ-ÿ]{3,}/.test(residenzaTrim);
       const longEnough = residenzaTrim.length >= 10;
-      if (!residenzaTrim || !longEnough || !hasCap || !hasStreetWord) {
+      if (!residenzaTrim || !longEnough || !hasStreetWord) {
+        newErrors.residenza = "Seleziona l'indirizzo dall'elenco (necessario per la fattura).";
+      } else if (!isForeignAddress && !hasCap) {
         newErrors.residenza = "Seleziona l'indirizzo dall'elenco (include il CAP, necessario per la fattura).";
       }
       if (!formData.birthDate) {
@@ -5028,12 +5038,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       the cauzione price. */}
                   <AddressAutocomplete
                     value={formData.address || formData.residenza}
-                    onChange={(val) => setFormData(prev => ({ ...prev, address: val, residenza: val }))}
+                    onChange={(val) => {
+                      // Digitazione libera: l'eventuale paese di una selezione
+                      // precedente non vale più finché non si sceglie dall'elenco.
+                      setResidenzaCountryCode('');
+                      setFormData(prev => ({ ...prev, address: val, residenza: val }));
+                    }}
+                    onSelect={(d) => setResidenzaCountryCode((d.countryCode || '').toLowerCase())}
                     className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm"
                     placeholder="Via Roma 10, 09100 Cagliari"
                   />
                   <p className="text-[11px] text-red-400 mt-1">
-                    Seleziona l'indirizzo dall'elenco — include il CAP, necessario per la fattura.
+                    Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
                   </p>
                   {(errors.residenza || errors.address) && <p className="text-xs text-red-400 mt-1">{errors.residenza || errors.address}</p>}
                 </div>
@@ -7761,8 +7777,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           // permissive on house number so Nominatim picks
                           // without a civico still pass.
                           const r = (formData.residenza || formData.address || '').trim();
+                          const isForeignAddress = !!residenzaCountryCode && residenzaCountryCode !== 'it';
                           if (!r || r.length < 10) return true;
-                          if (!/\b\d{5}\b/.test(r)) return true;
+                          if (!isForeignAddress && !/\b\d{5}\b/.test(r)) return true;
                           if (!/[A-Za-zÀ-ÿ]{3,}/.test(r)) return true;
                           return false;
                         })())}

@@ -3,6 +3,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 interface AddressAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
+  /** Fired only when the user picks a suggestion from the list. Gives the
+   *  resolved country code (ISO alpha-2, lowercase) so the caller can tell
+   *  Italian from foreign addresses (drives the resident/non-resident cauzione). */
+  onSelect?: (details: { value: string; countryCode?: string; postcode?: string }) => void;
   placeholder?: string;
   className?: string;
   id?: string;
@@ -23,12 +27,14 @@ interface NominatimResult {
     municipality?: string;
     state?: string;
     country?: string;
+    country_code?: string;
   };
 }
 
 const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   value,
   onChange,
+  onSelect,
   placeholder = 'Via, Numero Civico, CAP, Città',
   className = '',
   id,
@@ -50,9 +56,11 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
 
     try {
+      // No country lock: foreign customers must be able to find their own
+      // address (a hardcoded countrycodes=it hid every non-Italian result).
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=it`,
+        `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`,
         { headers: { 'Accept-Language': 'it' } }
       );
       if (!res.ok) return;
@@ -99,6 +107,11 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     skipFetchRef.current = true;
     const formatted = formatAddress(result);
     onChange(formatted);
+    onSelect?.({
+      value: formatted,
+      countryCode: result.address?.country_code,
+      postcode: result.address?.postcode,
+    });
     setSuggestions([]);
     setIsOpen(false);
   };

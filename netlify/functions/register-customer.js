@@ -121,8 +121,27 @@ exports.handler = async (event) => {
             if (linkError) {
                 console.error('=== GENERATE LINK FAILED ===', linkError);
             } else if (linkData?.properties?.action_link) {
-                const confirmationLink = linkData.properties.action_link;
-                console.log('=== LINK GENERATED OK === for:', email);
+                // 2026-06-11: The action_link host comes from Supabase's "Site URL"
+                // setting, which stayed on the OLD dead domain (www.dr7empire.com)
+                // after the dr7empire.com -> dr7.app migration. Result: confirmation
+                // links pointed at a domain that no longer resolves (NXDOMAIN), so
+                // nobody could verify their email. Force the link onto the LIVE site
+                // (siteUrl) so verification always works regardless of that dashboard
+                // setting. Keeps the /auth/v1/verify path + token/type/redirect_to query.
+                let confirmationLink = linkData.properties.action_link;
+                try {
+                    const _u = new URL(confirmationLink);
+                    const _site = new URL(siteUrl);
+                    if (_u.host !== _site.host) {
+                        console.warn('=== REWRITING STALE LINK HOST ===', _u.host, '->', _site.host);
+                        _u.protocol = _site.protocol;
+                        _u.host = _site.host;
+                        confirmationLink = _u.toString();
+                    }
+                } catch (_e) {
+                    console.error('Could not rewrite confirmation link host:', _e.message);
+                }
+                console.log('=== LINK GENERATED OK === for:', email, '->', confirmationLink);
 
                 const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
                 if (resendApiKey) {

@@ -131,40 +131,52 @@ function pickDepositOptions(
   const dOpts = configOverlay?.depositOptions
   if (!dOpts) return []
 
-  // PRIORITY 1: raw category id from the vehicle's DB row. Catches
-  // categorie create dall'admin in Centralina Pro che non sono nei
-  // 4 bucket legacy.
-  if (rawCategory && typeof rawCategory === 'string') {
-    const id = rawCategory.toLowerCase().trim()
-    if (id) {
-      // Alias supercars<->exotic per coerenza con configLookup.
-      const aliases = (id === 'supercars' || id === 'supercar') ? ['supercars', 'exotic', 'supercar']
-                    : id === 'exotic' ? ['exotic', 'supercars', 'supercar']
-                    : (id === 'supercar' ? ['supercar', 'supercars', 'exotic'] : [id])
-      for (const k of aliases) {
+  const lookup = (key: string): any[] => {
+    // PRIORITY 1: raw category id from the vehicle's DB row. Catches
+    // categorie create dall'admin in Centralina Pro che non sono nei
+    // 4 bucket legacy.
+    if (rawCategory && typeof rawCategory === 'string') {
+      const id = rawCategory.toLowerCase().trim()
+      if (id) {
+        // Alias supercars<->exotic per coerenza con configLookup.
+        const aliases = (id === 'supercars' || id === 'supercar') ? ['supercars', 'exotic', 'supercar']
+                      : id === 'exotic' ? ['exotic', 'supercars', 'supercar']
+                      : (id === 'supercar' ? ['supercar', 'supercars', 'exotic'] : [id])
+        for (const k of aliases) {
+          const byCat = dOpts.byCategory?.[k]
+          const fromCat = byCat?.[key]
+          if (Array.isArray(fromCat) && fromCat.length > 0) return fromCat
+        }
+      }
+    }
+
+    // PRIORITY 2: bucketed vType (legacy 4-way mapping). Mantiene il
+    // comportamento storico per veicoli senza categoria DB.
+    if (vType) {
+      const cat = vTypeToDepositCategory(vType)
+      const candidates = [cat]
+      if (cat === 'supercars') candidates.push('exotic')
+      if (cat === 'aziendali') candidates.push('furgone')
+      for (const k of candidates) {
         const byCat = dOpts.byCategory?.[k]
-        const fromCat = byCat?.[depKey]
+        const fromCat = byCat?.[key]
         if (Array.isArray(fromCat) && fromCat.length > 0) return fromCat
       }
     }
+
+    // PRIORITY 3: flat tier key (legacy default)
+    return dOpts[key] || []
   }
 
-  // PRIORITY 2: bucketed vType (legacy 4-way mapping). Mantiene il
-  // comportamento storico per veicoli senza categoria DB.
-  if (vType) {
-    const cat = vTypeToDepositCategory(vType)
-    const candidates = [cat]
-    if (cat === 'supercars') candidates.push('exotic')
-    if (cat === 'aziendali') candidates.push('furgone')
-    for (const k of candidates) {
-      const byCat = dOpts.byCategory?.[k]
-      const fromCat = byCat?.[depKey]
-      if (Array.isArray(fromCat) && fromCat.length > 0) return fromCat
-    }
+  const primary = lookup(depKey)
+  // SAFETY: se la cauzione non-residente non è configurata in Centralina Pro
+  // (lista vuota), ripiega su quella residente così la prenotazione non si
+  // rompe (mostra le opzioni residente invece di un elenco vuoto). L'admin può
+  // poi configurare le opzioni non-residente in Centralina Pro > Cauzioni.
+  if ((!primary || primary.length === 0) && depKey.includes('NON_RESIDENT')) {
+    return lookup(depKey.replace('NON_RESIDENT', 'RESIDENT'))
   }
-
-  // PRIORITY 3: flat tier key (legacy default)
-  return dOpts[depKey] || []
+  return primary || []
 }
 
 function getVehicleType(item: RentalItem, categoryContext?: string): 'UTILITARIA' | 'FURGONE' | 'V_CLASS' | 'SUPERCAR' {
@@ -326,6 +338,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     nome: '', cognome: '', codiceFiscale: '', dataNascita: '', luogoNascita: '',
     indirizzo: '', citta: '', cap: '', provincia: '', telefono: '', email: '',
   });
+  // Provincia di residenza del cliente loggato (da customers_extended via
+  // getResidencyZone). Serve a determinare la cauzione residente/non-residente:
+  // residente SOLO se provincia CA o SU (come admin getResidenceStatus); tutto
+  // il resto (altre province IT, estero 'EE') = non residente. Vuoto = residente
+  // (default sicuro, non sovra-addebita chi non ha la provincia in profilo).
+  const [customerProvinciaResidenza, setCustomerProvinciaResidenza] = useState<string>('');
   const today = useMemo(() => {
     // Get today's date in Italy timezone (Europe/Rome)
     const italyDate = new Date().toLocaleString('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -628,6 +646,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     };
   }, [configOverlay]);
 
+  // Cauzione residente vs non-residente (dipende dall'indirizzo del cliente).
+  // Regola business identica all'admin (sardegnaProvince.RESIDENT_PROVINCE_CODES):
+  // residente SOLO con provincia di residenza CA o SU. Qualsiasi altra provincia
+  // o l'estero ('EE') = non residente → si applica la cauzione non-residente
+  // (più alta, solo carta) configurata in Centralina Pro. Provincia vuota/ignota
+  // = residente (default sicuro, mantiene lo status quo per chi non ha la provincia).
+  const RESIDENT_PROVINCE_CODES = ['CA', 'SU'];
+  const isNonResidentCustomer = (() => {
+    const prov = (customerProvinciaResidenza || '').toUpperCase().trim();
+    if (!prov) return false;
+    return !RESIDENT_PROVINCE_CODES.includes(prov);
+  })();
+  const residencySuffix: 'RESIDENT' | 'NON_RESIDENT' = isNonResidentCustomer ? 'NON_RESIDENT' : 'RESIDENT';
+
   // Read the no_deposit surcharge per day from Centralina Pro. The Pro overlay stores
   // it per deposit option (surchargePerDay), NOT as a global field. Look it up from the
   // active tier's deposit list (Fascia A or B, resident).
@@ -635,7 +667,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // If Pro doesn't define no_deposit, the popup shows 0 — the admin must add the option.
   const ACTIVE_NO_DEPOSIT_SURCHARGE = (() => {
     const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
-    const depKey = `${activeTier}_RESIDENT` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT';
+    const depKey = `${activeTier}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
     const pools = [
       pickDepositOptions(configOverlay, vehicleType, depKey, (item as any).category),
       pickDepositOptions(configOverlay, vehicleType, 'TIER_2_RESIDENT', (item as any).category),
@@ -667,7 +699,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // amount from Pro's urban deposit options. Falls back to 0 if Pro empty.
   const ACTIVE_UTILITARIA_DEPOSIT = (() => {
     const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
-    const depKey = `${activeTier}_RESIDENT` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT';
+    const depKey = `${activeTier}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
     const opts = pickDepositOptions(configOverlay, 'UTILITARIA', depKey) as Array<{ amount?: number }>;
     const real = opts.find(o => typeof o.amount === 'number' && o.amount > 0);
     return real?.amount ?? 0;
@@ -1517,6 +1549,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           licenseIssueDate: customerData.metadata?.patente_data_rilascio || prev.licenseIssueDate,
         }));
 
+        // Cattura la provincia di residenza dal profilo per determinare la
+        // cauzione residente/non-residente (residente solo se CA o SU).
+        setCustomerProvinciaResidenza(
+          String(customerData.provincia_residenza || customerData.provincia || '').toUpperCase().trim()
+        );
+
         console.log('Autofilled form with user profile data');
 
       } catch (err) {
@@ -2057,7 +2095,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // Deposit surcharges from Centralina (no_deposit = €49/day, vehicle_deposit = €20/day, etc.)
     let supercarDepositSurcharge = 0;
     if (formData.depositOption) {
-      const depositCfgKey = `${activeTierForCalc}_RESIDENT` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT';
+      const depositCfgKey = `${activeTierForCalc}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
       const depOpts = pickDepositOptions(configOverlay, getVehicleType(item, categoryContext), depositCfgKey, (item as any).category);
       const selectedDep = depOpts.find((d: { id: string }) => d.id === formData.depositOption);
       if (selectedDep?.surchargePerDay) {
@@ -2235,7 +2273,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     formData.selectedExperiences, formData.dr7Flex, formData.pickupLocation, formData.returnLocation,
     formData.deliveryPickupKm, formData.deliveryReturnKm,
     item, currency, user, isUrbanOrCorporate, categoryContext, driverTier, dynamicPricing,
-    ACTIVE_RENTAL_DAY_RATES, ACTIVE_KM_INCLUDED, ACTIVE_KM_INCLUDED_AZIENDALI, configOverlay
+    ACTIVE_RENTAL_DAY_RATES, ACTIVE_KM_INCLUDED, ACTIVE_KM_INCLUDED_AZIENDALI, configOverlay,
+    residencySuffix
   ]);
 
   // Online booking discount REMOVED — no automatic discount
@@ -2357,8 +2396,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // pick (card €2000, cash €4999, vehicle deposit, etc.) was thrown away
     // before being shown in the riepilogo or written to the booking.
     const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
-    const depositKey = `${activeTier}_RESIDENT`;
-    const depOptions = pickDepositOptions(configOverlay, getVehicleType(item, categoryContext), depositKey as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT', (item as any).category);
+    const depositKey = `${activeTier}_${residencySuffix}`;
+    const depOptions = pickDepositOptions(configOverlay, getVehicleType(item, categoryContext), depositKey as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT', (item as any).category);
     const selectedDep = depOptions.find(d => d.id === formData.depositOption);
 
     if (selectedDep) {
@@ -5322,15 +5361,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const tierPricing = ACTIVE_TIER_PRICING[activeTier] || ACTIVE_TIER_PRICING.TIER_2;
         // Insurance options from Centralina per vehicle category
         const insuranceOptions = getInsuranceForVehicle(displayVehicleType, activeTier);
-        // Deposit options from Centralina Pro (per-category, RESIDENT by default)
-        const depositKey = `${activeTier}_RESIDENT` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT';
+        // Deposit options from Centralina Pro (per-category). RESIDENT o NON_RESIDENT
+        // a seconda dell'indirizzo del cliente (provincia CA/SU = residente).
+        const depositKey = `${activeTier}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
         const rawDepositOptions = pickDepositOptions(configOverlay, displayVehicleType, depositKey, (item as any).category);
         // Ensure "Nessuna cauzione" is always offered as a request for Fascia B as well —
         // Centralina Pro only lists no_deposit for Fascia A, but Fascia B must still be
         // able to submit a request. Borrow the Fascia A config when missing.
+        // NB: i clienti NON residenti NON hanno mai l'opzione "Nessuna cauzione"
+        // (cauzione non-residente = solo carta), quindi non la prendiamo in prestito.
         const depositOptions = (() => {
           const hasNoDeposit = rawDepositOptions.some((o: { id: string }) => o.id === 'no_deposit');
-          if (hasNoDeposit) return rawDepositOptions;
+          if (hasNoDeposit || isNonResidentCustomer) return rawDepositOptions;
           // If Centralina Pro defines no_deposit on Fascia A, mirror that exact entry to
           // Fascia B (so Fascia B can also request it). NO hardcoded fallback — if Pro
           // hasn't configured it anywhere, the option simply isn't offered and the admin
@@ -6722,7 +6764,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <div className="flex justify-between text-white">
                       <span>{`Supplemento cauzione (${(() => {
                         const days = Math.max(1, duration.days);
-                        const depositKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_RESIDENT` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT';
+                        const depositKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
                         const depOpts = pickDepositOptions(configOverlay, vehicleType, depositKey, (item as any).category);
                         const selectedDep = depOpts.find((d: { id: string }) => d.id === formData.depositOption);
                         const perDay = selectedDep?.surchargePerDay || 0;
@@ -6913,7 +6955,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     // customer still picked an explicit option (€1000 / €2000 /
                     // €4999) and expects to see what they chose.
                     if (formData.depositOption) {
-                      const depKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_RESIDENT` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT';
+                      const depKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
                       const opts = pickDepositOptions(configOverlay, vehicleType, depKey, (item as any).category);
                       const opt = opts.find((d: { id: string }) => d.id === formData.depositOption);
                       const optAmount = Number(opt?.amount || 0);

@@ -396,7 +396,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       idImage: null,
       address: '',
       city: '',
-      residenzaCap: '', // CAP residenza — campo dedicato così la digitazione manuale ha sempre il CAP per la fattura
       confirmsInformation: false,
 
       addSecondDriver: false,
@@ -2767,14 +2766,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // always include one (e.g. "Via Roma, 09100 Cagliari, Sardegna") and
       // requiring it was rejecting valid dropdown picks.
       const residenzaTrim = (formData.residenza || formData.address || '').trim();
-      const capField = (formData.residenzaCap || '').trim();
-      const hasCap = /\b\d{5}\b/.test(residenzaTrim) || /^\d{5}$/.test(capField);
+      const hasCap = /\b\d{5}\b/.test(residenzaTrim);
       const hasStreetWord = /[A-Za-zÀ-ÿ]{3,}/.test(residenzaTrim);
       const longEnough = residenzaTrim.length >= 10;
-      if (!residenzaTrim || !longEnough || !hasStreetWord) {
-        newErrors.residenza = "Indirizzo di residenza incompleto. Inserisci via e città (es: Via Roma 10, Cagliari).";
-      } else if (!hasCap) {
-        newErrors.residenza = "CAP mancante. Inserisci il CAP (5 cifre, es: 09100) nel campo dedicato.";
+      if (!residenzaTrim || !longEnough || !hasCap || !hasStreetWord) {
+        newErrors.residenza = "Seleziona l'indirizzo dall'elenco (include il CAP, necessario per la fattura).";
       }
       if (!formData.birthDate) {
         newErrors.birthDate = "La data di nascita è obbligatoria.";
@@ -5032,41 +5028,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       the cauzione price. */}
                   <AddressAutocomplete
                     value={formData.address || formData.residenza}
-                    onChange={(val) => setFormData(prev => {
-                      // Se l'indirizzo digitato non contiene già un CAP (5 cifre)
-                      // ma è stato inserito nel campo CAP dedicato, lo uniamo alla
-                      // residenza così la fattura ha sempre il CAP.
-                      const cap = (prev.residenzaCap || '').trim();
-                      const residenza = (val.trim() && cap && !/\b\d{5}\b/.test(val))
-                        ? `${val.trim()}, ${cap}`
-                        : val;
-                      return { ...prev, address: val, residenza };
-                    })}
+                    onChange={(val) => setFormData(prev => ({ ...prev, address: val, residenza: val }))}
                     className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm"
-                    placeholder="Via Roma 10, Cagliari"
+                    placeholder="Via Roma 10, 09100 Cagliari"
                   />
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={formData.residenzaCap || ''}
-                      onChange={(e) => {
-                        const cap = e.target.value.replace(/\D/g, '').slice(0, 5);
-                        setFormData(prev => {
-                          const addr = (prev.address || prev.residenza || '').trim();
-                          const residenza = (addr && cap && !/\b\d{5}\b/.test(addr))
-                            ? `${addr}, ${cap}`
-                            : (addr || prev.residenza);
-                          return { ...prev, residenzaCap: cap, residenza };
-                        });
-                      }}
-                      placeholder="CAP * (es: 09100)"
-                      className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white text-sm min-h-[44px]"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Seleziona l'indirizzo dall'elenco oppure scrivi <strong>via, numero civico e città</strong> e inserisci il <strong>CAP</strong> qui sopra — necessario per la fattura.
+                  <p className="text-[11px] text-red-400 mt-1">
+                    Seleziona l'indirizzo dall'elenco — include il CAP, necessario per la fattura.
                   </p>
                   {(errors.residenza || errors.address) && <p className="text-xs text-red-400 mt-1">{errors.residenza || errors.address}</p>}
                 </div>
@@ -7794,9 +7761,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           // permissive on house number so Nominatim picks
                           // without a civico still pass.
                           const r = (formData.residenza || formData.address || '').trim();
-                          const c = (formData.residenzaCap || '').trim();
                           if (!r || r.length < 10) return true;
-                          if (!/\b\d{5}\b/.test(r) && !/^\d{5}$/.test(c)) return true;
+                          if (!/\b\d{5}\b/.test(r)) return true;
                           if (!/[A-Za-zÀ-ÿ]{3,}/.test(r)) return true;
                           return false;
                         })())}

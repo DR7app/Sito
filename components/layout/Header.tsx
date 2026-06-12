@@ -3,7 +3,11 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
-import { UserCircleIcon, SignOutIcon } from '../icons/Icons';
+import {
+  UserCircleIcon, SignOutIcon,
+  CarIcon, AnchorIcon, PaperAirplaneIcon, HomeIcon,
+  SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon,
+} from '../icons/Icons';
 import { getUserCreditBalance } from '../../utils/creditWallet';
 import BookingSearchBox from '../ui/BookingSearchBox';
 import { getHeaderCopy, type HeaderCopy } from '../../utils/siteCopy';
@@ -93,6 +97,49 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   const accountLabel = user?.role === 'business' ? t('Partner_Dashboard') : t('My_Account');
   const userFullName = user?.fullName || 'User';
 
+  // Voci del menu (redesign): icona oro + immagine + titolo + sottotitolo.
+  // Le rotte puntano alle pagine esistenti; le immagini sono asset gia' presenti.
+  const GOLD = '#C8A24A';
+  const isIt = lang === 'it';
+  const MENU_ITEMS: Array<{
+    to: string;
+    img: string;
+    Icon: React.FC<{ className?: string }>;
+    title: string;
+    subtitle: string;
+    show?: boolean; // se false la voce è nascosta (gating da catalogo admin)
+  }> = [
+    { to: flottaLanding, img: '/menu-mobilita.jpeg', Icon: CarIcon,
+      title: isIt ? 'Mobilità' : 'Mobility',
+      subtitle: isIt ? 'Auto esclusive per ogni esperienza su strada' : 'Exclusive cars for every experience on the road' },
+    // Mare / Aria / Property: SEMPRE visibili (anche a catalogo vuoto), per
+    // scelta esplicita. Le pagine gestiscono lo stato vuoto.
+    { to: '/noleggio-mare', img: '/menu-mare.jpeg', Icon: AnchorIcon,
+      title: isIt ? 'Mare' : 'Sea',
+      subtitle: isIt ? 'Yacht, barche e esperienze esclusive in mare' : 'Yachts, boats and exclusive experiences at sea' },
+    { to: '/noleggio-aria', img: '/menu-aria.jpeg', Icon: PaperAirplaneIcon,
+      title: isIt ? 'Aria' : 'Air',
+      subtitle: isIt ? 'Voli privati ed elicotteri per viaggiare senza confini' : 'Private jets and helicopters to travel without limits' },
+    { to: '/soggiorni', img: '/menu-property.jpeg', Icon: HomeIcon,
+      title: 'Property',
+      subtitle: isIt ? 'Ville, appartamenti e residenze selezionate in tutto il mondo' : 'Villas, apartments and residences selected worldwide' },
+    { to: '/prime-wash', img: '/luxury.jpeg', Icon: SparklesIcon,
+      title: isIt ? 'Servizi' : 'Services',
+      subtitle: isIt ? 'Servizi su misura per uno stile di vita esclusivo' : 'Tailored services for an exclusive lifestyle' },
+    { to: '/membership', img: '/members.jpeg', Icon: CrownIcon,
+      title: 'DR7 Club',
+      subtitle: isIt ? 'Accesso esclusivo, eventi riservati e vantaggi unici' : 'Exclusive access, private events and unique benefits' },
+    { to: '/franchising', img: '/banner.jpeg', Icon: TrendingUpIcon,
+      title: 'Business',
+      subtitle: isIt ? 'Soluzioni corporate e noleggi a lungo termine' : 'Corporate solutions and long-term rentals' },
+    { to: '/token', img: '/cwallet.jpeg', Icon: CubeTransparentIcon,
+      title: 'Digital Innovation',
+      subtitle: 'Digital Asset & Token Creation' },
+    { to: '/contact', img: '/exclusivemc.jpeg', Icon: SendIcon,
+      title: isIt ? 'Contattaci' : 'Contact Us',
+      subtitle: isIt ? 'Siamo a tua disposizione' : 'We are at your service' },
+  ];
+
   const menuVariants = {
     hidden: { x: '-100%' },
     visible: { x: 0 },
@@ -122,41 +169,28 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate="visible"
             exit="hidden"
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 left-0 bottom-0 w-full max-w-sm bg-[#0a0a0a] border-r border-white/10 shadow-2xl flex flex-col px-5 py-8 overflow-y-auto"
+            className="fixed top-0 left-0 bottom-0 w-full max-w-md bg-[#070707] border-r border-white/10 shadow-2xl flex flex-col overflow-y-auto"
           >
-            {/* Logo centered at top */}
-            <div className="flex flex-col items-center mb-8">
-              <NavLink to="/" onClick={onClose} className="mb-6">
-                <img src="/DR7logo1.png" alt={copy.logo_alt} className="h-14 md:h-16 w-auto" />
+            {/* Header: logo + tagline (sinistra), chiudi (destra) */}
+            <div className="flex items-start justify-between px-5 pt-6 pb-5 border-b border-white/[0.06]">
+              <NavLink to="/" onClick={onClose} className="flex flex-col">
+                <img src="/DR7logo1.png" alt={copy.logo_alt} className="h-12 w-auto" />
+                <span className="mt-1 pl-1 text-[9px] tracking-[0.45em] text-gray-500 uppercase">Beyond Luxury</span>
               </NavLink>
               <button
                 onClick={onClose}
                 aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
-                className="absolute top-6 right-6 text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800"
+                className="-mr-2 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-colors"
               >
-
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            {/* Sign In/Sign Up Button at Top (when not logged in) */}
-            {!user && (
-              <div className="mb-6 pb-6 border-b border-gray-800">
-                <Link
-                  to="/signin"
-                  onClick={onClose}
-                  className="flex items-center justify-center w-full bg-white text-black py-4 rounded-full font-bold text-base hover:bg-gray-200 transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  {t('Sign_In')}
-                </Link>
-                <p className="text-center text-xs text-gray-400 mt-3">
-                  {t('New_here')}? <Link to="/signin" onClick={onClose} className="text-white underline hover:text-gray-300">{t('Create_account')}</Link>
-                </p>
-              </div>
-            )}
-
-            <nav className="flex-grow flex flex-col space-y-5">
-              {/* PRENOTA ORA — richiede autenticazione. Se non loggato
-                  reindirizza a /signin con returnTo che riapre il popup. */}
+            {/* PRENOTA ORA — conversione principale, mantenuta.
+                Se non loggato reindirizza a /signin e riapre il popup. */}
+            <div className="px-5 pt-5">
               <button
                 onClick={() => {
                   if (!user) {
@@ -167,193 +201,68 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   setShowBookingPopup(true);
                   try { window.dispatchEvent(new CustomEvent('dr7:prenota-ora:manual-opened')); } catch { /* ignore */ }
                 }}
-                className="w-full py-3 border border-white text-white font-semibold text-sm tracking-wider rounded-full hover:bg-white hover:text-black active:scale-[0.98] transition-all duration-300"
+                className="w-full py-3 rounded-full text-sm font-semibold tracking-[0.15em] uppercase active:scale-[0.98] transition-all duration-300 hover:bg-white/5"
+                style={{ color: GOLD, border: `1px solid ${GOLD}66` }}
               >
                 {h('drawer_book_cta_it', 'drawer_book_cta_en')}
               </button>
+            </div>
 
-              {/* LA NOSTRA FLOTTA — link al primo categoria selezionata in
-                  Sito > Flotta (fallback a /supercar-luxury se nulla
-                  selezionato). */}
-              <div className="flex flex-col items-center space-y-2 pb-5 border-b border-white/[0.06]">
-                <NavLink to={flottaLanding} onClick={onClose} className="text-[13px] font-medium text-gray-400 hover:text-white tracking-widest uppercase transition-all duration-200">
-                  {h('flotta_label_it', 'flotta_label_en')}
-                </NavLink>
-              </div>
-
-              {/* SERVIZI & MOBILITÀ DI LUSSO — lista dinamica delle
-                  categorie veicolo da admin > Sito > Flotta, piu'
-                  Yachting/Aviation fissi (non sono categorie veicolari). */}
-              <div className="border-b border-white/[0.06] pb-5">
-                <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                  {h('servizi_heading_it', 'servizi_heading_en')}
-                </h3>
-                <div className="space-y-1">
-                  {flottaCats.map(c => (
-                    <NavLink key={c.id} to={c.path} onClick={onClose} className={navLinkClasses}>
-                      <span>{c.label}</span>
-                    </NavLink>
-                  ))}
-                  <NavLink to="/yachts" onClick={onClose} className={navLinkClasses}>
-                    <span>Yachting Division</span>
-                  </NavLink>
-                  <NavLink to="/jets" onClick={onClose} className={navLinkClasses}>
-                    <span>Aviation Division</span>
-                  </NavLink>
-                </div>
-              </div>
-
-              {/* ESPERIENZE & ACCESSO ESCLUSIVO */}
-              <div className="border-b border-white/[0.06] pb-5">
-                <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                  {h('esperienze_heading_it', 'esperienze_heading_en')}
-                </h3>
-                <div className="space-y-1">
-                  <NavLink to="/membership" onClick={onClose} className={navLinkClasses}>
-                    <span>DR7 Club</span>
-                  </NavLink>
-                  <NavLink to="/credit-wallet" onClick={onClose} className={navLinkClasses}>
-                    <span className="flex items-center justify-between w-full">
-                      <span>DR7 Credit Wallet</span>
-                      {user && (
-                        <span className="ml-2 px-3 py-0.5 bg-gray-800 border border-gray-700 rounded-full text-white text-xs font-bold">
-                          {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
-                        </span>
-                      )}
-                    </span>
-                  </NavLink>
+            {/* Menu principale: immagine + icona oro + titolo + sottotitolo + chevron */}
+            <nav className="flex-grow px-3 py-4">
+              <div className="divide-y divide-white/[0.05]">
+                {MENU_ITEMS.map(({ to, img, Icon, title, subtitle }) => (
                   <NavLink
-                    to={user ? '/account/referral' : '/signin'}
-                    state={user ? undefined : { from: { pathname: '/account/referral' } }}
+                    key={title}
+                    to={to}
                     onClick={onClose}
-                    className={navLinkClasses}
+                    className="group flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-white/[0.03] transition-colors"
                   >
-                    <span>DR7 Referral</span>
+                    <img src={img} alt="" loading="lazy" className="w-[64px] h-[48px] flex-shrink-0 rounded-lg object-cover ring-1 ring-white/10" />
+                    <Icon className="w-5 h-5 flex-shrink-0 text-[#C8A24A]" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13px] font-semibold uppercase tracking-[0.1em] text-white leading-tight">{title}</span>
+                      <span className="mt-0.5 block text-[11px] text-gray-400 leading-snug line-clamp-2">{subtitle}</span>
+                    </span>
+                    <svg className="w-4 h-4 flex-shrink-0 text-gray-600 group-hover:text-gray-300 transition-colors" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </NavLink>
-                </div>
-              </div>
-
-              {/* NOLEGGIO MARE & ARIA — visibili SOLO se il catalogo admin
-                  (noleggio_catalog) ha elementi attivi. */}
-              {(hasBoats || hasHelis) && (
-                <div className="border-b border-white/[0.06] pb-5">
-                  <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                    Noleggio
-                  </h3>
-                  <div className="space-y-1">
-                    {hasBoats && (
-                      <NavLink to="/noleggio-mare" onClick={onClose} className={navLinkClasses}>
-                        <span>Noleggio Mare</span>
-                      </NavLink>
-                    )}
-                    {hasHelis && (
-                      <NavLink to="/noleggio-aria" onClick={onClose} className={navLinkClasses}>
-                        <span>Noleggio Aria</span>
-                      </NavLink>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* SOGGIORNI & OSPITALITÀ — visibile SOLO se il catalogo admin
-                  ha alloggi attivi (service_type stay_rental). */}
-              {hasStays && (
-                <div className="border-b border-white/[0.06] pb-5">
-                  <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                    Ospitalità
-                  </h3>
-                  <div className="space-y-1">
-                    <NavLink to="/soggiorni" onClick={onClose} className={navLinkClasses}>
-                      <span>Soggiorni &amp; Ospitalità</span>
-                    </NavLink>
-                  </div>
-                </div>
-              )}
-
-              {/* PRIME WASH */}
-              <div className="border-b border-white/[0.06] pb-5">
-                <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                  {h('prime_wash_heading_it', 'prime_wash_heading_en')}
-                </h3>
-                <div className="space-y-1">
-                  <NavLink to="/prime-wash" onClick={onClose} className={navLinkClasses}>
-                    <span>Detailing & Wash</span>
-                  </NavLink>
-                  <NavLink to="/prime-wash#mechanical" onClick={onClose} className={navLinkClasses}>
-                    <span>Mechanical & Body Repair</span>
-                  </NavLink>
-                  <NavLink to="/prime-wash#courtesy" onClick={onClose} className={navLinkClasses}>
-                    <span>Courtesy Car Service</span>
-                  </NavLink>
-                </div>
-              </div>
-
-              {/* BUSINESS & CORPORATE */}
-              <div className="border-b border-white/[0.06] pb-5">
-                <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                  {h('business_heading_it', 'business_heading_en')}
-                </h3>
-                <div className="space-y-1">
-                  <NavLink to="/franchising" onClick={onClose} className={navLinkClasses}>
-                    <span>Global Franchising</span>
-                  </NavLink>
-                  <NavLink to="/investitori" onClick={onClose} className={navLinkClasses}>
-                    <span>Investor Relations</span>
-                  </NavLink>
-                </div>
-              </div>
-
-              {/* DIGITAL INNOVATION */}
-              <div className="border-b border-white/[0.06] pb-5">
-                <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
-                  {h('digital_heading_it', 'digital_heading_en')}
-                </h3>
-                <div className="space-y-1">
-                  <NavLink to="/token" onClick={onClose} className={navLinkClasses}>
-                    <span>Digital Asset & Token Division</span>
-                  </NavLink>
-                </div>
-              </div>
-
-              {/* CONTATTACI */}
-              <div className="pt-2">
-                <NavLink to="/contact" onClick={onClose} className="block py-3 text-center text-[13px] font-medium text-gray-400 hover:text-white tracking-widest uppercase rounded-lg hover:bg-white/5 transition-all duration-200">
-                  {h('contact_cta_it', 'contact_cta_en')}
-                </NavLink>
+                ))}
               </div>
             </nav>
 
-            {/* Dead code removed — popup uses BookingSearchBox now */}
-
-            <div className="mt-auto pt-8 border-t border-gray-800">
-              {user && (
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold">
-                      {userFullName.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white">{userFullName}</p>
-                      <p className="text-xs text-gray-400">{user.email}</p>
-                    </div>
+            {/* Footer: accesso esclusivo + account/wallet (loggato) o sign in */}
+            <div className="mt-auto px-5 py-5 border-t border-white/[0.06]">
+              {user ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] tracking-[0.25em] uppercase" style={{ color: GOLD }}>{isIt ? 'Accesso Esclusivo' : 'Exclusive Access'}</p>
+                    <p className="text-sm font-semibold text-white truncate">{userFullName}</p>
                   </div>
-                  <Link
-                    to={accountLink}
-                    onClick={onClose}
-                    className="flex items-center justify-center w-full bg-gray-800 text-white py-3 rounded-full font-bold text-sm hover:bg-gray-700"
-                  >
-                    {accountLabel}
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    <Link to="/credit-wallet" onClick={onClose} className="rounded-full bg-white/[0.06] border border-white/10 px-3 py-1.5 text-xs font-bold text-white">
+                      {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
+                    </Link>
+                    <Link to={accountLink} onClick={onClose} title={accountLabel} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] border border-white/10 text-gray-200 hover:text-white">
+                      <UserCircleIcon className="w-5 h-5" />
+                    </Link>
+                    <button onClick={handleLogout} title={t('Sign_Out')} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] border border-white/10 text-gray-300 hover:text-white">
+                      <SignOutIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] tracking-[0.25em] uppercase" style={{ color: GOLD }}>{isIt ? 'Esperienze e Accesso Esclusivo' : 'Experiences & Exclusive Access'}</p>
+                    <p className="text-sm font-semibold text-white">DR7 Club</p>
+                  </div>
+                  <Link to="/signin" onClick={onClose} className="flex-shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-gray-200 transition-colors">
+                    {t('Sign_In')}
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center justify-center w-full bg-gray-200 text-black py-3 rounded-full font-bold text-sm hover:bg-white"
-                  >
-                    {t('Sign_Out')}
-                  </button>
                 </div>
               )}
-              <div className={`flex justify-between items-center ${user ? 'mt-6' : ''}`}>
-              </div>
             </div>
           </motion.div>
 

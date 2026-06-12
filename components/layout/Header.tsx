@@ -28,7 +28,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   const flottaLanding = '/flotta';
   // Noleggio Mare/Aria: link in menu SOLO se il catalogo admin ha elementi
   // attivi (catalogo vuoto => nessun link, nessuna pagina).
-  const { hasBoats, hasHelis } = useNoleggioCatalog();
+  const { hasBoats, hasHelis, hasStays } = useNoleggioCatalog();
 
   useEffect(() => {
     if (isOpen) {
@@ -251,6 +251,21 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                         <span>Noleggio Aria</span>
                       </NavLink>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* SOGGIORNI & OSPITALITÀ — visibile SOLO se il catalogo admin
+                  ha alloggi attivi (service_type stay_rental). */}
+              {hasStays && (
+                <div className="border-b border-white/[0.06] pb-5">
+                  <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
+                    Ospitalità
+                  </h3>
+                  <div className="space-y-1">
+                    <NavLink to="/soggiorni" onClick={onClose} className={navLinkClasses}>
+                      <span>Soggiorni &amp; Ospitalità</span>
+                    </NavLink>
                   </div>
                 </div>
               )}

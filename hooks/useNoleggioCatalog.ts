@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-export type NoleggioServiceType = 'boat_rental' | 'heli_rental';
+export type NoleggioServiceType = 'boat_rental' | 'heli_rental' | 'stay_rental';
 
 export interface NoleggioCatalogItem {
   id: string;
@@ -25,6 +25,7 @@ interface UseNoleggioCatalogResult {
   loading: boolean;
   hasBoats: boolean;
   hasHelis: boolean;
+  hasStays: boolean;
 }
 
 export function useNoleggioCatalog(serviceType?: NoleggioServiceType): UseNoleggioCatalogResult {
@@ -63,5 +64,6 @@ export function useNoleggioCatalog(serviceType?: NoleggioServiceType): UseNolegg
     loading,
     hasBoats: items.some(i => i.service_type === 'boat_rental'),
     hasHelis: items.some(i => i.service_type === 'heli_rental'),
+    hasStays: items.some(i => i.service_type === 'stay_rental'),
   };
 }

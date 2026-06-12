@@ -98,46 +98,52 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   const userFullName = user?.fullName || 'User';
 
   // Voci del menu (redesign): icona oro + immagine + titolo + sottotitolo.
-  // Le rotte puntano alle pagine esistenti; le immagini sono asset gia' presenti.
+  // Titolo/sottotitolo sono editabili da Admin > Sito > Header (chiavi
+  // menu_<id>_title/sub _it/en); se vuote nel DB si usa il default hardcoded.
   const GOLD = '#C8A24A';
   const isIt = lang === 'it';
+  // Legge una coppia di chiavi copy con fallback al default hardcoded.
+  const mc = (itKey: keyof HeaderCopy, enKey: keyof HeaderCopy, fbIt: string, fbEn: string): string => {
+    const rec = copy as Record<string, string | undefined>;
+    const val = (isIt ? rec[itKey as string] : rec[enKey as string]) || '';
+    return val.trim() ? val : (isIt ? fbIt : fbEn);
+  };
   const MENU_ITEMS: Array<{
     to: string;
     img: string;
     Icon: React.FC<{ className?: string }>;
     title: string;
     subtitle: string;
-    show?: boolean; // se false la voce è nascosta (gating da catalogo admin)
   }> = [
     { to: flottaLanding, img: '/menu-mobilita.jpeg', Icon: CarIcon,
-      title: isIt ? 'Mobilità' : 'Mobility',
-      subtitle: isIt ? 'Auto esclusive per ogni esperienza su strada' : 'Exclusive cars for every experience on the road' },
+      title: mc('menu_mobilita_title_it', 'menu_mobilita_title_en', 'Mobilità', 'Mobility'),
+      subtitle: mc('menu_mobilita_sub_it', 'menu_mobilita_sub_en', 'Auto esclusive per ogni esperienza su strada', 'Exclusive cars for every experience on the road') },
     // Mare / Aria / Property: SEMPRE visibili (anche a catalogo vuoto), per
     // scelta esplicita. Le pagine gestiscono lo stato vuoto.
     { to: '/noleggio-mare', img: '/menu-mare.jpeg', Icon: AnchorIcon,
-      title: isIt ? 'Mare' : 'Sea',
-      subtitle: isIt ? 'Yacht, barche e esperienze esclusive in mare' : 'Yachts, boats and exclusive experiences at sea' },
+      title: mc('menu_mare_title_it', 'menu_mare_title_en', 'Mare', 'Sea'),
+      subtitle: mc('menu_mare_sub_it', 'menu_mare_sub_en', 'Yacht, barche e esperienze esclusive in mare', 'Yachts, boats and exclusive experiences at sea') },
     { to: '/noleggio-aria', img: '/menu-aria.jpeg', Icon: PaperAirplaneIcon,
-      title: isIt ? 'Aria' : 'Air',
-      subtitle: isIt ? 'Voli privati ed elicotteri per viaggiare senza confini' : 'Private jets and helicopters to travel without limits' },
+      title: mc('menu_aria_title_it', 'menu_aria_title_en', 'Aria', 'Air'),
+      subtitle: mc('menu_aria_sub_it', 'menu_aria_sub_en', 'Voli privati ed elicotteri per viaggiare senza confini', 'Private jets and helicopters to travel without limits') },
     { to: '/soggiorni', img: '/menu-property.jpeg', Icon: HomeIcon,
-      title: 'Property',
-      subtitle: isIt ? 'Ville, appartamenti e residenze selezionate in tutto il mondo' : 'Villas, apartments and residences selected worldwide' },
+      title: mc('menu_property_title_it', 'menu_property_title_en', 'Property', 'Property'),
+      subtitle: mc('menu_property_sub_it', 'menu_property_sub_en', 'Ville, appartamenti e residenze selezionate in tutto il mondo', 'Villas, apartments and residences selected worldwide') },
     { to: '/prime-wash', img: '/luxury.jpeg', Icon: SparklesIcon,
-      title: isIt ? 'Servizi' : 'Services',
-      subtitle: isIt ? 'Servizi su misura per uno stile di vita esclusivo' : 'Tailored services for an exclusive lifestyle' },
+      title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Servizi', 'Services'),
+      subtitle: mc('menu_servizi_sub_it', 'menu_servizi_sub_en', 'Servizi su misura per uno stile di vita esclusivo', 'Tailored services for an exclusive lifestyle') },
     { to: '/membership', img: '/members.jpeg', Icon: CrownIcon,
-      title: 'DR7 Club',
-      subtitle: isIt ? 'Accesso esclusivo, eventi riservati e vantaggi unici' : 'Exclusive access, private events and unique benefits' },
+      title: mc('menu_club_title_it', 'menu_club_title_en', 'DR7 Club', 'DR7 Club'),
+      subtitle: mc('menu_club_sub_it', 'menu_club_sub_en', 'Accesso esclusivo, eventi riservati e vantaggi unici', 'Exclusive access, private events and unique benefits') },
     { to: '/franchising', img: '/banner.jpeg', Icon: TrendingUpIcon,
-      title: 'Business',
-      subtitle: isIt ? 'Soluzioni corporate e noleggi a lungo termine' : 'Corporate solutions and long-term rentals' },
+      title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
+      subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },
     { to: '/token', img: '/cwallet.jpeg', Icon: CubeTransparentIcon,
-      title: 'Digital Innovation',
-      subtitle: 'Digital Asset & Token Creation' },
+      title: mc('menu_digital_title_it', 'menu_digital_title_en', 'Digital Innovation', 'Digital Innovation'),
+      subtitle: mc('menu_digital_sub_it', 'menu_digital_sub_en', 'Digital Asset & Token Creation', 'Digital Asset & Token Creation') },
     { to: '/contact', img: '/exclusivemc.jpeg', Icon: SendIcon,
-      title: isIt ? 'Contattaci' : 'Contact Us',
-      subtitle: isIt ? 'Siamo a tua disposizione' : 'We are at your service' },
+      title: mc('menu_contatti_title_it', 'menu_contatti_title_en', 'Contattaci', 'Contact Us'),
+      subtitle: mc('menu_contatti_sub_it', 'menu_contatti_sub_en', 'Siamo a tua disposizione', 'We are at your service') },
   ];
 
   const menuVariants = {

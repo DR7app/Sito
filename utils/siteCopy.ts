@@ -856,6 +856,26 @@ export interface HeaderCopy {
   business_heading_it: string; business_heading_en: string;
   digital_heading_it: string; digital_heading_en: string;
   contact_cta_it: string; contact_cta_en: string;               // "Contattaci"
+  // Menu principale (redesign): 9 voci, titolo + sottotitolo IT/EN.
+  // Opzionali: se mancanti nel DB il sito usa i default hardcoded.
+  menu_mobilita_title_it?: string; menu_mobilita_title_en?: string;
+  menu_mobilita_sub_it?: string; menu_mobilita_sub_en?: string;
+  menu_mare_title_it?: string; menu_mare_title_en?: string;
+  menu_mare_sub_it?: string; menu_mare_sub_en?: string;
+  menu_aria_title_it?: string; menu_aria_title_en?: string;
+  menu_aria_sub_it?: string; menu_aria_sub_en?: string;
+  menu_property_title_it?: string; menu_property_title_en?: string;
+  menu_property_sub_it?: string; menu_property_sub_en?: string;
+  menu_servizi_title_it?: string; menu_servizi_title_en?: string;
+  menu_servizi_sub_it?: string; menu_servizi_sub_en?: string;
+  menu_club_title_it?: string; menu_club_title_en?: string;
+  menu_club_sub_it?: string; menu_club_sub_en?: string;
+  menu_business_title_it?: string; menu_business_title_en?: string;
+  menu_business_sub_it?: string; menu_business_sub_en?: string;
+  menu_digital_title_it?: string; menu_digital_title_en?: string;
+  menu_digital_sub_it?: string; menu_digital_sub_en?: string;
+  menu_contatti_title_it?: string; menu_contatti_title_en?: string;
+  menu_contatti_sub_it?: string; menu_contatti_sub_en?: string;
   // Booking popup chrome (form itself = BookingSearchBox)
   popup_title_it: string; popup_title_en: string;               // "Prenota Ora"
   popup_subtitle_it: string; popup_subtitle_en: string;         // "Seleziona date e orari"

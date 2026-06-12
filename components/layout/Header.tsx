@@ -8,6 +8,7 @@ import { getUserCreditBalance } from '../../utils/creditWallet';
 import BookingSearchBox from '../ui/BookingSearchBox';
 import { getHeaderCopy, type HeaderCopy } from '../../utils/siteCopy';
 import { useFlottaCategories } from '../../hooks/useFlottaCategories';
+import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
 
 const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy }> = ({ isOpen, onClose, copy }) => {
   const { t, lang } = useTranslation();
@@ -25,6 +26,9 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   // tutte le categorie come cards). Non saltare direttamente alla
   // prima categoria — l'utente deve vedere il menu di scelta.
   const flottaLanding = '/flotta';
+  // Noleggio Mare/Aria: link in menu SOLO se il catalogo admin ha elementi
+  // attivi (catalogo vuoto => nessun link, nessuna pagina).
+  const { hasBoats, hasHelis } = useNoleggioCatalog();
 
   useEffect(() => {
     if (isOpen) {
@@ -228,6 +232,28 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   </NavLink>
                 </div>
               </div>
+
+              {/* NOLEGGIO MARE & ARIA — visibili SOLO se il catalogo admin
+                  (noleggio_catalog) ha elementi attivi. */}
+              {(hasBoats || hasHelis) && (
+                <div className="border-b border-white/[0.06] pb-5">
+                  <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2 pl-3">
+                    Noleggio
+                  </h3>
+                  <div className="space-y-1">
+                    {hasBoats && (
+                      <NavLink to="/noleggio-mare" onClick={onClose} className={navLinkClasses}>
+                        <span>Noleggio Mare</span>
+                      </NavLink>
+                    )}
+                    {hasHelis && (
+                      <NavLink to="/noleggio-aria" onClick={onClose} className={navLinkClasses}>
+                        <span>Noleggio Aria</span>
+                      </NavLink>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* PRIME WASH */}
               <div className="border-b border-white/[0.06] pb-5">

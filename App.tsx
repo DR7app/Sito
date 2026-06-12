@@ -10,6 +10,7 @@ import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import RentalPage from './pages/RentalPage';
 import FlottaIndexPage from './pages/FlottaIndexPage';
+import NoleggioServicePage from './pages/NoleggioServicePage';
 import MembershipPage from './pages/MembershipPage';
 import { RENTAL_CATEGORIES } from './constants';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -279,6 +280,10 @@ const AnimatedRoutes = () => {
         <Route path="/aviation-quote" element={<AviationQuoteRequestPage />} />
         {/* Canonical SEO-friendly routes */}
         <Route path="/flotta" element={<FlottaIndexPage />} />
+        {/* Noleggio Mare / Aria — pagine DINAMICHE dal catalogo admin
+            (noleggio_catalog). Catalogo vuoto => pagina non mostra nulla. */}
+        <Route path="/noleggio-mare" element={<NoleggioServicePage serviceType="boat_rental" title="Noleggio Mare" subtitle="La nostra selezione di imbarcazioni per il tuo charter in Sardegna." asset="la barca" />} />
+        <Route path="/noleggio-aria" element={<NoleggioServicePage serviceType="heli_rental" title="Noleggio Aria" subtitle="Elicotteri e voli privati su misura, con il nostro servizio dedicato." asset="l'elicottero" />} />
         <Route path="/supercar-luxury" element={<RentalPage categoryId="cars" />} />
         <Route path="/urban" element={<Navigate to="/supercar-luxury" replace />} />
         <Route path="/prime-wash" element={<CarWashServicesPage />} />

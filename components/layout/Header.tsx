@@ -138,10 +138,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/franchising', img: '/menu-business.jpeg', Icon: TrendingUpIcon,
       title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
       subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },
-    { to: '/token', img: '/cwallet.jpeg', Icon: CubeTransparentIcon,
+    { to: '/token', img: '/menu-digital.jpeg', Icon: CubeTransparentIcon,
       title: mc('menu_digital_title_it', 'menu_digital_title_en', 'Digital Innovation', 'Digital Innovation'),
       subtitle: mc('menu_digital_sub_it', 'menu_digital_sub_en', 'Digital Asset & Token Creation', 'Digital Asset & Token Creation') },
-    { to: '/contact', img: '/exclusivemc.jpeg', Icon: SendIcon,
+    { to: '/contact', img: '/menu-contatti.jpeg', Icon: SendIcon,
       title: mc('menu_contatti_title_it', 'menu_contatti_title_en', 'Contattaci', 'Contact Us'),
       subtitle: mc('menu_contatti_sub_it', 'menu_contatti_sub_en', 'Siamo a tua disposizione', 'We are at your service') },
   ];

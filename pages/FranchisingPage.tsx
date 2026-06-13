@@ -71,6 +71,11 @@ const FranchisingPage: React.FC = () => {
     return (
         <LegalPageLayout title={t('Franchising')}>
             <div className="space-y-8">
+                {/* Hero banner — Global Franchising */}
+                <div className="relative -mt-2 rounded-2xl overflow-hidden border border-gray-800">
+                    <img src="/franchising-hero.jpeg" alt="" className="w-full h-40 md:h-56 object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                </div>
                 {/* Hero Statement */}
                 <div className="text-center py-6 md:py-8 border-b border-gray-800">
                     <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 px-4">

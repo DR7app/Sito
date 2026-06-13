@@ -410,7 +410,7 @@ export const RENTAL_CATEGORIES: RentalCategory[] = [
   },
   {
     id: 'car-wash-services',
-    label: { en: 'Prime Wash', it: 'Prime Wash' },
+    label: { en: 'Lavaggio Meccanica', it: 'Lavaggio Meccanica' },
     data: [],
     icon: SparklesIcon,
   },

@@ -104,7 +104,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   const isIt = lang === 'it';
   // Legge una coppia di chiavi copy con fallback al default hardcoded.
   const mc = (itKey: keyof HeaderCopy, enKey: keyof HeaderCopy, fbIt: string, fbEn: string): string => {
-    const rec = copy as Record<string, string | undefined>;
+    const rec = copy as unknown as Record<string, string | undefined>;
     const val = (isIt ? rec[itKey as string] : rec[enKey as string]) || '';
     return val.trim() ? val : (isIt ? fbIt : fbEn);
   };

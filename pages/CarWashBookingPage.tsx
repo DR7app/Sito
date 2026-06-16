@@ -759,7 +759,18 @@ const CarWashBookingPage: React.FC = () => {
     } else if (!validateItalianPhone(formData.phone)) {
       newErrors.phone = lang === 'it' ? 'Formato telefono non valido' : 'Invalid phone format';
     }
-    // Codice Fiscale, indirizzo, etc. are now optional
+    // Codice Fiscale + indirizzo OBBLIGATORI: servono per emettere la fattura
+    // (il SDI rifiuta senza CF + indirizzo del cliente). Per i clienti loggati
+    // questi campi sono già precompilati dal loro profilo (vedi prefill da
+    // customers_extended) → non li reinseriscono una seconda volta.
+    if (!formData.codiceFiscale.trim()) {
+      newErrors.codiceFiscale = lang === 'it' ? 'Il codice fiscale è obbligatorio per la fattura' : 'Codice Fiscale is required for the invoice';
+    } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
+      newErrors.codiceFiscale = lang === 'it' ? 'Codice fiscale non valido (16 caratteri)' : 'Invalid Codice Fiscale (16 characters)';
+    }
+    if (!formData.indirizzo.trim()) newErrors.indirizzo = lang === 'it' ? 'L\'indirizzo è obbligatorio per la fattura' : 'Address is required for the invoice';
+    if (!formData.cittaResidenza.trim()) newErrors.cittaResidenza = lang === 'it' ? 'La città è obbligatoria per la fattura' : 'City is required for the invoice';
+    if (!formData.codicePostale.trim()) newErrors.codicePostale = lang === 'it' ? 'Il CAP è obbligatorio per la fattura' : 'Postal code is required for the invoice';
     if (!formData.appointmentDate) newErrors.appointmentDate = lang === 'it' ? 'La data è obbligatoria' : 'Date is required';
     if (!formData.appointmentTime) newErrors.appointmentTime = lang === 'it' ? 'L\'ora è obbligatoria' : 'Time is required';
 
@@ -1618,7 +1629,8 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Codice Fiscale' : 'Tax Code'}
+                    {lang === 'it' ? 'Codice Fiscale *' : 'Tax Code *'}
+                    <span className="text-xs text-gray-500 font-normal ml-1">{lang === 'it' ? '(necessario per la fattura)' : '(required for the invoice)'}</span>
                   </label>
                   <input
                     type="text"
@@ -1633,7 +1645,7 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Indirizzo' : 'Address'}
+                    {lang === 'it' ? 'Indirizzo *' : 'Address *'}
                   </label>
                   <input
                     type="text"
@@ -1660,7 +1672,7 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Città di Residenza' : 'City'}
+                    {lang === 'it' ? 'Città di Residenza *' : 'City *'}
                   </label>
                   <input
                     type="text"
@@ -1674,7 +1686,7 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'CAP' : 'Postal Code'}
+                    {lang === 'it' ? 'CAP *' : 'Postal Code *'}
                   </label>
                   <input
                     type="text"

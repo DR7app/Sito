@@ -312,13 +312,24 @@ const CreditWalletPage: React.FC = () => {
       newErrors.phone = w('err_phone_invalid_it', 'err_phone_invalid_en');
     }
 
-    // Codice Fiscale (Optional for quickcheckout, validated if present)
-    if (formData.codiceFiscale && !validateCodiceFiscale(formData.codiceFiscale)) {
+    // Codice Fiscale + indirizzo OBBLIGATORI: ogni ricarica pagata con carta
+    // deve emettere fattura, che richiede CF + indirizzo del cliente. Per i
+    // clienti loggati questi campi sono già precompilati dal profilo
+    // (customers_extended) → non li reinseriscono una seconda volta.
+    if (!formData.codiceFiscale || !formData.codiceFiscale.trim()) {
+      newErrors.codiceFiscale = lang === 'it' ? 'Il codice fiscale è obbligatorio per la fattura' : 'Codice Fiscale is required for the invoice';
+    } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
       newErrors.codiceFiscale = w('err_cf_invalid_it', 'err_cf_invalid_en');
     }
-
-    // Address fields are now optional for credit wallet easy-checkout
-    // They will be empty string if not provided
+    if (!formData.indirizzo || !formData.indirizzo.trim()) {
+      newErrors.indirizzo = lang === 'it' ? 'L\'indirizzo è obbligatorio per la fattura' : 'Address is required for the invoice';
+    }
+    if (!formData.cittaResidenza || !formData.cittaResidenza.trim()) {
+      newErrors.cittaResidenza = lang === 'it' ? 'La città è obbligatoria per la fattura' : 'City is required for the invoice';
+    }
+    if (!formData.codicePostale || !formData.codicePostale.trim()) {
+      newErrors.codicePostale = lang === 'it' ? 'Il CAP è obbligatorio per la fattura' : 'Postal code is required for the invoice';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -702,6 +713,52 @@ const CreditWalletPage: React.FC = () => {
                     {paymentError && <p className="text-xs text-red-400 mt-2">{paymentError}</p>}
                   </div>
                 </div>
+
+                {/* Dati per la fattura — obbligatori per emettere fattura sulla
+                    ricarica (pagamento con carta). Mostrati SOLO se mancano nel
+                    profilo del cliente: se sono già presenti (precompilati da
+                    customers_extended) non vengono richiesti una seconda volta. */}
+                {(() => {
+                  const fiscalComplete = !!(formData.codiceFiscale.trim() && formData.indirizzo.trim() && formData.cittaResidenza.trim() && formData.codicePostale.trim());
+                  if (fiscalComplete) {
+                    return (
+                      <div className="bg-gray-800/40 border border-gray-700 rounded-lg p-3 text-xs text-gray-400">
+                        {lang === 'it' ? 'Dati per la fattura: completi (dal tuo profilo).' : 'Invoice details: complete (from your profile).'}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-bold text-white">{lang === 'it' ? 'Dati per la fattura' : 'Invoice details'}</h3>
+                      <div>
+                        <input name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} maxLength={16} placeholder={lang === 'it' ? 'Codice Fiscale *' : 'Tax Code *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase" />
+                        {errors.codiceFiscale && <p className="text-xs text-red-400 mt-1">{errors.codiceFiscale}</p>}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2">
+                          <input name="indirizzo" value={formData.indirizzo} onChange={handleChange} placeholder={lang === 'it' ? 'Indirizzo *' : 'Address *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
+                          {errors.indirizzo && <p className="text-xs text-red-400 mt-1">{errors.indirizzo}</p>}
+                        </div>
+                        <div className="col-span-1">
+                          <input name="numeroCivico" value={formData.numeroCivico} onChange={handleChange} placeholder={lang === 'it' ? 'N. civico' : 'No.'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <input name="codicePostale" value={formData.codicePostale} onChange={handleChange} maxLength={5} placeholder={lang === 'it' ? 'CAP *' : 'ZIP *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
+                          {errors.codicePostale && <p className="text-xs text-red-400 mt-1">{errors.codicePostale}</p>}
+                        </div>
+                        <div>
+                          <input name="cittaResidenza" value={formData.cittaResidenza} onChange={handleChange} placeholder={lang === 'it' ? 'Città *' : 'City *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
+                          {errors.cittaResidenza && <p className="text-xs text-red-400 mt-1">{errors.cittaResidenza}</p>}
+                        </div>
+                        <div>
+                          <input name="provinciaResidenza" value={formData.provinciaResidenza} onChange={handleChange} maxLength={2} placeholder={lang === 'it' ? 'Prov.' : 'Prov.'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Action Buttons */}
                 <div className="flex gap-4">

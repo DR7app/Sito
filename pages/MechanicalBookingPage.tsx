@@ -288,7 +288,17 @@ const MechanicalBookingPage: React.FC = () => {
     } else if (!validateItalianPhone(formData.phone)) {
       newErrors.phone = lang === 'it' ? 'Formato telefono non valido' : 'Invalid phone format';
     }
-    // Codice Fiscale, indirizzo, etc. are now optional
+    // Codice Fiscale + indirizzo OBBLIGATORI: servono per emettere la fattura
+    // (il SDI rifiuta senza CF + indirizzo). Per i clienti loggati questi campi
+    // sono già precompilati dal profilo → non li reinseriscono una seconda volta.
+    if (!formData.codiceFiscale || !formData.codiceFiscale.trim()) {
+      newErrors.codiceFiscale = lang === 'it' ? 'Il codice fiscale è obbligatorio per la fattura' : 'Codice Fiscale is required for the invoice';
+    } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
+      newErrors.codiceFiscale = lang === 'it' ? 'Codice fiscale non valido (16 caratteri)' : 'Invalid Codice Fiscale (16 characters)';
+    }
+    if (!formData.indirizzo || !formData.indirizzo.trim()) newErrors.indirizzo = lang === 'it' ? 'L\'indirizzo è obbligatorio per la fattura' : 'Address is required for the invoice';
+    if (!formData.cittaResidenza || !formData.cittaResidenza.trim()) newErrors.cittaResidenza = lang === 'it' ? 'La città è obbligatoria per la fattura' : 'City is required for the invoice';
+    if (!formData.codicePostale || !formData.codicePostale.trim()) newErrors.codicePostale = lang === 'it' ? 'Il CAP è obbligatorio per la fattura' : 'Postal code is required for the invoice';
     if (!formData.vehicleMake) newErrors.vehicleMake = lang === 'it' ? 'La marca è obbligatoria' : 'Make is required';
     if (!formData.vehicleModel) newErrors.vehicleModel = lang === 'it' ? 'Il modello è obbligatorio' : 'Model is required';
     if (!formData.appointmentDate) newErrors.appointmentDate = lang === 'it' ? 'La data è obbligatoria' : 'Date is required';
@@ -347,6 +357,11 @@ const MechanicalBookingPage: React.FC = () => {
           email: formData.email,
           phone: formData.phone,
           codiceFiscale: formData.codiceFiscale,
+          indirizzo: formData.indirizzo,
+          numeroCivico: formData.numeroCivico,
+          cittaResidenza: formData.cittaResidenza,
+          codicePostale: formData.codicePostale,
+          provinciaResidenza: formData.provinciaResidenza,
         },
         vehicleMake: formData.vehicleMake,
         vehicleModel: formData.vehicleModel,
@@ -767,7 +782,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Codice Fiscale' : 'Tax Code'}
+                    {lang === 'it' ? 'Codice Fiscale * (necessario per la fattura)' : 'Tax Code * (required for the invoice)'}
                   </label>
                   <input
                     type="text"
@@ -782,7 +797,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Indirizzo' : 'Address'}
+                    {lang === 'it' ? 'Indirizzo *' : 'Address *'}
                   </label>
                   <input
                     type="text"
@@ -809,7 +824,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Città di Residenza' : 'City'}
+                    {lang === 'it' ? 'Città di Residenza *' : 'City *'}
                   </label>
                   <input
                     type="text"
@@ -823,7 +838,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'CAP' : 'Postal Code'}
+                    {lang === 'it' ? 'CAP *' : 'Postal Code *'}
                   </label>
                   <input
                     type="text"

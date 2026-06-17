@@ -49,7 +49,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
             const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
             return (
               <div key={item.id} className="group rounded-2xl overflow-hidden bg-white/[0.03] border border-white/10 hover:border-dr7-gold/50 transition-colors flex flex-col">
-                <div className="aspect-[4/3] bg-white/5 overflow-hidden">
+                <div className="aspect-[16/9] bg-white/5 overflow-hidden">
                   {item.image_url ? (
                     <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (

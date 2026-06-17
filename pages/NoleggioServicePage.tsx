@@ -57,8 +57,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                   )}
                 </div>
                 <div className="px-6 pt-6 pb-4 flex flex-col flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-medium text-white">{item.name}</h3>
+                  <div className="flex items-start gap-3">
                     {item.price_per_day > 0 ? (
                       <div className="text-white font-semibold whitespace-nowrap">{eur(item.price_per_day)}<span className="text-xs text-gray-400">/giorno</span></div>
                     ) : (

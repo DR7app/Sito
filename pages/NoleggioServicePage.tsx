@@ -68,9 +68,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                   {item.capacity != null && (
                     <div className="mt-1 text-xs text-gray-400">Fino a {item.capacity} persone</div>
                   )}
-                  {item.description && (
-                    <p className="mt-3 text-sm text-gray-400 line-clamp-3 flex-1">{item.description}</p>
-                  )}
+                  <div className="flex-1" />
                   <a
                     href={waHref}
                     target="_blank"

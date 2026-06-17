@@ -40,8 +40,10 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
   // Hide booking button for vehicles with booking_disabled flag in metadata
   const isBlockedCar = isCar && (item as any).bookingDisabled;
 
-  // Jets, yachts, and helicopters use landscape format, cars use tall portrait, others use vertical format
-  const imageAspectRatio = (isJet || isYacht || isHelicopter) ? 'aspect-[16/9]' : isCar ? 'aspect-[9/16]' : 'aspect-[4/5]';
+  // 2026-06-17: barche (yacht) e aerei (jet/elicottero) usano lo STESSO formato
+  // verticale 9/16 delle auto — la card boat/plane deve essere identica alla
+  // card auto (richiesta direzione). Le ville restano 4/5.
+  const imageAspectRatio = (isJet || isYacht || isHelicopter || isCar) ? 'aspect-[9/16]' : 'aspect-[4/5]';
 
   const formatPrice = (price: number) => {
     const hasDecimals = price % 1 !== 0;

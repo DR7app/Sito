@@ -48,17 +48,17 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
               `Potete inviarmi disponibilità e preventivo?`;
             const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
             return (
-              <div key={item.id} className="group rounded-2xl overflow-hidden bg-white/[0.03] border border-white/10 hover:border-dr7-gold/50 transition-colors flex flex-col">
-                <div className="aspect-[9/16] bg-white/5 overflow-hidden">
+              <div key={item.id} className="bg-black border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col">
+                <div className="relative overflow-hidden">
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={item.image_url} alt={item.name} className="w-full aspect-[9/16] object-cover transition-transform duration-500 group-hover:scale-105" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">DR7</div>
+                    <div className="w-full aspect-[9/16] bg-white/5 flex items-center justify-center text-gray-600 text-sm">DR7</div>
                   )}
                 </div>
-                <div className="p-5 flex flex-col flex-1">
+                <div className="px-6 pt-6 pb-4 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-medium">{item.name}</h3>
+                    <h3 className="text-lg font-medium text-white">{item.name}</h3>
                     {item.price_per_day > 0 ? (
                       <div className="text-white font-semibold whitespace-nowrap">{eur(item.price_per_day)}<span className="text-xs text-gray-400">/giorno</span></div>
                     ) : (

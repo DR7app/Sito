@@ -81,10 +81,12 @@ export const handler: Handler = async (event) => {
       return { statusCode: 200, body: JSON.stringify({ success: true, skipped: true, reason: "not_car_wash" }) }
     }
 
-    // Solo i lavaggi prenotati DAL SITO dal cliente generano punti fedeltà.
-    // Le prenotazioni admin / walk-in (booking_source != 'website') NON danno punti.
-    if ((booking.booking_source || "").toLowerCase() !== "website") {
-      return { statusCode: 200, body: JSON.stringify({ success: true, skipped: true, reason: "not_website" }) }
+    // Solo i lavaggi prenotati dal CLIENTE LOGGATO sul sito generano punti.
+    // Le prenotazioni admin/walk-in NON hanno user_id (l'insert admin non lo
+    // imposta), mentre il sito mette user_id = id del cliente loggato. Quindi
+    // user_id presente = prenotazione fatta dal cliente sul sito.
+    if (!booking.user_id) {
+      return { statusCode: 200, body: JSON.stringify({ success: true, skipped: true, reason: "not_website_customer" }) }
     }
 
     const isPaid = ["paid", "succeeded", "completed"].includes((booking.payment_status || "").toLowerCase())

@@ -37,6 +37,7 @@ export const handler: Handler = async (event) => {
     const { data, error } = await supabase
       .from("bookings")
       .select("id, user_id, customer_email")
+      .eq("booking_source", "website")
       .in("service_type", ["car_wash", "carwash"])
       .in("payment_status", ["paid", "succeeded", "completed"])
       .order("created_at", { ascending: true })

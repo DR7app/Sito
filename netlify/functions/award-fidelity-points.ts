@@ -68,7 +68,7 @@ export const handler: Handler = async (event) => {
     // Load booking — must be car_wash and paid.
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, user_id, customer_email, customer_phone, customer_name, service_type, price_total, payment_status, payment_method, booking_details")
+      .select("id, user_id, customer_email, customer_phone, customer_name, service_type, price_total, payment_status, payment_method, booking_source, booking_details")
       .eq("id", bookingId)
       .single()
 
@@ -79,6 +79,12 @@ export const handler: Handler = async (event) => {
     const isCarWash = booking.service_type === "car_wash" || booking.service_type === "carwash"
     if (!isCarWash) {
       return { statusCode: 200, body: JSON.stringify({ success: true, skipped: true, reason: "not_car_wash" }) }
+    }
+
+    // Solo i lavaggi prenotati DAL SITO dal cliente generano punti fedeltà.
+    // Le prenotazioni admin / walk-in (booking_source != 'website') NON danno punti.
+    if ((booking.booking_source || "").toLowerCase() !== "website") {
+      return { statusCode: 200, body: JSON.stringify({ success: true, skipped: true, reason: "not_website" }) }
     }
 
     const isPaid = ["paid", "succeeded", "completed"].includes((booking.payment_status || "").toLowerCase())

@@ -61,6 +61,18 @@ type MainTabType = 'lavaggio' | 'meccanica';
 type LavaggioCategory = 'moto' | 'wash' | 'extra' | 'experience';
 type MeccanicaCategory = 'tech';
 
+// Manual wash-category override the customer can always set after a targa
+// lookup. 'urban'/'maxi' drive the combined-card price tier; 'moto' routes to
+// the Prime Moto services. This is the value persisted on the booking.
+type WashOverrideCategory = 'urban' | 'maxi' | 'moto';
+
+// Static Tailwind classes per override category (literals so JIT keeps them).
+const WASH_OVERRIDE_OPTIONS: { id: WashOverrideCategory; label: string; selected: string; idle: string }[] = [
+  { id: 'urban', label: 'PRIME URBAN', selected: 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500', idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500' },
+  { id: 'maxi',  label: 'PRIME MAXI',  selected: 'bg-amber-600/20 text-amber-400 border-2 border-amber-500',       idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500' },
+  { id: 'moto',  label: 'PRIME MOTO',  selected: 'bg-sky-600/20 text-sky-400 border-2 border-sky-500',             idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-sky-500' },
+];
+
 const LAVAGGIO_CATEGORIES = [
   { id: 'wash' as LavaggioCategory, name: 'PRIME WASH', nameEn: 'PRIME WASH' },
   { id: 'moto' as LavaggioCategory, name: 'PRIME MOTO EXPERIENCE', nameEn: 'PRIME MOTO EXPERIENCE' },
@@ -127,6 +139,9 @@ const CarWashServicesPage: React.FC = () => {
   const [targaError, setTargaError] = useState<string | null>(null);
   const [targaResult, setTargaResult] = useState<TargaResult | null>(null);
   const [targaManualCategory, setTargaManualCategory] = useState<VehicleCategory | null>(null);
+  // Source of truth for the chosen wash category (auto-detected, but always
+  // user-overridable to Urban/Maxi/Moto). Drives price + what is saved.
+  const [washCategory, setWashCategory] = useState<WashOverrideCategory | null>(null);
 
   const handleTargaSearch = useCallback(async () => {
     const plate = normalizePlate(targaInput);
@@ -151,8 +166,11 @@ const CarWashServicesPage: React.FC = () => {
         bodyType: result.bodyType,
       });
       const makeModel = `${result.carMake} ${result.carModel}`.trim();
-      setDetectedCategory(washClass.toLowerCase() as VehicleCategory);
+      const auto = washClass.toLowerCase() as VehicleCategory;
+      setDetectedCategory(auto);
       setDetectedModel(makeModel || null);
+      // Preselect the auto-detected tier; the customer can still override it.
+      setWashCategory(auto);
     } catch (err: any) {
       setTargaError(err.message || (lang === 'it' ? 'Errore nella ricerca.' : 'Search error.'));
     } finally {
@@ -167,6 +185,23 @@ const CarWashServicesPage: React.FC = () => {
     setTargaManualCategory(null);
     setDetectedCategory(null);
     setDetectedModel(null);
+    setWashCategory(null);
+  }, []);
+
+  // Apply a manual wash-category override (always available after a lookup).
+  // 'urban'/'maxi' set the combined-card price tier; 'moto' clears the tier
+  // and routes the customer to the Prime Moto services tab.
+  const applyWashOverride = useCallback((cat: WashOverrideCategory) => {
+    setWashCategory(cat);
+    setTargaManualCategory(cat === 'moto' ? null : (cat as VehicleCategory));
+    if (cat === 'moto') {
+      setDetectedCategory(null);
+      setMainTab('lavaggio');
+      setLavaggioCategory('moto');
+    } else {
+      setDetectedCategory(cat as VehicleCategory);
+      setLavaggioCategory('wash');
+    }
   }, []);
 
   const getLavaggioServices = (category: LavaggioCategory): WashService[] => {
@@ -343,7 +378,8 @@ const CarWashServicesPage: React.FC = () => {
             description: targaResult.description,
             registrationYear: targaResult.registrationYear,
             fuelType: targaResult.fuelType,
-            category: detectedCategory || targaManualCategory,
+            // The (possibly overridden) wash category — Urban / Maxi / Moto.
+            category: washCategory || detectedCategory || targaManualCategory,
           }
         } : {})
       }
@@ -417,8 +453,8 @@ const CarWashServicesPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Targa Error — with manual category fallback */}
-          {targaError && (
+          {/* Targa Error — plate not found, manual category pick (Urban/Maxi/Moto) */}
+          {targaError && !targaResult && (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
@@ -429,49 +465,53 @@ const CarWashServicesPage: React.FC = () => {
                 {cw('plate_manual_prompt_it', 'plate_manual_prompt_en', 'Seleziona manualmente la categoria:')}
               </p>
               <div className="flex justify-center gap-2">
-                <button
-                  onClick={() => { setTargaManualCategory('urban'); setDetectedCategory('urban'); }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                    targaManualCategory === 'urban'
-                      ? 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500'
-                      : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500'
-                  }`}
-                >
-                  URBAN
-                </button>
-                <button
-                  onClick={() => { setTargaManualCategory('maxi'); setDetectedCategory('maxi'); }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                    targaManualCategory === 'maxi'
-                      ? 'bg-amber-600/20 text-amber-400 border-2 border-amber-500'
-                      : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500'
-                  }`}
-                >
-                  MAXI
-                </button>
+                {WASH_OVERRIDE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => applyWashOverride(opt.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      washCategory === opt.id ? opt.selected : opt.idle
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </motion.div>
           )}
 
-          {/* Targa Result with Category */}
-          {targaResult && detectedCategory && (
+          {/* Targa Result — always-available manual override (Urban / Maxi / Moto).
+              The auto-detected tier is preselected; tapping any button overrides
+              it and is what drives the displayed price and the saved booking. */}
+          {targaResult && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-3 text-center"
             >
-              <div className="flex flex-wrap items-center justify-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
                 <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
                   {targaResult.plate}
                 </span>
-                <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-bold ${
-                  detectedCategory === 'urban'
-                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/40'
-                    : 'bg-amber-600/20 text-amber-400 border border-amber-600/40'
-                }`}>
-                  {detectedModel && <span className="opacity-70 mr-1">{detectedModel} →</span>}
-                  {detectedCategory === 'urban' ? 'PRIME URBAN CLASS' : 'PRIME MAXI CLASS'}
-                </span>
+                {detectedModel && (
+                  <span className="text-gray-400 text-xs">{detectedModel}</span>
+                )}
+              </div>
+              <p className="text-gray-400 text-xs mb-2">
+                {cw('plate_manual_prompt_it', 'plate_manual_prompt_en', 'Seleziona manualmente la categoria:')}
+              </p>
+              <div className="flex justify-center gap-2">
+                {WASH_OVERRIDE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => applyWashOverride(opt.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      washCategory === opt.id ? opt.selected : opt.idle
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
               <p className="text-gray-500 text-xs mt-1.5">{targaResult.description}</p>
               <button
@@ -482,60 +522,12 @@ const CarWashServicesPage: React.FC = () => {
               </button>
             </motion.div>
           )}
-
-          {/* Targa result but classifyVehicle returned null — manual category pick */}
-          {targaResult && !detectedCategory && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-3 text-center"
-            >
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
-                  {targaResult.plate}
-                </span>
-              </div>
-              <p className="text-gray-400 text-sm mb-2">
-                {lang === 'it'
-                  ? `Veicolo trovato: ${targaResult.description || `${targaResult.carMake} ${targaResult.carModel}`}. Seleziona la categoria:`
-                  : `Vehicle found: ${targaResult.description || `${targaResult.carMake} ${targaResult.carModel}`}. Select category:`
-                }
-              </p>
-              <div className="flex justify-center gap-2">
-                <button
-                  onClick={() => { setTargaManualCategory('urban'); setDetectedCategory('urban'); }}
-                  className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
-                    targaManualCategory === 'urban'
-                      ? 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500'
-                      : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500'
-                  }`}
-                >
-                  URBAN
-                </button>
-                <button
-                  onClick={() => { setTargaManualCategory('maxi'); setDetectedCategory('maxi'); }}
-                  className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
-                    targaManualCategory === 'maxi'
-                      ? 'bg-amber-600/20 text-amber-400 border-2 border-amber-500'
-                      : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500'
-                  }`}
-                >
-                  MAXI
-                </button>
-              </div>
-              <button
-                onClick={clearTargaSearch}
-                className="block mx-auto mt-2 text-gray-500 hover:text-white text-xs transition-colors"
-              >
-                {cw('plate_change_it', 'plate_change_en', 'Cambia veicolo')}
-              </button>
-            </motion.div>
-          )}
         </div>
       </div>
 
-      {/* Tabs + Categories + Services — only shown after a valid targa is entered */}
-      {detectedCategory && (<>
+      {/* Tabs + Categories + Services — shown once a wash category is chosen
+          (auto-detected or manually overridden to Urban / Maxi / Moto). */}
+      {washCategory && (<>
       {/* Main Tab Navigation: LAVAGGIO | MECCANICA */}
       <div className="container mx-auto px-4 mb-6">
         <div className="flex justify-center gap-4">
@@ -652,10 +644,10 @@ const CarWashServicesPage: React.FC = () => {
                   className="w-full h-auto object-contain"
                 />
                 <div className="p-4">
-                  {targaResult && detectedCategory ? (
+                  {targaResult && washCategory ? (
                     <a
                       href={`${contact.whatsapp_url}?text=${encodeURIComponent(
-                        `Ciao, vorrei richiedere un preventivo per il servizio PRIME ABSOLUTE DETAIL.\nVeicolo: ${targaResult.carMake} ${targaResult.carModel} (${targaResult.plate}) – ${detectedCategory.toUpperCase()}`
+                        `Ciao, vorrei richiedere un preventivo per il servizio PRIME ABSOLUTE DETAIL.\nVeicolo: ${targaResult.carMake} ${targaResult.carModel} (${targaResult.plate}) – ${washCategory.toUpperCase()}`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"

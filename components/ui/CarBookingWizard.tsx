@@ -7194,51 +7194,43 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           </div>
                         </div>
                       )}
+                      {/* Always-available manual category override. The auto-
+                          detected tier is preselected, but the customer can
+                          retap Urban/Maxi to override what drives the wash
+                          price grid and what is saved (carCategory). */}
                       {upsellTargaResult && (
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
-                            {upsellTargaResult.plate}
-                          </span>
-                          {upsellCarCategory && (
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                              upsellCarCategory === 'urban'
-                                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/40'
-                                : 'bg-amber-600/20 text-amber-400 border border-amber-600/40'
-                            }`}>
-                              {upsellCarModel && <span className="opacity-70 mr-1">{upsellCarModel} →</span>}
-                              {upsellCarCategory === 'urban' ? 'PRIME URBAN' : 'PRIME MAXI'}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {/* Manual category pick if classifyVehicle returned null */}
-                      {upsellTargaResult && !upsellCarCategory && (
                         <div className="mt-3 text-center">
-                          <p className="text-gray-400 text-xs mb-2">
-                            Veicolo trovato: {upsellTargaResult.description || `${upsellTargaResult.carMake} ${upsellTargaResult.carModel}`}. Seleziona la categoria:
-                          </p>
+                          <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+                            <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
+                              {upsellTargaResult.plate}
+                            </span>
+                            {upsellCarModel && (
+                              <span className="text-gray-400 text-xs">{upsellCarModel}</span>
+                            )}
+                          </div>
+                          <p className="text-gray-400 text-xs mb-2">Seleziona manualmente la categoria:</p>
                           <div className="flex justify-center gap-2">
                             <button
                               type="button"
-                              onClick={() => { setUpsellTargaManualCategory('urban'); setUpsellCarCategory('urban'); }}
+                              onClick={() => { setUpsellTargaManualCategory('urban'); setUpsellCarCategory('urban'); setSelectedUpsellWash(null); }}
                               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                upsellTargaManualCategory === 'urban'
+                                upsellCarCategory === 'urban'
                                   ? 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500'
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500'
                               }`}
                             >
-                              URBAN
+                              PRIME URBAN
                             </button>
                             <button
                               type="button"
-                              onClick={() => { setUpsellTargaManualCategory('maxi'); setUpsellCarCategory('maxi'); }}
+                              onClick={() => { setUpsellTargaManualCategory('maxi'); setUpsellCarCategory('maxi'); setSelectedUpsellWash(null); }}
                               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                upsellTargaManualCategory === 'maxi'
+                                upsellCarCategory === 'maxi'
                                   ? 'bg-amber-600/20 text-amber-400 border-2 border-amber-500'
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500'
                               }`}
                             >
-                              MAXI
+                              PRIME MAXI
                             </button>
                           </div>
                         </div>

@@ -506,6 +506,29 @@ exports.handler = async (event) => {
 
         console.log(`Booking ${newBooking.id} created from pending after successful payment`);
 
+        // Fidelity Card: car wash bought online (Nexi pay-by-link / card) earns
+        // 1 punto per €. In this flow the booking only exists AFTER payment, so
+        // the website's client-side award call (which fires at booking creation
+        // for wallet payments) never runs for card payments — award here.
+        // Idempotent (locked by fidelity_point_awards.booking_id) so duplicate
+        // callbacks can't double-count. Best-effort — never fails the callback.
+        {
+          const newSvcType = newBooking.service_type || newBooking.booking_details?.type || '';
+          if (newSvcType === 'car_wash' || newSvcType === 'carwash') {
+            try {
+              const fidelitySiteUrl = process.env.URL || process.env.DEPLOY_PRIME_URL || 'https://dr7.app';
+              await fetch(`${fidelitySiteUrl}/.netlify/functions/award-fidelity-points`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: newBooking.id }),
+              });
+              console.log('[nexi-callback] Fidelity points awarded for car wash booking', newBooking.id);
+            } catch (e) {
+              console.error('[nexi-callback] Fidelity Card award failed (non-fatal):', e);
+            }
+          }
+        }
+
         // ─── Supercar / Icon Experience: shadow rental block ──────────
         // The website carwash booking persists supercar_experience info
         // in booking_details when the customer picks a car at submit time.

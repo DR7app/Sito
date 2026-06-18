@@ -126,8 +126,17 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         }
 
         const { CarMake, CarModel, Description, RegistrationYear, FuelType } = json.data;
-        // Body type / version help the Urban-vs-Maxi wash classifier. OpenAPI field
-        // names vary, so probe the common ones defensively (empty if absent — harmless).
+        // Brand/model: prefer CarMake/CarModel, fall back to the documented
+        // MakeDescription/ModelDescription (OpenAPI IT-car returns both; the
+        // readable brand name lives in either depending on the record).
+        const carMake = CarMake || json.data.MakeDescription || '';
+        const carModel = CarModel || json.data.ModelDescription || '';
+        // NOTE (2026-06): OpenAPI IT-car has NO dedicated body-type field — the
+        // schema only exposes Description / Version (e.g. "AUDI A4 4ª serie").
+        // We still probe the common body-type names in case a record carries
+        // one, but the Urban-vs-Maxi classifier mostly relies on model keywords.
+        // Because bodyType is usually empty, the customer-facing manual
+        // Urban/Maxi/Moto override is the reliable correction path.
         const bodyType = json.data.BodyType || json.data.CarBodyType || json.data.Bodywork
             || json.data.VehicleType || json.data.Body || '';
         const version = json.data.Version || json.data.Setup || json.data.Trim || Description || '';
@@ -137,8 +146,8 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
             headers,
             body: JSON.stringify({
                 plate,
-                carMake: CarMake || '',
-                carModel: CarModel || '',
+                carMake,
+                carModel,
                 description: Description || '',
                 version: version || '',
                 bodyType: bodyType || '',

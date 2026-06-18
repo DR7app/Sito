@@ -79,6 +79,10 @@ export const handler = async (event: any) => {
       customer_name: customer.name,
       customer_email: customer.email || null,
       customer_phone: customer.phone || null,
+      // Soddisfa il check bookings_user_or_guest_check (user_id OPPURE guest_name).
+      guest_name: customer.name,
+      guest_email: customer.email || null,
+      guest_phone: customer.phone || null,
       booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length },
       created_at: new Date().toISOString(),
     }).select('id').single();

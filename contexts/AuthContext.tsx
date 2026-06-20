@@ -16,7 +16,7 @@ interface AuthContextType {
   signup: (email: string, password: string, data: { full_name: string, company_name?: string, role: 'personal' | 'business' }) => Promise<{ data: { user: SupabaseUser | null; session: Session | null; }; error: AuthError | null; }>;
   logout: () => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<OAuthResponse>;
-  sendPasswordResetEmail: (email: string) => Promise<{ data: {}; error: AuthError | null; }>;
+  sendPasswordResetEmail: (email: string) => Promise<{ data: {}; error: Error | null; }>;
   updateUserPassword: (password: string) => Promise<UserResponse>;
   updateUser: (updates: Partial<AppUser>) => Promise<{ data: AppUser | null; error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
@@ -168,10 +168,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
-    // Redirect directly to the reset password page
-    return supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    // 2026-06-20: il reset NATIVO di Supabase costruisce il link dalla "Site URL"
+    // del dashboard, rimasta sul vecchio dominio morto (dr7empire.com) -> i
+    // clienti finivano su un sito offline e non potevano reimpostare. Usiamo la
+    // nostra function che genera il link e lo invia via Resend sul sito LIVE
+    // (dr7.app), come gia' fatto per la conferma email in registrazione.
+    try {
+      const res = await fetch('/.netlify/functions/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        return { data: {}, error: new Error(j.error || 'Errore durante l\'invio dell\'email di reset') };
+      }
+      return { data: {}, error: null };
+    } catch (e) {
+      return { data: {}, error: e instanceof Error ? e : new Error('Errore di rete') };
+    }
   }, []);
 
   const updateUserPassword = useCallback(async (password: string) => {

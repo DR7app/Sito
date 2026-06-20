@@ -21,7 +21,7 @@ exports.handler = async (event) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Nexi X-Pay - DR7 Empire</title>
+    <title>Test Nexi X-Pay - DR7</title>
     <style>
         * {
             margin: 0;
@@ -194,7 +194,7 @@ exports.handler = async (event) => {
 <body>
     <div class="container">
         <h1>🧪 Test Nexi X-Pay</h1>
-        <p class="subtitle">DR7 Empire Payment Integration Test</p>
+        <p class="subtitle">DR7 Payment Integration Test</p>
         
         <div class="test-section">
             <h2>⚙️ Configuration <span class="status-badge">✅ Ready</span></h2>
@@ -276,7 +276,7 @@ exports.handler = async (event) => {
                     body: JSON.stringify({
                         amount: amount,
                         currency: 'EUR',
-                        description: 'Test Payment - DR7 Empire',
+                        description: 'Test Payment - DR7',
                         orderId: \`TEST-\${Date.now()}\`,
                         customerEmail: 'test@dr7.app',
                         customerName: 'Test User'

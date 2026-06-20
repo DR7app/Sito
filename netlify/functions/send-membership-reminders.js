@@ -129,7 +129,7 @@ exports.handler = async (event) => {
           `Rinnova subito per continuare a usufruire dei tuoi vantaggi esclusivi:\n` +
           `${renewalLink}\n\n` +
           `Per qualsiasi domanda, rispondi a questo messaggio.\n\n` +
-          `DR7 Empire Team`;
+          `DR7 Team`;
 
         try {
           const greenApiUrl = `https://api.green-api.com/waInstance${greenInstanceId}/sendMessage/${greenToken}`;
@@ -176,7 +176,7 @@ exports.handler = async (event) => {
             </div>
 
             <p style="margin-top: 30px;">A presto!</p>
-            <p><strong>DR7 Empire Team</strong></p>
+            <p><strong>DR7 Team</strong></p>
 
             <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
             <p style="font-size: 12px; color: #666;">
@@ -187,7 +187,7 @@ exports.handler = async (event) => {
 
         try {
           await transporter.sendMail({
-            from: '"DR7 Empire" <info@dr7.app>',
+            from: '"DR7" <info@dr7.app>',
             to: userEmail,
             subject: `La tua membership ${membership.tier_name} scade tra ${daysLeft} giorn${daysLeft === 1 ? 'o' : 'i'}`,
             html: emailHtml,

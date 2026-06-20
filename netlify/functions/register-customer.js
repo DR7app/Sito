@@ -153,7 +153,7 @@ exports.handler = async (event) => {
                     const fromAddress = process.env.SMTP_FROM || 'info@dr7.app';
 
                     const emailPayload = {
-                        from: `DR7 Empire <${fromAddress}>`,
+                        from: `DR7 <${fromAddress}>`,
                         reply_to: 'info@dr7.app',
                         to: [email],
                         subject: `Conferma email per ${customerName}`,
@@ -161,13 +161,13 @@ exports.handler = async (event) => {
                             'X-Entity-Ref-ID': userId,
                             'List-Unsubscribe': `<mailto:info@dr7.app?subject=unsubscribe>`
                         },
-                        text: `Ciao ${customerName},\n\nConferma il tuo indirizzo email per completare la registrazione su DR7 Empire.\n\nClicca qui: ${confirmationLink}\n\nSe non hai richiesto questa registrazione, ignora questo messaggio.\n\nDR7 Empire\nDubai Rent 7.0 S.p.A.\nVia Ostiense 131/L, 00154 Roma (RM)\ninfo@dr7.app`,
+                        text: `Ciao ${customerName},\n\nConferma il tuo indirizzo email per completare la registrazione su DR7.\n\nClicca qui: ${confirmationLink}\n\nSe non hai richiesto questa registrazione, ignora questo messaggio.\n\nDR7\nDubai Rent 7.0 S.p.A.\nVia Ostiense 131/L, 00154 Roma (RM)\ninfo@dr7.app`,
                         html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#333">
 <p>Ciao ${customerName},</p>
-<p>Conferma il tuo indirizzo email per completare la registrazione su DR7 Empire.</p>
+<p>Conferma il tuo indirizzo email per completare la registrazione su DR7.</p>
 <p style="margin:24px 0"><a href="${confirmationLink}" style="background:#1a1a1a;color:#fff;padding:12px 28px;border-radius:4px;text-decoration:none;font-size:14px">Conferma email</a></p>
 <p style="font-size:13px;color:#666">Oppure copia questo link nel browser:<br><a href="${confirmationLink}" style="color:#666;word-break:break-all">${confirmationLink}</a></p>
-<p style="font-size:12px;color:#999;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Se non hai richiesto questa registrazione, ignora questo messaggio.<br><br>DR7 Empire — Dubai Rent 7.0 S.p.A.<br>Via Ostiense 131/L, 00154 Roma (RM)<br>info@dr7.app</p>
+<p style="font-size:12px;color:#999;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Se non hai richiesto questa registrazione, ignora questo messaggio.<br><br>DR7 — Dubai Rent 7.0 S.p.A.<br>Via Ostiense 131/L, 00154 Roma (RM)<br>info@dr7.app</p>
 </div>`,
                     };
 
@@ -370,9 +370,9 @@ exports.handler = async (event) => {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            from: `DR7 Empire <${fromAddress}>`,
+                            from: `DR7 <${fromAddress}>`,
                             to: [email],
-                            subject: 'Benvenuto in DR7 Empire — 10€ di credito omaggio',
+                            subject: 'Benvenuto in DR7 — 10€ di credito omaggio',
                             text: welcomeMsg.replace(/\*/g, ''),
                         }),
                     });

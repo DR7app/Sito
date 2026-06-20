@@ -30,9 +30,9 @@ exports.handler = async (event) => {
 
         // Email content
         const mailOptions = {
-            from: '"DR7 Empire" <info@dr7.app>',
+            from: '"DR7" <info@dr7.app>',
             to: email,
-            subject: 'Account Deletion Confirmation - DR7 Empire',
+            subject: 'Account Deletion Confirmation - DR7',
             html: `
         <!DOCTYPE html>
         <html>
@@ -49,12 +49,12 @@ exports.handler = async (event) => {
         <body>
           <div class="container">
             <div class="header">
-              <h1>DR7 Empire</h1>
+              <h1>DR7</h1>
             </div>
             <div class="content">
               <h2>Account Deletion Confirmed</h2>
               <p>Hello ${fullName || 'Customer'},</p>
-              <p>This email confirms that your DR7 Empire account has been successfully deleted.</p>
+              <p>This email confirms that your DR7 account has been successfully deleted.</p>
               <p><strong>What was deleted:</strong></p>
               <ul>
                 <li>Your profile and personal information</li>
@@ -64,10 +64,10 @@ exports.handler = async (event) => {
               </ul>
               <p>If you did not request this deletion, please contact us immediately at <a href="mailto:${process.env.SMTP_USER}">${process.env.SMTP_USER}</a>.</p>
               <p>We're sorry to see you go. If you'd like to return in the future, you're always welcome to create a new account.</p>
-              <p>Best regards,<br>The DR7 Empire Team</p>
+              <p>Best regards,<br>The DR7 Team</p>
             </div>
             <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} DR7 Empire. All rights reserved.</p>
+              <p>&copy; ${new Date().getFullYear()} DR7. All rights reserved.</p>
             </div>
           </div>
         </body>

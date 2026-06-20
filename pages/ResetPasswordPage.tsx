@@ -18,19 +18,40 @@ const ResetPasswordPage: React.FC = () => {
     const [hasSession, setHasSession] = useState<boolean | null>(null);
     const [showPassword, setShowPassword] = useState(false);
 
-    // Check for active session on mount
+    // Check for active session on mount.
+    // 2026-06-20: il link email arriva come ?token_hash=...&type=recovery (lo
+    // genera la function request-password-reset). Qui verifichiamo il token via
+    // SDK (verifyOtp) per creare la sessione di recovery, poi l'utente imposta
+    // la nuova password. Evita la dipendenza da /auth/v1/verify (il sito non fa
+    // proxy) e dalla "Site URL" del dashboard. Fallback: sessione gia' presente
+    // (vecchio flusso con token nell'hash dopo redirect Supabase).
     useEffect(() => {
-        const checkSession = async () => {
+        const init = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const tokenHash = params.get('token_hash');
+            const type = params.get('type');
+            if (tokenHash) {
+                const { error: vErr } = await supabase.auth.verifyOtp({
+                    type: (type as any) || 'recovery',
+                    token_hash: tokenHash,
+                });
+                // Token monouso: pulisci la query dall'URL.
+                window.history.replaceState({}, document.title, '/reset-password');
+                if (vErr) {
+                    setHasSession(false);
+                    setError(t('Invalid_or_expired_reset_link'));
+                    return;
+                }
+            }
             const { data: { session } } = await supabase.auth.getSession();
             setHasSession(!!session);
-
             if (!session) {
                 // No session - user accessed this page directly without a valid link
                 setError(t('Invalid_or_expired_reset_link'));
             }
         };
 
-        checkSession();
+        init();
     }, [t]);
 
     const handleSubmit = async (e: React.FormEvent) => {

@@ -36,6 +36,13 @@ interface Props {
 
 const SEAT_BASE = 'w-12 h-12 rounded-lg border text-sm font-semibold flex items-center justify-center transition-colors';
 
+// Posizioni posti (% sulla foto cabina) — Bell 407 GX/GXP: 1 anteriore, 2-3 centrali, 4-5-6 posteriori.
+const HELI_407_SEATS: Record<number, { x: number; y: number }> = {
+  1: { x: 50, y: 24 },
+  2: { x: 44, y: 41 }, 3: { x: 56, y: 41 },
+  4: { x: 40, y: 49 }, 5: { x: 50, y: 49 }, 6: { x: 59, y: 49 },
+};
+
 export default function TourBookingModal({ item, waHref, onClose }: Props) {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,6 +199,28 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
                 <label className="text-xs text-gray-400 uppercase tracking-wider">3. Scegli i posti</label>
                 {seatsLoading ? (
                   <div className="mt-2 text-gray-400 text-sm">Caricamento posti…</div>
+                ) : item.service_type === 'heli_rental' && seats.some(s => HELI_407_SEATS[s.seat_position]) ? (
+                  <div className="mt-3 relative mx-auto w-full max-w-[260px] select-none">
+                    <img src="/heli-407-seatmap.png" alt="Mappa posti elicottero" draggable={false}
+                      className="w-full rounded-xl border border-gray-800" />
+                    {seats.map(s => {
+                      const posn = HELI_407_SEATS[s.seat_position];
+                      if (!posn) return null;
+                      const isSel = selected.has(s.id);
+                      const avail = s.status === 'available';
+                      const cls = isSel ? 'bg-white text-black ring-white'
+                        : avail ? 'bg-emerald-500/90 text-white ring-emerald-300 hover:scale-110'
+                        : 'bg-red-600/80 text-white ring-red-400 cursor-not-allowed';
+                      return (
+                        <button key={s.id} type="button" onClick={() => avail && toggleSeat(s)} disabled={!avail}
+                          style={{ left: `${posn.x}%`, top: `${posn.y}%` }}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full text-sm font-bold flex items-center justify-center ring-2 shadow-lg transition ${cls}`}
+                          title={avail ? `Posto ${s.seat_label} disponibile` : 'Occupato'}>
+                          {s.seat_label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {seats.map(s => {

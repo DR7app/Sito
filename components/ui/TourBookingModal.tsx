@@ -61,14 +61,37 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
   // nuovo). Chiediamo solo il telefono (per la conferma WhatsApp) se mancante.
   useEffect(() => {
     if (!user) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const meta = (user as any).user_metadata || {};
-    const fullName = meta.full_name || [meta.nome, meta.cognome].filter(Boolean).join(' ').trim() || meta.name || '';
-    setCust(c => ({
-      name: c.name || fullName,
-      email: c.email || (user as any).email || '',
-      phone: c.phone || meta.phone || meta.telefono || '',
-    }));
+    let cancelled = false;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const u = user as any;
+      const meta = u.user_metadata || {};
+      let name = meta.full_name || [meta.nome, meta.cognome].filter(Boolean).join(' ').trim() || meta.name || '';
+      let phone = meta.phone || meta.telefono || '';
+      const email = u.email || meta.email || '';
+      // Profilo completo da customers_extended (i metadata auth spesso non hanno
+      // nome/telefono): così il cliente loggato NON deve reinserire nulla.
+      try {
+        let prof: { nome?: string; cognome?: string; telefono?: string } | null = null;
+        const byId = await supabase.from('customers_extended').select('nome, cognome, telefono').eq('user_id', u.id).maybeSingle();
+        prof = byId.data;
+        if (!prof && email) {
+          const byEmail = await supabase.from('customers_extended').select('nome, cognome, telefono').ilike('email', email).maybeSingle();
+          prof = byEmail.data;
+        }
+        if (prof) {
+          if (!name) name = [prof.nome, prof.cognome].filter(Boolean).join(' ').trim();
+          if (!phone) phone = prof.telefono || '';
+        }
+      } catch { /* profilo opzionale */ }
+      if (cancelled) return;
+      setCust(c => ({
+        name: c.name || name,
+        email: c.email || email,
+        phone: c.phone || phone,
+      }));
+    })();
+    return () => { cancelled = true; };
   }, [user]);
 
   const todayYmd = new Date().toLocaleDateString('en-CA');
@@ -138,7 +161,12 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
   async function submit() {
     setError('');
     if (selected.size === 0) { setError('Seleziona almeno un posto.'); return; }
-    if (!cust.name.trim() || !cust.phone.trim()) { setError('Inserisci nome e telefono.'); return; }
+    // Loggato: l'identità arriva dall'account (nome/email), serve solo il
+    // telefono per la conferma WhatsApp. Non loggato: nome + telefono.
+    if (!cust.phone.trim()) { setError('Inserisci il numero di telefono.'); return; }
+    if (!user && !cust.name.trim()) { setError('Inserisci nome e telefono.'); return; }
+    // Nome effettivo: quello del profilo, altrimenti l'email dell'account.
+    const effName = cust.name.trim() || cust.email.trim() || 'Cliente';
     setSubmitting(true);
     try {
       const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
@@ -148,7 +176,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
           seatIds: Array.from(selected),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           userId: (user as any)?.id || null,
-          customer: { name: cust.name.trim(), email: cust.email.trim(), phone: cust.phone.trim() },
+          customer: { name: effName, email: cust.email.trim(), phone: cust.phone.trim() },
         }),
       });
       const data = await res.json();
@@ -164,7 +192,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: amountCents, currency: 'EUR', description: data.description, orderId,
-          customerEmail: cust.email.trim(), customerName: cust.name.trim(),
+          customerEmail: cust.email.trim(), customerName: effName,
           // Checkout carta standard che TOKENIZZA la carta (CONTRACT_CREATION),
           // così l'admin può eventualmente addebitare in seguito (Addebito MIT),
           // come per le ricariche wallet. contractId = orderId.

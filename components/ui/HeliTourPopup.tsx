@@ -77,6 +77,12 @@ const HeliTourPopup: React.FC = () => {
     setBooking(true);
   };
   const goAuth = (path: '/signin' | '/signup') => {
+    // IMPORTANTE: questo popup vive a livello App (fuori dalle Route), quindi
+    // cambiare rotta NON lo smonta: va chiuso a mano, altrimenti l'overlay
+    // resta sopra la pagina di accesso e "sembra che non succeda nulla".
+    setAuthPrompt(false);
+    setOpen(false);
+    try { sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* ignore */ }
     navigate(path, { state: { from: { pathname: '/noleggio-aria' } } });
   };
 

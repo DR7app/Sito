@@ -40,6 +40,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   const navigate = useNavigate();
   const location = useLocation();
   const goAuth = (path: '/signin' | '/signup') => {
+    setAuthPrompt(false);
     navigate(path, { state: { from: { pathname: location.pathname } } });
   };
   const handlePrenotaTour = (item: NoleggioCatalogItem) => {

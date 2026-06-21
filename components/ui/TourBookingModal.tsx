@@ -19,6 +19,15 @@ interface Seat {
   seat_position: number;
   price_cents: number | null;
   status: string;
+  hold_expires_at?: string | null;
+}
+
+// Un posto e' prenotabile se 'available' OPPURE in 'held' ma con hold scaduto
+// (pagamento mai completato): l'hold non paga e dopo la scadenza torna libero.
+function seatIsAvailable(s: Seat): boolean {
+  if (s.status === 'available') return true;
+  if (s.status === 'held' && s.hold_expires_at) return s.hold_expires_at < new Date().toISOString();
+  return false;
 }
 
 function eur(cents: number): string {
@@ -128,7 +137,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
       setSeatsLoading(true);
       const { data } = await supabase
         .from('noleggio_tour_seats')
-        .select('id, seat_label, seat_position, price_cents, status')
+        .select('id, seat_label, seat_position, price_cents, status, hold_expires_at')
         .eq('departure_id', departureId)
         .order('seat_position', { ascending: true });
       if (cancelled) return;
@@ -140,7 +149,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
   }, [departureId]);
 
   function toggleSeat(s: Seat) {
-    if (s.status !== 'available') return;
+    if (!seatIsAvailable(s)) return;
     setSelected(prev => {
       const next = new Set(prev);
       if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
@@ -269,7 +278,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
                       const posn = HELI_407_SEATS[s.seat_position];
                       if (!posn) return null;
                       const isSel = selected.has(s.id);
-                      const avail = s.status === 'available';
+                      const avail = seatIsAvailable(s);
                       const cls = isSel ? 'bg-white text-black ring-white'
                         : avail ? 'bg-emerald-500/90 text-white ring-emerald-300 hover:scale-110'
                         : 'bg-red-600/80 text-white ring-red-400 cursor-not-allowed';
@@ -287,7 +296,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {seats.map(s => {
                       const isSel = selected.has(s.id);
-                      const avail = s.status === 'available';
+                      const avail = seatIsAvailable(s);
                       return (
                         <button key={s.id} onClick={() => toggleSeat(s)} disabled={!avail}
                           className={`${SEAT_BASE} ${isSel ? 'border-white bg-white text-black' : avail ? 'border-emerald-500/60 text-emerald-300 hover:border-white' : 'border-gray-800 text-gray-600 line-through cursor-not-allowed'}`}

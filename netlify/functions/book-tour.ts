@@ -41,6 +41,34 @@ export const handler = async (event: any) => {
       .select('name, price_per_day, service_type')
       .eq('id', dep.catalog_id).single();
 
+    // LIBERA i posti "appesi" da pagamenti mai completati PRIMA di prenotare:
+    //  - sito: il posto si riserva SOLO a pagamento avvenuto. Un posto 'sold'
+    //    legato a una prenotazione NON pagata e' un residuo (vecchio flusso o
+    //    bug) -> liberalo. Un 'held' scaduto (cliente non ha pagato entro il
+    //    tempo del link) -> liberalo. Gli 'held' ancora validi (pagamento in
+    //    corso) e i 'sold' PAGATI restano intatti.
+    const nowIso = new Date().toISOString();
+    const { data: occ } = await supabase
+      .from('noleggio_tour_seats')
+      .select('id, status, hold_expires_at, booking_id')
+      .eq('departure_id', departureId).in('status', ['held', 'sold']).not('booking_id', 'is', null);
+    if (occ && occ.length) {
+      const occBookingIds = Array.from(new Set(occ.map(s => s.booking_id)));
+      const { data: bks } = await supabase.from('bookings').select('id, payment_status').in('id', occBookingIds);
+      const paidSet = new Set(['paid', 'succeeded', 'completed']);
+      const unpaid = new Set((bks || []).filter(b => !paidSet.has(String(b.payment_status || '').toLowerCase())).map(b => b.id));
+      const toRelease = occ.filter(s => {
+        if (!unpaid.has(s.booking_id)) return false;            // pagato -> mai liberare
+        if (s.status === 'sold') return true;                   // venduto ma non pagato -> residuo
+        return !s.hold_expires_at || s.hold_expires_at < nowIso; // hold scaduto
+      }).map(s => s.id);
+      if (toRelease.length) {
+        await supabase.from('noleggio_tour_seats')
+          .update({ status: 'available', booking_id: null, customer_name: null, customer_phone: null, hold_expires_at: null })
+          .in('id', toRelease);
+      }
+    }
+
     // Posti richiesti: devono essere tutti available
     const { data: seats, error: seatErr } = await supabase
       .from('noleggio_tour_seats')
@@ -99,15 +127,19 @@ export const handler = async (event: any) => {
       return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Errore creazione prenotazione: ' + (bErr?.message || '') }) };
     }
 
-    // Marca i posti come venduti SOLO se ancora available (anti race-condition)
+    // HOLD temporaneo (NON 'sold') SOLO se ancora available (anti race).
+    // Il posto diventa 'sold' SOLO a pagamento confermato (nexi-callback). Se il
+    // cliente non paga, l'hold scade e il posto torna libero: dal sito non si
+    // riserva mai un posto "da saldare". Scadenza allineata al link Nexi (1h).
+    const holdExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     const { data: updated, error: upErr } = await supabase
       .from('noleggio_tour_seats')
-      .update({ status: 'sold', booking_id: booking.id, customer_name: customer.name, customer_phone: customer.phone || null })
+      .update({ status: 'held', hold_expires_at: holdExpiresAt, booking_id: booking.id, customer_name: customer.name, customer_phone: customer.phone || null })
       .in('id', seatIds).eq('status', 'available')
       .select('id');
     if (upErr || !updated || updated.length !== seatIds.length) {
       // Rollback: qualcuno ha preso un posto nel frattempo -> annulla la prenotazione
-      await supabase.from('noleggio_tour_seats').update({ status: 'available', booking_id: null, customer_name: null, customer_phone: null }).eq('booking_id', booking.id);
+      await supabase.from('noleggio_tour_seats').update({ status: 'available', booking_id: null, customer_name: null, customer_phone: null, hold_expires_at: null }).eq('booking_id', booking.id);
       await supabase.from('bookings').delete().eq('id', booking.id);
       return { statusCode: 409, headers: corsHeaders, body: JSON.stringify({ error: 'Posti appena occupati da un altro cliente. Riprova con altri posti.' }) };
     }

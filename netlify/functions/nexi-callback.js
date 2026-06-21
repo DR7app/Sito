@@ -346,6 +346,30 @@ exports.handler = async (event) => {
 
       console.log(`Booking ${booking.id} updated: payment_status=${updateData.payment_status}`);
 
+      // TOUR (heli/boat/stay): i posti erano in HOLD durante il checkout. Solo
+      // ORA che il pagamento e' confermato li rendiamo 'sold'. Se il pagamento
+      // e' fallito/annullato, liberiamo i posti (tornano disponibili) — dal sito
+      // non resta mai un posto riservato non pagato.
+      {
+        const tourSvc = booking.service_type || booking.booking_details?.type || '';
+        const isTourBooking = tourSvc === 'heli_rental' || tourSvc === 'boat_rental' || tourSvc === 'stay_rental';
+        if (isTourBooking) {
+          try {
+            if (isSuccess) {
+              await supabase.from('noleggio_tour_seats')
+                .update({ status: 'sold', hold_expires_at: null })
+                .eq('booking_id', booking.id).in('status', ['held', 'sold']);
+            } else {
+              await supabase.from('noleggio_tour_seats')
+                .update({ status: 'available', booking_id: null, customer_name: null, customer_phone: null, hold_expires_at: null })
+                .eq('booking_id', booking.id);
+            }
+          } catch (seatErr) {
+            console.error('[nexi-callback] Tour seat status update failed:', seatErr);
+          }
+        }
+      }
+
       // Send notifications if payment succeeded
       if (isSuccess) {
         const siteUrl = process.env.URL || 'https://dr7.app';

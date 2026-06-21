@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
-    const { departureId, seatIds, customer } = JSON.parse(event.body || '{}');
+    const { departureId, seatIds, customer, userId } = JSON.parse(event.body || '{}');
     if (!departureId || !Array.isArray(seatIds) || seatIds.length === 0 || !customer?.name) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Dati mancanti (partenza, posti o cliente).' }) };
     }
@@ -67,6 +67,12 @@ export const handler = async (event: any) => {
     const seatLabels = seats.map(s => s.seat_label).join(', ');
     const pickupISO = new Date(`${dep.departure_date}T${dep.departure_time}`).toISOString();
 
+    // OrderId Nexi alfanumerico (sopravvive alla sanitizzazione di
+    // create-nexi-payment, che rimuove i trattini). Lo salviamo sul booking
+    // così nexi-callback ritrova la prenotazione (match su nexi_order_id) e
+    // manda conferma/fattura. Stesso schema del noleggio auto (CarBookingWizard).
+    const nexiOrderId = `DR7${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
     // Prenotazione
     const { data: booking, error: bErr } = await supabase.from('bookings').insert({
       service_type: tour?.service_type || 'heli_rental',
@@ -76,6 +82,9 @@ export const handler = async (event: any) => {
       price_total: totalCents,
       status: 'pending',
       payment_status: 'pending',
+      // Cliente loggato: collega l'account (punti, "Le mie prenotazioni", ecc.).
+      user_id: userId || null,
+      nexi_order_id: nexiOrderId,
       customer_name: customer.name,
       customer_email: customer.email || null,
       customer_phone: customer.phone || null,
@@ -83,7 +92,7 @@ export const handler = async (event: any) => {
       guest_name: customer.name,
       guest_email: customer.email || null,
       guest_phone: customer.phone || null,
-      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length },
+      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, nexi_order_id: nexiOrderId },
       created_at: new Date().toISOString(),
     }).select('id').single();
     if (bErr || !booking) {
@@ -108,6 +117,8 @@ export const handler = async (event: any) => {
       headers: corsHeaders,
       body: JSON.stringify({
         bookingId: booking.id,
+        nexiOrderId,
+        amountCents: totalCents,
         amountEuros: totalCents / 100,
         description: `${tour?.name || 'Tour'} — ${seats.length} posto/i (${seatLabels})`,
       }),

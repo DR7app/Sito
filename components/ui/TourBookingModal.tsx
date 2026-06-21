@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../hooks/useAuth';
 import type { NoleggioCatalogItem } from '../../hooks/useNoleggioCatalog';
 
 const FUNCTIONS_BASE =
@@ -54,6 +55,21 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
   const [cust, setCust] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { user } = useAuth();
+
+  // Cliente loggato: precompila nome + email dall'account (non li richiediamo di
+  // nuovo). Chiediamo solo il telefono (per la conferma WhatsApp) se mancante.
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = (user as any).user_metadata || {};
+    const fullName = meta.full_name || [meta.nome, meta.cognome].filter(Boolean).join(' ').trim() || meta.name || '';
+    setCust(c => ({
+      name: c.name || fullName,
+      email: c.email || (user as any).email || '',
+      phone: c.phone || meta.phone || meta.telefono || '',
+    }));
+  }, [user]);
 
   const todayYmd = new Date().toLocaleDateString('en-CA');
 
@@ -127,15 +143,33 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
     try {
       const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ departureId, seatIds: Array.from(selected), customer: { name: cust.name.trim(), email: cust.email.trim(), phone: cust.phone.trim() } }),
+        body: JSON.stringify({
+          departureId,
+          seatIds: Array.from(selected),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          userId: (user as any)?.id || null,
+          customer: { name: cust.name.trim(), email: cust.email.trim(), phone: cust.phone.trim() },
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data?.error || 'Errore prenotazione.'); setSubmitting(false); return; }
 
-      // Richiedi il link di pagamento Nexi e reindirizza
+      // Checkout carta standard Nexi (come il noleggio auto): amount in CENTESIMI,
+      // currency 'EUR', orderId = nexiOrderId (alfanumerico, ritrovabile dal
+      // callback). Salviamo l'orderId per il fallback di PaymentSuccessPage.
+      const orderId = data.nexiOrderId || data.bookingId;
+      try { sessionStorage.setItem('dr7_pending_order', orderId); } catch { /* ignore */ }
+      const amountCents = data.amountCents != null ? data.amountCents : Math.round((data.amountEuros || 0) * 100);
       const payRes = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/create-nexi-payment`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: data.amountEuros, currency: 'eur', description: data.description, orderId: data.bookingId, customerEmail: cust.email.trim(), customerName: cust.name.trim() }),
+        body: JSON.stringify({
+          amount: amountCents, currency: 'EUR', description: data.description, orderId,
+          customerEmail: cust.email.trim(), customerName: cust.name.trim(),
+          // Checkout carta standard che TOKENIZZA la carta (CONTRACT_CREATION),
+          // così l'admin può eventualmente addebitare in seguito (Addebito MIT),
+          // come per le ricariche wallet. contractId = orderId.
+          recurringType: 'MIT_UNSCHEDULED',
+        }),
       });
       const payData = await payRes.json();
       if (!payRes.ok || !payData?.paymentUrl) { setError(payData?.error || 'Prenotazione creata ma errore nel link di pagamento. Ti contatteremo su WhatsApp.'); setSubmitting(false); return; }
@@ -243,9 +277,23 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
             {selected.size > 0 && (
               <div className="space-y-2">
                 <label className="text-xs text-gray-400 uppercase tracking-wider">4. I tuoi dati</label>
-                <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Nome e cognome" value={cust.name} onChange={e => setCust({ ...cust, name: e.target.value })} />
-                <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Telefono (WhatsApp)" value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
-                <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Email (opzionale)" value={cust.email} onChange={e => setCust({ ...cust, email: e.target.value })} />
+                {user ? (
+                  <>
+                    {/* Loggato: nome + email dall'account, chiediamo solo il telefono. */}
+                    {(cust.name || cust.email) && (
+                      <div className="text-xs text-gray-400">
+                        Prenoti come <span className="text-white">{cust.name || cust.email}</span>{cust.name && cust.email ? ` · ${cust.email}` : ''}
+                      </div>
+                    )}
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Telefono (WhatsApp)" value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
+                  </>
+                ) : (
+                  <>
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Nome e cognome" value={cust.name} onChange={e => setCust({ ...cust, name: e.target.value })} />
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Telefono (WhatsApp)" value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Email (opzionale)" value={cust.email} onChange={e => setCust({ ...cust, email: e.target.value })} />
+                  </>
+                )}
               </div>
             )}
 

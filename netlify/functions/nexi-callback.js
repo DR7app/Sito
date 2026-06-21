@@ -400,13 +400,16 @@ exports.handler = async (event) => {
         }
 
         // Generate contract + signing links (car rental ONLY — car wash/mechanical
-        // non hanno contratto). MA la fattura va generata per TUTTI i servizi
-        // pagati: bug 2026-05-18 — i lavaggi paid-by-card NON ricevevano fattura.
+        // E i TOUR (elicottero/barca/soggiorno) NON hanno contratto da firmare).
+        // MA la fattura va generata per TUTTI i servizi pagati: bug 2026-05-18 —
+        // i lavaggi paid-by-card NON ricevevano fattura.
         const serviceType = booking.service_type || booking.booking_details?.type || '';
         const isWashOrMech = serviceType === 'car_wash' || serviceType === 'mechanical_service' || serviceType === 'mechanical';
+        // Tour a posti (Noleggio Aria/Mare/Soggiorni): nessun contratto.
+        const isTour = serviceType === 'heli_rental' || serviceType === 'boat_rental' || serviceType === 'stay_rental';
         const adminUrl = process.env.ADMIN_URL || 'https://platform.dr7ai.com';
 
-        if (!isWashOrMech) {
+        if (!isWashOrMech && !isTour) {
           try {
             const contractRes = await fetch(`${adminUrl}/.netlify/functions/generate-contract`, {
               method: 'POST',

@@ -6,7 +6,9 @@
  * disponibilita' e preventivo (no booking/pagamento online).
  */
 import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useNoleggioCatalog, type NoleggioServiceType, type NoleggioCatalogItem } from '../hooks/useNoleggioCatalog';
+import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import TourBookingModal from '../components/ui/TourBookingModal';
 
@@ -31,6 +33,19 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   // gli altri restano su "Richiedi Preventivo" via WhatsApp.
   const [tourItemIds, setTourItemIds] = useState<Set<string>>(new Set());
   const [openTour, setOpenTour] = useState<NoleggioCatalogItem | null>(null);
+  // Per prenotare un tour bisogna essere loggati (come ovunque sul sito). Se non
+  // loggato, "Prenota il tour" apre un popup che invita ad accedere/registrarsi.
+  const [authPrompt, setAuthPrompt] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const goAuth = (path: '/signin' | '/signup') => {
+    navigate(path, { state: { from: { pathname: location.pathname } } });
+  };
+  const handlePrenotaTour = (item: NoleggioCatalogItem) => {
+    if (!user) { setAuthPrompt(true); return; }
+    setOpenTour(item);
+  };
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -93,7 +108,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                   <div className="flex-1" />
                   {tourItemIds.has(item.id) ? (
                     <button
-                      onClick={() => setOpenTour(item)}
+                      onClick={() => handlePrenotaTour(item)}
                       className="mt-5 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-full bg-white text-black font-semibold transition-all duration-300 hover:opacity-90"
                     >
                       Prenota il tour
@@ -126,6 +141,35 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
           waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare ${asset}: ${openTour.name}.`)}`}
           onClose={() => setOpenTour(null)}
         />
+      )}
+
+      {/* Popup: accesso richiesto per prenotare il tour */}
+      {authPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={() => setAuthPrompt(false)}>
+          <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-end -mt-2 -mr-2">
+              <button onClick={() => setAuthPrompt(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <h3 className="text-xl font-semibold text-white">Accedi per prenotare</h3>
+            <p className="mt-2 text-sm text-gray-400">
+              Per prenotare il tour devi essere registrato e accedere al tuo account DR7.
+            </p>
+            <div className="mt-6 space-y-3">
+              <button
+                onClick={() => goAuth('/signin')}
+                className="w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity"
+              >
+                Accedi
+              </button>
+              <button
+                onClick={() => goAuth('/signup')}
+                className="w-full px-4 py-3 rounded-full bg-transparent border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors"
+              >
+                Registrati
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

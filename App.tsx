@@ -56,6 +56,7 @@ import PartnerNotificationSettings from './pages/partner/settings/PartnerNotific
 import PartnerPayoutSettings from './pages/partner/settings/PartnerPayoutSettings';
 import CookieBanner from './components/ui/CookieBanner';
 import AutoBookingPopup from './components/ui/AutoBookingPopup';
+import HeliTourPopup from './components/ui/HeliTourPopup';
 import { useAuth } from './hooks/useAuth';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { DR7AIFloatingButton } from './components/ui/DR7AIChat';
@@ -442,6 +443,7 @@ const MainContent = () => {
         <CookieBanner />
         <ConsentPopupManager />
         <AutoBookingPopup />
+        <HeliTourPopup />
         <DR7AIFloatingButton />
         <AnimatePresence>
           {isCarWizardOpen && selectedCar && (

@@ -58,6 +58,11 @@ const OLD_TO_PRO: Record<string, string> = {
   carwash_new_admin: 'pro_conferma_lavaggio',
   carwash_modified: 'pro_modifica_lavaggio',
 
+  // TOUR (Noleggio Aria/Mare/Soggiorni): conferma prenotazione tour.
+  tour_new_customer: 'pro_conferma_tour',
+  tour_new: 'pro_conferma_tour',
+  tour_new_admin: 'pro_conferma_tour',
+
   signature_request_link: 'pro_conferma_contratto_firmato',
   signature_reminder_whatsapp: 'pro_conferma_preventivo',
   signature_otp_whatsapp: 'pro_promemoria_pickup',

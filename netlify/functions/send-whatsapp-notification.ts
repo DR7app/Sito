@@ -224,9 +224,14 @@ const handler: Handler = async (event) => {
     message = await renderTemplate(resolvedKey, vars, undefined, booking ? { vehiclePlate: booking.vehicle_plate } : undefined);
   } else if (booking) {
     const serviceType = booking.service_type as string | undefined;
+    // TOUR (elicottero/barca/soggiorno): evento dedicato -> template "Conferma
+    // Tour" (pro_conferma_tour). Prima cadeva nel ramo noleggio e il cliente
+    // riceveva "NUOVA PRENOTAZIONE NOLEGGIO" invece della conferma tour.
+    const isTour = serviceType === 'heli_rental' || serviceType === 'boat_rental' || serviceType === 'stay_rental';
     const legacyKey =
       serviceType === 'car_wash' ? (isCustomerMessage ? 'carwash_new_customer' : 'carwash_new_admin') :
       serviceType === 'mechanical' || serviceType === 'mechanical_service' ? (isCustomerMessage ? 'mechanical_new_customer' : 'mechanical_new_admin') :
+      isTour ? (isCustomerMessage ? 'tour_new_customer' : 'tour_new_admin') :
       (isCustomerMessage ? 'rental_new_customer' : 'rental_new_admin');
 
     const resolvedKey = await resolveKeyForContext(legacyKey);

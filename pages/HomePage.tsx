@@ -145,7 +145,7 @@ const HomePage: React.FC = () => {
   // Corporate, Yachting, Aviation) su richiesta. Restano le card dei servizi
   // reali (Lavaggio & Meccanica, Club, Wallet, ecc.). Il noleggio resta
   // raggiungibile dal menu (Mobilità) e dalla ricerca "Prenota Ora".
-  const HOME_HIDDEN_DIVISIONS = new Set(['cars', 'urban-cars', 'corporate-fleet', 'yachts', 'jets', 'credit-wallet']);
+  const HOME_HIDDEN_DIVISIONS = new Set(['cars', 'urban-cars', 'corporate-fleet', 'yachts', 'jets', 'credit-wallet', 'car-wash-services', 'mechanical-services', 'membership']);
   const homeCards: HomeCard[] = React.useMemo(() => {
     return RENTAL_CATEGORIES.filter(c => !HOME_HIDDEN_DIVISIONS.has(c.id)).map(c => {
       const override = categoryOverrides.get(c.id);
@@ -181,7 +181,9 @@ const HomePage: React.FC = () => {
       {/* Cards alimentate dalle categorie selezionate in admin > Sito >
           Flotta. Niente piu' lista hardcoded — aggiungere una nuova
           categoria (Hypercar, Suv Luxury, ecc.) la fa comparire sulla
-          home senza modifiche al codice. */}
+          home senza modifiche al codice. Se nessuna card e' visibile, la
+          sezione non viene renderizzata (niente spazio vuoto). */}
+      {homeCards.length > 0 && (
       <section className="py-24 bg-black">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -218,6 +220,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+      )}
     </motion.div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
 import { supabase } from '../../supabaseClient';
@@ -24,28 +24,28 @@ import { getPickupLocations, getReturnLocations } from '../../utils/getLocations
  * matching exactly common variants. Case-insensitive.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function detectDr7Flex(bd: any): boolean {
+function detectDr7Flex(bd: any, expNameById?: Record<string, string>): boolean {
   if (!bd) return false;
   // Legacy boolean shapes
   if (bd.dr7Flex === true || bd.dr7Flex === 'true') return true;
   if (bd.dr7_flex === true || bd.dr7_flex === 'true') return true;
   if (bd.extras?.dr7_flex === true || bd.extras?.dr7_flex === 'true') return true;
-  // New experience services map
-  const isDr7FlexId = (id: string): boolean => {
-    const k = String(id || '').toLowerCase().trim();
+  // Riconosce il Flex per ID o per NOME (dal catalogo Experience di Centralina).
+  // Le prenotazioni vecchie salvano solo {experienceId: qty} con un id Centralina
+  // che NON contiene "dr7flex": senza il nome non venivano riconosciute (es.
+  // Massimo, RS3) e il pulsante Cancella non compariva.
+  const matchesFlex = (s: string): boolean => {
+    const k = String(s || '').toLowerCase().trim();
     if (!k) return false;
-    if (k === 'dr7_flex' || k === 'dr7-flex' || k === 'dr7flex') return true;
-    return k.includes('dr7') && k.includes('flex');
+    return k.includes('dr7 flex') || k.includes('dr7flex') || k.includes('dr7-flex') || (k.includes('dr7') && k.includes('flex')) || k.includes('flex');
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const checkMap = (m: any): boolean => {
     if (!m || typeof m !== 'object') return false;
     for (const [id, qty] of Object.entries(m)) {
-      if (!isDr7FlexId(id)) continue;
-      // qty stored as number (quantity) or boolean; either > 0 / truthy counts as active.
-      if (typeof qty === 'number' && qty > 0) return true;
-      if (qty === true) return true;
-      if (typeof qty === 'string' && qty !== '0' && qty !== '' && qty !== 'false') return true;
+      const active = (typeof qty === 'number' && qty > 0) || qty === true || (typeof qty === 'string' && qty !== '0' && qty !== '' && qty !== 'false');
+      if (!active) continue;
+      if (matchesFlex(id) || matchesFlex(expNameById?.[id] || '')) return true;
     }
     return false;
   };
@@ -84,6 +84,16 @@ const MyBookings = () => {
   const { t, lang } = useTranslation();
   // DR7 Flex rules (refund %, price, tier) come from Centralina Pro.
   const { overlay: proOverlay } = useCentralinaProOverlay();
+  // Mappa id Experience -> nome (per riconoscere DR7 Flex sulle prenotazioni
+  // vecchie, che salvano solo l'id Centralina senza "dr7flex").
+  const expNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (((proOverlay as any)?.experienceServices) || []).forEach((s: { id?: string; name?: string }) => {
+      if (s?.id) m[s.id] = s.name || '';
+    });
+    return m;
+  }, [proOverlay]);
   const cancelRules = useCancellationRules();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,7 +212,7 @@ const MyBookings = () => {
 
   const getCancelPolicy = (booking: Booking): { canCancel: boolean; hasFlex: boolean; refundPercent: number; penaltyPercent: number; refundMethod: 'wallet' | 'card'; message: string } => {
     const bd = booking.booking_details || {};
-    const hasDr7Flex = detectDr7Flex(bd);
+    const hasDr7Flex = detectDr7Flex(bd, expNameById);
     const hasPrimeFlex = booking.booking_details?.prime_flex === true || booking.booking_details?.prime_flex === 'true';
     const isElite = !!getMembershipTierName(user);
     const dateStr = booking.service_type === 'car_wash'

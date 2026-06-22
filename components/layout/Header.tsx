@@ -182,8 +182,8 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
           >
             {/* Header: logo + tagline (sinistra), chiudi (destra) */}
             <div className="flex items-start justify-between px-5 pt-6 pb-5 border-b border-white/[0.06]">
-              <NavLink to="/" onClick={onClose} className="flex flex-col">
-                <img src="/DR7logo1.png" alt={copy.logo_alt} className="h-12 w-auto" />
+              <NavLink to="/" onClick={onClose} className="flex flex-col items-start">
+                <img src="/DR7logo1.png" alt={copy.logo_alt} className="h-12 w-auto max-w-none self-start" />
                 <span className="mt-1 pl-1 text-[9px] tracking-[0.45em] text-gray-500 uppercase">Beyond Luxury</span>
               </NavLink>
               <button

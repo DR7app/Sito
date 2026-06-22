@@ -699,6 +699,27 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   })();
   // ACTIVE_DR7_FLEX rimosso — DR7 Flex ora è in EXPERIENCE_SERVICES.
   const ACTIVE_EXPERIENCE_SERVICES = configOverlay?.experienceServices ?? [];
+
+  // DR7 FLEX (noleggio): cancellazione fino al giorno stesso del servizio, 90% in
+  // DR7 Wallet, 1 spostamento gratuito. Da quando DR7 Flex è un Experience
+  // Service (id Centralina, spesso NON contiene "dr7flex"), il booking salvava
+  // dr7_flex=false e in "Le mie prenotazioni" il pulsante "Cancella" non
+  // compariva. Qui rileviamo il Flex tra gli experience selezionati per ID O
+  // NOME e salviamo un booleano affidabile su booking_details.dr7_flex.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isDr7FlexService = (svc: any): boolean => {
+    const hay = `${svc?.id || ''} ${svc?.name || ''}`.toLowerCase();
+    return hay.includes('dr7 flex') || hay.includes('dr7flex') || hay.includes('dr7-flex') || (hay.includes('dr7') && hay.includes('flex'));
+  };
+  const dr7FlexEffective = useMemo(() => {
+    if (formData.dr7Flex) return true;
+    return Object.entries(formData.selectedExperiences || {}).some(([svcId, qty]) => {
+      if (!(Number(qty) > 0)) return false;
+      const svc = (ACTIVE_EXPERIENCE_SERVICES as Array<{ id: string; name?: string }>).find(s => s.id === svcId);
+      return isDr7FlexService(svc || { id: svcId });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.dr7Flex, formData.selectedExperiences, ACTIVE_EXPERIENCE_SERVICES]);
   // Utilitaria/Aziendali deposit displayed in riepilogo — first real (non-zero)
   // amount from Pro's urban deposit options. Falls back to 0 if Pro empty.
   const ACTIVE_UTILITARIA_DEPOSIT = (() => {
@@ -3106,7 +3127,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           km_cost: kmPackageCost,
           experience_services: formData.selectedExperiences,
           experience_cost: experienceCost,
-          dr7_flex: formData.dr7Flex,
+          dr7_flex: dr7FlexEffective,
           flex_cost: flexCost,
           deposit_surcharge: noDepositSurcharge,
           vehicle_id: formData.selectedVehicleId,
@@ -3832,7 +3853,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             km_cost: kmPackageCost,
             experience_services: formData.selectedExperiences,
             experience_cost: experienceCost,
-            dr7_flex: formData.dr7Flex,
+            dr7_flex: dr7FlexEffective,
             flex_cost: flexCost,
             driverLicenseImage: licenseImageUrl,
             driverIdImage: idImageUrl,
@@ -4253,7 +4274,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             km_cost: kmPackageCost,
             experience_services: formData.selectedExperiences,
             experience_cost: experienceCost,
-            dr7_flex: formData.dr7Flex,
+            dr7_flex: dr7FlexEffective,
             flex_cost: flexCost,
             driverLicenseImage: licenseImageUrl,
             driverIdImage: idImageUrl,

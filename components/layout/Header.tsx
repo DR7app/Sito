@@ -133,7 +133,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
       title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanical'),
       subtitle: mc('menu_servizi_sub_it', 'menu_servizi_sub_en', 'Lavaggio auto premium e officina meccanica', 'Premium car wash and mechanical workshop') },
     { to: '/credit-wallet', img: '/menu-club.jpeg', Icon: WalletIcon,
-      title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Wallet', 'Wallet'),
+      title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'),
       subtitle: mc('menu_wallet_sub_it', 'menu_wallet_sub_en', 'Il tuo credito DR7 Wallet per prenotare e ricaricare', 'Your DR7 Wallet credit to book and top up') },
     { to: '/membership', img: '/menu-club.jpeg', Icon: CrownIcon,
       title: mc('menu_club_title_it', 'menu_club_title_en', 'DR7 Club', 'DR7 Club'),

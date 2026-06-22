@@ -141,8 +141,13 @@ const HomePage: React.FC = () => {
     image: string;
     path: string;
   };
+  // 2026-06-22: rimosse dalla home le 5 "Division" showcase (Supercar, Urban,
+  // Corporate, Yachting, Aviation) su richiesta. Restano le card dei servizi
+  // reali (Lavaggio & Meccanica, Club, Wallet, ecc.). Il noleggio resta
+  // raggiungibile dal menu (Mobilità) e dalla ricerca "Prenota Ora".
+  const HOME_HIDDEN_DIVISIONS = new Set(['cars', 'urban-cars', 'corporate-fleet', 'yachts', 'jets']);
   const homeCards: HomeCard[] = React.useMemo(() => {
-    return RENTAL_CATEGORIES.map(c => {
+    return RENTAL_CATEGORIES.filter(c => !HOME_HIDDEN_DIVISIONS.has(c.id)).map(c => {
       const override = categoryOverrides.get(c.id);
       return {
         id: c.id,

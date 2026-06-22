@@ -39,6 +39,9 @@ function detectDr7Flex(bd: any, expNameById?: Record<string, string>): boolean {
     if (!k) return false;
     return k.includes('dr7 flex') || k.includes('dr7flex') || k.includes('dr7-flex') || (k.includes('dr7') && k.includes('flex')) || k.includes('flex');
   };
+  // Costo flex registrato (campo dedicato) -> DR7 Flex attivo.
+  if (typeof bd.flex_cost === 'number' && bd.flex_cost > 0) return true;
+  if (bd.flex === true || bd.flex === 'true') return true;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const checkMap = (m: any): boolean => {
     if (!m || typeof m !== 'object') return false;
@@ -52,6 +55,15 @@ function detectDr7Flex(bd: any, expNameById?: Record<string, string>): boolean {
   if (checkMap(bd.experience_services)) return true;
   if (checkMap(bd.selectedExperiences)) return true;
   if (checkMap(bd.experiences)) return true;
+  // Ultima rete: QUALSIASI campo top-level con "flex" nel nome e valore vero
+  // (boolean true / numero > 0 / oggetto-mappa che contiene un flex).
+  for (const [k, v] of Object.entries(bd)) {
+    const key = String(k).toLowerCase();
+    if (!key.includes('flex')) continue;
+    if (v === true || v === 'true') return true;
+    if (typeof v === 'number' && v > 0) return true;
+    if (v && typeof v === 'object' && checkMap(v)) return true;
+  }
   return false;
 }
 
@@ -83,17 +95,25 @@ const MyBookings = () => {
   const { user } = useAuth();
   const { t, lang } = useTranslation();
   // DR7 Flex rules (refund %, price, tier) come from Centralina Pro.
-  const { overlay: proOverlay } = useCentralinaProOverlay();
-  // Mappa id Experience -> nome (per riconoscere DR7 Flex sulle prenotazioni
-  // vecchie, che salvano solo l'id Centralina senza "dr7flex").
+  const { overlay: proOverlay, snapshot: proSnapshot } = useCentralinaProOverlay();
+  // Mappa chiave Experience -> nome, per riconoscere DR7 Flex sulle prenotazioni
+  // vecchie (che salvano solo l'id Centralina senza "dr7flex"). Usiamo lo
+  // snapshot GREZZO (servizi.experience), così include anche gli experience
+  // disattivati/admin_only — il match non puo' mancare. Stessa chiave del wizard
+  // (`id || name`). Fallback sull'overlay (solo attivi) per sicurezza.
   const expNameById = useMemo(() => {
     const m: Record<string, string> = {};
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (((proSnapshot as any)?.servizi?.experience) || []).forEach((s: { id?: string; name?: string }) => {
+      const key = s?.id || s?.name;
+      if (key) m[key] = s?.name || '';
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (((proOverlay as any)?.experienceServices) || []).forEach((s: { id?: string; name?: string }) => {
-      if (s?.id) m[s.id] = s.name || '';
+      if (s?.id && !m[s.id]) m[s.id] = s.name || '';
     });
     return m;
-  }, [proOverlay]);
+  }, [proSnapshot, proOverlay]);
   const cancelRules = useCancellationRules();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);

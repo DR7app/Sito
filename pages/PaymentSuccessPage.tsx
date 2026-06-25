@@ -476,6 +476,18 @@ const PaymentSuccessPage: React.FC = () => {
                     }).then(r => console.log('[PaymentSuccess] wallet fattura trigger:', r.status))
                       .catch(e => console.error('[PaymentSuccess] wallet fattura trigger failed:', e));
 
+                    // CASHBACK DR7 Club: applica SEMPRE (idempotente lato server).
+                    // Il cashback dei membri DR7 Club veniva calcolato SOLO nel
+                    // webhook nexi-callback: se il webhook non scattava, il cliente
+                    // non riceveva il reward. Questa pagina e' sempre raggiunta ->
+                    // garantisce il cashback (skip se gia' applicato o se non club).
+                    fetch(`${FUNCTIONS_BASE}/.netlify/functions/award-wallet-cashback`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ purchaseId: purchase.id }),
+                    }).then(r => console.log('[PaymentSuccess] wallet cashback trigger:', r.status))
+                      .catch(e => console.error('[PaymentSuccess] wallet cashback trigger failed:', e));
+
                     setUpdating(false);
                     return;
                 }

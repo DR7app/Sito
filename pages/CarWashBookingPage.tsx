@@ -730,6 +730,9 @@ const CarWashBookingPage: React.FC = () => {
   };
 
   const getAvailableTimeSlots = () => {
+    // Blocco lavaggi: nessuno slot per le date PRIMA della data minima (es.
+    // blocco fino al 6/07). Doppia rete oltre al min del calendario.
+    if (formData.appointmentDate && formData.appointmentDate < minDate) return [];
     return getAllTimeSlotsWithAvailability()
       .filter(slot => slot.available)
       .map(slot => slot.time);

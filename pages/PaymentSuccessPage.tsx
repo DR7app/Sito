@@ -191,6 +191,17 @@ const PaymentSuccessPage: React.FC = () => {
                             .eq('id', booking.id);
                     }
 
+                    // FATTURA servizio: genera SEMPRE (idempotente lato admin
+                    // contro fatture esistenti). Il webhook nexi-callback puo' non
+                    // completare e questa pagina e' sempre raggiunta dal cliente:
+                    // garantisce la fattura per i servizi pagati dal sito + PDF WhatsApp.
+                    fetch(`${FUNCTIONS_BASE}/.netlify/functions/generate-fattura`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ bookingId: booking.id, includeIVA: true }),
+                    }).then(r => console.log('[PaymentSuccess] booking fattura trigger:', r.status))
+                      .catch(e => console.error('[PaymentSuccess] booking fattura trigger failed:', e));
+
                     // Send notifications
                     fetch(`${FUNCTIONS_BASE}/.netlify/functions/send-booking-confirmation`, {
                         method: 'POST',
@@ -403,52 +414,68 @@ const PaymentSuccessPage: React.FC = () => {
                         return;
                     }
 
-                    // Skip if already completed (avoid double-crediting)
-                    if (purchase.payment_status === 'completed' || purchase.payment_status === 'succeeded' || purchase.payment_status === 'paid') {
-                        console.log('Purchase already completed, skipping credit addition');
-                        setUpdating(false);
-                        return;
-                    }
+                    // Crediti: aggiungi SOLO se non gia' processato (race col
+                    // callback). add_credits e' comunque idempotente per reference_id.
+                    const alreadyDone = purchase.payment_status === 'completed' || purchase.payment_status === 'succeeded' || purchase.payment_status === 'paid';
+                    if (!alreadyDone) {
+                        const { data: updatedPurchase, error: upErr } = await supabase
+                            .from('credit_wallet_purchases')
+                            .update({
+                                payment_status: 'succeeded',
+                                payment_completed_at: new Date().toISOString()
+                            })
+                            .eq('id', purchase.id)
+                            .neq('payment_status', 'succeeded')
+                            .select()
+                            .single();
 
-                    // Atomically update purchase status - only succeeds if not already 'succeeded'
-                    const { data: updatedPurchase, error: upErr } = await supabase
-                        .from('credit_wallet_purchases')
-                        .update({
-                            payment_status: 'succeeded',
-                            payment_completed_at: new Date().toISOString()
-                        })
-                        .eq('id', purchase.id)
-                        .neq('payment_status', 'succeeded')
-                        .select()
-                        .single();
-
-                    // If no row returned, another caller (callback) already processed it
-                    if (!updatedPurchase) {
-                        console.log('Purchase already processed by callback, skipping credit addition');
-                        setUpdating(false);
-                        return;
-                    }
-
-                    if (upErr) {
-                        console.error('Error updating purchase:', upErr);
-                        setUpdateError(s('err_purchase_update_it', 'err_purchase_update_en'));
-                    } else {
-                        // Add credits to wallet via atomic RPC
-                        const result = await addCredits(
-                            purchase.user_id,
-                            purchase.received_amount,
-                            `Ricarica ${purchase.package_name} - Bonus ${purchase.bonus_percentage}%`,
-                            purchase.id,
-                            'wallet_purchase'
-                        );
-
-                        if (result.success) {
-                            console.log(`Credits added: €${purchase.received_amount} (new balance: €${result.newBalance})`);
+                        if (upErr) {
+                            console.error('Error updating purchase:', upErr);
+                            setUpdateError(s('err_purchase_update_it', 'err_purchase_update_en'));
+                        } else if (updatedPurchase) {
+                            // Abbiamo vinto la race -> accredita
+                            const result = await addCredits(
+                                purchase.user_id,
+                                purchase.received_amount,
+                                `Ricarica ${purchase.package_name} - Bonus ${purchase.bonus_percentage}%`,
+                                purchase.id,
+                                'wallet_purchase'
+                            );
+                            if (result.success) {
+                                console.log(`Credits added: €${purchase.received_amount} (new balance: €${result.newBalance})`);
+                            } else {
+                                console.error('Error adding credits:', result.error);
+                                setUpdateError(s('err_credit_add_it', 'err_credit_add_en'));
+                            }
                         } else {
-                            console.error('Error adding credits:', result.error);
-                            setUpdateError(s('err_credit_add_it', 'err_credit_add_en'));
+                            console.log('Purchase credits already processed by callback');
                         }
                     }
+
+                    // FATTURA: genera SEMPRE (idempotente lato server via note
+                    // 'wallet_purchase:{id}'). Il webhook nexi-callback puo' NON
+                    // scattare/completare e questa pagina e' SEMPRE raggiunta dal
+                    // cliente: senza questa chiamata le ricariche restavano SENZA
+                    // fattura (bug ricorrente da mesi). La function invia anche il
+                    // PDF della fattura su WhatsApp.
+                    fetch(`${FUNCTIONS_BASE}/.netlify/functions/generate-fattura`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            purchaseType: 'wallet_purchase',
+                            purchaseId: purchase.id,
+                            includeIVA: true,
+                            purchaseData: {
+                                userId: purchase.user_id,
+                                packageName: purchase.package_name,
+                                amount: purchase.recharge_amount,
+                                receivedAmount: purchase.received_amount,
+                                bonusPercentage: purchase.bonus_percentage,
+                            },
+                        }),
+                    }).then(r => console.log('[PaymentSuccess] wallet fattura trigger:', r.status))
+                      .catch(e => console.error('[PaymentSuccess] wallet fattura trigger failed:', e));
+
                     setUpdating(false);
                     return;
                 }

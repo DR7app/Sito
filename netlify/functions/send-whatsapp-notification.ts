@@ -331,6 +331,11 @@ const handler: Handler = async (event) => {
       Object.assign(vars, {
         vehicle_name: booking.vehicle_name || '',
         veicolo: booking.vehicle_name || '',
+        // Tour Aria/Mare/Soggiorni: esperienza/data/orario/posti per pro_conferma_tour.
+        esperienza: booking.vehicle_name || '',
+        data: pickup ? pickup.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }) : '',
+        orario: pickup ? pickup.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' }) : '',
+        posti: booking.booking_details?.seats || (booking.booking_details?.seat_count != null ? String(booking.booking_details.seat_count) : ''),
         plate: booking.vehicle_plate || '',
         targa: booking.vehicle_plate || '',
         pickup_date: pickup ? pickup.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }) : '',

@@ -23,9 +23,16 @@ export const handler = async (event: any) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
-    const { departureId, seatIds, customer, userId } = JSON.parse(event.body || '{}');
+    const { departureId, seatIds, customer, userId, paymentMethod } = JSON.parse(event.body || '{}');
     if (!departureId || !Array.isArray(seatIds) || seatIds.length === 0 || !customer?.name) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Dati mancanti (partenza, posti o cliente).' }) };
+    }
+    // Pagamento con Credit Wallet: richiede un utente loggato (il wallet e'
+    // legato all'account). Tutto il flusso (validazione posti + addebito + posto
+    // venduto) avviene server-side con service role, atomico, anti-oversell.
+    const isWallet = paymentMethod === 'credit_wallet';
+    if (isWallet && !userId) {
+      return { statusCode: 401, headers: corsHeaders, body: JSON.stringify({ error: 'Devi effettuare il login per pagare con Credit Wallet.' }) };
     }
 
     // Partenza + tour (catalogo)
@@ -101,15 +108,18 @@ export const handler = async (event: any) => {
     // manda conferma/fattura. Stesso schema del noleggio auto (CarBookingWizard).
     const nexiOrderId = `DR7${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // Prenotazione
+    // Prenotazione. Wallet: nasce gia' pagata (payment_status succeeded,
+    // payment_method credit_wallet) come per il lavaggio pagato a credito; carta
+    // Nexi: pending finche' nexi-callback non conferma il pagamento.
     const { data: booking, error: bErr } = await supabase.from('bookings').insert({
       service_type: tour?.service_type || 'heli_rental',
       vehicle_name: tour?.name || 'Tour Elicottero',
       pickup_date: pickupISO,
       dropoff_date: pickupISO,
       price_total: totalCents,
-      status: 'pending',
-      payment_status: 'pending',
+      status: isWallet ? 'confirmed' : 'pending',
+      payment_status: isWallet ? 'succeeded' : 'pending',
+      payment_method: isWallet ? 'credit_wallet' : null,
       // Cliente loggato: collega l'account (punti, "Le mie prenotazioni", ecc.).
       user_id: userId || null,
       nexi_order_id: nexiOrderId,
@@ -127,10 +137,98 @@ export const handler = async (event: any) => {
       return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Errore creazione prenotazione: ' + (bErr?.message || '') }) };
     }
 
-    // HOLD temporaneo (NON 'sold') SOLO se ancora available (anti race).
-    // Il posto diventa 'sold' SOLO a pagamento confermato (nexi-callback). Se il
-    // cliente non paga, l'hold scade e il posto torna libero: dal sito non si
-    // riserva mai un posto "da saldare". Scadenza allineata al link Nexi (1h).
+    if (isWallet) {
+      // --- FLUSSO WALLET: addebita PRIMA, poi marca i posti venduti ---
+      // 1) Addebito atomico (RPC deduct_credits lavora in EURO, FOR UPDATE: niente
+      //    double-spend). reference_id = bookingId (UUID).
+      const totalEuros = totalCents / 100;
+      const { data: dedData, error: dedErr } = await supabase.rpc('deduct_credits', {
+        p_user_id: userId,
+        p_amount: totalEuros,
+        p_description: `Tour ${tour?.name || ''} — ${seats.length} posto/i (${seatLabels})`,
+        p_reference_id: booking.id,
+        p_transaction_type: 'tour_booking',
+      });
+      const dedResult = (dedData && (dedData[0] || dedData)) || null;
+      if (dedErr || !dedResult?.success) {
+        // Addebito fallito: nessun credito tolto -> elimina la prenotazione, niente posti.
+        await supabase.from('bookings').delete().eq('id', booking.id);
+        const msg = dedErr?.message || dedResult?.error_message || 'Credito insufficiente';
+        return { statusCode: 402, headers: corsHeaders, body: JSON.stringify({ error: msg }) };
+      }
+
+      // 2) Posti -> 'sold' (pagamento gia' avvenuto) SOLO se ancora available (anti race).
+      const { data: soldSeats, error: soldErr } = await supabase
+        .from('noleggio_tour_seats')
+        .update({ status: 'sold', hold_expires_at: null, booking_id: booking.id, customer_name: customer.name, customer_phone: customer.phone || null })
+        .in('id', seatIds).eq('status', 'available')
+        .select('id');
+      if (soldErr || !soldSeats || soldSeats.length !== seatIds.length) {
+        // Qualcuno ha preso un posto nel frattempo: RIMBORSA il credito e annulla tutto.
+        await supabase.from('noleggio_tour_seats').update({ status: 'available', booking_id: null, customer_name: null, customer_phone: null, hold_expires_at: null }).eq('booking_id', booking.id);
+        try {
+          await supabase.rpc('add_credits', {
+            p_user_id: userId,
+            p_amount: totalEuros,
+            p_description: `Rimborso automatico: posti tour non piu' disponibili`,
+            p_reference_id: booking.id,
+            p_reference_type: 'refund',
+          });
+        } catch (refundErr) {
+          console.error('[book-tour] CRITICAL: refund failed after seat conflict:', refundErr);
+        }
+        await supabase.from('bookings').delete().eq('id', booking.id);
+        return { statusCode: 409, headers: corsHeaders, body: JSON.stringify({ error: 'Posti appena occupati da un altro cliente. Riprova con altri posti.' }) };
+      }
+
+      // 3) Conferma cliente/admin via WhatsApp (stesso routing del nexi-callback:
+      //    send-whatsapp-notification -> tour_new -> pro_conferma_tour). NIENTE
+      //    fattura per credit_wallet (la ricarica wallet e' gia' fatturata).
+      const siteUrl = process.env.URL || process.env.SITE_URL || '';
+      const notify = async (body: Record<string, unknown>) => {
+        try {
+          await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+          });
+        } catch (e) { console.error('[book-tour] WhatsApp notify failed (non-fatal):', e); }
+      };
+      const fullBooking = {
+        id: booking.id,
+        service_type: tour?.service_type || 'heli_rental',
+        vehicle_name: tour?.name || 'Tour Elicottero',
+        pickup_date: pickupISO,
+        dropoff_date: pickupISO,
+        price_total: totalCents,
+        payment_status: 'succeeded',
+        payment_method: 'credit_wallet',
+        customer_name: customer.name,
+        customer_email: customer.email || null,
+        customer_phone: customer.phone || null,
+        booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length },
+      };
+      await notify({ booking: fullBooking });                                   // admin
+      if (customer.phone) await notify({ booking: fullBooking, customPhone: customer.phone }); // cliente
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          bookingId: booking.id,
+          paid: true,
+          paymentMethod: 'credit_wallet',
+          newBalance: dedResult?.new_balance ?? null,
+          amountCents: totalCents,
+          amountEuros: totalEuros,
+          description: `${tour?.name || 'Tour'} — ${seats.length} posto/i (${seatLabels})`,
+        }),
+      };
+    }
+
+    // --- FLUSSO CARTA (Nexi): HOLD temporaneo (NON 'sold') SOLO se ancora ---
+    // available (anti race). Il posto diventa 'sold' SOLO a pagamento confermato
+    // (nexi-callback). Se il cliente non paga, l'hold scade e il posto torna
+    // libero: dal sito non si riserva mai un posto "da saldare". Scadenza
+    // allineata al link Nexi (1h).
     const holdExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     const { data: updated, error: upErr } = await supabase
       .from('noleggio_tour_seats')

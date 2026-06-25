@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
+import { getUserCreditBalance } from '../../utils/creditWallet';
 import type { NoleggioCatalogItem } from '../../hooks/useNoleggioCatalog';
 
 const FUNCTIONS_BASE =
@@ -64,7 +65,22 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
   const [cust, setCust] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [walletBalanceCents, setWalletBalanceCents] = useState<number | null>(null); // null = non caricato
+  const [success, setSuccess] = useState(false);
   const { user } = useAuth();
+
+  // Saldo Credit Wallet (solo loggati). Il wallet lavora in EURO -> convertiamo
+  // in centesimi per confrontarlo con il totale del tour (anch'esso in centesimi).
+  useEffect(() => {
+    if (!user) { setWalletBalanceCents(null); return; }
+    let cancelled = false;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const bal = await getUserCreditBalance((user as any).id);
+      if (!cancelled) setWalletBalanceCents(Math.round(bal * 100));
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Cliente loggato: precompila nome + email dall'account (non li richiediamo di
   // nuovo). Chiediamo solo il telefono (per la conferma WhatsApp) se mancante.
@@ -167,15 +183,52 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
     [seats, selected, departure],
   );
 
-  async function submit() {
+  // Validazione comune ai due flussi (carta / wallet). Ritorna il nome
+  // effettivo se ok, altrimenti imposta l'errore e ritorna null.
+  function validate(): string | null {
     setError('');
-    if (selected.size === 0) { setError('Seleziona almeno un posto.'); return; }
+    if (selected.size === 0) { setError('Seleziona almeno un posto.'); return null; }
     // Loggato: l'identità arriva dall'account (nome/email), serve solo il
     // telefono per la conferma WhatsApp. Non loggato: nome + telefono.
-    if (!cust.phone.trim()) { setError('Inserisci il numero di telefono.'); return; }
-    if (!user && !cust.name.trim()) { setError('Inserisci nome e telefono.'); return; }
+    if (!cust.phone.trim()) { setError('Inserisci il numero di telefono.'); return null; }
+    if (!user && !cust.name.trim()) { setError('Inserisci nome e telefono.'); return null; }
     // Nome effettivo: quello del profilo, altrimenti l'email dell'account.
-    const effName = cust.name.trim() || cust.email.trim() || 'Cliente';
+    return cust.name.trim() || cust.email.trim() || 'Cliente';
+  }
+
+  // Pagamento con Credit Wallet: book-tour fa tutto server-side (valida posti,
+  // addebita il credito, marca i posti venduti, manda la conferma WhatsApp). Su
+  // successo NON c'e' redirect Nexi: mostriamo lo stato di conferma.
+  async function submitWallet() {
+    const effName = validate();
+    if (effName === null) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          departureId,
+          seatIds: Array.from(selected),
+          paymentMethod: 'credit_wallet',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          userId: (user as any)?.id || null,
+          customer: { name: effName, email: cust.email.trim(), phone: cust.phone.trim() },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.paid) { setError(data?.error || 'Errore pagamento con Credit Wallet.'); setSubmitting(false); return; }
+      if (typeof data.newBalance === 'number') setWalletBalanceCents(Math.round(data.newBalance * 100));
+      setSuccess(true);
+      setSubmitting(false);
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
+  }
+
+  async function submit() {
+    const effName = validate();
+    if (effName === null) return;
     setSubmitting(true);
     try {
       const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
@@ -227,6 +280,17 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
 
         {loading ? (
           <div className="py-12 text-center text-gray-400">Caricamento date…</div>
+        ) : success ? (
+          <div className="py-8 text-center space-y-4">
+            <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 text-3xl">✓</div>
+            <h4 className="text-lg font-semibold text-white">Prenotazione confermata</h4>
+            <p className="text-gray-400 text-sm">
+              Pagamento effettuato con Credit Wallet. Riceverai la conferma su WhatsApp.
+            </p>
+            <button onClick={onClose} className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90">
+              Chiudi
+            </button>
+          </div>
         ) : departures.length === 0 ? (
           <div className="py-8 text-center space-y-4">
             <p className="text-gray-400">Nessuna data disponibile al momento.</p>
@@ -337,18 +401,45 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
             {error && <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</div>}
 
             {/* Riepilogo + CTA */}
-            {selected.size > 0 && (
-              <div className="border-t border-gray-800 pt-4 flex items-center justify-between gap-3">
-                <div className="text-white">
-                  <div className="text-sm text-gray-400">{selected.size} posto/i</div>
-                  <div className="text-xl font-bold">{totalCents > 0 ? eur(totalCents) : 'Prezzo da definire'}</div>
+            {selected.size > 0 && (() => {
+              // Credit Wallet: disponibile solo a cliente loggato con saldo caricato.
+              const walletLoaded = user && walletBalanceCents !== null;
+              const sufficient = walletLoaded && totalCents > 0 && (walletBalanceCents as number) >= totalCents;
+              return (
+                <div className="border-t border-gray-800 pt-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-white">
+                      <div className="text-sm text-gray-400">{selected.size} posto/i</div>
+                      <div className="text-xl font-bold">{totalCents > 0 ? eur(totalCents) : 'Prezzo da definire'}</div>
+                    </div>
+                    <button onClick={submit} disabled={submitting || totalCents <= 0}
+                      className="px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 disabled:opacity-50">
+                      {submitting ? 'Attendi…' : 'Prenota e paga'}
+                    </button>
+                  </div>
+
+                  {/* Pagamento con Credit Wallet (cliente loggato) */}
+                  {walletLoaded && (
+                    <div className="rounded-lg border border-gray-800 bg-white/5 p-3 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Saldo Credit Wallet</span>
+                        <span className="text-white font-semibold">{eur(walletBalanceCents as number)}</span>
+                      </div>
+                      <button onClick={submitWallet} disabled={submitting || totalCents <= 0 || !sufficient}
+                        className="w-full px-6 py-3 rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-white">
+                        {submitting ? 'Attendi…' : !sufficient ? 'Credito insufficiente' : 'Paga con Credit Wallet'}
+                      </button>
+                      {!sufficient && totalCents > 0 && (
+                        <p className="text-xs text-gray-400 text-center">
+                          Ricarica il tuo Credit Wallet per pagare questo tour.{' '}
+                          <a href="/credit-wallet" className="underline hover:text-white">Ricarica</a>
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <button onClick={submit} disabled={submitting || totalCents <= 0}
-                  className="px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 disabled:opacity-50">
-                  {submitting ? 'Attendi…' : 'Prenota e paga'}
-                </button>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </div>

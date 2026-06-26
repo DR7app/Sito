@@ -324,7 +324,10 @@ const MyBookings = () => {
     //   - customer has an active DR7 Club membership (Argento/Oro/Platino/DR7 Club — treated as "Elite" here)
     const bd = booking.booking_details || {};
     const hasPrimeFlex = bd.prime_flex === true || bd.prime_flex === 'true';
-    const hasDr7Flex = detectDr7Flex(bd);
+    // Passa expNameById come fa canCancel: cosi' il DR7 Flex comprato come
+    // Experience (salvato per ID Centralina, senza "flex" nel nome) viene
+    // riconosciuto e il bottone "Modifica" compare anche su quelle prenotazioni.
+    const hasDr7Flex = detectDr7Flex(bd, expNameById);
     const isElite = !!getMembershipTierName(user);
     if (!hasPrimeFlex && !hasDr7Flex && !isElite) return false;
 

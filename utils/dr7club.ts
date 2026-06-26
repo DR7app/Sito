@@ -197,6 +197,16 @@ const TIER_SPEND_OVERRIDES: Record<string, number> = {
   '3b896d05-3d65-4819-a46a-ea9894343935': 3155.20,
 }
 
+// Ricariche DOPPIONI: stesso pagamento registrato due volte in
+// credit_wallet_purchases (pagato UNA sola volta dal cliente). Vanno escluse
+// dal calcolo della spesa annua, altrimenti gonfiano livello e reward.
+// Runchina: un €1.000 (26/02) e un €2.000 (05/05) doppi. Il pagamento reale
+// dell'altra riga della coppia resta contato.
+const DUPLICATE_PURCHASE_IDS = new Set<string>([
+  '39a4c9cd-5670-465c-977d-cce805514c38', // 26/02 €1.000 — doppione
+  '4e6364d9-8707-4f12-897d-e02d63e0682d', // 05/05 €2.000 — doppione
+])
+
 export async function getAnnualSpend(userId: string, email?: string | null): Promise<number> {
   const oneYearAgo = new Date()
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
@@ -252,7 +262,7 @@ export async function getAnnualSpend(userId: string, email?: string | null): Pro
   //    (not real spend, just a reward).
   const { data: purchases, error: purchErr } = await supabase
     .from('credit_wallet_purchases')
-    .select('recharge_amount')
+    .select('id, recharge_amount')
     .eq('user_id', userId)
     .eq('payment_status', 'succeeded')
     .gte('created_at', cutoffIso)
@@ -261,6 +271,7 @@ export async function getAnnualSpend(userId: string, email?: string | null): Pro
     console.error('[dr7club] Error fetching wallet recharges:', purchErr)
   }
   const rechargeEur = (purchases || []).reduce((sum, p) => {
+    if (DUPLICATE_PURCHASE_IDS.has(String(p.id))) return sum // doppione: non contare
     const raw = p.recharge_amount
     const n = typeof raw === 'number' ? raw : parseFloat(String(raw ?? 0))
     return sum + (Number.isFinite(n) ? n : 0)

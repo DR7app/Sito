@@ -266,15 +266,18 @@ export async function getAnnualSpend(userId: string, email?: string | null): Pro
     return sum + (Number.isFinite(n) ? n : 0)
   }, 0)
 
-  // Apply grandfather override if set — absolute value, replaces the
-  // computed figure entirely. Customers in this map are locked to a
-  // specific displayed spend regardless of real activity. Remove an
-  // entry to let the engine start computing their real number again.
+  // Apply grandfather override if set — as a FLOOR, not a replacement: il
+  // cliente non scende mai sotto la cifra "congelata" pre-fix, ma se la sua
+  // spesa reale (noleggi a carta + ricariche a carta negli ultimi 12 mesi)
+  // la supera, la barra AVANZA col valore reale. Prima qui si ritornava
+  // l'override secco -> la barra restava bloccata (es. Runchina fermo a
+  // €3155.20 nonostante ~7k di ricariche).
+  const computed = bookingEur + rechargeEur
   const override = TIER_SPEND_OVERRIDES[userId]
   if (typeof override === 'number') {
-    return override
+    return Math.max(override, computed)
   }
-  return bookingEur + rechargeEur
+  return computed
 }
 
 /** Get full club status for a user */

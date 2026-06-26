@@ -400,7 +400,7 @@ const DR7Club = () => {
           <span className="text-2xl font-bold text-green-400">€{walletBalance.toFixed(2)}</span>
         </div>
         <p className="text-gray-400 text-sm mb-4">
-          Utilizzabile fino al {WALLET_MAX_ORDER_PERCENT}% di un ordine. Non convertibile in denaro. Validità 12 mesi.
+          Utilizzabile fino al {WALLET_MAX_ORDER_PERCENT}% di un ordine. Non convertibile in denaro. Nessuna scadenza.
         </p>
 
         {/* Recent transactions */}

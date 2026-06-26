@@ -3110,8 +3110,8 @@ const DEFAULT_CANCELLAZIONE: CancellazioneCopy = {
           ] },
         { type: 'p-bold', text_it: 'Caratteristiche del credit wallet:', text_en: 'Credit wallet features:' },
         { type: 'ul',
-          items_it: ['validità: 12 (dodici) mesi dalla data di emissione', 'utilizzabile per qualsiasi servizio DR7', 'non cedibile a terzi', 'non convertibile in denaro'],
-          items_en: ['validity: 12 (twelve) months from date of issue', 'usable for any DR7 service', 'not transferable to third parties', 'not convertible into cash'] },
+          items_it: ['nessuna scadenza', 'utilizzabile per qualsiasi servizio DR7', 'non cedibile a terzi', 'non convertibile in denaro'],
+          items_en: ['no expiry', 'usable for any DR7 service', 'not transferable to third parties', 'not convertible into cash'] },
       ],
     },
     {

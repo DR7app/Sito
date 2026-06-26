@@ -533,6 +533,48 @@ exports.handler = async (event) => {
 
         console.log(`Booking ${newBooking.id} created from pending after successful payment`);
 
+        // ─── TOUR (Noleggio Aria/Mare/Soggiorni) ───────────────────────────
+        // Flusso "nessun record finche' non paga": la prenotazione tour nasce
+        // SOLO qui. I posti NON erano bloccati -> ora li marchiamo 'sold' (per id,
+        // da booking_details.seat_ids). Nessun contratto da firmare. Notifica con
+        // i template tour + fattura. Gestione isolata + return: NON deve passare
+        // per il codice noleggio-auto qui sotto (messaggio/contratto sbagliati).
+        {
+          const tourSvc = (newBooking.service_type || '').toLowerCase();
+          const isTourBooking = tourSvc === 'heli_rental' || tourSvc === 'boat_rental' || tourSvc === 'stay_rental';
+          if (isTourBooking) {
+            const seatIds = (newBooking.booking_details && newBooking.booking_details.seat_ids) || [];
+            if (Array.isArray(seatIds) && seatIds.length) {
+              try {
+                await supabase.from('noleggio_tour_seats')
+                  .update({ status: 'sold', hold_expires_at: null, booking_id: newBooking.id, customer_name: newBooking.customer_name || null, customer_phone: newBooking.customer_phone || null })
+                  .in('id', seatIds).eq('status', 'available');
+              } catch (seatErr) {
+                console.error('[nexi-callback] Tour seat sold update failed:', seatErr);
+              }
+            }
+            const tourSiteUrl = process.env.URL || 'https://dr7.app';
+            const notifyTour = async (body) => {
+              try {
+                await fetch(`${tourSiteUrl}/.netlify/functions/send-whatsapp-notification`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+                });
+              } catch (e) { console.error('[nexi-callback] Tour WhatsApp failed (non-fatal):', e); }
+            };
+            await notifyTour({ booking: newBooking });                                        // admin
+            if (newBooking.customer_phone) await notifyTour({ booking: newBooking, customPhone: newBooking.customer_phone }); // cliente
+            try {
+              const tourAdminUrl = process.env.ADMIN_URL || 'https://platform.dr7ai.com';
+              await fetch(`${tourAdminUrl}/.netlify/functions/generate-invoice-from-booking`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId: newBooking.id, includeIVA: true }),
+              });
+            } catch (invErr) {
+              console.error('[nexi-callback] Tour invoice failed (non-fatal):', invErr);
+            }
+            return { statusCode: 200, body: 'OK' }; // tour completato: niente contratto/codice auto
+          }
+        }
+
         // Fidelity Card: car wash bought online (Nexi pay-by-link / card) earns
         // 1 punto per €. In this flow the booking only exists AFTER payment, so
         // the website's client-side award call (which fires at booking creation

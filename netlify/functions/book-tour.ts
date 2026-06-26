@@ -108,18 +108,15 @@ export const handler = async (event: any) => {
     // manda conferma/fattura. Stesso schema del noleggio auto (CarBookingWizard).
     const nexiOrderId = `DR7${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // Prenotazione. Wallet: nasce gia' pagata (payment_status succeeded,
-    // payment_method credit_wallet) come per il lavaggio pagato a credito; carta
-    // Nexi: pending finche' nexi-callback non conferma il pagamento.
-    const { data: booking, error: bErr } = await supabase.from('bookings').insert({
+    // Dati comuni della prenotazione. seat_ids serve a nexi-callback per marcare
+    // i posti 'sold' dopo il pagamento (flusso carta: la prenotazione nasce SOLO
+    // a pagamento confermato).
+    const commonBookingData: Record<string, unknown> = {
       service_type: tour?.service_type || 'heli_rental',
       vehicle_name: tour?.name || 'Tour Elicottero',
       pickup_date: pickupISO,
       dropoff_date: pickupISO,
       price_total: totalCents,
-      status: isWallet ? 'confirmed' : 'pending',
-      payment_status: isWallet ? 'succeeded' : 'pending',
-      payment_method: isWallet ? 'credit_wallet' : null,
       // Cliente loggato: collega l'account (punti, "Le mie prenotazioni", ecc.).
       user_id: userId || null,
       nexi_order_id: nexiOrderId,
@@ -130,14 +127,22 @@ export const handler = async (event: any) => {
       guest_name: customer.name,
       guest_email: customer.email || null,
       guest_phone: customer.phone || null,
-      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, nexi_order_id: nexiOrderId },
-      created_at: new Date().toISOString(),
-    }).select('id').single();
-    if (bErr || !booking) {
-      return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Errore creazione prenotazione: ' + (bErr?.message || '') }) };
-    }
+      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, seat_ids: seatIds, nexi_order_id: nexiOrderId },
+    };
 
     if (isWallet) {
+      // --- FLUSSO WALLET: pagamento immediato col credito -> la prenotazione
+      // nasce gia' confermata/pagata. ---
+      const { data: booking, error: bErr } = await supabase.from('bookings').insert({
+        ...commonBookingData,
+        status: 'confirmed',
+        payment_status: 'succeeded',
+        payment_method: 'credit_wallet',
+        created_at: new Date().toISOString(),
+      }).select('id').single();
+      if (bErr || !booking) {
+        return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Errore creazione prenotazione: ' + (bErr?.message || '') }) };
+      }
       // --- FLUSSO WALLET: addebita PRIMA, poi marca i posti venduti ---
       // 1) Addebito atomico (RPC deduct_credits lavora in EURO, FOR UPDATE: niente
       //    double-spend). reference_id = bookingId (UUID).
@@ -224,29 +229,22 @@ export const handler = async (event: any) => {
       };
     }
 
-    // --- FLUSSO CARTA (Nexi): HOLD temporaneo (NON 'sold') SOLO se ancora ---
-    // available (anti race). Il posto diventa 'sold' SOLO a pagamento confermato
-    // (nexi-callback). Se il cliente non paga, l'hold scade e il posto torna
-    // libero: dal sito non si riserva mai un posto "da saldare". Scadenza
-    // allineata al link Nexi (1h).
-    const holdExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    const { data: updated, error: upErr } = await supabase
-      .from('noleggio_tour_seats')
-      .update({ status: 'held', hold_expires_at: holdExpiresAt, booking_id: booking.id, customer_name: customer.name, customer_phone: customer.phone || null })
-      .in('id', seatIds).eq('status', 'available')
-      .select('id');
-    if (upErr || !updated || updated.length !== seatIds.length) {
-      // Rollback: qualcuno ha preso un posto nel frattempo -> annulla la prenotazione
-      await supabase.from('noleggio_tour_seats').update({ status: 'available', booking_id: null, customer_name: null, customer_phone: null, hold_expires_at: null }).eq('booking_id', booking.id);
-      await supabase.from('bookings').delete().eq('id', booking.id);
-      return { statusCode: 409, headers: corsHeaders, body: JSON.stringify({ error: 'Posti appena occupati da un altro cliente. Riprova con altri posti.' }) };
+    // --- FLUSSO CARTA (Nexi): NESSUN record, NESSUN posto bloccato ---
+    // Se il cliente arriva su Nexi e NON paga, dal sito non resta NIENTE: nessuna
+    // prenotazione "da saldare" e nessun posto riservato. Salviamo i dati in
+    // pending_nexi_bookings; sara' nexi-callback, SOLO a pagamento confermato, a
+    // creare la prenotazione e marcare i posti 'sold' (vedi booking_details.seat_ids).
+    const { error: pendErr } = await supabase
+      .from('pending_nexi_bookings')
+      .insert({ nexi_order_id: nexiOrderId, booking_data: commonBookingData });
+    if (pendErr) {
+      return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Errore preparazione pagamento: ' + pendErr.message }) };
     }
 
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify({
-        bookingId: booking.id,
         nexiOrderId,
         amountCents: totalCents,
         amountEuros: totalCents / 100,

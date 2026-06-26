@@ -310,6 +310,25 @@ const PaymentSuccessPage: React.FC = () => {
                         }
                     }
 
+                    // TOUR (Aria/Mare/Soggiorni): la prenotazione viene creata
+                    // ESCLUSIVAMENTE da nexi-callback (che marca i posti 'sold' e
+                    // NON genera contratto). Qui NON la creiamo, per evitare doppioni
+                    // e posti non marcati. Mostriamo successo; se il callback ha gia'
+                    // creato il booking lo recuperiamo, altrimenti arriva a breve.
+                    const pendingSvc = String(pending.booking_data?.service_type || '').toLowerCase();
+                    const isPendingTour = pendingSvc === 'heli_rental' || pendingSvc === 'boat_rental' || pendingSvc === 'stay_rental';
+                    if (isPendingTour) {
+                        setPurchaseType('booking');
+                        const { data: tourBk } = await supabase
+                            .from('bookings').select('*').eq('nexi_order_id', orderId).limit(1);
+                        if (tourBk && tourBk.length > 0) {
+                            const url = await buildBookingWhatsAppUrl(tourBk[0], contact.whatsapp_url);
+                            if (url) setWhatsappUrl(url);
+                        }
+                        setUpdating(false);
+                        return;
+                    }
+
                     // Fallback: old flow — create new booking (for legacy pending records without booking_id)
                     const bookingPayload = {
                         ...pending.booking_data,

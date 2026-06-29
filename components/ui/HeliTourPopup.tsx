@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
-import { useNoleggioCatalog, type NoleggioCatalogItem } from '../../hooks/useNoleggioCatalog';
+import { useNoleggioCatalog, type NoleggioCatalogItem, type TourDuration } from '../../hooks/useNoleggioCatalog';
 import TourBookingModal from './TourBookingModal';
 
 const SESSION_KEY = 'dr7_heli_tour_popup_dismissed';
@@ -33,6 +33,7 @@ const HeliTourPopup: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [booking, setBooking] = useState(false);
   const [authPrompt, setAuthPrompt] = useState(false);
+  const [selDuration, setSelDuration] = useState<TourDuration | null>(null);
 
   // L'elicottero "specifico" = quello con almeno una partenza tour programmata
   // futura (quindi realmente prenotabile online).
@@ -71,7 +72,8 @@ const HeliTourPopup: React.FC = () => {
     try { sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* ignore */ }
   };
 
-  const onPrenota = () => {
+  const onPrenota = (d: TourDuration | null) => {
+    setSelDuration(d);
     if (!user) { setAuthPrompt(true); return; }
     setOpen(false);
     setBooking(true);
@@ -121,22 +123,43 @@ const HeliTourPopup: React.FC = () => {
               )}
 
               <div className="p-5">
-                <div className="flex items-center justify-between gap-2">
-                  {tourItem.price_per_day > 0 ? (
-                    <div className="text-white font-semibold">{eur(tourItem.price_per_day)}<span className="text-xs text-gray-400">/persona</span></div>
-                  ) : (
-                    <div className="text-gray-300 text-sm font-medium">Prezzo su richiesta</div>
-                  )}
-                  {tourItem.capacity != null && (
-                    <div className="text-xs text-gray-400">Fino a {tourItem.capacity} persone</div>
-                  )}
-                </div>
-                <button
-                  onClick={onPrenota}
-                  className="mt-4 w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity"
-                >
-                  Prenota il tour
-                </button>
+                {tourItem.capacity != null && (
+                  <div className="text-xs text-gray-400 mb-3 text-right">Fino a {tourItem.capacity} persone</div>
+                )}
+                {tourItem.tour_durations && tourItem.tour_durations.length > 0 ? (
+                  <div className="space-y-2">
+                    {tourItem.tour_durations.map((d, i) => (
+                      <button
+                        key={i}
+                        onClick={() => onPrenota(d)}
+                        className={`w-full text-left rounded-xl border p-3 transition-colors ${d.best_value ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500'}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-white font-semibold">
+                            {d.label}{d.best_value && <span className="ml-2 text-xs text-yellow-400">★ MIGLIOR VALORE</span>}
+                          </span>
+                          <span className="text-white font-bold">{eur(Math.round(d.price * 100))}<span className="text-xs text-gray-400">/persona</span></span>
+                        </div>
+                        {d.description && <p className="text-xs text-gray-400 mt-1">{d.description}</p>}
+                      </button>
+                    ))}
+                    <p className="text-[11px] text-gray-500 pt-1 text-center">Scegli la durata per prenotare</p>
+                  </div>
+                ) : (
+                  <>
+                    {tourItem.price_per_day > 0 ? (
+                      <div className="text-white font-semibold">{eur(tourItem.price_per_day)}<span className="text-xs text-gray-400">/persona</span></div>
+                    ) : (
+                      <div className="text-gray-300 text-sm font-medium">Prezzo su richiesta</div>
+                    )}
+                    <button
+                      onClick={() => onPrenota(null)}
+                      className="mt-4 w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      Prenota il tour
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -146,7 +169,8 @@ const HeliTourPopup: React.FC = () => {
       {booking && tourItem && (
         <TourBookingModal
           item={tourItem}
-          waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare l'elicottero: ${tourItem.name}.`)}`}
+          selectedDuration={selDuration}
+          waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare l'elicottero: ${tourItem.name}${selDuration ? ` (${selDuration.label})` : ''}.`)}`}
           onClose={() => setBooking(false)}
         />
       )}

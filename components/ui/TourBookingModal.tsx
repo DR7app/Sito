@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 import { getUserCreditBalance } from '../../utils/creditWallet';
-import type { NoleggioCatalogItem } from '../../hooks/useNoleggioCatalog';
+import type { NoleggioCatalogItem, TourDuration } from '../../hooks/useNoleggioCatalog';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -43,6 +43,7 @@ interface Props {
   item: NoleggioCatalogItem;
   waHref: string;          // fallback WhatsApp se non ci sono date
   onClose: () => void;
+  selectedDuration?: TourDuration | null; // durata scelta (prezzo per persona)
 }
 
 const SEAT_BASE = 'w-12 h-12 rounded-lg border text-sm font-semibold flex items-center justify-center transition-colors';
@@ -54,7 +55,7 @@ const HELI_407_SEATS: Record<number, { x: number; y: number }> = {
   4: { x: 40, y: 49 }, 5: { x: 50, y: 49 }, 6: { x: 59, y: 49 },
 };
 
-export default function TourBookingModal({ item, waHref, onClose }: Props) {
+export default function TourBookingModal({ item, waHref, onClose, selectedDuration }: Props) {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState<string>('');
@@ -173,14 +174,18 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
     });
   }
 
+  // Se il cliente ha scelto una DURATA (es. elicottero 20/40/60 min), il prezzo
+  // per persona è quello della durata; altrimenti il prezzo del posto/partenza.
+  const durationSeatCents = selectedDuration ? Math.round(selectedDuration.price * 100) : null;
   const seatPriceCents = (s: Seat) =>
-    s.price_cents != null ? s.price_cents
-      : departure?.price_per_seat_cents != null ? departure.price_per_seat_cents
-        : item.price_per_day;
+    durationSeatCents != null ? durationSeatCents
+      : s.price_cents != null ? s.price_cents
+        : departure?.price_per_seat_cents != null ? departure.price_per_seat_cents
+          : item.price_per_day;
   const totalCents = useMemo(
     () => seats.filter(s => selected.has(s.id)).reduce((sum, s) => sum + seatPriceCents(s), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [seats, selected, departure],
+    [seats, selected, departure, durationSeatCents],
   );
 
   // Validazione comune ai due flussi (carta / wallet). Ritorna il nome
@@ -210,6 +215,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
           departureId,
           seatIds: Array.from(selected),
           paymentMethod: 'credit_wallet',
+          ...(durationSeatCents != null ? { durationPriceCents: durationSeatCents, durationLabel: selectedDuration?.label } : {}),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           userId: (user as any)?.id || null,
           customer: { name: effName, email: cust.email.trim(), phone: cust.phone.trim() },
@@ -236,6 +242,7 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
         body: JSON.stringify({
           departureId,
           seatIds: Array.from(selected),
+          ...(durationSeatCents != null ? { durationPriceCents: durationSeatCents, durationLabel: selectedDuration?.label } : {}),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           userId: (user as any)?.id || null,
           customer: { name: effName, email: cust.email.trim(), phone: cust.phone.trim() },
@@ -274,7 +281,12 @@ export default function TourBookingModal({ item, waHref, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={() => !submitting && onClose()}>
       <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 mb-4">
-          <h3 className="text-xl font-semibold text-white">Prenota: {item.name}</h3>
+          <div>
+            <h3 className="text-xl font-semibold text-white">Prenota: {item.name}</h3>
+            {selectedDuration && (
+              <p className="text-sm text-gray-400 mt-0.5">Volo {selectedDuration.label} — {eur(Math.round(selectedDuration.price * 100))}/persona</p>
+            )}
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
         </div>
 

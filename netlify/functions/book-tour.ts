@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
-    const { departureId, seatIds, customer, userId, paymentMethod } = JSON.parse(event.body || '{}');
+    const { departureId, seatIds, customer, userId, paymentMethod, durationPriceCents, durationLabel } = JSON.parse(event.body || '{}');
     if (!departureId || !Array.isArray(seatIds) || seatIds.length === 0 || !customer?.name) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Dati mancanti (partenza, posti o cliente).' }) };
     }
@@ -89,11 +89,13 @@ export const handler = async (event: any) => {
       return { statusCode: 409, headers: corsHeaders, body: JSON.stringify({ error: 'Alcuni posti non sono più disponibili.', seats: unavailable.map(s => s.seat_label) }) };
     }
 
-    // Prezzo: override posto -> override partenza -> prezzo catalogo
+    // Prezzo: durata scelta (per persona) -> override posto -> override partenza -> prezzo catalogo
+    const durCents = Number.isFinite(durationPriceCents) && durationPriceCents > 0 ? Math.round(durationPriceCents) : null;
     const seatPriceCents = (s: { price_cents: number | null }) =>
-      s.price_cents != null ? s.price_cents
-        : dep.price_per_seat_cents != null ? dep.price_per_seat_cents
-          : (tour?.price_per_day || 0);
+      durCents != null ? durCents
+        : s.price_cents != null ? s.price_cents
+          : dep.price_per_seat_cents != null ? dep.price_per_seat_cents
+            : (tour?.price_per_day || 0);
     const totalCents = seats.reduce((sum, s) => sum + seatPriceCents(s), 0);
     if (totalCents <= 0) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Prezzo posto non impostato: imposta il prezzo nel pannello admin (Tour).' }) };
@@ -127,7 +129,7 @@ export const handler = async (event: any) => {
       guest_name: customer.name,
       guest_email: customer.email || null,
       guest_phone: customer.phone || null,
-      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, seat_ids: seatIds, nexi_order_id: nexiOrderId },
+      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, seat_ids: seatIds, nexi_order_id: nexiOrderId, ...(durationLabel ? { duration_label: String(durationLabel) } : {}) },
     };
 
     if (isWallet) {

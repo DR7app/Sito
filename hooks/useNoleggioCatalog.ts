@@ -9,6 +9,14 @@ import { supabase } from '../supabaseClient';
 
 export type NoleggioServiceType = 'boat_rental' | 'heli_rental' | 'stay_rental';
 
+export interface TourDuration {
+  minutes: number;
+  price: number;          // EUR (intero) per persona
+  label: string;
+  description?: string;
+  best_value?: boolean;
+}
+
 export interface NoleggioCatalogItem {
   id: string;
   service_type: NoleggioServiceType;
@@ -18,6 +26,7 @@ export interface NoleggioCatalogItem {
   capacity: number | null;
   image_url: string | null;
   sort_order: number;
+  tour_durations?: TourDuration[]; // opzioni durata (es. elicottero 20/40/60 min)
 }
 
 interface UseNoleggioCatalogResult {
@@ -39,7 +48,7 @@ export function useNoleggioCatalog(serviceType?: NoleggioServiceType): UseNolegg
       try {
         let q = supabase
           .from('noleggio_catalog')
-          .select('id, service_type, name, description, price_per_day, capacity, image_url, sort_order')
+          .select('id, service_type, name, description, price_per_day, capacity, image_url, sort_order, tour_durations')
           .eq('is_active', true)
           .order('sort_order', { ascending: true })
           .order('name', { ascending: true });

@@ -5183,7 +5183,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             ...(data.codice_fiscale && !prev.codiceFiscale && { codiceFiscale: data.codice_fiscale }),
                             ...(data.indirizzo && !prev.residenza && { residenza: `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}, ${data.codice_postale || ''} ${data.citta_residenza || ''} ${data.provincia_residenza || ''}`.trim() }),
                             ...(data.patente_numero && !prev.licenseNumber && { licenseNumber: data.patente_numero }),
-                            ...(data.patente_rilascio && !prev.licenseIssueDate && { licenseIssueDate: data.patente_rilascio }),
+                            // Anzianità patente: usa la data REALE di conseguimento dal RETRO
+                            // (colonna 10 cat. B). Fallback alla 4a del fronte solo se manca.
+                            ...((data.patente_conseguimento || data.patente_rilascio) && !prev.licenseIssueDate && { licenseIssueDate: data.patente_conseguimento || data.patente_rilascio }),
                           }))
                         }}
                         onError={(err) => console.error('Compila error:', err)}
@@ -5337,7 +5339,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                 ...(data.cognome && !prev.secondDriver.lastName && { lastName: data.cognome }),
                                 ...(data.data_nascita && !prev.secondDriver.birthDate && { birthDate: data.data_nascita }),
                                 ...(data.patente_numero && !prev.secondDriver.licenseNumber && { licenseNumber: data.patente_numero }),
-                                ...(data.patente_rilascio && !prev.secondDriver.licenseIssueDate && { licenseIssueDate: data.patente_rilascio }),
+                                // 2° guidatore: anzianità patente dalla data REALE di conseguimento (retro, col.10 cat.B).
+                                ...((data.patente_conseguimento || data.patente_rilascio) && !prev.secondDriver.licenseIssueDate && { licenseIssueDate: data.patente_conseguimento || data.patente_rilascio }),
                                 ...(data.patente_scadenza && !prev.secondDriver.licenseExpiryDate && { licenseExpiryDate: data.patente_scadenza }),
                                 ...(data.patente_ente && !prev.secondDriver.countryOfIssue && { countryOfIssue: data.patente_ente }),
                               },

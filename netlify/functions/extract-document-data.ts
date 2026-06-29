@@ -15,6 +15,22 @@ Sul RETRO della patente NON c'è il numero patente.
 Se stai guardando il FRONTE, cerca il campo "5." (es: U1234567A).
 Se stai guardando il RETRO, NON estrarre patente_numero.
 
+!!! DATA DI CONSEGUIMENTO — STA SUL RETRO, NON SUL FRONTE !!!
+La data REALE in cui il titolare ha conseguito la patente per la PRIMA volta NON
+è sul fronte. Sul FRONTE il campo "4a" è solo la data di EMISSIONE/RINNOVO della
+tessera: NON usarla mai come data di conseguimento.
+Sul RETRO c'è una TABELLA delle categorie:
+- colonna 9  = categoria (A1, A, B, BE, C, ...)
+- colonna 10 = DATA DI CONSEGUIMENTO di quella categoria (di solito DD.MM.YY)
+- colonna 11 = scadenza di quella categoria
+Estrai quindi:
+- "patente_conseguimento" = la data nella COLONNA 10 della categoria "B" (auto).
+  Se la categoria B non c'è, usa la data PIÙ VECCHIA fra tutte le categorie.
+  Converti SEMPRE in formato YYYY-MM-DD.
+- "patente_tipo" = elenco delle categorie possedute (colonna 9), es. "A1, B".
+- "patente_rilascio" = la data "4a" del FRONTE (emissione tessera), SOLO quella.
+NON confondere patente_conseguimento (retro, col.10) con patente_rilascio (fronte 4a).
+
 REGOLA FONDAMENTALE: Trascrivi ESATTAMENTE quello che leggi. NON inventare, NON aggiungere caratteri.
 
 === FORMATI ESATTI ===
@@ -36,8 +52,9 @@ CODICE FISCALE: ESATTAMENTE 16 caratteri
   "documento_rilascio": "YYYY-MM-DD", "documento_scadenza": "YYYY-MM-DD",
   "documento_ente": "ente",
   "patente_numero": "dal campo 5 FRONTE",
-  "patente_tipo": "categorie con date sul RETRO",
-  "patente_rilascio": "YYYY-MM-DD", "patente_scadenza": "YYYY-MM-DD",
+  "patente_tipo": "categorie dalla colonna 9 del RETRO (es. A1, B)",
+  "patente_conseguimento": "YYYY-MM-DD (colonna 10 categoria B sul RETRO = data reale di conseguimento)",
+  "patente_rilascio": "YYYY-MM-DD (campo 4a FRONTE = emissione tessera)", "patente_scadenza": "YYYY-MM-DD",
   "patente_ente": "ente",
   "document_type": "carta_identita/patente/passaporto/tessera_sanitaria",
   "confidence": "high/medium/low",

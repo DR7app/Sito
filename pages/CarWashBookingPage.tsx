@@ -69,12 +69,10 @@ const CarWashBookingPage: React.FC = () => {
     return dateStr === getTodayDate();
   };
 
-  // 2026-06-25: LAVAGGI BLOCCATI dal sito fino a lunedì 6 luglio 2026 — primo
-  // slot prenotabile 9:00 del 6/07, poi normale. Forziamo la data minima: il
-  // calendario non permette di scegliere date precedenti e la validazione le
-  // rifiuta. Si auto-disattiva dal 6/07 (quando oggi >= 2026-07-06).
-  const WASH_BLOCK_UNTIL = '2026-07-06';
-  const minDate = getTodayDate() >= WASH_BLOCK_UNTIL ? getTodayDate() : WASH_BLOCK_UNTIL;
+  // 2026-06-30: rimosso il blocco hardcoded "fino al 6/07" — i lavaggi sono
+  // prenotabili DA OGGI (stesso giorno). Eventuali chiusure/blocchi si
+  // gestiscono da Centralina Pro > Automazioni > Blocco prenotazioni lavaggio.
+  const minDate = getTodayDate();
 
   // === HOLIDAY LOGIC ===
   const ITALIAN_HOLIDAYS = [

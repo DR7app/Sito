@@ -289,6 +289,10 @@ const CarWashBookingPage: React.FC = () => {
   // remote value lands (it's the same value the admin starts from).
   const [primeFlexSelected, setPrimeFlexSelected] = useState(false);
   const [PRIME_FLEX_PRICE, setPrimeFlexPrice] = useState<number>(4.90);
+  // Periodi in cui le prenotazioni lavaggio sono BLOCCATE (Centralina Pro >
+  // Automazioni > Blocco prenotazioni lavaggio): le date Dal–Al incluse non
+  // sono prenotabili.
+  const [blockRanges, setBlockRanges] = useState<{ from: string; to: string; message?: string }[]>([]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -304,12 +308,18 @@ const CarWashBookingPage: React.FC = () => {
         const pf = (servizi.prime_flex || {}) as Record<string, unknown>;
         const raw = typeof pf.price === 'number' ? pf.price : Number(pf.price);
         if (Number.isFinite(raw) && raw >= 0) setPrimeFlexPrice(raw);
+        const autom = (cfg.automations || {}) as Record<string, unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ranges = Array.isArray(autom.carwash_block_ranges) ? (autom.carwash_block_ranges as any[]) : [];
+        setBlockRanges(ranges.filter(r => r && r.from && r.to).map(r => ({ from: String(r.from), to: String(r.to), message: r.message ? String(r.message) : undefined })));
       } catch (e) {
         console.warn('[CarWashBookingPage] Prime Flex price fetch failed, using fallback 4.90:', e);
       }
     })();
     return () => { cancelled = true; };
   }, []);
+  // Periodo di blocco che copre la data (o null).
+  const blockedRangeFor = (dateStr: string) => blockRanges.find(r => dateStr >= r.from && dateStr <= r.to) || null;
 
   // Credit wallet state
   const [paymentMethod, setPaymentMethod] = useState<'nexi' | 'credit'>('nexi');
@@ -629,6 +639,19 @@ const CarWashBookingPage: React.FC = () => {
         setFormData(prev => ({ ...prev, appointmentDate: '' }));
         return;
       }
+
+      // Blocco prenotazioni lavaggio per periodo (Centralina Pro > Automazioni)
+      const blk = blockedRangeFor(value);
+      if (blk) {
+        setErrors(prev => ({
+          ...prev,
+          appointmentDate: blk.message || (lang === 'it'
+            ? 'Prenotazioni non disponibili in questa data.'
+            : 'Bookings are not available on this date.')
+        }));
+        setFormData(prev => ({ ...prev, appointmentDate: '' }));
+        return;
+      }
     }
 
     setFormData(prev => ({ ...prev, [name]: newValue }));
@@ -730,9 +753,9 @@ const CarWashBookingPage: React.FC = () => {
   };
 
   const getAvailableTimeSlots = () => {
-    // Blocco lavaggi: nessuno slot per le date PRIMA della data minima (es.
-    // blocco fino al 6/07). Doppia rete oltre al min del calendario.
-    if (formData.appointmentDate && formData.appointmentDate < minDate) return [];
+    // Blocco lavaggi: nessuno slot per date passate (< min) o dentro un periodo
+    // di blocco impostato da Centralina Pro > Automazioni.
+    if (formData.appointmentDate && (formData.appointmentDate < minDate || blockedRangeFor(formData.appointmentDate))) return [];
     return getAllTimeSlotsWithAvailability()
       .filter(slot => slot.available)
       .map(slot => slot.time);
@@ -786,6 +809,9 @@ const CarWashBookingPage: React.FC = () => {
     if (formData.appointmentDate) {
       if (formData.appointmentDate < minDate) {
         newErrors.appointmentDate = lang === 'it' ? 'La data non può essere nel passato. Seleziona da oggi in poi.' : 'Date cannot be in the past. Select from today onwards.';
+      } else {
+        const blk = blockedRangeFor(formData.appointmentDate);
+        if (blk) newErrors.appointmentDate = blk.message || (lang === 'it' ? 'Prenotazioni non disponibili in questa data.' : 'Bookings are not available on this date.');
       }
     }
 

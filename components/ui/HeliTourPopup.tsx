@@ -96,14 +96,20 @@ const HeliTourPopup: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-            onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}
+            // Backdrop = contenitore di scroll a tutto schermo. Su mobile il
+            // pannello (immagine 9:16 + durate) può superare l'altezza utile:
+            // senza scroll qui restava bloccato con la × fuori schermo.
+            className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-black/70 backdrop-blur-sm"
           >
+            <div
+              className="min-h-full flex items-start sm:items-center justify-center p-4"
+              onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}
+            >
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="relative w-full max-w-[340px] bg-black border border-white/[0.12] rounded-2xl overflow-hidden"
+              className="relative w-full max-w-[340px] my-4 bg-black border border-white/[0.12] rounded-2xl overflow-hidden"
             >
               <button
                 type="button"
@@ -117,9 +123,9 @@ const HeliTourPopup: React.FC = () => {
               </button>
 
               {tourItem.image_url ? (
-                <img src={tourItem.image_url} alt={tourItem.name} className="w-full aspect-[9/16] object-cover" />
+                <img src={tourItem.image_url} alt={tourItem.name} className="w-full aspect-[9/16] max-h-[50dvh] object-cover" />
               ) : (
-                <div className="w-full aspect-[9/16] bg-white/5 flex items-center justify-center text-gray-600">DR7</div>
+                <div className="w-full aspect-[9/16] max-h-[50dvh] bg-white/5 flex items-center justify-center text-gray-600">DR7</div>
               )}
 
               <div className="p-5">
@@ -162,6 +168,7 @@ const HeliTourPopup: React.FC = () => {
                 )}
               </div>
             </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

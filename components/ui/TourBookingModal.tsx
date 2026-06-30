@@ -278,8 +278,9 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={() => !submitting && onClose()}>
-      <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-black/70" onClick={() => !submitting && onClose()}>
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4">
+      <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-lg p-6 my-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h3 className="text-xl font-semibold text-white">Prenota: {item.name}</h3>
@@ -454,6 +455,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
             })()}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

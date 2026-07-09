@@ -629,9 +629,17 @@ export function buildWebsiteConfigOverlayFromPro(snapshot: ProCentralinaSnapshot
     }
     const s = num(k.sforo, 0)
     if (s > 0) sforoByCategory[k.id] = s
-    unlimitedKmByCategory[k.id] = {
-      TIER_1: unlimitedFor(k, 'TIER_1'),
-      TIER_2: unlimitedFor(k, 'TIER_2'),
+    // 2026-07-09: quando il toggle Km Illimitati e' OFF per la categoria
+    // (unlimitedKm_enabled === false) NON creiamo l'entry, cosi' il wizard
+    // NASCONDE del tutto l'opzione (nel render perDay === null → return null).
+    // Prima impostavamo sempre { TIER_1: 0, TIER_2: 0 } e il wizard la mostrava
+    // come "Incluso"/gratis per TUTTE le auto invece di rimuoverla. Entry
+    // presente con 0 = toggle ON gratis (Incluso); entry assente = toggle OFF.
+    if (k.unlimitedKm_enabled !== false) {
+      unlimitedKmByCategory[k.id] = {
+        TIER_1: unlimitedFor(k, 'TIER_1'),
+        TIER_2: unlimitedFor(k, 'TIER_2'),
+      }
     }
     const pkgs = (k.pacchetti || [])
       .filter(p => p && p.is_active === true)

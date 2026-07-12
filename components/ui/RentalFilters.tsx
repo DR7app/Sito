@@ -62,8 +62,11 @@ export default function RentalFilters({
       </select>
 
       {/* Category filter (only show if multiple categories) */}
+      {/* 2026-07-12: flex-wrap + max-w-full così i chip categoria vanno a capo
+          invece di uscire fuori schermo su mobile (prima era 'flex gap-2' senza
+          wrap → Hypercar/Urban tagliati sul bordo destro). */}
       {categories.length > 1 && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 max-w-full">
           {categories.map(cat => (
             <button
               key={cat}

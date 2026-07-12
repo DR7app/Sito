@@ -420,6 +420,20 @@ interface SearchBarState {
   pickupLocLabel: string;
   returnLoc: string;
   returnLocLabel: string;
+  // 2026-07-12: indirizzo + km consegna/ritiro a domicilio (Consegna = ritiro
+  // auto al cliente; Ritiro = riconsegna auto). Km × €/km = costo consegna.
+  deliveryPickupVia?: string;
+  deliveryPickupNumero?: string;
+  deliveryPickupCap?: string;
+  deliveryPickupCitta?: string;
+  deliveryPickupProvincia?: string;
+  deliveryPickupKm?: number;
+  deliveryReturnVia?: string;
+  deliveryReturnNumero?: string;
+  deliveryReturnCap?: string;
+  deliveryReturnCitta?: string;
+  deliveryReturnProvincia?: string;
+  deliveryReturnKm?: number;
 }
 
 interface ModificaBarProps {
@@ -580,6 +594,42 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
               </div>
             )}
 
+            {/* 2026-07-12: se il luogo è "Consegna a domicilio" l'indirizzo + km
+                si inseriscono QUI (il prezzo consegna è km × €/km). I dati sono
+                portati nel wizard, quindi il cliente non li reinserisce. */}
+            {draft.pickupLoc === 'home_delivery' && (
+              <div className="mt-3 p-3 rounded-lg border border-gray-700 bg-gray-800/40 space-y-2">
+                <p className="text-xs text-amber-400 font-semibold">Indirizzo consegna auto (a domicilio)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input className={inputClass} placeholder="Via *" value={draft.deliveryPickupVia || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupVia: e.target.value }))} />
+                  <input className={inputClass} placeholder="N. civico *" value={draft.deliveryPickupNumero || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupNumero: e.target.value }))} />
+                  <input className={inputClass} placeholder="CAP *" value={draft.deliveryPickupCap || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupCap: e.target.value }))} />
+                  <input className={inputClass} placeholder="Città *" value={draft.deliveryPickupCitta || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupCitta: e.target.value }))} />
+                  <input className={inputClass} placeholder="Provincia *" value={draft.deliveryPickupProvincia || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupProvincia: e.target.value }))} />
+                  <input className={inputClass} type="number" min={1} placeholder="Km dalla sede *" value={draft.deliveryPickupKm ?? ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupKm: e.target.value ? parseInt(e.target.value) : undefined }))} />
+                </div>
+                {(draft.deliveryPickupKm ?? 0) > 0 && (
+                  <p className="text-xs text-white">Costo consegna: {draft.deliveryPickupKm} km — la tariffa €/km DR7 viene applicata al passo successivo.</p>
+                )}
+              </div>
+            )}
+            {draft.returnLoc === 'home_delivery' && (
+              <div className="mt-3 p-3 rounded-lg border border-gray-700 bg-gray-800/40 space-y-2">
+                <p className="text-xs text-amber-400 font-semibold">Indirizzo ritiro/riconsegna auto (a domicilio)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input className={inputClass} placeholder="Via *" value={draft.deliveryReturnVia || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnVia: e.target.value }))} />
+                  <input className={inputClass} placeholder="N. civico *" value={draft.deliveryReturnNumero || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnNumero: e.target.value }))} />
+                  <input className={inputClass} placeholder="CAP *" value={draft.deliveryReturnCap || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnCap: e.target.value }))} />
+                  <input className={inputClass} placeholder="Città *" value={draft.deliveryReturnCitta || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnCitta: e.target.value }))} />
+                  <input className={inputClass} placeholder="Provincia *" value={draft.deliveryReturnProvincia || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnProvincia: e.target.value }))} />
+                  <input className={inputClass} type="number" min={1} placeholder="Km dalla sede *" value={draft.deliveryReturnKm ?? ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnKm: e.target.value ? parseInt(e.target.value) : undefined }))} />
+                </div>
+                {(draft.deliveryReturnKm ?? 0) > 0 && (
+                  <p className="text-xs text-white">Costo ritiro: {draft.deliveryReturnKm} km — la tariffa €/km DR7 viene applicata al passo successivo.</p>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSave}
@@ -719,6 +769,20 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
       returnTime: barState.returnTime,
       pickupLocation: resolveLocationId(barState.pickupLoc),
       returnLocation: resolveLocationId(barState.returnLoc),
+      // 2026-07-12: porta l'indirizzo + km consegna/ritiro inseriti nella barra
+      // di modifica cosi' il wizard li prefilla e calcola subito il prezzo km×€.
+      deliveryPickupVia: barState.deliveryPickupVia,
+      deliveryPickupNumero: barState.deliveryPickupNumero,
+      deliveryPickupCap: barState.deliveryPickupCap,
+      deliveryPickupCitta: barState.deliveryPickupCitta,
+      deliveryPickupProvincia: barState.deliveryPickupProvincia,
+      deliveryPickupKm: barState.deliveryPickupKm,
+      deliveryReturnVia: barState.deliveryReturnVia,
+      deliveryReturnNumero: barState.deliveryReturnNumero,
+      deliveryReturnCap: barState.deliveryReturnCap,
+      deliveryReturnCitta: barState.deliveryReturnCitta,
+      deliveryReturnProvincia: barState.deliveryReturnProvincia,
+      deliveryReturnKm: barState.deliveryReturnKm,
     });
   }, [barState, hasSearchParams, setInitialSearchDates]);
 

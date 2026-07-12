@@ -503,6 +503,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       ...(initialSearchDates.dr7Flex ? { dr7Flex: true } : {}),
       ...(initialSearchDates.secondDriver ? { addSecondDriver: true } : {}),
       ...(initialSearchDates.experienceServices ? { selectedExperiences: initialSearchDates.experienceServices } : {}),
+      // 2026-07-12: indirizzo + km consegna/ritiro inseriti nella barra di
+      // ricerca (Consegna a domicilio). Prefilla i campi del wizard cosi' il
+      // costo consegna (km × €/km) è già calcolato senza reinserirli.
+      ...(initialSearchDates.deliveryPickupVia !== undefined ? { deliveryPickupVia: initialSearchDates.deliveryPickupVia } : {}),
+      ...(initialSearchDates.deliveryPickupNumero !== undefined ? { deliveryPickupNumero: initialSearchDates.deliveryPickupNumero } : {}),
+      ...(initialSearchDates.deliveryPickupCap !== undefined ? { deliveryPickupCap: initialSearchDates.deliveryPickupCap } : {}),
+      ...(initialSearchDates.deliveryPickupCitta !== undefined ? { deliveryPickupCitta: initialSearchDates.deliveryPickupCitta } : {}),
+      ...(initialSearchDates.deliveryPickupProvincia !== undefined ? { deliveryPickupProvincia: initialSearchDates.deliveryPickupProvincia } : {}),
+      ...(initialSearchDates.deliveryPickupKm ? { deliveryPickupKm: initialSearchDates.deliveryPickupKm } : {}),
+      ...(initialSearchDates.deliveryReturnVia !== undefined ? { deliveryReturnVia: initialSearchDates.deliveryReturnVia } : {}),
+      ...(initialSearchDates.deliveryReturnNumero !== undefined ? { deliveryReturnNumero: initialSearchDates.deliveryReturnNumero } : {}),
+      ...(initialSearchDates.deliveryReturnCap !== undefined ? { deliveryReturnCap: initialSearchDates.deliveryReturnCap } : {}),
+      ...(initialSearchDates.deliveryReturnCitta !== undefined ? { deliveryReturnCitta: initialSearchDates.deliveryReturnCitta } : {}),
+      ...(initialSearchDates.deliveryReturnProvincia !== undefined ? { deliveryReturnProvincia: initialSearchDates.deliveryReturnProvincia } : {}),
+      ...(initialSearchDates.deliveryReturnKm ? { deliveryReturnKm: initialSearchDates.deliveryReturnKm } : {}),
     }));
     // Set noCauzioneRequested if preventivo was a no_deposit request
     if (initialSearchDates.depositOption === 'no_deposit') {

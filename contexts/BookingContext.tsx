@@ -40,6 +40,21 @@ export interface SearchDates {
   kmPackages?: Record<string, number>;
   preventivoId?: string;
   preventivoTotal?: number;
+  // 2026-07-12: indirizzo consegna/ritiro a domicilio inserito già nella barra
+  // di ricerca (modifica). Il prezzo consegna e' km × €/km e viene calcolato
+  // nel wizard; questi campi lo prefillano cosi' il cliente non li reinserisce.
+  deliveryPickupVia?: string;
+  deliveryPickupNumero?: string;
+  deliveryPickupCap?: string;
+  deliveryPickupCitta?: string;
+  deliveryPickupProvincia?: string;
+  deliveryPickupKm?: number;
+  deliveryReturnVia?: string;
+  deliveryReturnNumero?: string;
+  deliveryReturnCap?: string;
+  deliveryReturnCitta?: string;
+  deliveryReturnProvincia?: string;
+  deliveryReturnKm?: number;
   // 2026-05-21: when true, wizard is in EDIT mode (customer clicked
   // "Modifica" on MyPreventivi). On save, the wizard sends the preventivoId
   // to the backend which UPDATES the row instead of creating a new one.

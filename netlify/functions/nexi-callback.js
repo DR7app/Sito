@@ -948,57 +948,42 @@ exports.handler = async (event) => {
         }
 
         // Add credits via atomic RPC (prevents race conditions and double-crediting)
+        // 2026-07-13 FIX: prima l'INTERO received_amount (ricarica + bonus
+        // pacchetto) veniva accreditato come 'wallet_purchase' = PRINCIPALE, quindi
+        // il bonus finiva nel principale e maturava interessi (bug Runchina).
+        // Ora SPLIT: importo pagato con carta = principale; bonus pacchetto =
+        // 'wallet_package_bonus' (escluso dagli interessi, come cashback/omaggi).
         if (purchase.user_id && purchase.received_amount) {
-          const creditDesc = `Ricarica ${purchase.package_name} - Bonus ${purchase.bonus_percentage}%`;
-          const { data: rpcResult, error: rpcError } = await supabase.rpc('add_credits', {
-            p_user_id: purchase.user_id,
-            p_amount: parseFloat(purchase.received_amount),
-            p_description: creditDesc,
-            p_reference_id: purchase.id,
-            p_reference_type: 'wallet_purchase'
-          });
+          const rechargeEur = parseFloat(purchase.recharge_amount || purchase.received_amount);
+          const receivedEur = parseFloat(purchase.received_amount);
+          const bonusEur = Math.round((receivedEur - rechargeEur) * 100) / 100;
 
-          if (rpcError) {
-            console.error('Error adding credits via RPC:', rpcError);
-            // Fallback: insert directly if RPC fails (e.g. overload ambiguity)
-            console.log('Attempting direct insert fallback...');
+          const creditWallet = async (amount, description, refType) => {
+            if (!(amount > 0)) return;
+            const { error: rpcError } = await supabase.rpc('add_credits', {
+              p_user_id: purchase.user_id,
+              p_amount: amount,
+              p_description: description,
+              p_reference_id: purchase.id,
+              p_reference_type: refType,
+            });
+            if (!rpcError) { console.log(`Credits via RPC: €${amount} (${refType}) user ${purchase.user_id}`); return; }
+            console.error('add_credits RPC failed, fallback:', rpcError);
             try {
-              const { data: balanceRow } = await supabase
-                .from('user_credit_balance')
-                .select('balance')
-                .eq('user_id', purchase.user_id)
-                .single();
-
+              const { data: balanceRow } = await supabase.from('user_credit_balance').select('balance').eq('user_id', purchase.user_id).single();
               const currentBalance = balanceRow?.balance ? parseFloat(balanceRow.balance) : 0;
-              const newBalance = currentBalance + parseFloat(purchase.received_amount);
+              const newBalance = Math.round((currentBalance + amount) * 100) / 100;
+              await supabase.from('user_credit_balance').upsert({ user_id: purchase.user_id, balance: newBalance, last_updated: new Date().toISOString() }, { onConflict: 'user_id' });
+              await supabase.from('credit_transactions').insert({ user_id: purchase.user_id, transaction_type: 'credit', amount, balance_after: newBalance, description, reference_id: purchase.id, reference_type: refType });
+              console.log(`Credits via fallback: €${amount} (${refType}) new balance €${newBalance}`);
+            } catch (fallbackErr) { console.error('Fallback credit insert failed:', fallbackErr); }
+          };
 
-              await supabase
-                .from('user_credit_balance')
-                .upsert({
-                  user_id: purchase.user_id,
-                  balance: newBalance,
-                  last_updated: new Date().toISOString()
-                }, { onConflict: 'user_id' });
-
-              await supabase
-                .from('credit_transactions')
-                .insert({
-                  user_id: purchase.user_id,
-                  transaction_type: 'credit',
-                  amount: parseFloat(purchase.received_amount),
-                  balance_after: newBalance,
-                  description: creditDesc,
-                  reference_id: purchase.id,
-                  reference_type: 'wallet_purchase'
-                });
-
-              console.log(`Credits added via fallback: €${purchase.received_amount} (new balance: €${newBalance})`);
-            } catch (fallbackErr) {
-              console.error('Fallback credit insert also failed:', fallbackErr);
-            }
-          } else {
-            const result = rpcResult?.[0] || rpcResult;
-            console.log(`Credits added via RPC: €${purchase.received_amount} to user ${purchase.user_id} (new balance: €${result?.new_balance})`);
+          // PRINCIPALE = importo pagato con carta.
+          await creditWallet(rechargeEur, `Ricarica ${purchase.package_name} (€${rechargeEur.toFixed(2)})`, 'wallet_purchase');
+          // BONUS pacchetto = omaggio → NON principale (niente interessi).
+          if (bonusEur > 0) {
+            await creditWallet(bonusEur, `Bonus ricarica ${purchase.bonus_percentage}% (€${bonusEur.toFixed(2)})`, 'wallet_package_bonus');
           }
         }
 

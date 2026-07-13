@@ -100,7 +100,10 @@ async function getAnnualSpendEur(supabase, userId) {
     if (!pm.includes('nexi') && !pm.includes('card') && !pm.includes('stripe')) continue;
     const status = String(b.status || '').toLowerCase();
     if (status === 'cancelled' || status === 'annullata') continue;
-    const amount = Number(b.price_total != null ? b.price_total : (b.total_amount != null ? b.total_amount : 0));
+    // 2026-07-13 FIX: bookings.price_total è in CENTESIMI. Prima veniva sommato
+    // come euro → spesa annua gonfiata 100x → tutti finivano nel tier più alto
+    // (4%) invece del loro reale (es. Runchina 3% -> 4%). Ora /100.
+    const amount = Number(b.price_total != null ? b.price_total / 100 : (b.total_amount != null ? b.total_amount : 0));
     if (amount > 0) totalEur += amount;
   }
 

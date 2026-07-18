@@ -55,11 +55,14 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     let openapiToken = OPENAPI_TOKEN;
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
         try {
+            // Tabella service_secrets: leggibile SOLO con service_role (RLS blocca
+            // anon), quindi il token NON e' esposto al browser. Il config vince
+            // sull'env stale (causa 502 "Wrong Token").
             const sbTok = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-            const { data: cfgRow } = await sbTok.from('centralina_pro_config').select('config').eq('id', 'main').maybeSingle();
-            const cfgTok = (cfgRow?.config as { openapi_automotive_token?: string } | null)?.openapi_automotive_token;
+            const { data: secRow } = await sbTok.from('service_secrets').select('value').eq('key', 'openapi_automotive_token').maybeSingle();
+            const cfgTok = (secRow as { value?: string } | null)?.value;
             if (cfgTok && typeof cfgTok === 'string' && cfgTok.trim()) openapiToken = cfgTok.trim();
-        } catch (e: any) { console.warn('[lookupTarga] config token lookup failed, uso env:', e?.message); }
+        } catch (e: any) { console.warn('[lookupTarga] secret token lookup failed, uso env:', e?.message); }
     }
     if (!openapiToken) {
         console.error('[lookupTarga] token OpenAPI non configurato (ne config ne env)');

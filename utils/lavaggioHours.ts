@@ -105,9 +105,10 @@ function getApplicableBlocks(date: Date): LavaggioBlock[] {
   const ds = ymd(date);
   const dow = date.getDay();
   return (CONFIG.blocks || []).filter((b) =>
-    !!b && b.active !== false
-    && (!b.from || ds >= b.from)
-    && (!b.to || ds <= b.to)
+    // SICUREZZA: un blocco senza periodo (from+to) e' INCOMPLETO e viene
+    // IGNORATO (senza questo un blocco vuoto bloccava ogni giorno intero).
+    !!b && b.active !== false && !!b.from && !!b.to
+    && ds >= b.from && ds <= b.to
     && (!Array.isArray(b.weekdays) || b.weekdays.length === 0 || b.weekdays.includes(dow)),
   );
 }

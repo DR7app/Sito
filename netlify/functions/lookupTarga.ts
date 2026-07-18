@@ -107,11 +107,17 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         }
 
         if (!response.ok) {
-            console.error('[lookupTarga] API error:', response.status, response.statusText);
+            const errBody = await response.text().catch(() => '');
+            console.error('[lookupTarga] API error:', response.status, response.statusText, errBody.slice(0, 300));
+            // Messaggio specifico per capire subito la causa reale.
+            let msg = 'Errore nella ricerca. Riprova tra qualche istante.';
+            if (response.status === 401 || response.status === 403) msg = 'Servizio targa non autorizzato (token non valido). Contattaci.';
+            else if (response.status === 402) msg = 'Servizio targa: credito esaurito.';
+            else if (response.status === 429) msg = 'Troppe ricerche targa: riprova tra poco.';
             return {
                 statusCode: 502,
                 headers,
-                body: JSON.stringify({ error: 'Errore nella ricerca. Riprova tra qualche istante.' }),
+                body: JSON.stringify({ error: msg, openapi_status: response.status }),
             };
         }
 

@@ -47,8 +47,22 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         };
     }
 
-    if (!OPENAPI_TOKEN) {
-        console.error('[lookupTarga] OPENAPI_AUTOMOTIVE_TOKEN not configured');
+    // 2026-07-18: risolvi il token PRIMA dal config condiviso
+    // (centralina_pro_config.config.openapi_automotive_token) e POI da env.
+    // Cosi' si aggiorna il token con una sola SQL, senza toccare Netlify, e vale
+    // sia per il sito che per l'admin (stessa tabella). Il config VINCE sull'env
+    // stale/sbagliato.
+    let openapiToken = OPENAPI_TOKEN;
+    if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+        try {
+            const sbTok = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+            const { data: cfgRow } = await sbTok.from('centralina_pro_config').select('config').eq('id', 'main').maybeSingle();
+            const cfgTok = (cfgRow?.config as { openapi_automotive_token?: string } | null)?.openapi_automotive_token;
+            if (cfgTok && typeof cfgTok === 'string' && cfgTok.trim()) openapiToken = cfgTok.trim();
+        } catch (e: any) { console.warn('[lookupTarga] config token lookup failed, uso env:', e?.message); }
+    }
+    if (!openapiToken) {
+        console.error('[lookupTarga] token OpenAPI non configurato (ne config ne env)');
         return {
             statusCode: 500,
             headers,
@@ -95,7 +109,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         console.log('[lookupTarga] Looking up plate:', plate);
 
         const response = await fetch(`https://automotive.openapi.com/IT-car/${plate}`, {
-            headers: { 'Authorization': `Bearer ${OPENAPI_TOKEN}` },
+            headers: { 'Authorization': `Bearer ${openapiToken}` },
         });
 
         if (response.status === 404) {

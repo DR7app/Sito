@@ -50,7 +50,7 @@ exports.handler = async (event) => {
         const admin = createClient(process.env.SUPABASE_URL, serviceKey);
 
         // Delete ALL user data from all tables
-        try { await admin.from('bookings').delete().eq('userId', userId); } catch(e) { console.error('Error deleting from bookings:', e?.message); }
+        try { await admin.from('bookings').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from bookings:', e?.message); }
         try { await admin.from('credit_transactions').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from credit_transactions:', e?.message); }
         try { await admin.from('membership_purchases').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from membership_purchases:', e?.message); }
         try { await admin.from('customers_extended').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from customers_extended:', e?.message); }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../supabaseClient';
 
 const SecuritySettings = () => {
     const { t } = useTranslation();
@@ -62,34 +63,30 @@ const SecuritySettings = () => {
         setError('');
 
         try {
-            // Get userId from multiple sources
-            let userId = user?.id;
+            // Prendi la sessione corrente: la funzione delete-account richiede un
+            // token valido (Authorization). Senza, rispondeva "Authentication
+            // required". Usiamo access_token + user id dalla sessione Supabase.
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token || '';
+            const userId = user?.id || session?.user?.id;
 
-            // Fallback: get from localStorage
-            if (!userId) {
-                try {
-                    const stored = localStorage.getItem(`sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] || 'app'}-auth-token`);
-                    if (stored) {
-                        const parsed = JSON.parse(stored);
-                        userId = parsed?.user?.id;
-                    }
-                } catch(e) {}
-            }
-
-            if (!userId) {
-                throw new Error('Cannot find user ID. Please log out and log in again.');
+            if (!token || !userId) {
+                throw new Error(t({ en: 'Session expired. Please log out and log in again.', it: 'Sessione scaduta. Esci e accedi di nuovo.' }));
             }
 
             const response = await fetch('/.netlify/functions/delete-account', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ userId, token })
             });
 
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                throw new Error(result.error || 'Delete failed');
+                throw new Error(result.error || t({ en: 'Delete failed', it: 'Eliminazione non riuscita' }));
             }
 
             setDeleteSuccess(true);
@@ -154,15 +151,15 @@ const SecuritySettings = () => {
 
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg mt-6">
                 <div className="p-4 md:p-6 border-b border-gray-800">
-                    <h2 className="text-xl font-bold text-white">Delete Account</h2>
-                    <p className="text-sm text-gray-400 mt-1">Permanently remove your account and all data</p>
+                    <h2 className="text-xl font-bold text-white">{t({ en: 'Delete Account', it: 'Elimina Account' })}</h2>
+                    <p className="text-sm text-gray-400 mt-1">{t({ en: 'Permanently remove your account and all data', it: 'Rimuovi definitivamente il tuo account e tutti i dati' })}</p>
                 </div>
                 <div className="p-4 md:p-6">
                     <button
                         onClick={() => setShowDeleteModal(true)}
                         className="px-5 py-2.5 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-colors text-sm"
                     >
-                        Delete My Account
+                        {t({ en: 'Delete My Account', it: 'Elimina il mio Account' })}
                     </button>
                 </div>
             </div>
@@ -172,13 +169,13 @@ const SecuritySettings = () => {
                     <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-4 md:p-6">
                         {deleteSuccess ? (
                             <>
-                                <h3 className="text-2xl font-bold text-green-400 mb-4">Account Deleted</h3>
-                                <p className="text-gray-300">Redirecting...</p>
+                                <h3 className="text-2xl font-bold text-green-400 mb-4">{t({ en: 'Account Deleted', it: 'Account Eliminato' })}</h3>
+                                <p className="text-gray-300">{t({ en: 'Redirecting...', it: 'Reindirizzamento...' })}</p>
                             </>
                         ) : (
                             <>
-                                <h3 className="text-2xl font-bold text-white mb-4">Delete Account?</h3>
-                                <p className="text-gray-300 mb-6">This will permanently delete your account and all data.</p>
+                                <h3 className="text-2xl font-bold text-white mb-4">{t({ en: 'Delete Account?', it: 'Eliminare l\'account?' })}</h3>
+                                <p className="text-gray-300 mb-6">{t({ en: 'This will permanently delete your account and all data.', it: 'Questa azione eliminerà definitivamente il tuo account e tutti i dati.' })}</p>
                                 {error && <p className="text-sm text-red-400 bg-red-900/20 p-3 rounded-md mb-4">{error}</p>}
                                 <div className="flex gap-3">
                                     <button
@@ -186,14 +183,14 @@ const SecuritySettings = () => {
                                         disabled={isDeleting}
                                         className="flex-1 px-5 py-2.5 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors text-sm disabled:opacity-50"
                                     >
-                                        Cancel
+                                        {t({ en: 'Cancel', it: 'Annulla' })}
                                     </button>
                                     <button
                                         onClick={handleDeleteAccount}
                                         disabled={isDeleting}
                                         className="flex-1 px-5 py-2.5 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                                     >
-                                        {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                                        {isDeleting ? t({ en: 'Deleting...', it: 'Eliminazione...' }) : t({ en: 'Yes, Delete', it: 'Sì, elimina' })}
                                     </button>
                                 </div>
                             </>

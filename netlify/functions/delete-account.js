@@ -49,15 +49,21 @@ exports.handler = async (event) => {
 
         const admin = createClient(process.env.SUPABASE_URL, serviceKey);
 
-        // Delete ALL user data from all tables
-        try { await admin.from('bookings').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from bookings:', e?.message); }
-        try { await admin.from('credit_transactions').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from credit_transactions:', e?.message); }
-        try { await admin.from('membership_purchases').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from membership_purchases:', e?.message); }
-        try { await admin.from('customers_extended').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from customers_extended:', e?.message); }
-        try { await admin.from('user_credit_balance').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from user_credit_balance:', e?.message); }
-        try { await admin.from('user_documents').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from user_documents:', e?.message); }
-        try { await admin.from('aviation_quotes').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from aviation_quotes:', e?.message); }
-        try { await admin.from('credit_wallet_purchases').delete().eq('user_id', userId); } catch(e) { console.error('Error deleting from credit_wallet_purchases:', e?.message); }
+        // Cancella i dati collegati all'utente in TUTTE le tabelle che referenziano
+        // auth.users. Se ne manca una, la deleteUser hard fallirebbe per vincolo
+        // FK ("Database error deleting user"): per questo sotto c'e' il fallback
+        // soft-delete. Best-effort: un errore su una tabella non blocca il resto.
+        const userTables = [
+            'bookings', 'credit_transactions', 'membership_purchases',
+            'customers_extended', 'user_credit_balance', 'user_documents',
+            'aviation_quotes', 'credit_wallet_purchases',
+            'commercial_operation_tickets', 'user_consents',
+            'dr7_club_subscriptions', 'lottery_tickets',
+        ];
+        for (const t of userTables) {
+            try { await admin.from(t).delete().eq('user_id', userId); }
+            catch (e) { console.error(`Error deleting from ${t}:`, e?.message); }
+        }
 
         // Delete user files from storage
         try {
@@ -65,15 +71,23 @@ exports.handler = async (event) => {
             await admin.storage.from('carta-identita').remove([`${userId}`]);
         } catch(e) { console.error('Error deleting from storage:', e?.message); }
 
-        // Delete user account
-        const { error } = await admin.auth.admin.deleteUser(userId);
-        if (error) {
-            return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+        // Elimina l'account (hard delete). Se un vincolo FK residuo lo blocca,
+        // ripiega su soft-delete: l'utente viene disattivato e non puo' piu'
+        // accedere — la cancellazione riesce comunque dal suo punto di vista.
+        const { error: hardErr } = await admin.auth.admin.deleteUser(userId);
+        if (hardErr) {
+            console.error('[delete-account] hard delete failed, trying soft:', hardErr?.message);
+            const { error: softErr } = await admin.auth.admin.deleteUser(userId, true);
+            if (softErr) {
+                console.error('[delete-account] soft delete failed:', softErr?.message);
+                return { statusCode: 500, headers, body: JSON.stringify({ error: 'Impossibile eliminare l\'account in questo momento. Riprova piu\' tardi o contatta l\'assistenza.' }) };
+            }
         }
 
         return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
 
     } catch (e) {
-        return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
+        console.error('[delete-account] error:', e?.message);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Errore durante l\'eliminazione dell\'account. Riprova piu\' tardi.' }) };
     }
 };

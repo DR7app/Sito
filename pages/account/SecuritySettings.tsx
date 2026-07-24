@@ -97,7 +97,7 @@ const SecuritySettings = () => {
             }, 2000);
 
         } catch (err: any) {
-            setError(err.message || 'Failed to delete account');
+            setError(err.message || t({ en: 'Failed to delete account', it: 'Eliminazione account non riuscita' }));
             setIsDeleting(false);
         }
     };

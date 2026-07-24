@@ -129,9 +129,18 @@ const CarWashServicesPage: React.FC = () => {
       const urban = liveUrban.find(s => s.id === `urban-${tpl.suffix}`);
       const maxi = liveMaxi.find(s => s.id === `maxi-${tpl.suffix}`);
       if (!urban || !maxi) return null;
-      return { id: `combined-${tpl.suffix}`, name: tpl.name, nameEn: tpl.nameEn, image: tpl.image, urban, maxi };
+      // 2026-07-24: l'immagine della card combinata viene dal Catalogo Lavaggio
+      // (urban/maxi.image). Prima usava tpl.image hardcoded: cambiare la foto
+      // dall'admin non aveva effetto. Fallback al template solo se il catalogo
+      // non ha immagine.
+      return { id: `combined-${tpl.suffix}`, name: tpl.name, nameEn: tpl.nameEn, image: urban.image || maxi.image || tpl.image, urban, maxi };
     })
     .filter((x): x is CombinedWashService => x !== null);
+
+  // 2026-07-24: immagine "Absolute Detail" dal Catalogo Lavaggio se presente
+  // (servizio con id/nome che contiene "absolute"), altrimenti fallback locale.
+  const absoluteDetailService = dbServices.find(s => /absolute/i.test(s.id) || /absolute/i.test(s.name || '') || /absolute/i.test(s.nameEn || ''));
+  const absoluteDetailImage = absoluteDetailService?.image || '/absolute-detail.jpeg';
 
   // Targa lookup state
   const [targaInput, setTargaInput] = useState('');
@@ -639,7 +648,7 @@ const CarWashServicesPage: React.FC = () => {
                 className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
               >
                 <img
-                  src="/absolute-detail.jpeg"
+                  src={absoluteDetailImage}
                   alt="Prime Absolute Detail"
                   className="w-full h-auto object-contain"
                 />

@@ -390,11 +390,11 @@ const Header: React.FC = () => {
           <div className="flex items-center">
             <button
               onClick={() => setIsMenuOpen(true)}
-              aria-label={h('open_menu_aria_it', 'open_menu_aria_en') || 'Open menu'}
+              aria-label={h('open_menu_aria_it', 'open_menu_aria_en') || t({ it: 'Apri menu', en: 'Open menu' })}
               aria-expanded={isMenuOpen}
               className="text-white hover:text-gray-300 font-normal text-sm tracking-wider transition-colors"
             >
-              {h('explore_label_it', 'explore_label_en') || 'EXPLORE'}
+              {h('explore_label_it', 'explore_label_en') || t({ it: 'ESPLORA', en: 'EXPLORE' })}
             </button>
           </div>
 

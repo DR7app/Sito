@@ -55,7 +55,7 @@ const LinkRow: React.FC<{ links: FooterLinkData[]; lang: 'it' | 'en'; bold?: boo
 );
 
 const Footer: React.FC = () => {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const [copy, setCopy] = useState<FooterCopy | null>(null);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
 
         {/* Contact Section */}
         <div className="text-center mb-12 pb-12 border-b border-gray-900">
-          <h3 className="text-2xl font-bold text-white mb-6">{copy.contact_title}</h3>
+          <h3 className="text-2xl font-bold text-white mb-6">{t({ en: 'Contact', it: 'Contatti' })}</h3>
           <a
             href={copy.contact_whatsapp_url}
             target="_blank"
@@ -159,9 +159,9 @@ const Footer: React.FC = () => {
             <button
               onClick={scrollToTop}
               className="text-sm font-semibold hover:text-white transition-colors flex items-center gap-1"
-              aria-label="Back to top"
+              aria-label={t({ en: 'Back to top', it: 'Torna su' })}
             >
-              Back to Top
+              {t({ en: 'Back to Top', it: 'Torna su' })}
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
               </svg>

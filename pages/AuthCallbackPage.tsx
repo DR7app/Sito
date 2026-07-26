@@ -69,8 +69,8 @@ const AuthCallbackPage: React.FC = () => {
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-12 h-12 border-4 border-t-white border-gray-700 rounded-full mb-6"
         />
-        <h1 className="text-3xl font-bold">Authenticating...</h1>
-        <p className="text-gray-400 mt-2">Please wait while we securely sign you in.</p>
+        <h1 className="text-3xl font-bold">Autenticazione in corso...</h1>
+        <p className="text-gray-400 mt-2">Attendi, accesso sicuro in corso.</p>
       </div>
     </div>
   );

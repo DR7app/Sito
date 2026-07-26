@@ -34,11 +34,11 @@ const WelcomePopup: React.FC = () => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-lg"
           role="dialog"
           aria-live="polite"
-          aria-label="Welcome message"
+          aria-label="Messaggio di benvenuto"
         >
           <div className="text-center">
             <h2 className="text-4xl font-bold text-white uppercase tracking-widest">
-              Welcome to DR7
+              Benvenuti in DR7
             </h2>
           </div>
         </motion.div>

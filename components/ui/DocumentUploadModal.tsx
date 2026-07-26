@@ -277,7 +277,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
             <button
               onClick={handleSkip}
               className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
-              aria-label="Close"
+              aria-label="Chiudi"
             >
               <XIcon className="w-6 h-6" />
             </button>

@@ -62,13 +62,13 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
     event.preventDefault();
 
     if (!stripe || !elements || !clientSecret || !user) {
-      setError("Payment system is not ready. Please try again in a moment.");
+      setError("Il sistema di pagamento non è pronto. Riprova tra un istante.");
       return;
     }
 
     const cardElement = elements.getElement(CardElement);
     if (!cardElement) {
-        setError("Card details could not be found. Please try again.");
+        setError("Impossibile trovare i dati della carta. Riprova.");
         return;
     }
 
@@ -86,7 +86,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
     });
 
     if (setupError) {
-      setError(setupError.message || "An unexpected error occurred.");
+      setError(setupError.message || "Si è verificato un errore imprevisto.");
       setIsProcessing(false);
       return;
     }
@@ -98,7 +98,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
       const newPaymentMethodDetails = await stripe.retrievePaymentMethod(typeof paymentMethod === 'string' ? paymentMethod : paymentMethod.id);
 
       if (newPaymentMethodDetails.error || !newPaymentMethodDetails.paymentMethod.card) {
-          setError(newPaymentMethodDetails.error?.message || "Could not retrieve card details.");
+          setError(newPaymentMethodDetails.error?.message || "Impossibile recuperare i dati della carta.");
           setIsProcessing(false);
           return;
       }

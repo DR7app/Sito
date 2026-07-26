@@ -131,7 +131,7 @@ const DocumentsVerification = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+                const errorData = await response.json().catch(() => ({ error: 'Caricamento non riuscito' }));
                 throw new Error(errorData.error || `HTTP ${response.status}`);
             }
 
@@ -152,7 +152,7 @@ const DocumentsVerification = () => {
             }
         } catch (error: any) {
             console.error(`Exception uploading ${step.key}:`, error);
-            alert(`Errore nel caricamento: ${error.message || 'Upload failed'}`);
+            alert(`Errore nel caricamento: ${error.message || 'Caricamento non riuscito'}`);
         } finally {
             setUploading(false);
         }
@@ -172,7 +172,7 @@ const DocumentsVerification = () => {
             window.open(data.signedUrl, '_blank');
         } catch (error: any) {
             console.error('Error viewing document:', error);
-            alert(`Impossibile visualizzare il documento. Riprova più tardi.\nErrore: ${error.message || 'Unknown error'}`);
+            alert(`Impossibile visualizzare il documento. Riprova più tardi.\nErrore: ${error.message || 'Errore sconosciuto'}`);
         }
     };
 

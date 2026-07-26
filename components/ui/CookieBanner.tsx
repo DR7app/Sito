@@ -53,7 +53,7 @@ const CookieBanner: React.FC = () => {
               className="w-full max-w-lg"
               role="dialog"
               aria-live="polite"
-              aria-label="Cookie consent"
+              aria-label="Consenso ai cookie"
             >
             <div className="bg-[#181818] border border-white/10 p-8 md:p-10">
               {/* Welcome message */}

@@ -73,7 +73,7 @@ const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, o
                         <button
                             onClick={onClose}
                             className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-10"
-                            aria-label="Close"
+                            aria-label="Chiudi"
                         >
                             <XIcon className="w-5 h-5" />
                         </button>

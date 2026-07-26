@@ -406,7 +406,7 @@ const CarWashServicesPage: React.FC = () => {
     <div className="min-h-screen bg-black pt-32 pb-32">
       <SEOHead
         title="Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Prime Wash"
-        description="Professional car wash, premium detailing, ceramic coating, and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Prime Wash by DR7."
+        description="Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Prime Wash by DR7."
         canonical="/prime-wash"
         jsonLd={{ '@type': 'AutoWash', name: 'DR7 Prime Wash', url: 'https://dr7.app/prime-wash', address: { '@type': 'PostalAddress', addressLocality: 'Cagliari', addressRegion: 'CA', addressCountry: 'IT' }, priceRange: '$$' }}
       />

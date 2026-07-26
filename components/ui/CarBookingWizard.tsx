@@ -2522,10 +2522,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         setIsCameraOpen(true);
       } catch (err) {
         console.error("Camera access denied:", err);
-        alert("Camera access was denied. Please check your browser settings.");
+        alert("Accesso alla fotocamera negato. Controlla le impostazioni del browser.");
       }
     } else {
-      alert("Your browser does not support camera access.");
+      alert("Il tuo browser non supporta l'accesso alla fotocamera.");
     }
   };
   const handleCloseCamera = () => {
@@ -7093,7 +7093,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-          aria-label="Close"
+          aria-label="Chiudi"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

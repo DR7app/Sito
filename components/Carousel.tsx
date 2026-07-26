@@ -21,7 +21,7 @@ const Carousel: React.FC<CarouselProps> = ({ images }) => {
         <motion.img
           key={index}
           src={images[index]}
-          alt="Carousel image"
+          alt="Immagine carosello"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

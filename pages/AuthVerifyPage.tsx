@@ -53,11 +53,11 @@ const AuthVerifyPage: React.FC = () => {
                     }
                 } catch (err: any) {
                     console.error('[AuthVerify] Error:', err);
-                    setError(err.message || 'Verification failed');
+                    setError(err.message || 'Verifica non riuscita');
                     setIsProcessing(false);
                 }
             } else {
-                setError('Invalid verification link');
+                setError('Link di verifica non valido');
                 setIsProcessing(false);
             }
         };

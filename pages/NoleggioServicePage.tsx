@@ -33,6 +33,10 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   // gli altri restano su "Richiedi Preventivo" via WhatsApp.
   const [tourItemIds, setTourItemIds] = useState<Set<string>>(new Set());
   const [openTour, setOpenTour] = useState<NoleggioCatalogItem | null>(null);
+  // Modalita' sito impostata dall'admin (Interruttori ON/OFF): 'preventivo' =
+  // solo richiesta preventivo via WhatsApp; 'bookable' = tour prenotabili online.
+  // Default 'bookable' per non cambiare il comportamento esistente.
+  const [bookingMode, setBookingMode] = useState<'preventivo' | 'bookable'>('bookable');
   // Per prenotare un tour bisogna essere loggati (come ovunque sul sito). Se non
   // loggato, "Prenota il tour" apre un popup che invita ad accedere/registrarsi.
   const [authPrompt, setAuthPrompt] = useState(false);
@@ -61,6 +65,27 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     })();
     return () => { cancelled = true; };
   }, [items.length]);
+
+  // Legge la modalita' sito dal business corrispondente in centralina_pro_config.
+  useEffect(() => {
+    let cancelled = false;
+    const row =
+      serviceType === 'boat_rental' ? 'business_mare' :
+      serviceType === 'heli_rental' ? 'business_aria' :
+      serviceType === 'stay_rental' ? 'business_soggiorni' : null;
+    if (!row) return;
+    (async () => {
+      const { data } = await supabase
+        .from('centralina_pro_config')
+        .select('config')
+        .eq('id', row)
+        .maybeSingle();
+      if (cancelled) return;
+      const mode = (data?.config as { booking_mode?: string } | null)?.booking_mode;
+      setBookingMode(mode === 'preventivo' ? 'preventivo' : 'bookable');
+    })();
+    return () => { cancelled = true; };
+  }, [serviceType]);
 
   // Catalogo vuoto => la pagina non mostra nulla (richiesta esplicita).
   if (loading) {
@@ -107,7 +132,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                     <div className="mt-1 text-xs text-gray-400">Fino a {item.capacity} persone</div>
                   )}
                   <div className="flex-1" />
-                  {tourItemIds.has(item.id) ? (
+                  {bookingMode === 'bookable' && tourItemIds.has(item.id) ? (
                     <button
                       onClick={() => handlePrenotaTour(item)}
                       className="mt-5 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-full bg-white text-black font-semibold transition-all duration-300 hover:opacity-90"

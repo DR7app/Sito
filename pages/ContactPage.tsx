@@ -25,8 +25,8 @@ const ContactPage: React.FC = () => {
       className="min-h-screen bg-black pt-28 pb-20"
     >
       <SEOHead
-        title="Contact DR7 | Book Luxury Cars & Services in Sardinia"
-        description="Contatta DR7 per noleggio auto di lusso, esperienze in supercar e servizi di autolavaggio premium in Sardegna. Chiama, scrivi su WhatsApp o vieni a trovarci a Cagliari."
+        title={lang === 'it' ? 'Contatti DR7 | Prenota Auto di Lusso e Servizi in Sardegna' : 'Contact DR7 | Book Luxury Cars & Services in Sardinia'}
+        description={lang === 'it' ? 'Contatta DR7 per noleggio auto di lusso, esperienze in supercar e servizi di autolavaggio premium in Sardegna. Chiama, scrivi su WhatsApp o vieni a trovarci a Cagliari.' : 'Get in touch with DR7 for luxury car rentals, supercar experiences, and premium car wash services in Sardinia. Call, WhatsApp, or visit us in Cagliari.'}
         canonical="/contact"
         jsonLd={[
           {

@@ -4677,7 +4677,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             ) : (
             <>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-2">LOCATION SELECTION</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">{t({ it: 'SELEZIONE LUOGO', en: 'LOCATION SELECTION' })}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-gray-400 font-semibold mb-2 block">Luogo di ritiro *</label>
@@ -4766,7 +4766,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             {/* Availability is handled directly by date picker validation — no separate box needed */}
 
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">DATE AND TIME SELECTION</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">{t({ it: 'SELEZIONE DATA E ORA', en: 'DATE AND TIME SELECTION' })}</h3>
               <div className="space-y-4">
                 {/* Pickup Date & Time */}
                 <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/30">

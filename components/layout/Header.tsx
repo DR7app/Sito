@@ -15,7 +15,7 @@ import { useFlottaCategories } from '../../hooks/useFlottaCategories';
 import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
 
 const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy }> = ({ isOpen, onClose, copy }) => {
-  const { t, lang } = useTranslation();
+  const { t, lang, setLanguage } = useTranslation();
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const [creditBalance, setCreditBalance] = useState<number>(0);
@@ -186,15 +186,22 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                 <img src="/DR7logo1.png" alt={copy.logo_alt} className="h-12 w-auto max-w-none self-start" />
                 <span className="mt-1 pl-1 text-[9px] tracking-[0.45em] text-gray-500 uppercase">Beyond Luxury</span>
               </NavLink>
-              <button
-                onClick={onClose}
-                aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
-                className="-mr-2 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Toggle lingua: IT/EN. Cambia TUTTO il sito (via useTranslation). */}
+                <div className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-0.5 text-[11px] font-bold">
+                  <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 rounded-full transition-colors ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
+                  <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 rounded-full transition-colors ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
+                </div>
+                <button
+                  onClick={onClose}
+                  aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
+                  className="-mr-2 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* PRENOTA ORA — conversione principale, mantenuta.
@@ -316,7 +323,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
 };
 
 const Header: React.FC = () => {
-  const { t, lang } = useTranslation();
+  const { t, lang, setLanguage } = useTranslation();
   const { user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -407,6 +414,11 @@ const Header: React.FC = () => {
 
           {/* User controls on the right */}
           <div className="flex items-center space-x-4">
+            {/* Toggle lingua IT/EN — cambia TUTTO il sito */}
+            <div className="hidden sm:flex items-center rounded-full border border-white/15 bg-white/[0.05] p-0.5 text-[11px] font-bold">
+              <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2 py-0.5 rounded-full transition-colors ${lang === 'it' ? 'bg-white text-black' : 'text-gray-300 hover:text-white'}`}>IT</button>
+              <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2 py-0.5 rounded-full transition-colors ${lang === 'en' ? 'bg-white text-black' : 'text-gray-300 hover:text-white'}`}>EN</button>
+            </div>
             <AnimatePresence mode="wait">
               {user ? (
                 <motion.div

@@ -74,7 +74,7 @@ const WASH_OVERRIDE_OPTIONS: { id: WashOverrideCategory; label: string; selected
 ];
 
 const LAVAGGIO_CATEGORIES = [
-  { id: 'wash' as LavaggioCategory, name: 'PRIME WASH', nameEn: 'PRIME WASH' },
+  { id: 'wash' as LavaggioCategory, name: 'LAVAGGIO', nameEn: 'CAR WASH' },
   { id: 'moto' as LavaggioCategory, name: 'PRIME MOTO EXPERIENCE', nameEn: 'PRIME MOTO EXPERIENCE' },
 ];
 
@@ -405,10 +405,10 @@ const CarWashServicesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-black pt-32 pb-32">
       <SEOHead
-        title={lang === 'it' ? 'Autolavaggio Premium Sardegna | Detailing & Cura di Lusso | DR7 Prime Wash' : 'Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Prime Wash'}
-        description={lang === 'it' ? 'Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Prime Wash by DR7.' : 'Professional car wash, premium detailing, ceramic coating and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Prime Wash by DR7.'}
+        title={lang === 'it' ? 'Autolavaggio Premium Sardegna | Detailing & Cura di Lusso | DR7 Lavaggio & Meccanica' : 'Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Car Wash & Mechanics'}
+        description={lang === 'it' ? 'Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Lavaggio & Meccanica.' : 'Professional car wash, premium detailing, ceramic coating and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Car Wash & Mechanics.'}
         canonical="/prime-wash"
-        jsonLd={{ '@type': 'AutoWash', name: 'DR7 Prime Wash', url: 'https://dr7.app/prime-wash', address: { '@type': 'PostalAddress', addressLocality: 'Cagliari', addressRegion: 'CA', addressCountry: 'IT' }, priceRange: '$$' }}
+        jsonLd={{ '@type': 'AutoWash', name: 'DR7 Lavaggio & Meccanica', url: 'https://dr7.app/prime-wash', address: { '@type': 'PostalAddress', addressLocality: 'Cagliari', addressRegion: 'CA', addressCountry: 'IT' }, priceRange: '$$' }}
       />
 
       {/* Hero banner — Servizi: Lavaggio & Meccanica */}

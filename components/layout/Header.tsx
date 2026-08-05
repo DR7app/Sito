@@ -130,7 +130,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
       title: mc('menu_property_title_it', 'menu_property_title_en', 'Property', 'Property'),
       subtitle: mc('menu_property_sub_it', 'menu_property_sub_en', 'Ville, appartamenti e residenze selezionate in tutto il mondo', 'Villas, apartments and residences selected worldwide') },
     { to: '/prime-wash', img: '/menu-servizi.jpeg', Icon: SparklesIcon,
-      title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanical'),
+      title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanics'),
       subtitle: mc('menu_servizi_sub_it', 'menu_servizi_sub_en', 'Lavaggio auto premium e officina meccanica', 'Premium car wash and mechanical workshop') },
     { to: '/credit-wallet', img: '/menu-club.jpeg', Icon: WalletIcon,
       title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'),

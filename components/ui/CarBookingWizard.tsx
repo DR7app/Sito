@@ -7157,7 +7157,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {/* Header image */}
                     <img
                       src="/prime-wash-header.jpeg"
-                      alt="Prime Wash"
+                      alt="Lavaggio & Meccanica"
                       className="w-full h-48 sm:h-56 object-cover rounded-xl mb-5"
                     />
 

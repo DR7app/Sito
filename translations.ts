@@ -483,4 +483,30 @@ export const translations: Translations = {
   "cookie.decline": { en: "Decline", it: "Rifiuta" },
   "cookie.accept": { en: "Accept", it: "Accetta" },
   Back_Soon: { en: "Back Soon", it: "Torna Presto" },
+
+  // Partner area
+  No_bookings_yet: { en: "No bookings yet", it: "Nessuna prenotazione" },
+  Your_bookings_will_appear_here: { en: "Your bookings will appear here.", it: "Le tue prenotazioni appariranno qui." },
+  Create_Your_Listing: { en: "Create Your Listing", it: "Crea il Tuo Annuncio" },
+  Specific_Details: { en: "Specific Details", it: "Dettagli Specifici" },
+  Document_uploaded: { en: "Document uploaded.", it: "Documento caricato." },
+
+  // Blog / post
+  Loading_Post: { en: "Loading article…", it: "Caricamento articolo…" },
+  Error_Fetching_Post: { en: "Error loading article", it: "Errore nel caricamento dell'articolo" },
+
+  // Vehicle search
+  Search_Available_Vehicles: { en: "Search available vehicles", it: "Cerca veicoli disponibili" },
+  Select_dates_and_verify: { en: "Select your dates and check availability", it: "Seleziona le date e verifica la disponibilità" },
+
+  // Generic states / errors
+  Loading: { en: "Loading…", it: "Caricamento…" },
+  Go_to_Home: { en: "Go to Home", it: "Vai alla Home" },
+  Category_not_found: { en: "Category not found.", it: "Categoria non trovata." },
+  Unexpected_error: { en: "An unexpected error occurred", it: "Si è verificato un errore imprevisto" },
+  User_not_logged_in: { en: "User not logged in", it: "Utente non autenticato" },
+  AI_response_failed: { en: "Failed to get AI response", it: "Impossibile ottenere una risposta dall'AI" },
+  Purchase_record_failed: { en: "Failed to save purchase record", it: "Impossibile salvare la registrazione dell'acquisto" },
+  Credit_Wallet_title: { en: "DR7 Credit Wallet", it: "DR7 Credit Wallet" },
+  Credit_Wallet_subtitle: { en: "Your available credits for DR7 services", it: "I tuoi crediti disponibili per i servizi DR7" },
 };

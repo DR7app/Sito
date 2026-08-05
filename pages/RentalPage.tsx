@@ -240,6 +240,7 @@ const VehicleResults: React.FC<{
   setSelectedCategories: (c: string[]) => void
   categoryLabels?: Record<string, string>
 }> = ({ categoryData, categoryId, hasSearched, availabilityResults, selectedCategories, maxBudget, sortBy, preDays, handleBook, setSortBy, setMaxBudget, setSelectedCategories, categoryLabels }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   // Categorie configurate visibili in Sito > Flotta. Array vuoto = mostra
@@ -342,8 +343,8 @@ const VehicleResults: React.FC<{
       {displayData.length === 0 ? (
         <div className="text-center text-gray-400 mt-12 py-16">
           {hasSearched
-            ? <p className="text-lg">Nessun veicolo disponibile per le date selezionate.</p>
-            : <p>Nessun veicolo trovato in questa categoria.</p>
+            ? <p className="text-lg">{t({ it: "Nessun veicolo disponibile per le date selezionate.", en: "No vehicles available for the selected dates." })}</p>
+            : <p>{t({ it: "Nessun veicolo trovato in questa categoria.", en: "No vehicles found in this category." })}</p>
           }
         </div>
       ) : (
@@ -386,13 +387,16 @@ const VehicleResults: React.FC<{
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const ITALIAN_MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+const MONTHS_BY_LANG: Record<string, string[]> = {
+  it: ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
 
-/** Format a YYYY-MM-DD + HH:MM pair as "06 Apr 2026, 10:00" */
-function formatItalianDateTime(date: string, time: string): string {
+/** Format a YYYY-MM-DD + HH:MM pair as "06 Apr 2026, 10:00" in the active language. */
+function formatShortDateTime(date: string, time: string, lang: string): string {
   if (!date || !time) return '';
   const [year, month, day] = date.split('-');
-  const monthLabel = ITALIAN_MONTHS[parseInt(month, 10) - 1] ?? month;
+  const monthLabel = (MONTHS_BY_LANG[lang] ?? MONTHS_BY_LANG.it)[parseInt(month, 10) - 1] ?? month;
   return `${day} ${monthLabel} ${year}, ${time}`;
 }
 
@@ -442,6 +446,7 @@ interface ModificaBarProps {
 }
 
 const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
+  const { t, lang, getTranslated } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState<SearchBarState>(initial);
   const [pickupLocs, setPickupLocs] = useState(DEFAULT_PICKUP_LOCATIONS);
@@ -475,9 +480,9 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
         {!expanded && (
           <div className="flex items-center gap-4 py-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-gray-300 min-w-0">
-              <span className="text-gray-500 shrink-0">Ritiro</span>
+              <span className="text-gray-500 shrink-0">{t({ it: "Ritiro", en: "Pick-up" })}</span>
               <span className="text-white font-medium truncate">
-                {formatItalianDateTime(initial.pickupDate, initial.pickupTime)}
+                {formatShortDateTime(initial.pickupDate, initial.pickupTime, lang)}
               </span>
               {initial.pickupLocLabel && (
                 <span className="text-gray-500 truncate hidden sm:inline">— {initial.pickupLocLabel}</span>
@@ -485,9 +490,9 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
             </div>
             <span className="text-gray-600 hidden sm:block">→</span>
             <div className="flex items-center gap-2 text-sm text-gray-300 min-w-0">
-              <span className="text-gray-500 shrink-0">Riconsegna</span>
+              <span className="text-gray-500 shrink-0">{t({ it: "Riconsegna", en: "Drop-off" })}</span>
               <span className="text-white font-medium truncate">
-                {formatItalianDateTime(initial.returnDate, initial.returnTime)}
+                {formatShortDateTime(initial.returnDate, initial.returnTime, lang)}
               </span>
               {initial.returnLocLabel && (
                 <span className="text-gray-500 truncate hidden sm:inline">— {initial.returnLocLabel}</span>
@@ -520,7 +525,7 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {/* Ritiro date + time */}
               <div>
-                <label className={labelClass}>Ritiro — data</label>
+                <label className={labelClass}>{t({ it: "Ritiro — data", en: "Pick-up — date" })}</label>
                 <input
                   type="date"
                   value={draft.pickupDate}
@@ -530,7 +535,7 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Ritiro — ora</label>
+                <label className={labelClass}>{t({ it: "Ritiro — ora", en: "Pick-up — time" })}</label>
                 <select value={draft.pickupTime} onChange={e => set('pickupTime')(e.target.value)} className={inputClass}>
                   {AVAILABLE_TIMES.map(t => (
                     <option key={t} value={t}>{t}</option>
@@ -539,7 +544,7 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
               </div>
               {/* Riconsegna date + time */}
               <div>
-                <label className={labelClass}>Riconsegna — data</label>
+                <label className={labelClass}>{t({ it: "Riconsegna — data", en: "Drop-off — date" })}</label>
                 <input
                   type="date"
                   value={draft.returnDate}
@@ -549,7 +554,7 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Riconsegna — ora</label>
+                <label className={labelClass}>{t({ it: "Riconsegna — ora", en: "Drop-off — time" })}</label>
                 <select value={draft.returnTime} onChange={e => set('returnTime')(e.target.value)} className={inputClass}>
                   {AVAILABLE_TIMES.map(t => (
                     <option key={t} value={t}>{t}</option>
@@ -562,32 +567,32 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
             {pickupLocs.length > 1 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className={labelClass}>Luogo Ritiro</label>
+                  <label className={labelClass}>{t({ it: "Luogo Ritiro", en: "Pick-up location" })}</label>
                   <select value={draft.pickupLoc} onChange={e => {
                     const loc = pickupLocs.find(l => l.id === e.target.value);
                     setDraft(prev => ({
                       ...prev,
                       pickupLoc: e.target.value,
-                      pickupLocLabel: loc?.label?.it ?? loc?.label?.en ?? e.target.value,
+                      pickupLocLabel: loc?.label ? getTranslated(loc.label) : e.target.value,
                     }));
                   }} className={inputClass}>
                     {pickupLocs.map(l => (
-                      <option key={l.id} value={l.id}>{l.label?.it ?? l.label?.en}</option>
+                      <option key={l.id} value={l.id}>{getTranslated(l.label)}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className={labelClass}>Luogo Riconsegna</label>
+                  <label className={labelClass}>{t({ it: "Luogo Riconsegna", en: "Drop-off location" })}</label>
                   <select value={draft.returnLoc} onChange={e => {
                     const loc = pickupLocs.find(l => l.id === e.target.value);
                     setDraft(prev => ({
                       ...prev,
                       returnLoc: e.target.value,
-                      returnLocLabel: loc?.label?.it ?? loc?.label?.en ?? e.target.value,
+                      returnLocLabel: loc?.label ? getTranslated(loc.label) : e.target.value,
                     }));
                   }} className={inputClass}>
                     {pickupLocs.map(l => (
-                      <option key={l.id} value={l.id}>{l.label?.it ?? l.label?.en}</option>
+                      <option key={l.id} value={l.id}>{getTranslated(l.label)}</option>
                     ))}
                   </select>
                 </div>
@@ -599,33 +604,33 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
                 portati nel wizard, quindi il cliente non li reinserisce. */}
             {draft.pickupLoc === 'home_delivery' && (
               <div className="mt-3 p-3 rounded-lg border border-gray-700 bg-gray-800/40 space-y-2">
-                <p className="text-xs text-amber-400 font-semibold">Indirizzo consegna auto (a domicilio)</p>
+                <p className="text-xs text-amber-400 font-semibold">{t({ it: "Indirizzo consegna auto (a domicilio)", en: "Car delivery address (to your address)" })}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <input className={inputClass} placeholder="Via *" value={draft.deliveryPickupVia || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupVia: e.target.value }))} />
-                  <input className={inputClass} placeholder="N. civico *" value={draft.deliveryPickupNumero || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupNumero: e.target.value }))} />
-                  <input className={inputClass} placeholder="CAP *" value={draft.deliveryPickupCap || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupCap: e.target.value }))} />
-                  <input className={inputClass} placeholder="Città *" value={draft.deliveryPickupCitta || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupCitta: e.target.value }))} />
-                  <input className={inputClass} placeholder="Provincia *" value={draft.deliveryPickupProvincia || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupProvincia: e.target.value }))} />
-                  <input className={inputClass} type="number" min={1} placeholder="Km dalla sede *" value={draft.deliveryPickupKm ?? ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupKm: e.target.value ? parseInt(e.target.value) : undefined }))} />
+                  <input className={inputClass} placeholder={t({ it: "Via *", en: "Street *" })} value={draft.deliveryPickupVia || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupVia: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "N. civico *", en: "Street no. *" })} value={draft.deliveryPickupNumero || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupNumero: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "CAP *", en: "Postcode *" })} value={draft.deliveryPickupCap || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupCap: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "Città *", en: "City *" })} value={draft.deliveryPickupCitta || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupCitta: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "Provincia *", en: "Province *" })} value={draft.deliveryPickupProvincia || ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupProvincia: e.target.value }))} />
+                  <input className={inputClass} type="number" min={1} placeholder={t({ it: "Km dalla sede *", en: "Km from our office *" })} value={draft.deliveryPickupKm ?? ''} onChange={e => setDraft(p => ({ ...p, deliveryPickupKm: e.target.value ? parseInt(e.target.value) : undefined }))} />
                 </div>
                 {(draft.deliveryPickupKm ?? 0) > 0 && (
-                  <p className="text-xs text-white">Costo consegna: {draft.deliveryPickupKm} km — la tariffa €/km DR7 viene applicata al passo successivo.</p>
+                  <p className="text-xs text-white">{t({ it: "Costo consegna:", en: "Delivery cost:" })} {draft.deliveryPickupKm} km — {t({ it: "la tariffa €/km DR7 viene applicata al passo successivo.", en: "the DR7 €/km rate is applied at the next step." })}</p>
                 )}
               </div>
             )}
             {draft.returnLoc === 'home_delivery' && (
               <div className="mt-3 p-3 rounded-lg border border-gray-700 bg-gray-800/40 space-y-2">
-                <p className="text-xs text-amber-400 font-semibold">Indirizzo ritiro/riconsegna auto (a domicilio)</p>
+                <p className="text-xs text-amber-400 font-semibold">{t({ it: "Indirizzo ritiro/riconsegna auto (a domicilio)", en: "Car collection/drop-off address (at your address)" })}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <input className={inputClass} placeholder="Via *" value={draft.deliveryReturnVia || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnVia: e.target.value }))} />
-                  <input className={inputClass} placeholder="N. civico *" value={draft.deliveryReturnNumero || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnNumero: e.target.value }))} />
-                  <input className={inputClass} placeholder="CAP *" value={draft.deliveryReturnCap || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnCap: e.target.value }))} />
-                  <input className={inputClass} placeholder="Città *" value={draft.deliveryReturnCitta || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnCitta: e.target.value }))} />
-                  <input className={inputClass} placeholder="Provincia *" value={draft.deliveryReturnProvincia || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnProvincia: e.target.value }))} />
-                  <input className={inputClass} type="number" min={1} placeholder="Km dalla sede *" value={draft.deliveryReturnKm ?? ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnKm: e.target.value ? parseInt(e.target.value) : undefined }))} />
+                  <input className={inputClass} placeholder={t({ it: "Via *", en: "Street *" })} value={draft.deliveryReturnVia || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnVia: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "N. civico *", en: "Street no. *" })} value={draft.deliveryReturnNumero || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnNumero: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "CAP *", en: "Postcode *" })} value={draft.deliveryReturnCap || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnCap: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "Città *", en: "City *" })} value={draft.deliveryReturnCitta || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnCitta: e.target.value }))} />
+                  <input className={inputClass} placeholder={t({ it: "Provincia *", en: "Province *" })} value={draft.deliveryReturnProvincia || ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnProvincia: e.target.value }))} />
+                  <input className={inputClass} type="number" min={1} placeholder={t({ it: "Km dalla sede *", en: "Km from our office *" })} value={draft.deliveryReturnKm ?? ''} onChange={e => setDraft(p => ({ ...p, deliveryReturnKm: e.target.value ? parseInt(e.target.value) : undefined }))} />
                 </div>
                 {(draft.deliveryReturnKm ?? 0) > 0 && (
-                  <p className="text-xs text-white">Costo ritiro: {draft.deliveryReturnKm} km — la tariffa €/km DR7 viene applicata al passo successivo.</p>
+                  <p className="text-xs text-white">{t({ it: "Costo ritiro:", en: "Collection cost:" })} {draft.deliveryReturnKm} km — {t({ it: "la tariffa €/km DR7 viene applicata al passo successivo.", en: "the DR7 €/km rate is applied at the next step." })}</p>
                 )}
               </div>
             )}
@@ -635,7 +640,7 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
                 onClick={handleSave}
                 className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-gray-200 transition-colors"
               >
-                Aggiorna
+                {t({ it: "Aggiorna", en: "Update" })}
               </button>
               <button
                 onClick={() => { setDraft(initial); setExpanded(false); }}
@@ -1090,7 +1095,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
               DR7 Aviation Division
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              Jet Privati ed Elicotteri su Misura
+              {t({ it: "Jet Privati ed Elicotteri su Misura", en: "Bespoke Private Jets and Helicopters" })}
             </p>
           </motion.div>
 
@@ -1103,30 +1108,30 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
               className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-white transition-colors"
             >
               <h2 className="text-3xl font-bold text-white mb-4 text-center">
-                Jet Privati
+                {t({ it: "Jet Privati", en: "Private Jets" })}
               </h2>
               <p className="text-gray-400 mb-6 text-center">
-                Voli a lungo raggio, business e viaggi intercontinentali
+                {t({ it: "Voli a lungo raggio, business e viaggi intercontinentali", en: "Long-haul, business and intercontinental flights" })}
               </p>
               <div className="space-y-3 mb-8">
                 <div className="flex items-center text-gray-300">
 
-                  <span>Voli nazionali ed internazionali</span>
+                  <span>{t({ it: "Voli nazionali ed internazionali", en: "Domestic and international flights" })}</span>
                 </div>
                 <div className="flex items-center text-gray-300">
 
-                  <span>Capacità fino a 20 passeggeri</span>
+                  <span>{t({ it: "Capacità fino a 20 passeggeri", en: "Capacity for up to 20 passengers" })}</span>
                 </div>
                 <div className="flex items-center text-gray-300">
 
-                  <span>Massimo comfort e privacy</span>
+                  <span>{t({ it: "Massimo comfort e privacy", en: "Maximum comfort and privacy" })}</span>
                 </div>
               </div>
               <button
                 onClick={() => window.open('https://wa.me/393457905205?text=' + encodeURIComponent('Ciao, vorrei richiedere un preventivo per un Jet Privato.'), '_blank')}
                 className="w-full bg-white text-black px-6 py-4 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
               >
-                Richiedi Preventivo Jet
+                {t({ it: "Richiedi Preventivo Jet", en: "Request a Jet Quote" })}
               </button>
             </motion.div>
 
@@ -1139,30 +1144,30 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
             >
               <div className="text-6xl mb-6 text-center"></div>
               <h2 className="text-3xl font-bold text-white mb-4 text-center">
-                Elicotteri
+                {t({ it: "Elicotteri", en: "Helicopters" })}
               </h2>
               <p className="text-gray-400 mb-6 text-center">
-                Voli brevi, trasferimenti veloci e operazioni speciali
+                {t({ it: "Voli brevi, trasferimenti veloci e operazioni speciali", en: "Short flights, fast transfers and special operations" })}
               </p>
               <div className="space-y-3 mb-8">
                 <div className="flex items-center text-gray-300">
 
-                  <span>Accesso a luoghi difficili da raggiungere</span>
+                  <span>{t({ it: "Accesso a luoghi difficili da raggiungere", en: "Access to hard-to-reach locations" })}</span>
                 </div>
                 <div className="flex items-center text-gray-300">
 
-                  <span>Trasferimenti rapidi da/per aeroporti</span>
+                  <span>{t({ it: "Trasferimenti rapidi da/per aeroporti", en: "Fast transfers to and from airports" })}</span>
                 </div>
                 <div className="flex items-center text-gray-300">
 
-                  <span>Tour panoramici ed eventi speciali</span>
+                  <span>{t({ it: "Tour panoramici ed eventi speciali", en: "Scenic tours and special events" })}</span>
                 </div>
               </div>
               <button
                 onClick={() => window.open('https://wa.me/393457905205?text=' + encodeURIComponent('Ciao, vorrei richiedere un preventivo per un Elicottero.'), '_blank')}
                 className="w-full bg-white text-black px-6 py-4 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
               >
-                Richiedi Preventivo Elicottero
+                {t({ it: "Richiedi Preventivo Elicottero", en: "Request a Helicopter Quote" })}
               </button>
             </motion.div>
           </div>
@@ -1175,13 +1180,13 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
             className="mt-16 text-center"
           >
             <p className="text-gray-400 text-lg mb-4">
-              Non sei sicuro di quale servizio scegliere?
+              {t({ it: "Non sei sicuro di quale servizio scegliere?", en: "Not sure which service to choose?" })}
             </p>
             <button
               onClick={() => navigate('/aviation-quote')}
               className="bg-gray-800 text-white px-8 py-3 rounded-full font-semibold hover:bg-gray-700 transition-colors"
             >
-              Contattaci per una Consulenza Gratuita
+              {t({ it: "Contattaci per una Consulenza Gratuita", en: "Contact us for a Free Consultation" })}
             </button>
           </motion.div>
         </div>
@@ -1195,7 +1200,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
   // hero hardcoded. Mostriamo "Category not found" solo se la rotta non e'
   // veicolare e non c'e' nemmeno metadata statici.
   if (!category && !isVehicleCategory) {
-    return <div className="pt-32 text-center text-white">Category not found.</div>;
+    return <div className="pt-32 text-center text-white">{t('Category_not_found')}</div>;
   }
 
   const seoConfig: Record<string, { title: string; description: string; canonical: string; jsonLd?: Record<string, any> }> = {
@@ -1256,8 +1261,8 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
             >
               <div className="w-full max-w-3xl mx-auto px-4">
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl md:text-4xl font-serif text-white tracking-wide">Richiedi il tuo preventivo nautico</h2>
-                  <p className="text-base md:text-lg text-white/70 mt-3">Compila il form in modo preciso. Riceverai una proposta personalizzata in base alla disponibilità.</p>
+                  <h2 className="text-3xl md:text-4xl font-serif text-white tracking-wide">{t({ it: "Richiedi il tuo preventivo nautico", en: "Request your boat charter quote" })}</h2>
+                  <p className="text-base md:text-lg text-white/70 mt-3">{t({ it: "Compila il form in modo preciso. Riceverai una proposta personalizzata in base alla disponibilità.", en: "Fill in the form accurately. You will receive a tailored proposal based on availability." })}</p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 md:p-10 shadow-2xl">
@@ -1282,95 +1287,95 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                   >
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Data inizio</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Data inizio", en: "Start date" })}</label>
                         <input type="date" name="startDate" required className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Ora inizio</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Ora inizio", en: "Start time" })}</label>
                         <input type="time" name="startTime" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Data fine</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Data fine", en: "End date" })}</label>
                         <input type="date" name="endDate" required className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Ora fine</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Ora fine", en: "End time" })}</label>
                         <input type="time" name="endTime" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Zona / Porto di partenza</label>
-                        <input type="text" name="departurePort" placeholder="Es. Porto Cervo, Cagliari, Olbia" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Zona / Porto di partenza", en: "Area / Departure port" })}</label>
+                        <input type="text" name="departurePort" placeholder={t({ it: "Es. Porto Cervo, Cagliari, Olbia", en: "e.g. Porto Cervo, Cagliari, Olbia" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Zona / Porto di rientro</label>
-                        <input type="text" name="returnPort" placeholder="Es. stesso porto o altro porto" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Zona / Porto di rientro", en: "Area / Return port" })}</label>
+                        <input type="text" name="returnPort" placeholder={t({ it: "Es. stesso porto o altro porto", en: "e.g. same port or a different port" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Paese</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Paese", en: "Country" })}</label>
                         <select name="country" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                          <option value="">Seleziona</option>
-                          <option value="Italia">Italia</option>
-                          <option value="Francia">Francia</option>
-                          <option value="Spagna">Spagna</option>
-                          <option value="Grecia">Grecia</option>
-                          <option value="Croazia">Croazia</option>
+                          <option value="">{t({ it: "Seleziona", en: "Select" })}</option>
+                          <option value="Italia">{t({ it: "Italia", en: "Italy" })}</option>
+                          <option value="Francia">{t({ it: "Francia", en: "France" })}</option>
+                          <option value="Spagna">{t({ it: "Spagna", en: "Spain" })}</option>
+                          <option value="Grecia">{t({ it: "Grecia", en: "Greece" })}</option>
+                          <option value="Croazia">{t({ it: "Croazia", en: "Croatia" })}</option>
                           <option value="Montenegro">Montenegro</option>
-                          <option value="Altro">Altro</option>
+                          <option value="Altro">{t({ it: "Altro", en: "Other" })}</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">N. ospiti</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "N. ospiti", en: "No. of guests" })}</label>
                         <input type="number" name="guests" min="1" placeholder="" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Tipo imbarcazione</label>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Tipo imbarcazione", en: "Boat type" })}</label>
                         <select name="boatType" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                          <option value="">Seleziona</option>
-                          <option value="Barca a vela">Barca a vela</option>
-                          <option value="Catamarano">Catamarano</option>
+                          <option value="">{t({ it: "Seleziona", en: "Select" })}</option>
+                          <option value="Barca a vela">{t({ it: "Barca a vela", en: "Sailing boat" })}</option>
+                          <option value="Catamarano">{t({ it: "Catamarano", en: "Catamaran" })}</option>
                           <option value="Motoryacht">Motoryacht</option>
-                          <option value="Gommone">Gommone</option>
+                          <option value="Gommone">{t({ it: "Gommone", en: "RIB / dinghy" })}</option>
                           <option value="Superyacht">Superyacht</option>
-                          <option value="Altro">Altro</option>
+                          <option value="Altro">{t({ it: "Altro", en: "Other" })}</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Lunghezza minima (m)</label>
-                        <input type="number" name="minLength" min="1" placeholder="Es. 8" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Lunghezza minima (m)", en: "Minimum length (m)" })}</label>
+                        <input type="number" name="minLength" min="1" placeholder={t({ it: "Es. 8", en: "e.g. 8" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Prezzo minimo (€)</label>
-                        <input type="number" name="minPrice" min="0" placeholder="Es. 500" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Prezzo minimo (€)", en: "Minimum price (€)" })}</label>
+                        <input type="number" name="minPrice" min="0" placeholder={t({ it: "Es. 500", en: "e.g. 500" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Lunghezza massima (m)</label>
-                        <input type="number" name="maxLength" min="1" placeholder="Es. 30" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Lunghezza massima (m)", en: "Maximum length (m)" })}</label>
+                        <input type="number" name="maxLength" min="1" placeholder={t({ it: "Es. 30", en: "e.g. 30" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Prezzo minimo (€)</label>
-                        <input type="number" name="minPriceDup" min="0" placeholder="Es. 500" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Prezzo minimo (€)", en: "Minimum price (€)" })}</label>
+                        <input type="number" name="minPriceDup" min="0" placeholder={t({ it: "Es. 500", en: "e.g. 500" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-800 mb-1">Prezzo massimo (€)</label>
-                        <input type="number" name="maxPrice" min="0" placeholder="Es. 10,000" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        <label className="block text-sm font-semibold text-gray-800 mb-1">{t({ it: "Prezzo massimo (€)", en: "Maximum price (€)" })}</label>
+                        <input type="number" name="maxPrice" min="0" placeholder={t({ it: "Es. 10,000", en: "e.g. 10,000" })} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                       </div>
                     </div>
 
@@ -1380,7 +1385,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                         className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1ebe57] text-white text-lg font-bold py-4 rounded-xl transition-colors duration-200 shadow-lg"
                       >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        CHIEDI PREVENTIVO
+                        {t({ it: "CHIEDI PREVENTIVO", en: "REQUEST A QUOTE" })}
                       </button>
                     </div>
                   </form>
@@ -1429,11 +1434,11 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                   <div className="flex-1">
                     <p className="text-yellow-200 text-sm font-medium">
                       {usingCache
-                        ? 'Showing cached vehicles — connection issue detected'
-                        : 'Temporary connection issue — showing last known vehicles'}
+                        ? t({ it: 'Veicoli da cache — problema di connessione rilevato', en: 'Showing cached vehicles — connection issue detected' })
+                        : t({ it: 'Problema di connessione temporaneo — mostriamo gli ultimi veicoli noti', en: 'Temporary connection issue — showing last known vehicles' })}
                     </p>
                     <p className="text-yellow-300/70 text-xs mt-0.5">
-                      Vehicles may not reflect real-time availability. Retry to refresh.
+                      {t({ it: 'I veicoli potrebbero non riflettere la disponibilità in tempo reale. Riprova per aggiornare.', en: 'Vehicles may not reflect real-time availability. Retry to refresh.' })}
                     </p>
                   </div>
                 </div>

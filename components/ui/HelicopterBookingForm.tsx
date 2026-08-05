@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useContactInfo } from "../../hooks/useContactInfo";
+import { useTranslation } from "../../hooks/useTranslation";
 
 const HelicopterBookingForm: React.FC = () => {
   const navigate = useNavigate();
   const contact = useContactInfo();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     // Customer info
@@ -99,15 +101,15 @@ const HelicopterBookingForm: React.FC = () => {
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.firstName.trim()) newErrors.firstName = "Inserisci il tuo nome";
-    if (!formData.lastName.trim()) newErrors.lastName = "Inserisci il tuo cognome";
-    if (!formData.email.trim()) newErrors.email = "Inserisci la tua email";
-    if (!formData.phone.trim()) newErrors.phone = "Inserisci il tuo numero WhatsApp";
-    if (!formData.departureLocation.trim()) newErrors.departureLocation = "Inserisci il luogo di partenza";
-    if (!formData.arrivalLocation.trim()) newErrors.arrivalLocation = "Inserisci il luogo di arrivo";
-    if (!formData.flightDate.trim()) newErrors.flightDate = "Seleziona la data del volo";
-    if (!formData.passengerCount.trim()) newErrors.passengerCount = "Inserisci il numero di passeggeri";
-    if (!formData.terms) newErrors.terms = "Devi accettare i termini e le condizioni";
+    if (!formData.firstName.trim()) newErrors.firstName = t({ it: "Inserisci il tuo nome", en: "Enter your first name" });
+    if (!formData.lastName.trim()) newErrors.lastName = t({ it: "Inserisci il tuo cognome", en: "Enter your last name" });
+    if (!formData.email.trim()) newErrors.email = t({ it: "Inserisci la tua email", en: "Enter your email" });
+    if (!formData.phone.trim()) newErrors.phone = t({ it: "Inserisci il tuo numero WhatsApp", en: "Enter your WhatsApp number" });
+    if (!formData.departureLocation.trim()) newErrors.departureLocation = t({ it: "Inserisci il luogo di partenza", en: "Enter the departure location" });
+    if (!formData.arrivalLocation.trim()) newErrors.arrivalLocation = t({ it: "Inserisci il luogo di arrivo", en: "Enter the arrival location" });
+    if (!formData.flightDate.trim()) newErrors.flightDate = t({ it: "Seleziona la data del volo", en: "Select the flight date" });
+    if (!formData.passengerCount.trim()) newErrors.passengerCount = t({ it: "Inserisci il numero di passeggeri", en: "Enter the number of passengers" });
+    if (!formData.terms) newErrors.terms = t({ it: "Devi accettare i termini e le condizioni", en: "You must accept the terms and conditions" });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -224,60 +226,59 @@ const HelicopterBookingForm: React.FC = () => {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Indietro
+        {t({ it: "Indietro", en: "Back" })}
       </button>
 
-      <h2 className="text-2xl md:text-3xl font-semibold mb-4">Prenota il Tuo Volo in Elicottero</h2>
+      <h2 className="text-2xl md:text-3xl font-semibold mb-4">{t({ it: "Prenota il Tuo Volo in Elicottero", en: "Book Your Helicopter Flight" })}</h2>
       <p className="text-sm mb-6 text-zinc-300">
-        Compila il modulo qui sotto e verrai reindirizzato su WhatsApp con la tua richiesta precompilata.
-        I voli sono soggetti a disponibilità e condizioni meteorologiche.
+        {t({ it: 'Compila il modulo qui sotto e verrai reindirizzato su WhatsApp con la tua richiesta precompilata. I voli sono soggetti a disponibilità e condizioni meteorologiche.', en: 'Fill in the form below and you will be redirected to WhatsApp with your request pre-filled. Flights are subject to availability and weather conditions.' })}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Customer Info Section */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            Dati Cliente
+            {t({ it: "Dati Cliente", en: "Customer Details" })}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Nome *</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Nome *", en: "First name *" })}</label>
               <input
                 type="text"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. Marco"
+                placeholder={t({ it: "es. Marco", en: "e.g. Marco" })}
               />
               {errors.firstName && <p className="text-red-400 text-xs mt-1">{errors.firstName}</p>}
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium">Cognome *</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Cognome *", en: "Last name *" })}</label>
               <input
                 type="text"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. Rossi"
+                placeholder={t({ it: "es. Rossi", en: "e.g. Rossi" })}
               />
               {errors.lastName && <p className="text-red-400 text-xs mt-1">{errors.lastName}</p>}
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium">Email *</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Email *", en: "Email *" })}</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="tuaemail@mail.com"
+                placeholder={t({ it: "tuaemail@mail.com", en: "youremail@mail.com" })}
               />
               {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium">Telefono / WhatsApp *</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Telefono / WhatsApp *", en: "Phone / WhatsApp *" })}</label>
               <input
                 type="text"
                 name="phone"
@@ -294,52 +295,52 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 1. Flight Details */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            1. Dettagli del Volo
+            {t({ it: "1. Dettagli del Volo", en: "1. Flight Details" })}
           </h3>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-1 text-sm font-medium">Da dove (partenza) *</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Da dove (partenza) *", en: "From (departure) *" })}</label>
                 <input
                   type="text"
                   name="departureLocation"
                   value={formData.departureLocation}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Olbia aeroporto"
+                  placeholder={t({ it: "es. Olbia aeroporto", en: "e.g. Olbia airport" })}
                 />
                 {errors.departureLocation && <p className="text-red-400 text-xs mt-1">{errors.departureLocation}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-sm font-medium">A dove (arrivo) *</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "A dove (arrivo) *", en: "To (arrival) *" })}</label>
                 <input
                   type="text"
                   name="arrivalLocation"
                   value={formData.arrivalLocation}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Porto Cervo"
+                  placeholder={t({ it: "es. Porto Cervo", en: "e.g. Porto Cervo" })}
                 />
                 {errors.arrivalLocation && <p className="text-red-400 text-xs mt-1">{errors.arrivalLocation}</p>}
               </div>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Tipo di viaggio</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Tipo di viaggio", en: "Trip type" })}</label>
               <select
                 name="tripType"
                 value={formData.tripType}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="one_way">Solo Andata</option>
-                <option value="round_trip">Andata e Ritorno</option>
+                <option value="one_way">{t({ it: "Solo Andata", en: "One way" })}</option>
+                <option value="round_trip">{t({ it: "Andata e Ritorno", en: "Round trip" })}</option>
               </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-1 text-sm font-medium">Data partenza *</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Data partenza *", en: "Departure date *" })}</label>
                 <input
                   type="date"
                   name="flightDate"
@@ -350,7 +351,7 @@ const HelicopterBookingForm: React.FC = () => {
                 {errors.flightDate && <p className="text-red-400 text-xs mt-1">{errors.flightDate}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-sm font-medium">Orario partenza</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Orario partenza", en: "Departure time" })}</label>
                 <input
                   type="time"
                   name="flightTime"
@@ -364,7 +365,7 @@ const HelicopterBookingForm: React.FC = () => {
             {formData.tripType === 'round_trip' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-1 text-sm font-medium">Data ritorno</label>
+                  <label className="block mb-1 text-sm font-medium">{t({ it: "Data ritorno", en: "Return date" })}</label>
                   <input
                     type="date"
                     name="returnDate"
@@ -376,7 +377,7 @@ const HelicopterBookingForm: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-sm font-medium">Orario ritorno</label>
+                  <label className="block mb-1 text-sm font-medium">{t({ it: "Orario ritorno", en: "Return time" })}</label>
                   <input
                     type="time"
                     name="returnTime"
@@ -389,69 +390,69 @@ const HelicopterBookingForm: React.FC = () => {
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Preferisce un volo diretto?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Preferisce un volo diretto?", en: "Do you prefer a direct flight?" })}</label>
               <select
                 name="directFlight"
                 value={formData.directFlight}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="yes">Sì, volo diretto</option>
-                <option value="no">No, con tappe intermedie</option>
+                <option value="yes">{t({ it: "Sì, volo diretto", en: "Yes, direct flight" })}</option>
+                <option value="no">{t({ it: "No, con tappe intermedie", en: "No, with intermediate stops" })}</option>
               </select>
             </div>
 
             {formData.directFlight === 'no' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Specificare tappe intermedie</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Specificare tappe intermedie", en: "Specify intermediate stops" })}</label>
                 <input
                   type="text"
                   name="intermediateStops"
                   value={formData.intermediateStops}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Tappa a Cagliari"
+                  placeholder={t({ it: "es. Tappa a Cagliari", en: "e.g. Stop in Cagliari" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Esiste flessibilità di orario o giorno?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Esiste flessibilità di orario o giorno?", en: "Any flexibility on time or date?" })}</label>
               <select
                 name="hasFlexibility"
                 value={formData.hasFlexibility}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">No, data fissa</option>
-                <option value="yes">Sì, flessibile</option>
+                <option value="no">{t({ it: "No, data fissa", en: "No, fixed date" })}</option>
+                <option value="yes">{t({ it: "Sì, flessibile", en: "Yes, flexible" })}</option>
               </select>
             </div>
 
             {formData.hasFlexibility === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli flessibilità</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli flessibilità", en: "Flexibility details" })}</label>
                 <input
                   type="text"
                   name="flexibilityDetails"
                   value={formData.flexibilityDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Disponibile anche 2-3 giorni prima/dopo"
+                  placeholder={t({ it: "es. Disponibile anche 2-3 giorni prima/dopo", en: "e.g. Also available 2-3 days before/after" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Volo diurno o notturno?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Volo diurno o notturno?", en: "Day or night flight?" })}</label>
               <select
                 name="dayNightFlight"
                 value={formData.dayNightFlight}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="day">Diurno</option>
-                <option value="night">Notturno</option>
+                <option value="day">{t({ it: "Diurno", en: "Daytime" })}</option>
+                <option value="night">{t({ it: "Notturno", en: "Night" })}</option>
               </select>
             </div>
           </div>
@@ -460,11 +461,11 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 2. Passengers */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            2. Passeggeri
+            {t({ it: "2. Passeggeri", en: "2. Passengers" })}
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Quante persone viaggeranno? *</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Quante persone viaggeranno? *", en: "How many people will travel? *" })}</label>
               <input
                 type="number"
                 name="passengerCount"
@@ -472,13 +473,13 @@ const HelicopterBookingForm: React.FC = () => {
                 value={formData.passengerCount}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. 2"
+                placeholder={t({ it: "es. 2", en: "e.g. 2" })}
               />
               {errors.passengerCount && <p className="text-red-400 text-xs mt-1">{errors.passengerCount}</p>}
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">È previsto un bambino o un neonato?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "È previsto un bambino o un neonato?", en: "Any children or infants travelling?" })}</label>
               <select
                 name="hasChildren"
                 value={formData.hasChildren}
@@ -486,26 +487,26 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             {formData.hasChildren === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli bambini (età, numero)</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli bambini (età, numero)", en: "Children details (age, number)" })}</label>
                 <input
                   type="text"
                   name="childrenDetails"
                   value={formData.childrenDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. 1 bambino di 3 anni"
+                  placeholder={t({ it: "es. 1 bambino di 3 anni", en: "e.g. 1 child aged 3" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Ci sono animali a bordo?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Ci sono animali a bordo?", en: "Any pets on board?" })}</label>
               <select
                 name="hasPets"
                 value={formData.hasPets}
@@ -513,26 +514,26 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             {formData.hasPets === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli animali (razza, dimensione, peso)</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli animali (razza, dimensione, peso)", en: "Pet details (breed, size, weight)" })}</label>
                 <input
                   type="text"
                   name="petDetails"
                   value={formData.petDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Labrador, 30 kg"
+                  placeholder={t({ it: "es. Labrador, 30 kg", en: "e.g. Labrador, 30 kg" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">È necessario un assistente personale / hostess?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "È necessario un assistente personale / hostess?", en: "Do you need a personal assistant / hostess?" })}</label>
               <select
                 name="needsHostess"
                 value={formData.needsHostess}
@@ -540,12 +541,12 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Ospite VIP o figura pubblica?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Ospite VIP o figura pubblica?", en: "VIP guest or public figure?" })}</label>
               <select
                 name="isVIP"
                 value={formData.isVIP}
@@ -553,20 +554,20 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             {formData.isVIP === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli VIP (misure di riservatezza o sicurezza)</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli VIP (misure di riservatezza o sicurezza)", en: "VIP details (privacy or security measures)" })}</label>
                 <input
                   type="text"
                   name="vipDetails"
                   value={formData.vipDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Richiesta massima discrezione"
+                  placeholder={t({ it: "es. Richiesta massima discrezione", en: "e.g. Maximum discretion required" })}
                 />
               </div>
             )}
@@ -576,11 +577,11 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 3. Luggage */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            3. Bagagli
+            {t({ it: "3. Bagagli", en: "3. Luggage" })}
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Quanti bagagli avete in totale?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Quanti bagagli avete in totale?", en: "How many bags in total?" })}</label>
               <input
                 type="number"
                 name="luggageCount"
@@ -588,24 +589,24 @@ const HelicopterBookingForm: React.FC = () => {
                 value={formData.luggageCount}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. 3"
+                placeholder={t({ it: "es. 3", en: "e.g. 3" })}
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Dimensione e peso approssimativo</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Dimensione e peso approssimativo", en: "Approximate size and weight" })}</label>
               <input
                 type="text"
                 name="luggageDimensions"
                 value={formData.luggageDimensions}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. 2 valigie medie (20kg ciascuna), 1 zaino"
+                placeholder={t({ it: "es. 2 valigie medie (20kg ciascuna), 1 zaino", en: "e.g. 2 medium suitcases (20kg each), 1 backpack" })}
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Avete attrezzature speciali?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Avete attrezzature speciali?", en: "Any special equipment?" })}</label>
               <select
                 name="hasSpecialEquipment"
                 value={formData.hasSpecialEquipment}
@@ -613,26 +614,26 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             {formData.hasSpecialEquipment === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli attrezzature speciali</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli attrezzature speciali", en: "Special equipment details" })}</label>
                 <input
                   type="text"
                   name="specialEquipmentDetails"
                   value={formData.specialEquipmentDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Mazze da golf, strumenti musicali"
+                  placeholder={t({ it: "es. Mazze da golf, strumenti musicali", en: "e.g. Golf clubs, musical instruments" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Serve spazio per bagagli ingombranti?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Serve spazio per bagagli ingombranti?", en: "Do you need space for oversized luggage?" })}</label>
               <select
                 name="needsBulkySpace"
                 value={formData.needsBulkySpace}
@@ -640,7 +641,7 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
           </div>
@@ -649,47 +650,47 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 4. Flight Type & Preferences */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            4. Tipologia di Volo e Preferenze
+            {t({ it: "4. Tipologia di Volo e Preferenze", en: "4. Flight Type and Preferences" })}
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Tipo di volo</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Tipo di volo", en: "Flight type" })}</label>
               <input
                 type="text"
                 name="flightPurpose"
                 value={formData.flightPurpose}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. Business, turistico, evento speciale, transfer rapido"
+                placeholder={t({ it: "es. Business, turistico, evento speciale, transfer rapido", en: "e.g. Business, leisure, special event, fast transfer" })}
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Priorità principale</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Priorità principale", en: "Main priority" })}</label>
               <input
                 type="text"
                 name="mainPriority"
                 value={formData.mainPriority}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. Velocità, lusso, risparmio"
+                placeholder={t({ it: "es. Velocità, lusso, risparmio", en: "e.g. Speed, luxury, value" })}
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Modello di velivolo preferito (opzionale)</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Modello di velivolo preferito (opzionale)", en: "Preferred aircraft model (optional)" })}</label>
               <input
                 type="text"
                 name="preferredModel"
                 value={formData.preferredModel}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="es. AW109, Airbus H145"
+                placeholder={t({ it: "es. AW109, Airbus H145", en: "e.g. AW109, Airbus H145" })}
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Serve un logo aziendale a bordo?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Serve un logo aziendale a bordo?", en: "Do you need a company logo on board?" })}</label>
               <select
                 name="needsLogo"
                 value={formData.needsLogo}
@@ -697,87 +698,87 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             {formData.needsLogo === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli logo</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli logo", en: "Logo details" })}</label>
                 <input
                   type="text"
                   name="logoDetails"
                   value={formData.logoDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="Nome azienda / brand"
+                  placeholder={t({ it: "Nome azienda / brand", en: "Company / brand name" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Wi-Fi a bordo</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Wi-Fi a bordo", en: "Wi-Fi on board" })}</label>
               <select
                 name="needsWifi"
                 value={formData.needsWifi}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, richiesto</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, richiesto", en: "Yes, required" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Catering di bordo</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Catering di bordo", en: "On-board catering" })}</label>
               <select
                 name="needsCatering"
                 value={formData.needsCatering}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, richiesto</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, richiesto", en: "Yes, required" })}</option>
               </select>
             </div>
 
             {formData.needsCatering === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli catering</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli catering", en: "Catering details" })}</label>
                 <input
                   type="text"
                   name="cateringDetails"
                   value={formData.cateringDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Champagne, snack, pasto completo"
+                  placeholder={t({ it: "es. Champagne, snack, pasto completo", en: "e.g. Champagne, snacks, full meal" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Transfer a terra (auto di lusso)</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Transfer a terra (auto di lusso)", en: "Ground transfer (luxury car)" })}</label>
               <select
                 name="needsGroundTransfer"
                 value={formData.needsGroundTransfer}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, richiesto</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, richiesto", en: "Yes, required" })}</option>
               </select>
             </div>
 
             {formData.needsGroundTransfer === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli transfer</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli transfer", en: "Transfer details" })}</label>
                 <input
                   type="text"
                   name="transferDetails"
                   value={formData.transferDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Da aeroporto a hotel"
+                  placeholder={t({ it: "es. Da aeroporto a hotel", en: "e.g. From airport to hotel" })}
                 />
               </div>
             )}
@@ -787,36 +788,36 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 5. Technical & Logistics */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            5. Dettagli Tecnici e Logistici
+            {t({ it: "5. Dettagli Tecnici e Logistici", en: "5. Technical and Logistics Details" })}
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Conoscete già l'eliporto di arrivo?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Conoscete già l'eliporto di arrivo?", en: "Do you already know the arrival helipad?" })}</label>
               <select
                 name="knowsAirport"
                 value={formData.knowsAirport}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="yes">Sì</option>
-                <option value="no">No, serve individuare quello più vicino</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
+                <option value="no">{t({ it: "No, serve individuare quello più vicino", en: "No, we need help finding the closest one" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Dettagli eliporto / aeroporto</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli eliporto / aeroporto", en: "Helipad / airport details" })}</label>
               <input
                 type="text"
                 name="airportDetails"
                 value={formData.airportDetails}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="Nome eliporto o aeroporto, codice ICAO/IATA"
+                placeholder={t({ it: "Nome eliporto o aeroporto, codice ICAO/IATA", en: "Helipad or airport name, ICAO/IATA code" })}
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Serve atterraggio su rooftop / terreno privato?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Serve atterraggio su rooftop / terreno privato?", en: "Do you need a rooftop / private land landing?" })}</label>
               <select
                 name="needsRooftopLanding"
                 value={formData.needsRooftopLanding}
@@ -824,26 +825,26 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
 
             {formData.needsRooftopLanding === 'yes' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Dettagli località atterraggio</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Dettagli località atterraggio", en: "Landing location details" })}</label>
                 <input
                   type="text"
                   name="landingLocationDetails"
                   value={formData.landingLocationDetails}
                   onChange={handleChange}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                  placeholder="es. Villa privata, hotel, zona urbana"
+                  placeholder={t({ it: "es. Villa privata, hotel, zona urbana", en: "e.g. Private villa, hotel, urban area" })}
                 />
               </div>
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Serve assistenza bagagli / sicurezza all'imbarco?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Serve assistenza bagagli / sicurezza all'imbarco?", en: "Do you need luggage assistance / security at boarding?" })}</label>
               <select
                 name="needsLuggageAssistance"
                 value={formData.needsLuggageAssistance}
@@ -851,7 +852,7 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
           </div>
@@ -860,25 +861,25 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 6. Economic & Administrative */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            6. Condizioni Economiche e Amministrative
+            {t({ it: "6. Condizioni Economiche e Amministrative", en: "6. Financial and Administrative Terms" })}
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Preventivo intestato a</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Preventivo intestato a", en: "Quote issued to" })}</label>
               <select
                 name="billingType"
                 value={formData.billingType}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="individual">Persona fisica</option>
-                <option value="company">Società</option>
+                <option value="individual">{t({ it: "Persona fisica", en: "Individual" })}</option>
+                <option value="company">{t({ it: "Società", en: "Company" })}</option>
               </select>
             </div>
 
             {formData.billingType === 'company' && (
               <div>
-                <label className="block mb-1 text-sm font-medium">Partita IVA</label>
+                <label className="block mb-1 text-sm font-medium">{t({ it: "Partita IVA", en: "VAT number" })}</label>
                 <input
                   type="text"
                   name="vatNumber"
@@ -891,7 +892,7 @@ const HelicopterBookingForm: React.FC = () => {
             )}
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Codice fiscale (opzionale)</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Codice fiscale (opzionale)", en: "Tax code (optional)" })}</label>
               <input
                 type="text"
                 name="fiscalCode"
@@ -902,35 +903,35 @@ const HelicopterBookingForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Metodo di pagamento preferito</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Metodo di pagamento preferito", en: "Preferred payment method" })}</label>
               <select
                 name="paymentMethod"
                 value={formData.paymentMethod}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="">Seleziona</option>
-                <option value="Carta">Carta</option>
-                <option value="Bonifico">Bonifico</option>
-                <option value="Contanti">Contanti</option>
+                <option value="">{t({ it: "Seleziona", en: "Select" })}</option>
+                <option value="Carta">{t({ it: "Carta", en: "Card" })}</option>
+                <option value="Bonifico">{t({ it: "Bonifico", en: "Bank transfer" })}</option>
+                <option value="Contanti">{t({ it: "Contanti", en: "Cash" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Preventivo IVA</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Preventivo IVA", en: "VAT on quote" })}</label>
               <select
                 name="vatIncluded"
                 value={formData.vatIncluded}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="yes">Inclusa</option>
-                <option value="no">Esclusa</option>
+                <option value="yes">{t({ it: "Inclusa", en: "Included" })}</option>
+                <option value="no">{t({ it: "Esclusa", en: "Excluded" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Serve contratto di sub-noleggio?</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Serve contratto di sub-noleggio?", en: "Do you need a sub-charter contract?" })}</label>
               <select
                 name="needsContract"
                 value={formData.needsContract}
@@ -938,7 +939,7 @@ const HelicopterBookingForm: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
                 <option value="no">No</option>
-                <option value="yes">Sì</option>
+                <option value="yes">{t({ it: "Sì", en: "Yes" })}</option>
               </select>
             </div>
           </div>
@@ -947,58 +948,58 @@ const HelicopterBookingForm: React.FC = () => {
         {/* 7. Optional Services */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            7. Servizi Opzionali o Premium
+            {t({ it: "7. Servizi Opzionali o Premium", en: "7. Optional or Premium Services" })}
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Assicurazione full risk</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Assicurazione full risk", en: "Full-risk insurance" })}</label>
               <select
                 name="needsInsurance"
                 value={formData.needsInsurance}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, richiesto</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, richiesto", en: "Yes, required" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Sicurezza privata o scorta a terra</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Sicurezza privata o scorta a terra", en: "Private security or ground escort" })}</label>
               <select
                 name="needsSecurity"
                 value={formData.needsSecurity}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, richiesto</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, richiesto", en: "Yes, required" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Pernottamento equipaggio (rientro posticipato)</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Pernottamento equipaggio (rientro posticipato)", en: "Crew overnight stay (delayed return)" })}</label>
               <select
                 name="needsCrewAccommodation"
                 value={formData.needsCrewAccommodation}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, necessario</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, necessario", en: "Yes, needed" })}</option>
               </select>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Richiesta NDA (Non Disclosure Agreement)</label>
+              <label className="block mb-1 text-sm font-medium">{t({ it: "Richiesta NDA (Non Disclosure Agreement)", en: "NDA request (Non Disclosure Agreement)" })}</label>
               <select
                 name="needsNDA"
                 value={formData.needsNDA}
                 onChange={handleChange}
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
               >
-                <option value="no">Non necessario</option>
-                <option value="yes">Sì, richiesto</option>
+                <option value="no">{t({ it: "Non necessario", en: "Not needed" })}</option>
+                <option value="yes">{t({ it: "Sì, richiesto", en: "Yes, required" })}</option>
               </select>
             </div>
           </div>
@@ -1007,7 +1008,7 @@ const HelicopterBookingForm: React.FC = () => {
         {/* General Notes */}
         <div className="bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            Note Aggiuntive
+            {t({ it: "Note Aggiuntive", en: "Additional Notes" })}
           </h3>
           <textarea
             name="notes"
@@ -1015,7 +1016,7 @@ const HelicopterBookingForm: React.FC = () => {
             onChange={handleChange}
             rows={4}
             className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-            placeholder="Eventuali altre richieste, dettagli o informazioni..."
+            placeholder={t({ it: "Eventuali altre richieste, dettagli o informazioni...", en: "Any other requests, details or information..." })}
           />
         </div>
 
@@ -1029,7 +1030,7 @@ const HelicopterBookingForm: React.FC = () => {
             className="mt-1"
           />
           <p className="text-sm text-zinc-200">
-            Accetto i termini e le condizioni del servizio e comprendo che questa richiesta è soggetta a disponibilità.
+            {t({ it: 'Accetto i termini e le condizioni del servizio e comprendo che questa richiesta è soggetta a disponibilità.', en: 'I accept the terms and conditions of the service and understand that this request is subject to availability.' })}
           </p>
         </div>
         {errors.terms && <p className="text-red-400 text-xs mt-1">{errors.terms}</p>}
@@ -1039,12 +1040,11 @@ const HelicopterBookingForm: React.FC = () => {
           type="submit"
           className="w-full bg-white hover:bg-gray-200 text-black font-semibold py-3 rounded-md transition text-lg"
         >
-          Invia Richiesta via WhatsApp
+          {t({ it: "Invia Richiesta via WhatsApp", en: "Send Request via WhatsApp" })}
         </button>
 
         <p className="text-xs text-center text-zinc-400">
-          Verrai reindirizzato su WhatsApp con tutti i dettagli precompilati.
-          Ti contatteremo entro 24 ore con un preventivo personalizzato.
+          {t({ it: 'Verrai reindirizzato su WhatsApp con tutti i dettagli precompilati. Ti contatteremo entro 24 ore con un preventivo personalizzato.', en: 'You will be redirected to WhatsApp with all details pre-filled. We will contact you within 24 hours with a personalised quote.' })}
         </p>
       </form>
     </div>

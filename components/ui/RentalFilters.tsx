@@ -1,6 +1,7 @@
 /**
  * RentalFilters — Sort and filter controls for vehicle results
  */
+import { useTranslation } from '../../hooks/useTranslation'
 
 interface Props {
   sortBy: string
@@ -41,13 +42,14 @@ export default function RentalFilters({
   totalResults,
   categoryLabels = {},
 }: Props) {
+  const { t } = useTranslation()
   const labelFor = (id: string) =>
     categoryLabels[id] || LEGACY_LABELS[id] || humanize(id)
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6 bg-gray-900/40 border border-gray-800 rounded-xl px-4 py-3">
       {/* Results count */}
       <span className="text-sm text-gray-400 mr-2">
-        {totalResults} {totalResults === 1 ? 'veicolo disponibile' : 'veicoli disponibili'}
+        {totalResults} {totalResults === 1 ? t({ it: "veicolo disponibile", en: "vehicle available" }) : t({ it: "veicoli disponibili", en: "vehicles available" })}
       </span>
 
       {/* Sort */}
@@ -56,9 +58,9 @@ export default function RentalFilters({
         onChange={e => onSortChange(e.target.value)}
         className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:ring-1 focus:ring-white"
       >
-        <option value="default">Ordine predefinito</option>
-        <option value="price-asc">Prezzo piu basso</option>
-        <option value="price-desc">Prezzo piu alto</option>
+        <option value="default">{t({ it: "Ordine predefinito", en: "Default order" })}</option>
+        <option value="price-asc">{t({ it: "Prezzo piu basso", en: "Lowest price" })}</option>
+        <option value="price-desc">{t({ it: "Prezzo piu alto", en: "Highest price" })}</option>
       </select>
 
       {/* Category filter (only show if multiple categories) */}

@@ -19,7 +19,7 @@ interface CartItem {
 }
 
 const CarWashBookingPage: React.FC = () => {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
@@ -1193,7 +1193,7 @@ const CarWashBookingPage: React.FC = () => {
       if (!isRedirecting) {
         isSubmittingRef.current = false;
         setIsProcessing(false);
-        setPaymentError('Timeout — riprova il pagamento.');
+        setPaymentError(t({ it: "Timeout — riprova il pagamento.", en: "Timeout — please retry the payment." }));
       }
     }, 120000);
 
@@ -1204,7 +1204,7 @@ const CarWashBookingPage: React.FC = () => {
         // Credit wallet payment requires login
         if (!user?.id) {
           clearTimeout(safetyTimer);
-          throw new Error('Devi effettuare il login per procedere.');
+          throw new Error(t({ it: "Devi effettuare il login per procedere.", en: "You must sign in to continue." }));
         }
 
         const totalAmount = calculateTotal();
@@ -1482,7 +1482,7 @@ const CarWashBookingPage: React.FC = () => {
     } catch (error: any) {
       console.error('Payment error:', error);
       setPaymentError(
-        error instanceof Error ? error.message : 'An unexpected error occurred'
+        error instanceof Error ? error.message : t('Unexpected_error')
       );
       isSubmittingRef.current = false;
       setIsProcessing(false);
@@ -1967,10 +1967,10 @@ const CarWashBookingPage: React.FC = () => {
                     <div className="min-w-0">
                       <span className="font-bold text-white">PRIME FLEX</span>
                       <ul className="text-sm text-gray-400 mt-2 space-y-1 list-disc list-inside marker:text-yellow-400">
-                        <li>Cancellazione consentita fino al giorno stesso del servizio.</li>
-                        <li>Rimborso del 90% in credito DR7 Wallet per utilizzi futuri.</li>
-                        <li>È possibile 1 solo spostamento gratuito, salvo eventuale differenza di prezzo.</li>
-                        <li>Nessuna perdita totale dell'importo, salvo promozioni non rimborsabili o mancata presentazione.</li>
+                        <li>{t({ it: "Cancellazione consentita fino al giorno stesso del servizio.", en: "Cancellation allowed up to the day of the service." })}</li>
+                        <li>{t({ it: "Rimborso del 90% in credito DR7 Wallet per utilizzi futuri.", en: "90% refunded as DR7 Wallet credit for future use." })}</li>
+                        <li>{t({ it: "È possibile 1 solo spostamento gratuito, salvo eventuale differenza di prezzo.", en: "One free reschedule is allowed, subject to any price difference." })}</li>
+                        <li>{t({ it: "Nessuna perdita totale dell'importo, salvo promozioni non rimborsabili o mancata presentazione.", en: "No total loss of the amount, except for non-refundable promotions or no-shows." })}</li>
                       </ul>
                     </div>
                   </div>
@@ -2009,7 +2009,7 @@ const CarWashBookingPage: React.FC = () => {
                     type="text"
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                    placeholder="Inserisci codice (es. BDAY-XXXX-XXXX)"
+                    placeholder={t({ it: "Inserisci codice (es. BDAY-XXXX-XXXX)", en: "Enter code (e.g. BDAY-XXXX-XXXX)" })}
                     className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 uppercase"
                   />
                   <button

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import type { User } from '../types';
 import { supabase } from '../supabaseClient';
+import { translate } from '../utils/i18nStatic';
 // FIX: Removed OtpVerificationError as it is not an exported member of '@supabase/supabase-js'
 import type { AuthError, Session, User as SupabaseUser, OAuthResponse, UserResponse } from '@supabase/supabase-js';
 
@@ -231,7 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!token) {
-        throw new Error('Session expired. Please log out and log in again.');
+        throw new Error(translate({ it: 'Sessione scaduta. Esci e accedi di nuovo.', en: 'Session expired. Please log out and log in again.' }));
       }
 
       // Check for corrupted token (should be ~1000 chars, not 300k)
@@ -240,7 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.clear();
         sessionStorage.clear();
         await supabase.auth.signOut();
-        throw new Error('Session corrupted. Please refresh the page and log in again.');
+        throw new Error(translate({ it: 'Sessione corrotta. Ricarica la pagina e accedi di nuovo.', en: 'Session corrupted. Please refresh the page and log in again.' }));
       }
 
       const response = await fetch('/.netlify/functions/delete-account', {
@@ -255,11 +256,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         data = JSON.parse(text);
       } catch {
-        throw new Error('Server error');
+        throw new Error(translate({ it: 'Errore del server', en: 'Server error' }));
       }
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Delete failed');
+        throw new Error(data.error || translate({ it: 'Eliminazione non riuscita', en: 'Delete failed' }));
       }
 
       setUser(null);

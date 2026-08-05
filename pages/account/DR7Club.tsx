@@ -3,6 +3,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../supabaseClient'
 import { getUserCreditBalance, getCreditTransactions } from '../../utils/creditWallet'
 import type { CreditTransaction } from '../../utils/creditWallet'
+import { useTranslation } from '../../hooks/useTranslation'
+import { dateLocale } from '../../utils/i18nDate'
 import {
   getClubStatus,
   CLUB_PLANS,
@@ -15,6 +17,7 @@ import {
 } from '../../utils/dr7club'
 
 const DR7Club = () => {
+  const { t, lang } = useTranslation()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState<ClubSubscription | null>(null)
@@ -140,7 +143,7 @@ const DR7Club = () => {
   if (loading) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8 text-center">
-        <p className="text-gray-400">Caricamento DR7 Club...</p>
+        <p className="text-gray-400">{t({ it: "Caricamento DR7 Club...", en: "Loading DR7 Club..." })}</p>
       </div>
     )
   }
@@ -160,23 +163,23 @@ const DR7Club = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-white">DR7 Club</h2>
           {isActive ? (
-            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-bold rounded-full">Attivo</span>
+            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-bold rounded-full">{t({ it: "Attivo", en: "Active" })}</span>
           ) : (
-            <span className="px-3 py-1 bg-gray-700 text-gray-400 text-sm font-bold rounded-full">Non iscritto</span>
+            <span className="px-3 py-1 bg-gray-700 text-gray-400 text-sm font-bold rounded-full">{t({ it: "Non iscritto", en: "Not enrolled" })}</span>
           )}
         </div>
         <p className="text-gray-400 text-sm">
-          Guadagna fino al 4% in credito wallet su ogni noleggio. Più spendi, più guadagni.
+          {t({ it: "Guadagna fino al 4% in credito wallet su ogni noleggio. Più spendi, più guadagni.", en: "Earn up to 4% in wallet credit on every rental. The more you spend, the more you earn." })}
         </p>
       </div>
 
       {/* Subscription Plans (if not active) */}
       {!isActive && (
         <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-white mb-4">Iscriviti al DR7 Club</h3>
+          <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Iscriviti al DR7 Club", en: "Join the DR7 Club" })}</h3>
           <p className="text-gray-400 text-sm mb-6">
-            Scegli il tuo piano e inizia a guadagnare credito wallet su ogni prenotazione.
-            Bonus di €{SIGNUP_BONUS} alla prima iscrizione!
+            {t({ it: 'Scegli il tuo piano e inizia a guadagnare credito wallet su ogni prenotazione.', en: 'Choose your plan and start earning wallet credit on every booking.' })}
+            {t({ it: 'Bonus di', en: 'Bonus of' })} €{SIGNUP_BONUS} {t({ it: 'alla prima iscrizione!', en: 'when you first join!' })}
           </p>
           {subscribeError && (
             <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
@@ -189,7 +192,7 @@ const DR7Club = () => {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h4 className="text-white font-bold text-lg">{CLUB_PLANS.monthly.label}</h4>
-                  <p className="text-gray-400 text-sm">Flessibile, senza vincoli</p>
+                  <p className="text-gray-400 text-sm">{t({ it: "Flessibile, senza vincoli", en: "Flexible, no commitment" })}</p>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-white">€{CLUB_PLANS.monthly.price.toFixed(2)}</span>
@@ -201,17 +204,17 @@ const DR7Club = () => {
                 disabled={subscribing}
                 className="w-full mt-3 py-2.5 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors text-sm"
               >
-                Iscriviti ora
+                {t({ it: "Iscriviti ora", en: "Join now" })}
               </button>
             </div>
 
             {/* Annual */}
             <div className="border-2 border-[#C9A96E]/50 rounded-lg p-5 relative">
-              <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#C9A96E] text-black text-xs font-bold rounded">RISPARMIA 33%</div>
+              <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#C9A96E] text-black text-xs font-bold rounded">{t({ it: "RISPARMIA 33%", en: "SAVE 33%" })}</div>
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h4 className="text-white font-bold text-lg">{CLUB_PLANS.annual.label}</h4>
-                  <p className="text-gray-400 text-sm">+ €{ANNUAL_RENEWAL_BONUS} bonus rinnovo</p>
+                  <p className="text-gray-400 text-sm">+ €{ANNUAL_RENEWAL_BONUS} {t({ it: "bonus rinnovo", en: "renewal bonus" })}</p>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-[#D4B896]">€{CLUB_PLANS.annual.price}</span>
@@ -223,7 +226,7 @@ const DR7Club = () => {
                 disabled={subscribing}
                 className="w-full mt-3 py-2.5 bg-[#C9A96E] text-black font-bold rounded-lg hover:bg-[#D4B896] transition-colors text-sm"
               >
-                Iscriviti ora
+                {t({ it: "Iscriviti ora", en: "Join now" })}
               </button>
             </div>
           </div>
@@ -235,15 +238,15 @@ const DR7Club = () => {
         <div className="bg-gray-900/50 border border-green-500/30 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Piano attivo</p>
+              <p className="text-gray-400 text-sm">{t({ it: "Piano attivo", en: "Active plan" })}</p>
               <p className="text-white font-bold text-lg">
-                {subscription.plan === 'monthly' ? 'Mensile' : 'Annuale'} — €{subscription.price}{subscription.plan === 'monthly' ? '/mese' : '/anno'}
+                {subscription.plan === 'monthly' ? t({ it: "Mensile", en: "Monthly" }) : t({ it: "Annuale", en: "Annual" })} — €{subscription.price}{subscription.plan === 'monthly' ? t({ it: "/mese", en: "/month" }) : t({ it: "/anno", en: "/year" })}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-gray-400 text-sm">Scade il</p>
+              <p className="text-gray-400 text-sm">{t({ it: "Scade il", en: "Expires on" })}</p>
               <p className="text-white font-medium">
-                {new Date(subscription.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                {new Date(subscription.expires_at).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>
@@ -259,13 +262,13 @@ const DR7Club = () => {
                 {tierInfo.label}
               </span>
               <div>
-                <p className="text-white font-bold">Livello {tierInfo.label}</p>
-                <p className="text-gray-400 text-sm">Reward: {tierInfo.rewardPercent}% su ogni noleggio</p>
+                <p className="text-white font-bold">{t({ it: "Livello", en: "Tier" })} {tierInfo.label}</p>
+                <p className="text-gray-400 text-sm">{t({ it: "Reward:", en: "Reward:" })} {tierInfo.rewardPercent}% {t({ it: "su ogni noleggio", en: "on every rental" })}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-gray-400 text-sm">Spesa annuale</p>
-              <p className="text-white font-bold text-xl">€{tierInfo.annualSpend.toLocaleString('it-IT', { minimumFractionDigits: 0 })}</p>
+              <p className="text-gray-400 text-sm">{t({ it: "Spesa annuale", en: "Annual spend" })}</p>
+              <p className="text-white font-bold text-xl">€{tierInfo.annualSpend.toLocaleString(dateLocale(lang), { minimumFractionDigits: 0 })}</p>
             </div>
           </div>
 
@@ -273,8 +276,8 @@ const DR7Club = () => {
           {tierInfo.nextTier && (
             <div className="mt-4">
               <div className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>Livello {tierInfo.label}</span>
-                <span>Livello {TIER_THRESHOLDS.find(t => t.tier === tierInfo.nextTier)?.label} (€{tierInfo.nextTierThreshold.toLocaleString()})</span>
+                <span>{t({ it: "Livello", en: "Tier" })} {tierInfo.label}</span>
+                <span>{t({ it: "Livello", en: "Tier" })} {TIER_THRESHOLDS.find(x => x.tier === tierInfo.nextTier)?.label} (€{tierInfo.nextTierThreshold.toLocaleString()})</span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-2.5">
                 <div
@@ -283,38 +286,38 @@ const DR7Club = () => {
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Mancano €{(tierInfo.nextTierThreshold - tierInfo.annualSpend).toLocaleString('it-IT')} per il livello successivo
+                {t({ it: 'Mancano', en: 'Still' })} €{(tierInfo.nextTierThreshold - tierInfo.annualSpend).toLocaleString(dateLocale(lang))} {t({ it: 'per il livello successivo', en: 'to the next tier' })}
               </p>
             </div>
           )}
 
           {!tierInfo.nextTier && (
-            <p className="mt-3 text-sm text-[#D4B896] font-medium">Hai raggiunto il livello massimo! Reward del {tierInfo.rewardPercent}% su ogni noleggio.</p>
+            <p className="mt-3 text-sm text-[#D4B896] font-medium">{t({ it: "Hai raggiunto il livello massimo!", en: "You have reached the top tier!" })} {tierInfo.rewardPercent}% {t({ it: "di reward su ogni noleggio.", en: "reward on every rental." })}</p>
           )}
         </div>
       )}
 
       {/* Tiers Table */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Livelli DR7 Club</h3>
+        <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Livelli DR7 Club", en: "DR7 Club tiers" })}</h3>
         <div className="grid grid-cols-3 gap-3">
-          {TIER_THRESHOLDS.map(t => (
+          {TIER_THRESHOLDS.map(tier => (
             <div
-              key={t.tier}
-              className={`p-4 rounded-lg border text-center ${tierInfo?.tier === t.tier
-                ? `${tierColors[t.tier].border} ${tierColors[t.tier].bg}`
+              key={tier.tier}
+              className={`p-4 rounded-lg border text-center ${tierInfo?.tier === tier.tier
+                ? `${tierColors[tier.tier].border} ${tierColors[tier.tier].bg}`
                 : 'border-gray-700 bg-gray-800/30'}`}
             >
-              <p className={`font-bold text-lg ${tierInfo?.tier === t.tier ? tierColors[t.tier].text : 'text-gray-400'}`}>
-                {t.label}
+              <p className={`font-bold text-lg ${tierInfo?.tier === tier.tier ? tierColors[tier.tier].text : 'text-gray-400'}`}>
+                {tier.label}
               </p>
               <p className="text-gray-500 text-xs mt-1">
-                {t.max === Infinity ? `da €${t.min.toLocaleString()}` : `€${t.min.toLocaleString()} – €${t.max.toLocaleString()}`}
+                {tier.max === Infinity ? `${t({ it: 'da', en: 'from' })} €${tier.min.toLocaleString()}` : `€${tier.min.toLocaleString()} – €${tier.max.toLocaleString()}`}
               </p>
-              <p className={`text-2xl font-bold mt-2 ${tierInfo?.tier === t.tier ? 'text-[#D4B896]' : 'text-gray-500'}`}>
-                {t.rewardPercent}%
+              <p className={`text-2xl font-bold mt-2 ${tierInfo?.tier === tier.tier ? 'text-[#D4B896]' : 'text-gray-500'}`}>
+                {tier.rewardPercent}%
               </p>
-              <p className="text-gray-500 text-xs">reward</p>
+              <p className="text-gray-500 text-xs">{t({ it: 'reward', en: 'reward' })}</p>
             </div>
           ))}
         </div>
@@ -331,54 +334,54 @@ const DR7Club = () => {
         return (
           <div className="bg-gradient-to-br from-yellow-900/20 to-gray-900/50 border border-yellow-700/40 rounded-lg p-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-bold text-white">Interesse DR7 CLUB PRIVILEGE</h3>
-              <span className="text-xs text-yellow-400 font-medium">0,1% / giorno</span>
+              <h3 className="text-lg font-bold text-white">{t({ it: "Interesse DR7 CLUB PRIVILEGE", en: "DR7 CLUB PRIVILEGE interest" })}</h3>
+              <span className="text-xs text-yellow-400 font-medium">{t({ it: "0,1% / giorno", en: "0.1% / day" })}</span>
             </div>
             <p className="text-gray-400 text-sm mb-4">
-              Ogni giorno guadagni lo 0,1% sul saldo del wallet pagato con carta. Accredito automatico il 1° del mese successivo.
+              {t({ it: "Ogni giorno guadagni lo 0,1% sul saldo del wallet pagato con carta. Accredito automatico il 1° del mese successivo.", en: "Every day you earn 0.1% on the card-paid wallet balance. Automatically credited on the 1st of the following month." })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className="rounded-lg border border-yellow-700/40 bg-yellow-900/10 p-3">
-                <p className="text-xs text-gray-400 mb-1">Maturato oggi</p>
+                <p className="text-xs text-gray-400 mb-1">{t({ it: "Maturato oggi", en: "Accrued today" })}</p>
                 <p className="text-2xl font-bold text-yellow-400">
                   {todayRow ? `+€${Number(todayRow.accrual_eur).toFixed(4)}` : '—'}
                 </p>
                 <p className="text-[10px] text-gray-500 mt-1">
                   {todayRow
-                    ? `su €${Number(todayRow.principal_eur).toFixed(2)} di capitale`
-                    : 'in calcolo questa notte'}
+                    ? `${t({ it: 'su', en: 'on' })} €${Number(todayRow.principal_eur).toFixed(2)} ${t({ it: 'di capitale', en: 'of principal' })}`
+                    : t({ it: 'in calcolo questa notte', en: 'being calculated tonight' })}
                 </p>
               </div>
               <div className="rounded-lg border border-yellow-700/40 bg-yellow-900/10 p-3">
-                <p className="text-xs text-gray-400 mb-1">Mese in corso (in attesa)</p>
+                <p className="text-xs text-gray-400 mb-1">{t({ it: "Mese in corso (in attesa)", en: "Current month (pending)" })}</p>
                 <p className="text-2xl font-bold text-amber-400">€{(Math.round(monthUnpaid * 100) / 100).toFixed(2)}</p>
                 <p className="text-[10px] text-gray-500 mt-1">
-                  {monthAccruals.length} giorn{monthAccruals.length === 1 ? 'o' : 'i'}
+                  {monthAccruals.length} {monthAccruals.length === 1 ? t({ it: "giorno", en: "day" }) : t({ it: "giorni", en: "days" })}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
-                <p className="text-xs text-gray-400 mb-1">Accreditato (ultimi 90gg)</p>
+                <p className="text-xs text-gray-400 mb-1">{t({ it: "Accreditato (ultimi 90gg)", en: "Credited (last 90 days)" })}</p>
                 <p className="text-2xl font-bold text-green-400">€{(Math.round(totalPaid * 100) / 100).toFixed(2)}</p>
               </div>
             </div>
             {interestAccruals.length === 0 ? (
               <p className="text-xs text-gray-400 italic">
-                Il primo interesse viene calcolato la notte successiva alla tua iscrizione. Torna domani per vedere il maturato giornaliero.
+                {t({ it: "Il primo interesse viene calcolato la notte successiva alla tua iscrizione. Torna domani per vedere il maturato giornaliero.", en: "The first interest is calculated the night after you join. Come back tomorrow to see the daily accrual." })}
               </p>
             ) : (
               <details className="text-sm">
                 <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 font-medium">
-                  Mostra storico giornaliero
+                  {t({ it: "Mostra storico giornaliero", en: "Show daily history" })}
                 </summary>
                 <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
                   {interestAccruals.slice(0, 31).map(a => (
                     <div key={a.accrual_date} className="flex justify-between items-center py-2 border-b border-gray-800 last:border-0">
                       <div>
                         <p className="text-white text-sm">
-                          {new Date(a.accrual_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {new Date(a.accrual_date).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
                         <p className="text-gray-500 text-xs">
-                          Capitale: €{Number(a.principal_eur).toFixed(2)} · {a.paid_out_at ? 'Accreditato' : 'In attesa'}
+                          {t({ it: 'Capitale:', en: 'Principal:' })} €{Number(a.principal_eur).toFixed(2)} · {a.paid_out_at ? t({ it: "Accreditato", en: "Credited" }) : t({ it: "In attesa", en: "Pending" })}
                         </p>
                       </div>
                       <span className="font-bold text-sm text-yellow-400">
@@ -400,20 +403,20 @@ const DR7Club = () => {
           <span className="text-2xl font-bold text-green-400">€{walletBalance.toFixed(2)}</span>
         </div>
         <p className="text-gray-400 text-sm mb-4">
-          Utilizzabile fino al {WALLET_MAX_ORDER_PERCENT}% di un ordine. Non convertibile in denaro. Nessuna scadenza.
+          {t({ it: 'Utilizzabile fino al', en: 'Usable for up to' })} {WALLET_MAX_ORDER_PERCENT}% {t({ it: 'di un ordine. Non convertibile in denaro. Nessuna scadenza.', en: 'of an order. Not convertible into cash. No expiry.' })}
         </p>
 
         {/* Recent transactions */}
         {transactions.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-300 mb-2">Ultimi movimenti</h4>
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">{t({ it: "Ultimi movimenti", en: "Recent transactions" })}</h4>
             <div className="space-y-2">
               {transactions.slice(0, 5).map(tx => (
                 <div key={tx.id} className="flex justify-between items-center py-2 border-b border-gray-800 last:border-0">
                   <div>
                     <p className="text-white text-sm">{tx.description}</p>
                     <p className="text-gray-500 text-xs">
-                      {new Date(tx.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(tx.created_at).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <span className={`font-bold text-sm ${tx.transaction_type === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
@@ -428,31 +431,31 @@ const DR7Club = () => {
 
       {/* Rules */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-bold text-white mb-3">Come funziona</h3>
+        <h3 className="text-lg font-bold text-white mb-3">{t({ it: "Come funziona", en: "How it works" })}</h3>
         <ul className="space-y-2 text-sm text-gray-400">
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>Pagamento anticipato (100%): reward base fino al {TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1].rewardPercent}%</span>
+            <span>{t({ it: 'Pagamento anticipato (100%): reward base fino al', en: 'Full upfront payment (100%): base reward up to' })} {TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1].rewardPercent}%</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>Pagamento con acconto (30%): reward dimezzato (min 1%)</span>
+            <span>{t({ it: "Pagamento con acconto (30%): reward dimezzato (min 1%)", en: "Deposit payment (30%): reward halved (min 1%)" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>Servizi Lavaggio & Meccanica: reward 3%</span>
+            <span>{t({ it: "Servizi Lavaggio & Meccanica: reward 3%", en: "Car Wash & Mechanics services: 3% reward" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>Servizi extra: reward 2%</span>
+            <span>{t({ it: "Servizi extra: reward 2%", en: "Extra services: 2% reward" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-[#D4B896] mt-0.5">!</span>
-            <span>Il credito viene accreditato solo a noleggio completato</span>
+            <span>{t({ it: "Il credito viene accreditato solo a noleggio completato", en: "Credit is only awarded once the rental is completed" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-red-400 mt-0.5">-</span>
-            <span>Non utilizzabile per cauzioni, penali, danni o franchigie</span>
+            <span>{t({ it: "Non utilizzabile per cauzioni, penali, danni o franchigie", en: "Cannot be used for deposits, penalties, damages or excesses" })}</span>
           </li>
         </ul>
       </div>

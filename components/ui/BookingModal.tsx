@@ -301,7 +301,7 @@ const BookingModal: React.FC = () => {
                           filterDate={(date: Date) => !isBlockedDate(date)}
                           minDate={new Date()}
                           dateFormat="dd/MM/yyyy"
-                          placeholderText="Seleziona data"
+                          placeholderText={t({ it: "Seleziona data", en: "Select a date" })}
                           required
                           className="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md shadow-sm text-white focus:ring-white focus:border-white px-3 py-2"
                         />
@@ -325,11 +325,11 @@ const BookingModal: React.FC = () => {
                           minDate={pickupDate ? new Date(pickupDate + 'T12:00:00') : new Date()}
                           disabled={!pickupDate}
                           dateFormat="dd/MM/yyyy"
-                          placeholderText="Seleziona data"
+                          placeholderText={t({ it: "Seleziona data", en: "Select a date" })}
                           required
                           className="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md shadow-sm text-white focus:ring-white focus:border-white px-3 py-2"
                         />
-                        <p className="text-xs text-yellow-400 mt-1">Chiusi domenica e festivi</p>
+                        <p className="text-xs text-yellow-400 mt-1">{t({ it: "Chiusi domenica e festivi", en: "Closed on Sundays and public holidays" })}</p>
                       </div>
 
                       <div>

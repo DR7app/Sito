@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { searchLocations, type SardegnaLocation } from '../../data/sardegnaLocations';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface NominatimResult {
   place_id: number;
@@ -73,10 +74,12 @@ type DisplayItem = {
 const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   value,
   onChange,
-  placeholder = 'Cerca località o indirizzo...',
+  placeholder,
   label,
   className = '',
 }) => {
+  const { t } = useTranslation();
+  const ph = placeholder ?? t({ it: 'Cerca località o indirizzo...', en: 'Search location or address...' });
   const [query, setQuery] = useState(value);
   const [localResults, setLocalResults] = useState<SardegnaLocation[]>([]);
   const [nominatimResults, setNominatimResults] = useState<NominatimResult[]>([]);
@@ -222,7 +225,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         onFocus={() => { isFocusedRef.current = true; handleFocus(); }}
         onBlur={() => { isFocusedRef.current = false; setTimeout(() => setIsOpen(false), 200); }}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={ph}
         className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors text-sm"
         autoComplete="off"
         role="combobox"
@@ -288,7 +291,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
           })}
 
           {loading && (
-            <div className="px-4 py-2.5 text-xs text-white/30 text-center">Ricerca indirizzi...</div>
+            <div className="px-4 py-2.5 text-xs text-white/30 text-center">{t({ it: "Ricerca indirizzi...", en: "Searching addresses..." })}</div>
           )}
         </div>
       )}

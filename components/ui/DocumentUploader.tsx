@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DocumentUploaderProps {
   onFileChange: (file: File | null) => void;
@@ -8,6 +9,7 @@ interface DocumentUploaderProps {
 }
 
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onFileChange, title, details }) => {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -60,7 +62,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onFileChange, title
       ) : (
         <div {...getRootProps()} className={`p-4 border-2 border-dashed rounded-lg text-center cursor-pointer ${isDragActive ? 'border-white bg-gray-700' : 'border-gray-600 hover:border-gray-500'}`}>
           <input {...getInputProps()} />
-          <p className="text-sm text-gray-300"> trascina qui o clicca per caricare</p>
+          <p className="text-sm text-gray-300"> {t({ it: "trascina qui o clicca per caricare", en: "drag here or click to upload" })}</p>
           <ul className="text-xs text-gray-400 mt-2 list-disc list-inside">
             {details.map((detail, i) => <li key={i}>{detail}</li>)}
           </ul>

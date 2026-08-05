@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
+import { useTranslation } from '../../hooks/useTranslation';
+import { dateLocale } from '../../utils/i18nDate';
 
 interface ReferralBonus {
   id: string;
@@ -12,6 +14,7 @@ interface ReferralBonus {
 const SITE_URL = (typeof window !== 'undefined' ? window.location.origin : 'https://dr7.app');
 
 const ReferralProgram: React.FC = () => {
+  const { t, lang } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState<string>('');
@@ -80,7 +83,7 @@ const ReferralProgram: React.FC = () => {
   if (loading) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-5 md:p-8 text-center">
-        <p className="text-gray-400 text-sm">Caricamento...</p>
+        <p className="text-gray-400 text-sm">{t({ it: "Caricamento...", en: "Loading..." })}</p>
       </div>
     );
   }
@@ -88,8 +91,8 @@ const ReferralProgram: React.FC = () => {
   if (!referralCode) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-5 md:p-8 text-center">
-        <h2 className="text-xl font-bold text-white">Invita un amico</h2>
-        <p className="text-sm text-gray-400 mt-2">Il tuo codice referral non è ancora disponibile. Riprova tra qualche istante.</p>
+        <h2 className="text-xl font-bold text-white">{t({ it: "Invita un amico", en: "Invite a friend" })}</h2>
+        <p className="text-sm text-gray-400 mt-2">{t({ it: "Il tuo codice referral non è ancora disponibile. Riprova tra qualche istante.", en: "Your referral code is not available yet. Please try again in a moment." })}</p>
       </div>
     );
   }
@@ -97,14 +100,13 @@ const ReferralProgram: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-5 md:p-8">
-        <h2 className="text-xl md:text-2xl font-bold text-white">Invita un amico, ricevi €50</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-white">{t({ it: "Invita un amico, ricevi €50", en: "Invite a friend, get €50" })}</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-xl">
-          Condividi il tuo link personale. Quando un amico si registra e ricarica il wallet con almeno <span className="text-white font-semibold">€100</span>,
-          ti accreditiamo <span className="text-white font-semibold">€50</span> sul tuo Credit Wallet. Bonus una tantum per ogni amico invitato.
+          {t({ it: 'Condividi il tuo link personale. Quando un amico si registra e ricarica il wallet con almeno €100, ti accreditiamo €50 sul tuo Credit Wallet. Bonus una tantum per ogni amico invitato.', en: 'Share your personal link. When a friend signs up and tops up their wallet with at least €100, we credit €50 to your Credit Wallet. One-off bonus for each friend invited.' })}
         </p>
 
         <div className="mt-6">
-          <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">Il tuo link personale</label>
+          <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">{t({ it: "Il tuo link personale", en: "Your personal link" })}</label>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               readOnly
@@ -116,10 +118,10 @@ const ReferralProgram: React.FC = () => {
               onClick={handleCopy}
               className="px-5 py-3 bg-white text-black font-bold rounded-md hover:bg-gray-200 transition-colors text-sm whitespace-nowrap"
             >
-              {copied ? 'Copiato!' : 'Copia link'}
+              {copied ? t({ it: "Copiato!", en: "Copied!" }) : t({ it: "Copia link", en: "Copy link" })}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Codice: <span className="font-mono text-gray-300">{referralCode}</span></p>
+          <p className="text-xs text-gray-500 mt-2">{t({ it: "Codice:", en: "Code:" })} <span className="font-mono text-gray-300">{referralCode}</span></p>
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
@@ -129,13 +131,13 @@ const ReferralProgram: React.FC = () => {
             rel="noopener noreferrer"
             className="px-4 py-2.5 bg-[#25D366] text-white font-semibold rounded-md hover:opacity-90 text-sm"
           >
-            Condividi su WhatsApp
+            {t({ it: "Condividi su WhatsApp", en: "Share on WhatsApp" })}
           </a>
           <a
             href={emailHref}
             className="px-4 py-2.5 bg-gray-800 text-white font-semibold rounded-md hover:bg-gray-700 text-sm"
           >
-            Condividi via Email
+            {t({ it: "Condividi via Email", en: "Share by email" })}
           </a>
         </div>
       </div>
@@ -143,8 +145,8 @@ const ReferralProgram: React.FC = () => {
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-5 md:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
           <div>
-            <h3 className="text-lg font-bold text-white">I tuoi bonus</h3>
-            <p className="text-sm text-gray-400 mt-1">{bonuses.length} {bonuses.length === 1 ? 'amico' : 'amici'} — totale accreditato</p>
+            <h3 className="text-lg font-bold text-white">{t({ it: "I tuoi bonus", en: "Your bonuses" })}</h3>
+            <p className="text-sm text-gray-400 mt-1">{bonuses.length} {bonuses.length === 1 ? t({ it: "amico", en: "friend" }) : t({ it: "amici", en: "friends" })} — {t({ it: "totale accreditato", en: "total credited" })}</p>
           </div>
           <div className="text-right">
             <p className="text-2xl md:text-3xl font-bold text-white">€{totalEarned.toFixed(2)}</p>
@@ -152,15 +154,15 @@ const ReferralProgram: React.FC = () => {
         </div>
 
         {bonuses.length === 0 ? (
-          <p className="text-sm text-gray-500">Ancora nessun amico ha completato una ricarica qualificante. Condividi il tuo link per iniziare.</p>
+          <p className="text-sm text-gray-500">{t({ it: "Ancora nessun amico ha completato una ricarica qualificante. Condividi il tuo link per iniziare.", en: "No friend has completed a qualifying top-up yet. Share your link to get started." })}</p>
         ) : (
           <ul className="divide-y divide-gray-800">
             {bonuses.map((b) => (
               <li key={b.id} className="flex justify-between items-center py-3">
                 <div className="text-sm text-gray-300">
-                  Amico invitato
+                  {t({ it: "Amico invitato", en: "Invited friend" })}
                   <span className="block text-xs text-gray-500 mt-0.5">
-                    {new Date(b.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    {new Date(b.created_at).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric' })}
                   </span>
                 </div>
                 <span className="text-white font-semibold">+€{Number(b.amount).toFixed(2)}</span>

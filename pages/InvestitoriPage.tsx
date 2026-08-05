@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { getInvestitoriCopy, type InvestitoriCopy } from '../utils/siteCopy';
+import { getInvestitoriCopy, bilingual, bilingualList, type InvestitoriCopy } from '../utils/siteCopy';
+import { useTranslation } from '../hooks/useTranslation';
 
 const InvestitoriPage: React.FC = () => {
+  const { t, lang } = useTranslation();
   const [copy, setCopy] = useState<InvestitoriCopy | null>(null);
 
   useEffect(() => {
@@ -14,7 +16,7 @@ const InvestitoriPage: React.FC = () => {
   if (!copy) {
     return (
       <div className="bg-black text-white min-h-screen pt-32 text-center">
-        <p className="text-gray-500 text-sm">Caricamento…</p>
+        <p className="text-gray-500 text-sm">{t('Loading')}</p>
       </div>
     );
   }
@@ -39,10 +41,10 @@ const InvestitoriPage: React.FC = () => {
             className="max-w-4xl mx-auto text-center"
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-6 notranslate">
-              {copy.hero_title}
+              {bilingual(copy, 'hero_title', lang)}
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-8">
-              {copy.hero_subtitle}
+              {bilingual(copy, 'hero_subtitle', lang)}
             </p>
           </motion.div>
         </div>
@@ -59,7 +61,7 @@ const InvestitoriPage: React.FC = () => {
             className="max-w-4xl mx-auto"
           >
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 md:p-12 space-y-6">
-              {copy.intro_paragraphs.map((p, i) => (
+              {bilingualList(copy, 'intro_paragraphs', lang).map((p, i) => (
                 <p key={i} className="text-lg text-gray-300 leading-relaxed">{p}</p>
               ))}
             </div>
@@ -78,10 +80,10 @@ const InvestitoriPage: React.FC = () => {
             className="max-w-4xl mx-auto"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">
-              {copy.opportunity_heading}
+              {bilingual(copy, 'opportunity_heading', lang)}
             </h2>
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 md:p-12 space-y-6">
-              {copy.opportunity_paragraphs.map((p, i) => (
+              {bilingualList(copy, 'opportunity_paragraphs', lang).map((p, i) => (
                 <p key={i} className="text-lg text-gray-300 leading-relaxed">{p}</p>
               ))}
             </div>
@@ -100,7 +102,7 @@ const InvestitoriPage: React.FC = () => {
             className="max-w-6xl mx-auto"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
-              {copy.strength_heading}
+              {bilingual(copy, 'strength_heading', lang)}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {copy.strength_points.map((point, index) => (
@@ -112,8 +114,8 @@ const InvestitoriPage: React.FC = () => {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-colors"
                 >
-                  <h3 className="text-xl font-semibold mb-3">{point.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">{point.description}</p>
+                  <h3 className="text-xl font-semibold mb-3">{bilingual(point, 'title', lang)}</h3>
+                  <p className="text-gray-400 leading-relaxed">{bilingual(point, 'description', lang)}</p>
                 </motion.div>
               ))}
             </div>
@@ -133,10 +135,10 @@ const InvestitoriPage: React.FC = () => {
           >
             <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-8 md:p-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                {copy.cta_heading}
+                {bilingual(copy, 'cta_heading', lang)}
               </h2>
-              {copy.cta_paragraphs.map((p, i) => (
-                <p key={i} className={`text-lg text-gray-300 leading-relaxed ${i === copy.cta_paragraphs.length - 1 ? 'mb-10' : 'mb-8'}`}>{p}</p>
+              {bilingualList(copy, 'cta_paragraphs', lang).map((p, i) => (
+                <p key={i} className={`text-lg text-gray-300 leading-relaxed ${i === bilingualList(copy, 'cta_paragraphs', lang).length - 1 ? 'mb-10' : 'mb-8'}`}>{p}</p>
               ))}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <a
@@ -145,7 +147,7 @@ const InvestitoriPage: React.FC = () => {
                   rel="noopener noreferrer"
                   className="inline-block bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-200 transition-colors"
                 >
-                  {copy.cta_button_label}
+                  {bilingual(copy, 'cta_button_label', lang)}
                 </a>
                 <a
                   href={`mailto:${copy.cta_email}`}
@@ -170,7 +172,7 @@ const InvestitoriPage: React.FC = () => {
             className="max-w-4xl mx-auto"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">
-              {copy.info_heading}
+              {bilingual(copy, 'info_heading', lang)}
             </h2>
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 md:p-12">
               <div className="space-y-4">
@@ -180,16 +182,16 @@ const InvestitoriPage: React.FC = () => {
                     className="flex flex-col md:flex-row md:items-start border-b border-gray-700 last:border-b-0 pb-4 last:pb-0"
                   >
                     <span className="text-gray-400 md:w-1/3 mb-2 md:mb-0 font-medium">
-                      {info.label}:
+                      {bilingual(info, 'label', lang)}:
                     </span>
                     <span className="text-white md:w-2/3">
-                      {info.value}
+                      {bilingual(info, 'value', lang)}
                     </span>
                   </div>
                 ))}
               </div>
               <p className="text-sm text-gray-400 mt-8 italic leading-relaxed">
-                {copy.info_footnote}
+                {bilingual(copy, 'info_footnote', lang)}
               </p>
             </div>
           </motion.div>
@@ -208,9 +210,9 @@ const InvestitoriPage: React.FC = () => {
           >
             <div className="bg-red-900/10 border border-red-900/30 rounded-2xl p-8 md:p-12 space-y-4">
               <h2 className="text-2xl font-bold mb-6 text-red-400">
-                {copy.legal_heading}
+                {bilingual(copy, 'legal_heading', lang)}
               </h2>
-              {copy.legal_paragraphs.map((p, i) => (
+              {bilingualList(copy, 'legal_paragraphs', lang).map((p, i) => (
                 <p key={i} className="text-gray-300 leading-relaxed">{p}</p>
               ))}
             </div>

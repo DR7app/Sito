@@ -11,14 +11,17 @@ import { useNoleggioCatalog, type NoleggioServiceType, type NoleggioCatalogItem 
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import TourBookingModal from '../components/ui/TourBookingModal';
+import { useTranslation } from '../hooks/useTranslation';
 
 const WHATSAPP_NUMBER = '393457905205';
 
+interface Bilingual { it: string; en: string }
+
 interface NoleggioServicePageProps {
   serviceType: NoleggioServiceType;
-  title: string;       // "Noleggio Mare"
-  subtitle: string;    // tagline
-  asset: string;       // "la barca" / "l'elicottero"
+  title: Bilingual;    // "Noleggio Mare" / "Sea Rentals"
+  subtitle: Bilingual; // tagline
+  asset: Bilingual;    // "la barca" / "the boat"
 }
 
 function eur(cents: number): string {
@@ -26,6 +29,7 @@ function eur(cents: number): string {
 }
 
 export default function NoleggioServicePage({ serviceType, title, subtitle, asset }: NoleggioServicePageProps) {
+  const { t, getTranslated } = useTranslation();
   const { items, loading } = useNoleggioCatalog(serviceType);
 
   // Quali tour (catalog item) hanno almeno una partenza programmata futura:
@@ -101,14 +105,14 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     <div className="bg-black text-white min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-20">
         <header className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{title}</h1>
-          <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{subtitle}</p>
+          <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+          <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map(item => {
             const message =
-              `Ciao DR7, vorrei richiedere un preventivo per ${asset}: ${item.name}. ` +
+              `Ciao DR7, vorrei richiedere un preventivo per ${asset.it}: ${item.name}. ` +
               `Potete inviarmi disponibilità e preventivo?`;
             const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
             return (
@@ -123,13 +127,13 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                 <div className="px-6 pt-6 pb-4 flex flex-col flex-1">
                   <div className="flex items-start gap-3">
                     {item.price_per_day > 0 ? (
-                      <div className="text-white font-semibold whitespace-nowrap">{eur(item.price_per_day)}<span className="text-xs text-gray-400">/giorno</span></div>
+                      <div className="text-white font-semibold whitespace-nowrap">{eur(item.price_per_day)}<span className="text-xs text-gray-400">{t({ it: "/giorno", en: "/day" })}</span></div>
                     ) : (
-                      <div className="text-gray-300 font-medium text-sm whitespace-nowrap">Prezzo su richiesta</div>
+                      <div className="text-gray-300 font-medium text-sm whitespace-nowrap">{t({ it: "Prezzo su richiesta", en: "Price on request" })}</div>
                     )}
                   </div>
                   {item.capacity != null && (
-                    <div className="mt-1 text-xs text-gray-400">Fino a {item.capacity} persone</div>
+                    <div className="mt-1 text-xs text-gray-400">{t({ it: "Fino a", en: "Up to" })} {item.capacity} {t({ it: "persone", en: "people" })}</div>
                   )}
                   <div className="flex-1" />
                   {bookingMode === 'bookable' && tourItemIds.has(item.id) ? (
@@ -137,7 +141,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                       onClick={() => handlePrenotaTour(item)}
                       className="mt-5 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-full bg-white text-black font-semibold transition-all duration-300 hover:opacity-90"
                     >
-                      Prenota il tour
+                      {t({ it: "Prenota il tour", en: "Book the tour" })}
                     </button>
                   ) : (
                     <a
@@ -147,7 +151,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                       className="mt-5 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-full bg-transparent border-2 border-white text-white font-semibold transition-all duration-300 hover:bg-white hover:text-black"
                     >
                       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.728-.979zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/></svg>
-                      Richiedi Preventivo
+                      {t({ it: "Richiedi Preventivo", en: "Request a Quote" })}
                     </a>
                   )}
                 </div>
@@ -157,14 +161,14 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
         </div>
 
         <p className="mt-10 text-center text-xs text-gray-500">
-          Disponibilità e preventivo si concordano direttamente con il nostro operatore via WhatsApp.
+          {t({ it: 'Disponibilità e preventivo si concordano direttamente con il nostro operatore via WhatsApp.', en: 'Availability and pricing are agreed directly with our operator on WhatsApp.' })}
         </p>
       </div>
 
       {openTour && (
         <TourBookingModal
           item={openTour}
-          waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare ${asset}: ${openTour.name}.`)}`}
+          waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare ${asset.it}: ${openTour.name}.`)}`}
           onClose={() => setOpenTour(null)}
         />
       )}
@@ -176,22 +180,22 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
             <div className="flex justify-end -mt-2 -mr-2">
               <button onClick={() => setAuthPrompt(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
-            <h3 className="text-xl font-semibold text-white">Accedi per prenotare</h3>
+            <h3 className="text-xl font-semibold text-white">{t({ it: "Accedi per prenotare", en: "Sign in to book" })}</h3>
             <p className="mt-2 text-sm text-gray-400">
-              Per prenotare il tour devi essere registrato e accedere al tuo account DR7.
+              {t({ it: 'Per prenotare il tour devi essere registrato e accedere al tuo account DR7.', en: 'To book the tour you must be registered and signed in to your DR7 account.' })}
             </p>
             <div className="mt-6 space-y-3">
               <button
                 onClick={() => goAuth('/signin')}
                 className="w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity"
               >
-                Accedi
+                {t({ it: "Accedi", en: "Sign in" })}
               </button>
               <button
                 onClick={() => goAuth('/signup')}
                 className="w-full px-4 py-3 rounded-full bg-transparent border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors"
               >
-                Registrati
+                {t({ it: "Registrati", en: "Sign up" })}
               </button>
             </div>
           </div>

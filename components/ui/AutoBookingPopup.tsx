@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import BookingSearchBox from './BookingSearchBox';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const SESSION_KEY = 'dr7_auto_booking_popup_dismissed';
 const DELAY_MS = 8000; // 8 seconds after page mount on the homepage.
@@ -23,6 +24,7 @@ const DELAY_MS = 8000; // 8 seconds after page mount on the homepage.
  *     (the customer is mid-flow, no need to nag).
  */
 const AutoBookingPopup: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -95,15 +97,15 @@ const AutoBookingPopup: React.FC = () => {
             <button
               type="button"
               onClick={close}
-              aria-label="Chiudi"
+              aria-label={t({ it: "Chiudi", en: "Close" })}
               className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h3 className="text-[20px] font-semibold text-white text-center mb-1 tracking-tight">Prenota Ora</h3>
-            <p className="text-xs text-white/60 text-center mb-5">Inserisci date e luogo per vedere i veicoli disponibili</p>
+            <h3 className="text-[20px] font-semibold text-white text-center mb-1 tracking-tight">{t({ it: "Prenota Ora", en: "Book Now" })}</h3>
+            <p className="text-xs text-white/60 text-center mb-5">{t({ it: "Inserisci date e luogo per vedere i veicoli disponibili", en: "Enter dates and location to see available vehicles" })}</p>
             <BookingSearchBox variant="popup" onClose={close} />
           </motion.div>
         </motion.div>

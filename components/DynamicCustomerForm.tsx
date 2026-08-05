@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import CalcolaCFButton from './ui/CalcolaCFButton'
 import AddressAutocomplete from './ui/AddressAutocomplete'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface CustomerFormData {
   tipoCliente: 'azienda' | 'persona_fisica' | 'pubblica_amministrazione' | ''
@@ -32,6 +33,7 @@ interface DynamicCustomerFormProps {
 }
 
 export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: DynamicCustomerFormProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState<CustomerFormData>({
     tipoCliente: '',
     nazione: 'Italia',
@@ -67,37 +69,37 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
   const cercaPerDenominazione = async () => {
     console.log('Searching for:', formData.denominazione)
     // TODO: Implement actual search logic
-    alert('Funzione di ricerca per denominazione - da implementare')
+    alert(t({ it: 'Funzione di ricerca per denominazione - da implementare', en: 'Search by company name - to be implemented' }))
   }
 
   const cercaPerPartitaIVA = async () => {
     console.log('Searching for Partita IVA:', formData.partitaIVA)
     // TODO: Implement actual search logic
-    alert('Funzione di ricerca per Partita IVA - da implementare')
+    alert(t({ it: 'Funzione di ricerca per Partita IVA - da implementare', en: 'Search by VAT number - to be implemented' }))
   }
 
   const cercaPerCodiceUnivoco = async () => {
     console.log('Searching for Codice Univoco:', formData.codiceUnivoco)
     // TODO: Implement actual search logic
-    alert('Funzione di ricerca per Codice Univoco - da implementare')
+    alert(t({ it: 'Funzione di ricerca per Codice Univoco - da implementare', en: 'Search by recipient code - to be implemented' }))
   }
 
   const cercaPerCodiceFiscale = async () => {
     console.log('Searching for Codice Fiscale:', formData.codiceFiscale)
     // TODO: Implement actual search logic
-    alert('Funzione di ricerca per Codice Fiscale - da implementare')
+    alert(t({ it: 'Funzione di ricerca per Codice Fiscale - da implementare', en: 'Search by tax code - to be implemented' }))
   }
 
   const cercaPerEnteUfficio = async () => {
     console.log('Searching for Ente/Ufficio:', formData.enteUfficio)
     // TODO: Implement actual search logic
-    alert('Funzione di ricerca per Ente o Ufficio - da implementare')
+    alert(t({ it: 'Funzione di ricerca per Ente o Ufficio - da implementare', en: 'Search by body or office - to be implemented' }))
   }
 
   const cercaPerCitta = async () => {
     console.log('Searching for Città:', formData.citta)
     // TODO: Implement actual search logic
-    alert('Funzione di ricerca per Città - da implementare')
+    alert(t({ it: 'Funzione di ricerca per Città - da implementare', en: 'Search by city - to be implemented' }))
   }
 
   return (
@@ -279,14 +281,14 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
       `}</style>
 
       <h2 className="form-title">
-        {isAdminMode ? 'Crea Nuovo Cliente' : 'Registrazione Cliente'}
+        {isAdminMode ? t({ it: "Crea Nuovo Cliente", en: "Create New Customer" }) : t({ it: "Registrazione Cliente", en: "Customer Registration" })}
       </h2>
 
       <form onSubmit={handleSubmit}>
         {/* Client Type Selection */}
         <div className="form-group">
           <label className="form-label required" htmlFor="tipoCliente">
-            Tipo Cliente
+            {t({ it: "Tipo Cliente", en: "Customer Type" })}
           </label>
           <select
             id="tipoCliente"
@@ -296,10 +298,10 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             onChange={handleChange}
             required
           >
-            <option value="">Seleziona tipo cliente...</option>
-            <option value="azienda">Azienda</option>
-            <option value="persona_fisica">Persona Fisica</option>
-            <option value="pubblica_amministrazione">Pubblica Amministrazione</option>
+            <option value="">{t({ it: "Seleziona tipo cliente...", en: "Select customer type..." })}</option>
+            <option value="azienda">{t({ it: "Azienda", en: "Company" })}</option>
+            <option value="persona_fisica">{t({ it: "Persona Fisica", en: "Individual" })}</option>
+            <option value="pubblica_amministrazione">{t({ it: "Pubblica Amministrazione", en: "Public Administration" })}</option>
           </select>
         </div>
 
@@ -311,7 +313,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Nazione */}
             <div className="form-group">
               <label className="form-label required" htmlFor="nazione">
-                Nazione
+                {t({ it: "Nazione", en: "Country" })}
               </label>
               <input
                 type="text"
@@ -327,7 +329,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Denominazione */}
             <div className="form-group">
               <label className="form-label required" htmlFor="denominazione">
-                Denominazione
+                {t({ it: "Denominazione", en: "Company Name" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -337,7 +339,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.denominazione}
                   onChange={handleChange}
-                  placeholder="Nome azienda"
+                  placeholder={t({ it: "Nome azienda", en: "Company name" })}
                   required
                 />
                 <button
@@ -345,7 +347,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="btn-search"
                   onClick={cercaPerDenominazione}
                 >
-                  Cerca
+                  {t({ it: "Cerca", en: "Search" })}
                 </button>
               </div>
             </div>
@@ -353,7 +355,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Partita IVA */}
             <div className="form-group">
               <label className="form-label required" htmlFor="partitaIVA">
-                Partita IVA
+                {t({ it: "Partita IVA", en: "VAT Number" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -371,7 +373,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="btn-search"
                   onClick={cercaPerPartitaIVA}
                 >
-                  Cerca
+                  {t({ it: "Cerca", en: "Search" })}
                 </button>
               </div>
             </div>
@@ -379,7 +381,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Codice Fiscale */}
             <div className="form-group">
               <label className="form-label required" htmlFor="codiceFiscale">
-                Codice Fiscale
+                {t({ it: "Codice Fiscale", en: "Tax Code" })}
               </label>
               <input
                 type="text"
@@ -396,7 +398,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Indirizzo */}
             <div className="form-group">
               <label className="form-label required" htmlFor="indirizzo">
-                Indirizzo
+                {t({ it: "Indirizzo", en: "Address" })}
               </label>
               <AddressAutocomplete
                 id="indirizzo"
@@ -404,16 +406,16 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                 className="form-input"
                 value={formData.indirizzo}
                 onChange={(val) => setFormData(prev => ({ ...prev, indirizzo: val }))}
-                placeholder="Via, Numero Civico, CAP, Città"
+                placeholder={t({ it: "Via, Numero Civico, CAP, Città", en: "Street, number, postcode, city" })}
                 required
               />
             </div>
 
             {/* Optional Fields Section */}
             <div className="optional-section">
-              <h3 className="optional-section-title">Campi Facoltativi</h3>
+              <h3 className="optional-section-title">{t({ it: "Campi Facoltativi", en: "Optional Fields" })}</h3>
               <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-                Sezione riservata per campi aggiuntivi futuri
+                {t({ it: "Sezione riservata per campi aggiuntivi futuri", en: "Section reserved for future additional fields" })}
               </p>
             </div>
           </div>
@@ -427,7 +429,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Nazione */}
             <div className="form-group">
               <label className="form-label required" htmlFor="nazione">
-                Nazione
+                {t({ it: "Nazione", en: "Country" })}
               </label>
               <input
                 type="text"
@@ -443,7 +445,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Nome */}
             <div className="form-group">
               <label className="form-label required" htmlFor="nome">
-                Nome
+                {t({ it: "Nome", en: "First name" })}
               </label>
               <input
                 type="text"
@@ -460,7 +462,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Cognome */}
             <div className="form-group">
               <label className="form-label required" htmlFor="cognome">
-                Cognome
+                {t({ it: "Cognome", en: "Last name" })}
               </label>
               <input
                 type="text"
@@ -477,7 +479,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Codice Fiscale */}
             <div className="form-group">
               <label className="form-label required" htmlFor="codiceFiscale">
-                Codice Fiscale
+                {t({ it: "Codice Fiscale", en: "Tax Code" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -513,36 +515,36 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
 
             {/* Sesso */}
             <div className="form-group">
-              <label className="form-label" htmlFor="sesso">Sesso</label>
+              <label className="form-label" htmlFor="sesso">{t({ it: "Sesso", en: "Gender" })}</label>
               <select id="sesso" name="sesso" className="form-select" value={formData.sesso} onChange={handleChange}>
-                <option value="">Seleziona...</option>
-                <option value="M">Maschio</option>
-                <option value="F">Femmina</option>
+                <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
+                <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
+                <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
               </select>
             </div>
 
             {/* Data di Nascita */}
             <div className="form-group">
-              <label className="form-label" htmlFor="dataNascita">Data di Nascita</label>
+              <label className="form-label" htmlFor="dataNascita">{t({ it: "Data di Nascita", en: "Date of Birth" })}</label>
               <input type="date" id="dataNascita" name="dataNascita" className="form-input" value={formData.dataNascita} onChange={handleChange} />
             </div>
 
             {/* Luogo di Nascita */}
             <div className="form-group">
-              <label className="form-label" htmlFor="luogoNascita">Luogo di Nascita</label>
-              <input type="text" id="luogoNascita" name="luogoNascita" className="form-input" value={formData.luogoNascita} onChange={handleChange} placeholder="es. Cagliari" />
+              <label className="form-label" htmlFor="luogoNascita">{t({ it: "Luogo di Nascita", en: "Place of Birth" })}</label>
+              <input type="text" id="luogoNascita" name="luogoNascita" className="form-input" value={formData.luogoNascita} onChange={handleChange} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} />
             </div>
 
             {/* Provincia di Nascita */}
             <div className="form-group">
-              <label className="form-label" htmlFor="provinciaNascita">Provincia di Nascita</label>
-              <input type="text" id="provinciaNascita" name="provinciaNascita" className="form-input" value={formData.provinciaNascita} onChange={(e) => setFormData(p => ({ ...p, provinciaNascita: e.target.value.toUpperCase() }))} placeholder="es. CA" maxLength={2} style={{ textTransform: 'uppercase' }} />
+              <label className="form-label" htmlFor="provinciaNascita">{t({ it: "Provincia di Nascita", en: "Province of Birth" })}</label>
+              <input type="text" id="provinciaNascita" name="provinciaNascita" className="form-input" value={formData.provinciaNascita} onChange={(e) => setFormData(p => ({ ...p, provinciaNascita: e.target.value.toUpperCase() }))} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} style={{ textTransform: 'uppercase' }} />
             </div>
 
             {/* Indirizzo */}
             <div className="form-group">
               <label className="form-label required" htmlFor="indirizzo">
-                Indirizzo
+                {t({ it: "Indirizzo", en: "Address" })}
               </label>
               <AddressAutocomplete
                 id="indirizzo"
@@ -550,19 +552,19 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                 className="form-input"
                 value={formData.indirizzo}
                 onChange={(val) => setFormData(prev => ({ ...prev, indirizzo: val }))}
-                placeholder="Via, Numero Civico, CAP, Città"
+                placeholder={t({ it: "Via, Numero Civico, CAP, Città", en: "Street, number, postcode, city" })}
                 required
               />
             </div>
 
             {/* Optional Fields Section */}
             <div className="optional-section">
-              <h3 className="optional-section-title">Campi Facoltativi</h3>
+              <h3 className="optional-section-title">{t({ it: "Campi Facoltativi", en: "Optional Fields" })}</h3>
 
               {/* Telefono */}
               <div className="form-group">
                 <label className="form-label" htmlFor="telefono">
-                  Telefono
+                  {t({ it: "Telefono", en: "Phone" })}
                 </label>
                 <input
                   type="tel"
@@ -587,7 +589,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="email@esempio.it"
+                  placeholder={t({ it: "email@esempio.it", en: "email@example.com" })}
                 />
               </div>
 
@@ -618,7 +620,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Codice Univoco */}
             <div className="form-group">
               <label className="form-label required" htmlFor="codiceUnivoco">
-                Codice Univoco
+                {t({ it: "Codice Univoco", en: "Recipient Code" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -636,7 +638,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="btn-search"
                   onClick={cercaPerCodiceUnivoco}
                 >
-                  Cerca
+                  {t({ it: "Cerca", en: "Search" })}
                 </button>
               </div>
             </div>
@@ -644,7 +646,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Codice Fiscale */}
             <div className="form-group">
               <label className="form-label required" htmlFor="codiceFiscale">
-                Codice Fiscale
+                {t({ it: "Codice Fiscale", en: "Tax Code" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -662,7 +664,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="btn-search"
                   onClick={cercaPerCodiceFiscale}
                 >
-                  Cerca
+                  {t({ it: "Cerca", en: "Search" })}
                 </button>
               </div>
             </div>
@@ -670,7 +672,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Ente o Ufficio */}
             <div className="form-group">
               <label className="form-label required" htmlFor="enteUfficio">
-                Ente o Ufficio
+                {t({ it: "Ente o Ufficio", en: "Body or Office" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -680,7 +682,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.enteUfficio}
                   onChange={handleChange}
-                  placeholder="Nome dell'ente o ufficio"
+                  placeholder={t({ it: "Nome dell'ente o ufficio", en: "Name of the body or office" })}
                   required
                 />
                 <button
@@ -688,7 +690,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="btn-search"
                   onClick={cercaPerEnteUfficio}
                 >
-                  Cerca
+                  {t({ it: "Cerca", en: "Search" })}
                 </button>
               </div>
             </div>
@@ -696,7 +698,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
             {/* Città */}
             <div className="form-group">
               <label className="form-label required" htmlFor="citta">
-                Città
+                {t({ it: "Città", en: "City" })}
               </label>
               <div className="input-with-button">
                 <input
@@ -714,7 +716,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="btn-search"
                   onClick={cercaPerCitta}
                 >
-                  Cerca
+                  {t({ it: "Cerca", en: "Search" })}
                 </button>
               </div>
             </div>
@@ -724,7 +726,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
         {/* Submit Button */}
         {formData.tipoCliente && (
           <button type="submit" className="btn-submit">
-            {isAdminMode ? 'Crea Cliente' : 'Registrati'}
+            {isAdminMode ? t({ it: "Crea Cliente", en: "Create Customer" }) : t({ it: "Registrati", en: "Sign up" })}
           </button>
         )}
       </form>

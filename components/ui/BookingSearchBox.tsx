@@ -10,6 +10,7 @@ import {
   getReturnTimesForDateString as getReturnTimes,
 } from '../../utils/noleggioHours';
 import { useTranslation } from '../../hooks/useTranslation';
+import { dateLocale } from '../../utils/i18nDate';
 import { getBookingSearchBoxCopy, type BookingSearchBoxCopy } from '../../utils/siteCopy';
 
 // Pickup/return office hours come from Centralina Pro > Orari Noleggio.
@@ -44,12 +45,12 @@ function calcAutoReturnTime(pickupTime: string, returnDateStr: string, pickupDat
   return best;
 }
 
-function formatDateLabel(dateStr: string): string {
+function formatDateLabel(dateStr: string, lang: string): string {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T12:00:00');
-  const dayName = d.toLocaleDateString('it-IT', { weekday: 'short' });
+  const dayName = d.toLocaleDateString(dateLocale(lang), { weekday: 'short' });
   const dayNum = d.getDate();
-  const month = d.toLocaleDateString('it-IT', { month: 'short' });
+  const month = d.toLocaleDateString(dateLocale(lang), { month: 'short' });
   return `${dayName.charAt(0).toUpperCase() + dayName.slice(1)} ${dayNum} ${month.charAt(0).toUpperCase() + month.slice(1)}`;
 }
 

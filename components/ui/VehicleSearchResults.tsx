@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import type { SearchFormData } from './VehicleSearchForm';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export interface AvailableVehicleResult {
     vehicleId: string;
@@ -60,6 +61,7 @@ const getVehicleImage = (name: string, metadata?: Record<string, any> | null): s
 };
 
 const VehicleSearchResults: React.FC<VehicleSearchResultsProps> = ({ results, searchData, onBook, isUrban }) => {
+  const { t } = useTranslation();
     // Calculate number of rental days
     const pickupTime = searchData.pickupTime || '10:30';
     const returnTime = searchData.returnTime || '09:00';
@@ -88,9 +90,9 @@ const VehicleSearchResults: React.FC<VehicleSearchResultsProps> = ({ results, se
                     <svg className="mx-auto h-16 w-16 text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <h3 className="text-xl font-bold text-white mb-2">Nessun veicolo disponibile</h3>
+                    <h3 className="text-xl font-bold text-white mb-2">{t({ it: "Nessun veicolo disponibile", en: "No vehicles available" })}</h3>
                     <p className="text-gray-400">
-                        Non ci sono veicoli disponibili per le date selezionate. Prova a modificare le date.
+                        {t({ it: 'Non ci sono veicoli disponibili per le date selezionate. Prova a modificare le date.', en: 'No vehicles are available for the selected dates. Try changing the dates.' })}
                     </p>
                 </div>
             </motion.div>
@@ -177,10 +179,10 @@ const VehicleSearchResults: React.FC<VehicleSearchResultsProps> = ({ results, se
                                 <div className="mt-3 mb-4">
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-2xl font-bold text-white">{formatPrice(totalPrice)}</span>
-                                        <span className="text-sm text-gray-400">totale</span>
+                                        <span className="text-sm text-gray-400">{t({ it: "totale", en: "total" })}</span>
                                     </div>
                                     <p className="text-sm text-gray-500 mt-0.5">
-                                        {formatPrice(dailyPrice)}/giorno {isUrban && '· KASKO inclusa'}
+                                        {formatPrice(dailyPrice)}{t({ it: '/giorno', en: '/day' })} {isUrban && t({ it: '· KASKO inclusa', en: '· KASKO included' })}
                                     </p>
                                 </div>
 

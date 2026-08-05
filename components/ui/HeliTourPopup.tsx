@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
 import { useNoleggioCatalog, type NoleggioCatalogItem, type TourDuration } from '../../hooks/useNoleggioCatalog';
 import TourBookingModal from './TourBookingModal';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const SESSION_KEY = 'dr7_heli_tour_popup_dismissed';
 const CAR_POPUP_KEY = 'dr7_auto_booking_popup_dismissed';
@@ -25,6 +26,7 @@ function eur(cents: number): string {
  * Stessa logica del popup auto: una sola apparizione per tab.
  */
 const HeliTourPopup: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -114,7 +116,7 @@ const HeliTourPopup: React.FC = () => {
               <button
                 type="button"
                 onClick={close}
-                aria-label="Chiudi"
+                aria-label={t({ it: "Chiudi", en: "Close" })}
                 className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white/80 hover:text-white transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,7 +132,7 @@ const HeliTourPopup: React.FC = () => {
 
               <div className="p-5">
                 {tourItem.capacity != null && (
-                  <div className="text-xs text-gray-400 mb-3 text-right">Fino a {tourItem.capacity} persone</div>
+                  <div className="text-xs text-gray-400 mb-3 text-right">{t({ it: "Fino a", en: "Up to" })} {tourItem.capacity} {t({ it: "persone", en: "people" })}</div>
                 )}
                 {tourItem.tour_durations && tourItem.tour_durations.length > 0 ? (
                   <div className="space-y-2">
@@ -142,27 +144,27 @@ const HeliTourPopup: React.FC = () => {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-white font-semibold">
-                            {d.label}{d.best_value && <span className="ml-2 text-xs text-yellow-400">★ MIGLIOR VALORE</span>}
+                            {d.label}{d.best_value && <span className="ml-2 text-xs text-yellow-400">★ {t({ it: "MIGLIOR VALORE", en: "BEST VALUE" })}</span>}
                           </span>
-                          <span className="text-white font-bold">{eur(Math.round(d.price * 100))}<span className="text-xs text-gray-400">/persona</span></span>
+                          <span className="text-white font-bold">{eur(Math.round(d.price * 100))}<span className="text-xs text-gray-400">{t({ it: "/persona", en: "/person" })}</span></span>
                         </div>
                         {d.description && <p className="text-xs text-gray-400 mt-1">{d.description}</p>}
                       </button>
                     ))}
-                    <p className="text-[11px] text-gray-500 pt-1 text-center">Scegli la durata per prenotare</p>
+                    <p className="text-[11px] text-gray-500 pt-1 text-center">{t({ it: "Scegli la durata per prenotare", en: "Choose a duration to book" })}</p>
                   </div>
                 ) : (
                   <>
                     {tourItem.price_per_day > 0 ? (
-                      <div className="text-white font-semibold">{eur(tourItem.price_per_day)}<span className="text-xs text-gray-400">/persona</span></div>
+                      <div className="text-white font-semibold">{eur(tourItem.price_per_day)}<span className="text-xs text-gray-400">{t({ it: "/persona", en: "/person" })}</span></div>
                     ) : (
-                      <div className="text-gray-300 text-sm font-medium">Prezzo su richiesta</div>
+                      <div className="text-gray-300 text-sm font-medium">{t({ it: "Prezzo su richiesta", en: "Price on request" })}</div>
                     )}
                     <button
                       onClick={() => onPrenota(null)}
                       className="mt-4 w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity"
                     >
-                      Prenota il tour
+                      {t({ it: "Prenota il tour", en: "Book the tour" })}
                     </button>
                   </>
                 )}
@@ -189,11 +191,11 @@ const HeliTourPopup: React.FC = () => {
             <div className="flex justify-end -mt-2 -mr-2">
               <button onClick={() => setAuthPrompt(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
-            <h3 className="text-xl font-semibold text-white">Accedi per prenotare</h3>
-            <p className="mt-2 text-sm text-gray-400">Per prenotare il tour devi essere registrato e accedere al tuo account DR7.</p>
+            <h3 className="text-xl font-semibold text-white">{t({ it: "Accedi per prenotare", en: "Sign in to book" })}</h3>
+            <p className="mt-2 text-sm text-gray-400">{t({ it: "Per prenotare il tour devi essere registrato e accedere al tuo account DR7.", en: "To book the tour you must be registered and signed in to your DR7 account." })}</p>
             <div className="mt-6 space-y-3">
-              <button onClick={() => goAuth('/signin')} className="w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity">Accedi</button>
-              <button onClick={() => goAuth('/signup')} className="w-full px-4 py-3 rounded-full bg-transparent border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">Registrati</button>
+              <button onClick={() => goAuth('/signin')} className="w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity">{t({ it: "Accedi", en: "Sign in" })}</button>
+              <button onClick={() => goAuth('/signup')} className="w-full px-4 py-3 rounded-full bg-transparent border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">{t({ it: "Registrati", en: "Sign up" })}</button>
             </div>
           </div>
         </div>

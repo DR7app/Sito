@@ -5,6 +5,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { PICKUP_LOCATIONS as DEFAULT_PICKUP_LOCATIONS } from '../../constants'
 import { getPickupLocations } from '../../utils/getLocations'
+import { useTranslation } from '../../hooks/useTranslation'
 
 export interface SearchParams {
   pickupLocation: string
@@ -68,6 +69,7 @@ function autoReturnTime(pickupTime: string, returnDate: string): string {
 }
 
 export default function RentalSearchBar({ onSearch, isSearching }: Props) {
+  const { t, getTranslated } = useTranslation()
   const [pickupLocs, setPickupLocs] = useState(DEFAULT_PICKUP_LOCATIONS)
   useEffect(() => { let c = false; getPickupLocations().then(l => { if (!c) setPickupLocs(l) }); return () => { c = true } }, [])
   const today = new Date()
@@ -148,30 +150,30 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
         {/* Pickup Location */}
         <div className="col-span-2 md:col-span-3 lg:col-span-2">
-          <label className="text-xs text-gray-400 font-medium mb-1 block">Luogo di ritiro</label>
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Luogo di ritiro', en: 'Pick-up location' })}</label>
           <select
             value={pickupLocation}
             onChange={e => { setPickupLocation(e.target.value); if (sameLocation) setReturnLocation(e.target.value) }}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white"
           >
             {pickupLocs.map(loc => (
-              <option key={loc.id} value={loc.id}>{typeof loc.label === 'string' ? loc.label : loc.label.it}</option>
+              <option key={loc.id} value={loc.id}>{getTranslated(loc.label)}</option>
             ))}
           </select>
           <label className="flex items-center gap-2 mt-2 cursor-pointer">
             <input type="checkbox" checked={sameLocation} onChange={e => setSameLocation(e.target.checked)} className="w-3.5 h-3.5 rounded bg-gray-700 border-gray-600 text-white focus:ring-white" />
-            <span className="text-xs text-gray-400">Stesso luogo di riconsegna</span>
+            <span className="text-xs text-gray-400">{t({ it: 'Stesso luogo di riconsegna', en: 'Same drop-off location' })}</span>
           </label>
           {!sameLocation && (
             <div className="mt-2">
-              <label className="text-xs text-gray-400 font-medium mb-1 block">Luogo di riconsegna</label>
+              <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Luogo di riconsegna', en: 'Drop-off location' })}</label>
               <select
                 value={returnLocation}
                 onChange={e => setReturnLocation(e.target.value)}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white"
               >
                 {pickupLocs.map(loc => (
-                  <option key={loc.id} value={loc.id}>{typeof loc.label === 'string' ? loc.label : loc.label.it}</option>
+                  <option key={loc.id} value={loc.id}>{getTranslated(loc.label)}</option>
                 ))}
               </select>
             </div>
@@ -180,7 +182,7 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
 
         {/* Pickup Date */}
         <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">Data ritiro</label>
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Data ritiro', en: 'Pick-up date' })}</label>
           <input
             type="date"
             value={pickupDate}
@@ -192,12 +194,12 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
             }}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white"
           />
-          {isBlocked(pickupDate) && <p className="text-xs text-red-400 mt-1">Chiusi (domenica o festivo)</p>}
+          {isBlocked(pickupDate) && <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiusi (domenica o festivo)', en: 'Closed (Sunday or public holiday)' })}</p>}
         </div>
 
         {/* Pickup Time */}
         <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">Ora ritiro</label>
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Ora ritiro', en: 'Pick-up time' })}</label>
           <select
             value={pickupTime}
             onChange={e => handlePickupTimeChange(e.target.value)}
@@ -206,14 +208,14 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
           >
             {pickupTimes.length > 0
               ? pickupTimes.map(t => <option key={t} value={t}>{t}</option>)
-              : <option>Non disponibile</option>
+              : <option>{t({ it: 'Non disponibile', en: 'Not available' })}</option>
             }
           </select>
         </div>
 
         {/* Return Date */}
         <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">Data restituzione</label>
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Data restituzione', en: 'Drop-off date' })}</label>
           <input
             type="date"
             value={returnDate}
@@ -224,12 +226,12 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
             }}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white"
           />
-          {isBlocked(returnDate) && <p className="text-xs text-red-400 mt-1">Chiusi (domenica o festivo)</p>}
+          {isBlocked(returnDate) && <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiusi (domenica o festivo)', en: 'Closed (Sunday or public holiday)' })}</p>}
         </div>
 
         {/* Return Time */}
         <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">Ora restituzione</label>
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Ora restituzione', en: 'Drop-off time' })}</label>
           <select
             value={returnTime}
             onChange={e => handleReturnTimeChange(e.target.value)}
@@ -238,7 +240,7 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
           >
             {returnTimes.length > 0
               ? returnTimes.map(t => <option key={t} value={t}>{t}</option>)
-              : <option>Non disponibile</option>
+              : <option>{t({ it: 'Non disponibile', en: 'Not available' })}</option>
             }
           </select>
         </div>
@@ -246,13 +248,13 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
 
       {/* Red warning + Search button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 gap-3">
-        <p className="text-xs text-red-400 font-medium">La tariffa puo subire variazioni</p>
+        <p className="text-xs text-red-400 font-medium">{t({ it: 'La tariffa puo subire variazioni', en: 'Rates are subject to change' })}</p>
         <button
           type="submit"
           disabled={!isValid || isSearching}
           className="px-8 py-3 bg-white text-black font-bold uppercase tracking-wider text-sm rounded-full hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
-          {isSearching ? 'Ricerca...' : 'Verifica Disponibilita'}
+          {isSearching ? t({ it: 'Ricerca...', en: 'Searching...' }) : t({ it: 'Verifica Disponibilita', en: 'Check availability' })}
         </button>
       </div>
     </form>

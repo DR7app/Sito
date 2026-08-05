@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import SEOHead from '../components/seo/SEOHead';
 import { useTranslation } from '../hooks/useTranslation';
-import { getContactCopy, type ContactCopy } from '../utils/siteCopy';
+import { getContactCopy, bilingual, type ContactCopy } from '../utils/siteCopy';
 import { trackPhoneCall } from '../utils/analytics';
 
 const ContactPage: React.FC = () => {
@@ -170,7 +170,7 @@ const ContactPage: React.FC = () => {
             {/* Map */}
             <div className="rounded-2xl overflow-hidden border border-gray-800">
               <iframe
-                title={copy.map_title}
+                title={bilingual(copy, 'map_title', lang)}
                 src={copy.map_iframe_url}
                 width="100%"
                 height="400"

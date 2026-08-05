@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useBooking } from '../../hooks/useBooking';
 import { supabase } from '../../supabaseClient';
 import { PICKUP_LOCATIONS as DEFAULT_PICKUP_LOCATIONS, RETURN_LOCATIONS as DEFAULT_RETURN_LOCATIONS } from '../../constants';
+import { dateLocale } from '../../utils/i18nDate';
 
 const LOYAL_CUSTOMER_THRESHOLD = 3;
 import { getPickupLocations, getReturnLocations } from '../../utils/getLocations';
@@ -286,7 +287,7 @@ interface CarBookingWizardProps {
 }
 
 const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryContext, onBookingComplete, onClose }) => {
-  const { t, getTranslated } = useTranslation();
+  const { t, lang, getTranslated } = useTranslation();
   const { currency } = useCurrency();
   const { user, loading: authLoading } = useAuth();
   const { initialSearchDates } = useBooking();
@@ -2522,10 +2523,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         setIsCameraOpen(true);
       } catch (err) {
         console.error("Camera access denied:", err);
-        alert("Accesso alla fotocamera negato. Controlla le impostazioni del browser.");
+        alert(t({ it: "Accesso alla fotocamera negato. Controlla le impostazioni del browser.", en: "Camera access denied. Check your browser settings." }));
       }
     } else {
-      alert("Il tuo browser non supporta l'accesso alla fotocamera.");
+      alert(t({ it: "Il tuo browser non supporta l'accesso alla fotocamera.", en: "Your browser does not support camera access." }));
     }
   };
   const handleCloseCamera = () => {
@@ -2565,7 +2566,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // Upload (File or dataURL) via Netlify function to handle CORS
   const uploadToBucket = async (bucket: string, userId: string, fileOrDataUrl: File | string | null, prefix: string): Promise<string> => {
     if (!fileOrDataUrl) {
-      throw new Error("No file provided for upload.");
+      throw new Error(t({ it: "Nessun file fornito per il caricamento.", en: "No file provided for upload." }));
     }
 
     try {
@@ -2711,8 +2712,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 isConstrainedSlot = true;
                 const startStr = windowStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                 const endStr = windowEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-                const startDateStr = windowStart.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-                const endDateStr = windowEnd.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+                const startDateStr = windowStart.toLocaleDateString(dateLocale(lang), { day: 'numeric', month: 'short' });
+                const endDateStr = windowEnd.toLocaleDateString(dateLocale(lang), { day: 'numeric', month: 'short' });
                 setShortSlotWarning(
                   `Attenzione: questo veicolo è disponibile solo per questo slot ridotto (${startDateStr} ${startStr} → ${endDateStr} ${endStr}).`
                 );
@@ -3024,7 +3025,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Ensure dates are valid before creating booking
       if (!formData.pickupDate || !formData.returnDate) {
-        throw new Error('Dates invalides. Veuillez sélectionner les dates de ritiro et riconsegna.');
+        throw new Error(t({ it: 'Date non valide. Seleziona le date di ritiro e riconsegna.', en: 'Invalid dates. Please select the pick-up and drop-off dates.' }));
       }
 
       console.log('DEBUG - Form data before booking:', {
@@ -3509,7 +3510,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // ha gia' un default 'KASKO_BASE' su mount, quindi questo guard
     // scatta solo se qualcosa azzera lo stato.
     if (!formData.insuranceOption) {
-      alert('Seleziona un\'assicurazione prima di salvare il preventivo.');
+      alert(t({ it: "Seleziona un'assicurazione prima di salvare il preventivo.", en: "Select an insurance option before saving the quote." }));
       return;
     }
     setIsSavingPreventivo(true);
@@ -3669,7 +3670,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       setPreventivoSaved(true);
     } catch (err: any) {
       console.error('Preventivo save error:', err);
-      alert('Errore: ' + (err.message || 'Riprova'));
+      alert(t({ it: 'Errore: ', en: 'Error: ' }) + (err.message || t({ it: 'Riprova', en: 'Please try again' })));
     } finally {
       setIsSavingPreventivo(false);
     }
@@ -3690,7 +3691,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const safetyTimer = setTimeout(() => {
       isSubmittingRef.current = false;
       setIsProcessing(false);
-      setPaymentError('Timeout — riprova il pagamento.');
+      setPaymentError(t({ it: "Timeout — riprova il pagamento.", en: "Timeout — please retry the payment." }));
     }, 120000);
 
     try {
@@ -3713,14 +3714,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const customerName = `${formData.firstName} ${formData.lastName}`.trim();
     if (!customerName || !formData.firstName.trim() || !formData.lastName.trim()) {
       clearTimeout(safetyTimer);
-      setPaymentError('Nome e cognome sono obbligatori. Torna allo Step 2 e compila i campi.');
+      setPaymentError(t({ it: "Nome e cognome sono obbligatori. Torna allo Step 2 e compila i campi.", en: "First and last name are required. Go back to Step 2 and fill in the fields." }));
       isSubmittingRef.current = false;
       setIsProcessing(false);
       return;
     }
     if (!formData.email.trim()) {
       clearTimeout(safetyTimer);
-      setPaymentError('Email obbligatoria. Torna allo Step 2 e compila il campo.');
+      setPaymentError(t({ it: "Email obbligatoria. Torna allo Step 2 e compila il campo.", en: "Email is required. Go back to Step 2 and fill in the field." }));
       isSubmittingRef.current = false;
       setIsProcessing(false);
       return;
@@ -3732,7 +3733,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // che fatturare meno.
     if (!configOverlay?.tierPricing) {
       clearTimeout(safetyTimer);
-      setPaymentError('Configurazione prezzi non ancora caricata. Ricarica la pagina e riprova.');
+      setPaymentError(t({ it: "Configurazione prezzi non ancora caricata. Ricarica la pagina e riprova.", en: "Pricing configuration not loaded yet. Reload the page and try again." }));
       console.error('[handleSubmit] BLOCKED: configOverlay.tierPricing missing — refuse to book to avoid underpricing');
       isSubmittingRef.current = false;
       setIsProcessing(false);
@@ -4143,7 +4144,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           if (preNexiConflicts.length > 0) {
             const first = preNexiConflicts[0] as { _checkFailed?: boolean; availableFrom?: string; _availableFrom?: string }
             if (first?._checkFailed) {
-              setPaymentError('Impossibile verificare la disponibilità in questo momento. Riprova fra qualche secondo.')
+              setPaymentError(t({ it: "Impossibile verificare la disponibilità in questo momento. Riprova fra qualche secondo.", en: "Unable to check availability right now. Please try again in a few seconds." }))
               setIsProcessing(false)
               return
             }
@@ -4159,7 +4160,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           }
         } catch (e) {
           console.warn('[Nexi flow] Pre-insert availability re-check failed:', e)
-          setPaymentError('Impossibile verificare la disponibilità. Riprova fra qualche secondo.')
+          setPaymentError(t({ it: "Impossibile verificare la disponibilità. Riprova fra qualche secondo.", en: "Unable to check availability. Please try again in a few seconds." }))
           setIsProcessing(false)
           return
         }
@@ -4454,7 +4455,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const amountCents = eurosToCents(grandTotal);
         if (!amountCents || isNaN(amountCents) || amountCents <= 0) {
           console.error('Invalid payment amount:', { grandTotal, amountCents });
-          throw new Error("Importo non valido per il pagamento. Controlla i dati della prenotazione.");
+          throw new Error(t({ it: "Importo non valido per il pagamento. Controlla i dati della prenotazione.", en: "Invalid payment amount. Check the booking details." }));
         }
 
         // 5. Initiate Nexi Payment
@@ -4478,7 +4479,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         }
 
         if (!nexiData.paymentUrl) {
-          throw new Error("URL di pagamento non ricevuto da Nexi");
+          throw new Error(t({ it: "URL di pagamento non ricevuto da Nexi", en: "No payment URL received from Nexi" }));
         }
 
         // 5. Store orderId in sessionStorage as fallback for PaymentSuccessPage
@@ -4501,7 +4502,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // Fallback: should never reach here after normalization, but guard against it explicitly
       console.error('[handleSubmit] Ramo non raggiungibile — paymentMethod:', rawPaymentMethod, 'normalized:', normalizedPaymentMethod);
       clearTimeout(safetyTimer);
-      setPaymentError('Metodo di pagamento non riconosciuto. Ricarica la pagina e riprova.');
+      setPaymentError(t({ it: "Metodo di pagamento non riconosciuto. Ricarica la pagina e riprova.", en: "Payment method not recognised. Reload the page and try again." }));
       isSubmittingRef.current = false;
       setIsProcessing(false);
     }
@@ -4509,7 +4510,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     } catch (outerErr: any) {
       // Catch-all safety net for any unhandled errors
       console.error("Unhandled booking error:", outerErr);
-      setPaymentError("Errore imprevisto. Riprova.");
+      setPaymentError(t({ it: "Errore imprevisto. Riprova.", en: "Unexpected error. Please try again." }));
       isSubmittingRef.current = false;
       setIsProcessing(false);
     } finally {
@@ -4607,10 +4608,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const handleBack = () => setStep(s => s - 1);
 
   const steps = [
-    { id: 1, name: t('STEP 1: Date e Località') },
-    { id: 2, name: t('STEP 2: Informazioni Conducente') },
-    { id: 3, name: t('STEP 3: Opzioni e Assicurazioni') },
-    { id: 4, name: t('STEP 4: Pagamento e Conferma') }
+    { id: 1, name: t({ it: 'STEP 1: Date e Località', en: 'STEP 1: Dates and Location' }) },
+    { id: 2, name: t({ it: 'STEP 2: Informazioni Conducente', en: 'STEP 2: Driver Information' }) },
+    { id: 3, name: t({ it: 'STEP 3: Opzioni e Assicurazioni', en: 'STEP 3: Options and Insurance' }) },
+    { id: 4, name: t({ it: 'STEP 4: Pagamento e Conferma', en: 'STEP 4: Payment and Confirmation' }) }
   ];
 
   const renderStepContent = () => {
@@ -4641,8 +4642,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               const returnMin = rH * 60 + rM;
               if (returnMin >= defaultReturnMin + 30) return (
                 <div className="p-3 bg-red-900/30 border border-red-500 rounded-lg">
-                  <p className="text-red-300 font-semibold text-sm">La tariffa può subire variazioni</p>
-                  <p className="text-red-300/80 text-xs mt-1">La restituzione del veicolo è prevista entro 1 ora e 30 minuti prima dell'orario di uscita, al fine di evitare eventuali variazioni.</p>
+                  <p className="text-red-300 font-semibold text-sm">{t({ it: "La tariffa può subire variazioni", en: "The rate may change" })}</p>
+                  <p className="text-red-300/80 text-xs mt-1">{t({ it: "La restituzione del veicolo è prevista entro 1 ora e 30 minuti prima dell'orario di uscita, al fine di evitare eventuali variazioni.", en: "The vehicle must be returned within 1 hour and 30 minutes before the pick-up time, to avoid any changes." })}</p>
                 </div>
               );
               return null;
@@ -4651,20 +4652,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             {isFromSearch ? (
               /* Read-only summary when coming from Prenota Ora search */
               <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/30 space-y-2">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Riepilogo Prenotazione</h3>
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">{t({ it: "Riepilogo Prenotazione", en: "Booking Summary" })}</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-gray-500 block text-xs">Ritiro</span>
-                    <span className="text-white">{new Date(formData.pickupDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' })}</span>
+                    <span className="text-gray-500 block text-xs">{t({ it: "Ritiro", en: "Pick-up" })}</span>
+                    <span className="text-white">{new Date(formData.pickupDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' })}</span>
                     <span className="text-gray-400 ml-1">{formData.pickupTime}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block text-xs">Restituzione</span>
-                    <span className="text-white">{new Date(formData.returnDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' })}</span>
+                    <span className="text-gray-500 block text-xs">{t({ it: "Restituzione", en: "Return" })}</span>
+                    <span className="text-white">{new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' })}</span>
                     <span className="text-gray-400 ml-1">{formData.returnTime}</span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-500 block text-xs">Luogo</span>
+                    <span className="text-gray-500 block text-xs">{t({ it: "Luogo", en: "Location" })}</span>
                     <span className="text-white">{
                       pickupLocs.find(l => l.id === formData.pickupLocation)?.label?.it
                       || (formData.pickupLocation === 'dr7-cagliari' ? 'DR7 Cagliari — Viale Marconi 229, 09131' : null)
@@ -4680,7 +4681,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               <h3 className="text-lg font-semibold text-white mb-2">{t({ it: 'SELEZIONE LUOGO', en: 'LOCATION SELECTION' })}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-gray-400 font-semibold mb-2 block">Luogo di ritiro *</label>
+                  <label className="text-sm text-gray-400 font-semibold mb-2 block">{t({ it: "Luogo di ritiro *", en: "Pick-up location *" })}</label>
                   {pickupLocs.map(loc => (
                     <div key={loc.id} className="flex items-start mt-2 p-2 rounded hover:bg-gray-800/30 transition-colors">
                       <input type="radio" id={`pickup-${loc.id}`} name="pickupLocation" value={loc.id} checked={formData.pickupLocation === loc.id} onChange={handleChange} className="w-4 h-4 mt-1 text-white bg-gray-700 border-gray-600 focus:ring-white" />
@@ -4691,7 +4692,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   ))}
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 font-semibold mb-2 block">Luogo di riconsegna *</label>
+                  <label className="text-sm text-gray-400 font-semibold mb-2 block">{t({ it: "Luogo di riconsegna *", en: "Drop-off location *" })}</label>
                   {returnLocs.map(loc => (
                     <div key={loc.id} className="flex items-start mt-2 p-2 rounded hover:bg-gray-800/30 transition-colors">
                       <input type="radio" id={`return-${loc.id}`} name="returnLocation" value={loc.id} checked={formData.returnLocation === loc.id} onChange={handleChange} className="w-4 h-4 mt-1 text-white bg-gray-700 border-gray-600 focus:ring-white" />
@@ -4706,19 +4707,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               {/* Delivery address — PICKUP domicilio */}
               {formData.pickupLocation === 'home_delivery' && (
                 <div className="mt-4 p-4 rounded-lg border border-gray-700 bg-gray-800/40">
-                  <label className="text-sm text-white font-semibold mb-3 block">Indirizzo consegna veicolo *</label>
+                  <label className="text-sm text-white font-semibold mb-3 block">{t({ it: "Indirizzo consegna veicolo *", en: "Vehicle delivery address *" })}</label>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
-                      <input type="text" placeholder="Via *" value={formData.deliveryPickupVia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupVia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                      <input type="text" placeholder={t({ it: "Via *", en: "Street *" })} value={formData.deliveryPickupVia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupVia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <input type="text" placeholder="N. civico *" value={formData.deliveryPickupNumero || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupNumero: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                      <input type="text" placeholder={t({ it: "N. civico *", en: "House no. *" })} value={formData.deliveryPickupNumero || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupNumero: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     </div>
-                    <input type="text" placeholder="CAP *" value={formData.deliveryPickupCap || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupCap: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
-                    <input type="text" placeholder="Città *" value={formData.deliveryPickupCitta || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupCitta: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
-                    <input type="text" placeholder="Provincia *" value={formData.deliveryPickupProvincia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupProvincia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                    <input type="text" placeholder={t({ it: "CAP *", en: "Postcode *" })} value={formData.deliveryPickupCap || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupCap: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                    <input type="text" placeholder={t({ it: "Città *", en: "City *" })} value={formData.deliveryPickupCitta || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupCitta: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                    <input type="text" placeholder={t({ it: "Provincia *", en: "Province *" })} value={formData.deliveryPickupProvincia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupProvincia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     <div>
-                      <input type="number" min="1" placeholder="Km dalla sede *" value={formData.deliveryPickupKm || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupKm: parseInt(e.target.value) || 0 }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                      <input type="number" min="1" placeholder={t({ it: "Km dalla sede *", en: "Km from our office *" })} value={formData.deliveryPickupKm || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupKm: parseInt(e.target.value) || 0 }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     </div>
                   </div>
                   {formData.deliveryPickupKm > 0 && (
@@ -4726,26 +4727,26 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       Costo consegna: {formData.deliveryPickupKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM} = €{(formData.deliveryPickupKm * ACTIVE_DELIVERY_PRICE_PER_KM).toFixed(2)}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">La distanza sarà verificata da DR7. In caso di discrepanza, verrà applicata la distanza reale.</p>
+                  <p className="text-xs text-gray-500 mt-2">{t({ it: "La distanza sarà verificata da DR7. In caso di discrepanza, verrà applicata la distanza reale.", en: "The distance will be verified by DR7. If it differs, the actual distance will be applied." })}</p>
                 </div>
               )}
 
               {/* Delivery address — RETURN domicilio */}
               {formData.returnLocation === 'home_delivery' && (
                 <div className="mt-4 p-4 rounded-lg border border-gray-700 bg-gray-800/40">
-                  <label className="text-sm text-white font-semibold mb-3 block">Indirizzo ritiro/riconsegna veicolo *</label>
+                  <label className="text-sm text-white font-semibold mb-3 block">{t({ it: "Indirizzo ritiro/riconsegna veicolo *", en: "Vehicle pick-up/drop-off address *" })}</label>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
-                      <input type="text" placeholder="Via *" value={formData.deliveryReturnVia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnVia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                      <input type="text" placeholder={t({ it: "Via *", en: "Street *" })} value={formData.deliveryReturnVia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnVia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <input type="text" placeholder="N. civico *" value={formData.deliveryReturnNumero || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnNumero: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                      <input type="text" placeholder={t({ it: "N. civico *", en: "House no. *" })} value={formData.deliveryReturnNumero || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnNumero: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     </div>
-                    <input type="text" placeholder="CAP *" value={formData.deliveryReturnCap || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnCap: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
-                    <input type="text" placeholder="Città *" value={formData.deliveryReturnCitta || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnCitta: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
-                    <input type="text" placeholder="Provincia *" value={formData.deliveryReturnProvincia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnProvincia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                    <input type="text" placeholder={t({ it: "CAP *", en: "Postcode *" })} value={formData.deliveryReturnCap || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnCap: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                    <input type="text" placeholder={t({ it: "Città *", en: "City *" })} value={formData.deliveryReturnCitta || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnCitta: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                    <input type="text" placeholder={t({ it: "Provincia *", en: "Province *" })} value={formData.deliveryReturnProvincia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnProvincia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     <div>
-                      <input type="number" min="1" placeholder="Km dalla sede *" value={formData.deliveryReturnKm || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnKm: parseInt(e.target.value) || 0 }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
+                      <input type="number" min="1" placeholder={t({ it: "Km dalla sede *", en: "Km from our office *" })} value={formData.deliveryReturnKm || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnKm: parseInt(e.target.value) || 0 }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
                     </div>
                   </div>
                   {formData.deliveryReturnKm > 0 && (
@@ -4753,7 +4754,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       Costo riconsegna: {formData.deliveryReturnKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM} = €{(formData.deliveryReturnKm * ACTIVE_DELIVERY_PRICE_PER_KM).toFixed(2)}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">La distanza sarà verificata da DR7. In caso di discrepanza, verrà applicata la distanza reale.</p>
+                  <p className="text-xs text-gray-500 mt-2">{t({ it: "La distanza sarà verificata da DR7. In caso di discrepanza, verrà applicata la distanza reale.", en: "The distance will be verified by DR7. If it differs, the actual distance will be applied." })}</p>
                 </div>
               )}
 
@@ -4778,7 +4779,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Data di ritiro *
                         {formData.pickupDate && (
-                          <span className="ml-2 text-xs text-green-400">Selezionata</span>
+                          <span className="ml-2 text-xs text-green-400">{t({ it: "Selezionata", en: "Selected" })}</span>
                         )}
                       </label>
                       <input
@@ -4861,7 +4862,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         {getValidPickupTimes(formData.pickupDate).length > 0 ? (
                           getValidPickupTimes(formData.pickupDate).map(time => <option key={time} value={time}>{time}</option>)
                         ) : (
-                          <option value="">Seleziona prima una data feriale</option>
+                          <option value="">{t({ it: "Seleziona prima una data feriale", en: "Select a weekday first" })}</option>
                         )}
                       </select>
                     </div>
@@ -4878,7 +4879,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Data di riconsegna *
                         {formData.returnDate && (
-                          <span className="ml-2 text-xs text-green-400">Selezionata</span>
+                          <span className="ml-2 text-xs text-green-400">{t({ it: "Selezionata", en: "Selected" })}</span>
                         )}
                       </label>
                       <input
@@ -4951,16 +4952,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         </p>
                       )}
                       {!formData.pickupDate && (
-                        <p className="text-xs text-gray-400 mt-1">Seleziona prima la data di ritiro</p>
+                        <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima la data di ritiro", en: "Select the pick-up date first" })}</p>
                       )}
                       {formData.pickupDate && !formData.pickupTime && (
-                        <p className="text-xs text-gray-400 mt-1">Seleziona prima l'ora di ritiro</p>
+                        <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima l'ora di ritiro", en: "Select the pick-up time first" })}</p>
                       )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Ora di riconsegna *
-                        <span className="ml-2 text-xs text-gray-400">(auto-calcolata, modificabile)</span>
+                        <span className="ml-2 text-xs text-gray-400">{t({ it: "(auto-calcolata, modificabile)", en: "(auto-calculated, editable)" })}</span>
                       </label>
                       <select
                         name="returnTime"
@@ -4978,16 +4979,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         {getValidReturnTimes(formData.returnDate).length > 0 ? (
                           getValidReturnTimes(formData.returnDate).map(time => <option key={time} value={time}>{time}</option>)
                         ) : (
-                          <option value="">Seleziona prima una data</option>
+                          <option value="">{t({ it: "Seleziona prima una data", en: "Select a date first" })}</option>
                         )}
                       </select>
-                      <p className="text-xs text-gray-400 mt-1">Ritiro - 1h30 (auto), adattato alla disponibilità</p>
+                      <p className="text-xs text-gray-400 mt-1">{t({ it: "Ritiro - 1h30 (auto), adattato alla disponibilità", en: "Pick-up - 1h30 (automatic), adjusted to availability" })}</p>
                     </div>
                   </div>
                   {/* Vehicle Availability Check */}
                   {isCheckingAvailability && (
                     <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600 rounded-lg">
-                      <p className="text-blue-300 text-sm">Verifica disponibilità veicolo...</p>
+                      <p className="text-blue-300 text-sm">{t({ it: "Verifica disponibilità veicolo...", en: "Checking vehicle availability..." })}</p>
                     </div>
                   )}
                   {availabilityError && (
@@ -5026,14 +5027,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="text-sm text-gray-400">Nome *</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} autoComplete="given-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">Cognome *</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} autoComplete="family-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} autoComplete="given-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} autoComplete="family-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
               <div><label className="text-sm text-gray-400">Email *</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">Telefono *</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
               {driverType === 'main' && (
                 <>
                   <div>
-                    <label className="text-sm text-gray-400">Codice Fiscale *</label>
+                    <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
                     <div className="flex gap-2 mt-1">
                       <input type="text" name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} placeholder="es. RSSMRA85M01H501Z" className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
                       <CalcolaCFButton
@@ -5056,23 +5057,23 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {errors.codiceFiscale && <p className="text-xs text-red-400 mt-1">{errors.codiceFiscale}</p>}
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Sesso</label>
+                    <label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label>
                     <select name="sesso" value={formData.sesso} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm">
-                      <option value="">Seleziona...</option>
-                      <option value="M">Maschio</option>
-                      <option value="F">Femmina</option>
+                      <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
+                      <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
+                      <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
                     </select>
                   </div>
-                  <div><label className="text-sm text-gray-400">Luogo di nascita</label><input type="text" name="luogoNascita" value={formData.luogoNascita} onChange={handleChange} placeholder="es. Cagliari" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm" /></div>
-                  <div><label className="text-sm text-gray-400">Provincia di nascita</label><input type="text" name="provinciaNascita" value={formData.provinciaNascita} onChange={(e) => setFormData(p => ({ ...p, provinciaNascita: e.target.value.toUpperCase() }))} placeholder="es. CA" maxLength={2} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm uppercase" /></div>
+                  <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name="luogoNascita" value={formData.luogoNascita} onChange={handleChange} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm" /></div>
+                  <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" name="provinciaNascita" value={formData.provinciaNascita} onChange={(e) => setFormData(p => ({ ...p, provinciaNascita: e.target.value.toUpperCase() }))} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm uppercase" /></div>
                 </>
               )}
-              <div><label className="text-sm text-gray-400">Data di nascita *</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">Numero patente *</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">Data rilascio patente *</label><input type="date" name={`${prefix}licenseIssueDate`} value={(driverData as any).licenseIssueDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Data rilascio patente *", en: "Licence issue date *" })}</label><input type="date" name={`${prefix}licenseIssueDate`} value={(driverData as any).licenseIssueDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}</div>
               {driverType === 'main' && (
                 <div className="md:col-span-2">
-                  <label className="text-sm text-gray-400">Indirizzo di residenza *</label>
+                  <label className="text-sm text-gray-400">{t({ it: "Indirizzo di residenza *", en: "Residential address *" })}</label>
                   {/* Mirror the typed value into BOTH `address` (autocomplete UI
                       state) and `residenza` (the field the validator and the
                       cauzione/pricing logic actually read). Previously the
@@ -5101,8 +5102,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               )}
               {driverType === 'second' && (
                 <>
-                  <div><label className="text-sm text-gray-400">Data scadenza patente *</label><input type="date" name={`${prefix}licenseExpiryDate`} value={(driverData as any).licenseExpiryDate} onChange={handleChange} min={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseExpiryDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseExpiryDate`]}</p>}</div>
-                  <div><label className="text-sm text-gray-400">Paese di rilascio *</label><input type="text" name={`${prefix}countryOfIssue`} value={(driverData as any).countryOfIssue} onChange={handleChange} placeholder="es. Italia" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}countryOfIssue`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}countryOfIssue`]}</p>}</div>
+                  <div><label className="text-sm text-gray-400">{t({ it: "Data scadenza patente *", en: "Licence expiry date *" })}</label><input type="date" name={`${prefix}licenseExpiryDate`} value={(driverData as any).licenseExpiryDate} onChange={handleChange} min={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseExpiryDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseExpiryDate`]}</p>}</div>
+                  <div><label className="text-sm text-gray-400">{t({ it: "Paese di rilascio *", en: "Country of issue *" })}</label><input type="text" name={`${prefix}countryOfIssue`} value={(driverData as any).countryOfIssue} onChange={handleChange} placeholder={t({ it: "es. Italia", en: "e.g. Italy" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}countryOfIssue`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}countryOfIssue`]}</p>}</div>
                 </>
               )}
             </div>
@@ -5118,10 +5119,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             <section>
               <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                 A. CARICA DOCUMENTI
-                <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5 rounded">OBBLIGATORIO</span>
+                <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5 rounded">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
               </h3>
               <p className="text-sm text-gray-400 mb-4">
-                Per noleggiare un veicolo è <strong className="text-red-400">obbligatorio</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
+                Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
               </p>
 
               {/* Check if documents are already on file */}
@@ -5133,8 +5134,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </svg>
                   </div>
                   <div>
-                    <p className="text-green-400 font-semibold">Documenti già presenti in archivio</p>
-                    <p className="text-sm text-gray-400">Non è necessario caricare nuovamente i documenti.</p>
+                    <p className="text-green-400 font-semibold">{t({ it: "Documenti già presenti in archivio", en: "Documents already on file" })}</p>
+                    <p className="text-sm text-gray-400">{t({ it: "Non è necessario caricare nuovamente i documenti.", en: "You do not need to upload the documents again." })}</p>
                   </div>
                 </div>
               ) : (
@@ -5142,13 +5143,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {/* License Uploader */}
                   {hasStoredDocs.licensePath ? (
                     <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
-                      <p className="text-green-400 text-sm font-medium mb-1">✓ Patente di Guida presente</p>
-                      <p className="text-xs text-gray-500">Già in archivio</p>
+                      <p className="text-green-400 text-sm font-medium mb-1">{t({ it: "✓ Patente di Guida presente", en: "✓ Driving licence on file" })}</p>
+                      <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
                     </div>
                   ) : (
                     <div>
                       <DocumentUploader
-                        title="1. PATENTE DI GUIDA *"
+                        title={t({ it: "1. PATENTE DI GUIDA *", en: "1. DRIVING LICENCE *" })}
                         details={["Solo fronte/retro", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
                         onFileChange={(file) => setFormData(prev => ({ ...prev, licenseImage: file }))}
                       />
@@ -5159,13 +5160,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {/* ID Uploader */}
                   {hasStoredDocs.idPath ? (
                     <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
-                      <p className="text-green-400 text-sm font-medium mb-1">✓ Carta d'Identità presente</p>
-                      <p className="text-xs text-gray-500">Già in archivio</p>
+                      <p className="text-green-400 text-sm font-medium mb-1">{t({ it: "✓ Carta d'Identità presente", en: "✓ ID card on file" })}</p>
+                      <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
                     </div>
                   ) : (
                     <div>
                       <DocumentUploader
-                        title="2. CARTA D'IDENTITÀ / PASSAPORTO *"
+                        title={t({ it: "2. CARTA D'IDENTITÀ / PASSAPORTO *", en: "2. ID CARD / PASSPORT *" })}
                         details={["Documento valido", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
                         onFileChange={(file) => setFormData(prev => ({ ...prev, idImage: file }))}
                       />
@@ -5213,13 +5214,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* Main Driver Form — after documents for auto-fill */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">B. DATI CONDUCENTE</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "B. DATI CONDUCENTE", en: "B. DRIVER DETAILS" })}</h3>
               {renderDriverForm('main')}
             </section>
 
             {/* Automatic Validation & Tier Classification */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">C. VERIFICA REQUISITI</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "C. VERIFICA REQUISITI", en: "C. REQUIREMENTS CHECK" })}</h3>
               <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 space-y-2">
                 <p>Età conducente: {driverAgeLocal || '--'} anni</p>
                 <p>Anzianità patente: {licenseYearsLocal || '--'} anni</p>
@@ -5270,7 +5271,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* Second Driver */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">D. SECONDO CONDUCENTE (OPZIONALE)</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "D. SECONDO CONDUCENTE (OPZIONALE)", en: "D. SECOND DRIVER (OPTIONAL)" })}</h3>
               <div className="flex items-start mb-4">
                 <input
                   type="checkbox"
@@ -5295,19 +5296,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   className="overflow-hidden"
                 >
                 <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700 space-y-4">
-                  <p className="text-sm text-amber-300">Tutti i campi sono obbligatori per il secondo conducente.</p>
+                  <p className="text-sm text-amber-300">{t({ it: "Tutti i campi sono obbligatori per il secondo conducente.", en: "All fields are required for the second driver." })}</p>
                   {renderDriverForm('second')}
 
                   {/* Second Driver Document Upload */}
                   <div className="mt-4">
                     <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                       Documenti secondo conducente
-                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5 rounded">OBBLIGATORIO</span>
+                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5 rounded">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <DocumentUploader
-                          title="PATENTE SECONDO CONDUCENTE *"
+                          title={t({ it: "PATENTE SECONDO CONDUCENTE *", en: "SECOND DRIVER'S LICENCE *" })}
                           details={["Solo fronte/retro", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
                           onFileChange={(file) => setFormData(prev => ({
                             ...prev,
@@ -5318,7 +5319,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       </div>
                       <div>
                         <DocumentUploader
-                          title="DOCUMENTO SECONDO CONDUCENTE *"
+                          title={t({ it: "DOCUMENTO SECONDO CONDUCENTE *", en: "SECOND DRIVER'S ID *" })}
                           details={["Carta d'identità o passaporto", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
                           onFileChange={(file) => setFormData(prev => ({
                             ...prev,
@@ -5378,7 +5379,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             <section className="border-t border-gray-700 pt-6">
               <div className="flex items-start">
                 <input type="checkbox" name="confirmsInformation" checked={formData.confirmsInformation} onChange={handleChange} id="confirms-information" className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 rounded focus:ring-white" />
-                <label htmlFor="confirms-information" className="ml-2 text-white">Dichiaro che i dati inseriti sono veritieri e conformi ai requisiti richiesti.</label>
+                <label htmlFor="confirms-information" className="ml-2 text-white">{t({ it: "Dichiaro che i dati inseriti sono veritieri e conformi ai requisiti richiesti.", en: "I declare that the information provided is true and meets the required conditions." })}</label>
               </div>
               {errors.confirmsInformation && <p className="text-xs text-red-400 mt-1">{errors.confirmsInformation}</p>}
             </section>
@@ -5424,60 +5425,60 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           return (
             <div className="space-y-6">
               <div className="text-center mb-2">
-                <span className="text-xs font-bold text-white bg-white/10 px-4 py-1.5 rounded-full uppercase tracking-widest">Cliente VIP</span>
+                <span className="text-xs font-bold text-white bg-white/10 px-4 py-1.5 rounded-full uppercase tracking-widest">{t({ it: "Cliente VIP", en: "VIP Customer" })}</span>
               </div>
 
               <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 space-y-4">
-                <h3 className="text-lg font-bold text-white mb-4">Riepilogo Noleggio VIP</h3>
+                <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Riepilogo Noleggio VIP", en: "VIP Rental Summary" })}</h3>
 
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Veicolo</span>
+                  <span className="text-gray-400">{t({ it: "Veicolo", en: "Vehicle" })}</span>
                   <span className="text-white font-semibold">{item.name}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Ritiro</span>
+                  <span className="text-gray-400">{t({ it: "Ritiro", en: "Pick-up" })}</span>
                   <span className="text-white font-semibold">{formData.pickupDate} — {formData.pickupTime}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Riconsegna</span>
+                  <span className="text-gray-400">{t({ it: "Riconsegna", en: "Drop-off" })}</span>
                   <span className="text-white font-semibold">{formData.returnDate} — {formData.returnTime}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Durata</span>
+                  <span className="text-gray-400">{t({ it: "Durata", en: "Duration" })}</span>
                   <span className="text-white font-semibold">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}{duration.hours > 0 ? ` ${duration.hours}h` : ''}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Copertura assicurativa</span>
-                  <span className="text-green-400 font-semibold">Kasko Base — Inclusa</span>
+                  <span className="text-gray-400">{t({ it: "Copertura assicurativa", en: "Insurance cover" })}</span>
+                  <span className="text-green-400 font-semibold">{t({ it: "Kasko Base — Inclusa", en: "Basic Kasko — Included" })}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Chilometri</span>
-                  <span className="text-green-400 font-semibold">Illimitati — Inclusi</span>
+                  <span className="text-gray-400">{t({ it: "Chilometri", en: "Mileage" })}</span>
+                  <span className="text-green-400 font-semibold">{t({ it: "Illimitati — Inclusi", en: "Unlimited — Included" })}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Lavaggio</span>
-                  <span className="text-green-400 font-semibold">Incluso</span>
+                  <span className="text-gray-400">{t({ it: "Lavaggio", en: "Car wash" })}</span>
+                  <span className="text-green-400 font-semibold">{t({ it: "Incluso", en: "Included" })}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                  <span className="text-gray-400">Cauzione</span>
-                  <span className="text-green-400 font-semibold">Nessuna</span>
+                  <span className="text-gray-400">{t({ it: "Cauzione", en: "Deposit" })}</span>
+                  <span className="text-green-400 font-semibold">{t({ it: "Nessuna", en: "None" })}</span>
                 </div>
                 {deliveryFee > 0 && (
                   <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                    <span className="text-gray-400">Consegna/Ritiro a domicilio</span>
+                    <span className="text-gray-400">{t({ it: "Consegna/Ritiro a domicilio", en: "Delivery/Collection at your address" })}</span>
                     <span className="text-white font-semibold">{formatPrice(deliveryFee)}</span>
                   </div>
                 )}
 
                 {discountAmount > 0 && (
                   <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                    <span className="text-white">Codice Sconto</span>
+                    <span className="text-white">{t({ it: "Codice Sconto", en: "Discount Code" })}</span>
                     <span className="text-white font-semibold">-{formatPrice(discountAmount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between items-center pt-4">
-                  <span className="text-xl font-bold text-white">TOTALE</span>
+                  <span className="text-xl font-bold text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span>
                   <div className="flex items-center gap-3">
                     {discountAmount > 0 && (
                       <span className="text-lg text-gray-500 line-through">€{rentalCost}</span>
@@ -5489,7 +5490,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
               {/* Codice Sconto — also available for VIP */}
               <div className="border-t border-gray-600 pt-4">
-                <p className="font-bold text-base text-white mb-3">CODICE SCONTO</p>
+                <p className="font-bold text-base text-white mb-3">{t({ it: "CODICE SCONTO", en: "DISCOUNT CODE" })}</p>
                 {appliedDiscount ? (
                   <div className="flex items-center justify-between p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
                     <div>
@@ -5500,7 +5501,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           : `Sconto di €${Number(appliedDiscount.amount).toFixed(2)} applicato`}
                       </p>
                     </div>
-                    <button type="button" onClick={removeDiscount} className="text-red-400 hover:text-red-300 text-sm underline">Rimuovi</button>
+                    <button type="button" onClick={removeDiscount} className="text-red-400 hover:text-red-300 text-sm underline">{t({ it: "Rimuovi", en: "Remove" })}</button>
                   </div>
                 ) : (
                   <div className="flex gap-2">
@@ -5508,7 +5509,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       type="text"
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      placeholder="Inserisci codice (es. BDAY-XXXX-XXXX)"
+                      placeholder={t({ it: "Inserisci codice (es. BDAY-XXXX-XXXX)", en: "Enter code (e.g. BDAY-XXXX-XXXX)" })}
                       className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm uppercase"
                     />
                     <button
@@ -5533,18 +5534,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           <div className="space-y-8">
             {/* === A. ASSICURAZIONE (tier-conditional) === */}
             <section>
-              <h3 className="text-lg font-bold text-white mb-4">A. COPERTURA ASSICURATIVA</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "A. COPERTURA ASSICURATIVA", en: "A. INSURANCE COVER" })}</h3>
               {false ? (
                 <div className="p-4 rounded-lg border-2 border-green-500 bg-green-500/10">
                   <div className="flex items-center">
-                    <span className="font-bold text-white">Kasko Base</span>
-                    <span className="ml-auto text-green-400 font-bold">Inclusa</span>
+                    <span className="font-bold text-white">{t({ it: "Kasko Base", en: "Basic Kasko" })}</span>
+                    <span className="ml-auto text-green-400 font-bold">{t({ it: "Inclusa", en: "Included" })}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Copertura assicurativa inclusa nel tuo piano VIP.</p>
+                  <p className="text-xs text-gray-400 mt-1">{t({ it: "Copertura assicurativa inclusa nel tuo piano VIP.", en: "Insurance cover included in your VIP plan." })}</p>
                 </div>
               ) : (
               <>
-              <p className="text-sm text-gray-400 mb-4">Seleziona il livello di protezione desiderato.</p>
+              <p className="text-sm text-gray-400 mb-4">{t({ it: "Seleziona il livello di protezione desiderato.", en: "Choose the level of protection you want." })}</p>
               <div className="space-y-3">
                 {insuranceOptions.map(opt => {
                   const isSelected = formData.insuranceOption === opt.id;
@@ -5605,7 +5606,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* === B. CHILOMETRI === */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">B. CHILOMETRI</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "B. CHILOMETRI", en: "B. MILEAGE" })}</h3>
               {/* 2026-05-16: rendering unificato del blocco Km per TUTTI i veicoli.
                   Prima esisteva un branch separato "non-SUPERCAR" che mostrava
                   pacchetti come selezione singola (no + buttons, no qty),
@@ -5625,9 +5626,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <div className="flex justify-between items-center">
                       <div>
                         <span className="font-bold text-white">{includedKm >= 9999 ? 'Illimitati' : includedKm > 0 ? `${includedKm} km inclusi` : 'KM inclusi nel noleggio'}</span>
-                        <p className="text-sm text-gray-400">Calcolati in base alla durata del noleggio</p>
+                        <p className="text-sm text-gray-400">{t({ it: "Calcolati in base alla durata del noleggio", en: "Calculated on the rental duration" })}</p>
                       </div>
-                      <span className="font-bold text-green-400">Inclusi</span>
+                      <span className="font-bold text-green-400">{t({ it: "Inclusi", en: "Included" })}</span>
                     </div>
                   </div>
                   {/* === PACCHETTI KM (2026-05-16) ===
@@ -5692,14 +5693,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                   className="w-8 h-8 rounded-full bg-gray-700 text-white text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-600 disabled:opacity-50">−</button>
                                 <span className="text-white font-bold min-w-[1.5rem] text-center">{qty}</span>
                                 <button type="button" disabled={isUnlimitedActive || qty >= maxQty} onClick={(e) => { e.stopPropagation(); setQty(qty + 1) }}
-                                  className="w-8 h-8 rounded-full bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title="Aggiungi pacchetto">+</button>
+                                  className="w-8 h-8 rounded-full bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title={t({ it: "Aggiungi pacchetto", en: "Add package" })}>+</button>
                                 <span className="font-bold text-dr7-gold ml-2">+{formatPrice(pkg.price * qty)}</span>
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-dr7-gold">+{formatPrice(pkg.price)}</span>
                                 <button type="button" disabled={isUnlimitedActive} onClick={(e) => { e.stopPropagation(); setQty(1) }}
-                                  className="w-8 h-8 rounded-full bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title="Aggiungi pacchetto">+</button>
+                                  className="w-8 h-8 rounded-full bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title={t({ it: "Aggiungi pacchetto", en: "Add package" })}>+</button>
                               </div>
                             )}
                           </div>
@@ -5749,8 +5750,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <span className="font-bold text-white">Km illimitati</span>
-                            <p className="text-sm text-gray-400">Senza limiti di percorrenza</p>
+                            <span className="font-bold text-white">{t({ it: "Km illimitati", en: "Unlimited km" })}</span>
+                            <p className="text-sm text-gray-400">{t({ it: "Senza limiti di percorrenza", en: "Unlimited mileage" })}</p>
                           </div>
                           <span className="font-bold text-white">{unlimitedPrice > 0 ? `+€${unlimitedPrice}/giorno` : 'Incluso'}</span>
                         </div>
@@ -5773,7 +5774,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         <span className="font-bold text-white">{calculateIncludedKm(duration.days || 1, getKmIncludedForVehicle((item as any).category, vehicleType)) || 0} km inclusi</span>
                         <p className="text-sm text-gray-400">Calcolati sulla durata del noleggio ({duration.days || 1} {(duration.days || 1) === 1 ? 'giorno' : 'giorni'})</p>
                       </div>
-                      <span className="font-bold text-green-400">Incluso</span>
+                      <span className="font-bold text-green-400">{t({ it: "Incluso", en: "Included" })}</span>
                     </div>
                   </div>
                   {/* === PACCHETTI KM (2026-05-16) === stesso meccanismo
@@ -5840,8 +5841,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <span className="font-bold text-white">Km illimitati</span>
-                            <p className="text-sm text-gray-400">Senza limiti di percorrenza</p>
+                            <span className="font-bold text-white">{t({ it: "Km illimitati", en: "Unlimited km" })}</span>
+                            <p className="text-sm text-gray-400">{t({ it: "Senza limiti di percorrenza", en: "Unlimited mileage" })}</p>
                           </div>
                           <span className="font-bold text-white">
                             {perDay > 0 ? formatPrice(perDay * days) : 'Incluso'}
@@ -5862,13 +5863,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 non appare. */}
             {(tierPricing.lavaggio > 0 || tierPricing.secondDriverPerDay > 0) && (
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">C. SERVIZI AGGIUNTIVI</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "C. SERVIZI AGGIUNTIVI", en: "C. ADDITIONAL SERVICES" })}</h3>
               <div className="space-y-3">
                 {/* Lavaggio finale — solo se prezzo > 0 */}
                 {tierPricing.lavaggio > 0 && (
                 <div className={`flex items-center p-3 rounded-md border ${'bg-gray-800/50 border-gray-700'}`}>
                   <input type="checkbox" checked disabled className="h-4 w-4" />
-                  <span className="ml-3 text-white">Pulizia finale</span>
+                  <span className="ml-3 text-white">{t({ it: "Pulizia finale", en: "Final cleaning" })}</span>
                   <span className={`ml-auto font-semibold ${'text-white'}`}>
                     {`€${tierPricing.lavaggio.toFixed(2)}`}
                   </span>
@@ -5884,7 +5885,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 >
                   <div className="flex items-center">
                     <input type="checkbox" checked={formData.addSecondDriver} onChange={() => {}} className="h-4 w-4" />
-                    <span className="ml-3 text-white">Secondo guidatore</span>
+                    <span className="ml-3 text-white">{t({ it: "Secondo guidatore", en: "Second driver" })}</span>
                     <span className="ml-auto font-semibold text-white">€{tierPricing.secondDriverPerDay}/giorno</span>
                   </div>
                 </div>
@@ -5897,8 +5898,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             {getMembershipTierName(user) !== 'gold' && getMembershipTierName(user) !== 'platinum' ? (
               /* Supercar: tier-based deposit options */
               <section className="border-t border-gray-700 pt-6">
-                <h3 className="text-lg font-bold text-white mb-2">D. CAUZIONE</h3>
-                <p className="text-sm text-gray-400 mb-4">Scegli come gestire la cauzione.</p>
+                <h3 className="text-lg font-bold text-white mb-2">{t({ it: "D. CAUZIONE", en: "D. DEPOSIT" })}</h3>
+                <p className="text-sm text-gray-400 mb-4">{t({ it: "Scegli come gestire la cauzione.", en: "Choose how to handle the deposit." })}</p>
                 {(() => {
                   const rcaOpt = insuranceOptions.find((o: any) => o.id === 'RCA');
                   const mandatoryAmount = rcaOpt?.mandatoryDeposit || 0;
@@ -5906,7 +5907,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     return (
                       <div className="p-4 rounded-lg border-2 border-red-500/50 bg-red-500/10">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-white">Cauzione obbligatoria (solo RCA)</span>
+                          <span className="font-bold text-white">{t({ it: "Cauzione obbligatoria (solo RCA)", en: "Deposit required (third-party cover only)" })}</span>
                           <span className="font-bold text-red-400">€{mandatoryAmount.toLocaleString()}</span>
                         </div>
                         <p className="text-sm text-gray-400 mt-1">Senza Kasko è richiesta una cauzione di €{mandatoryAmount.toLocaleString()} su carta di credito.</p>
@@ -5964,7 +5965,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             </div>
                             <p className="text-sm text-gray-400 mt-1">{opt.description}</p>
                             {isDisabled && (
-                              <p className="text-xs text-red-400 mt-1">Disponibile solo con acquisto Kasko</p>
+                              <p className="text-xs text-red-400 mt-1">{t({ it: "Disponibile solo con acquisto Kasko", en: "Available only with Kasko cover" })}</p>
                             )}
                           </div>
                         </div>
@@ -5974,7 +5975,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>}
                 {noCauzioneRequested && formData.depositOption === 'no_deposit' && (
                   <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-                    <p className="text-green-400 text-sm font-medium">Richiesta No Cauzione inviata! Sarai contattato per conferma.</p>
+                    <p className="text-green-400 text-sm font-medium">{t({ it: "Richiesta No Cauzione inviata! Sarai contattato per conferma.", en: "No-Deposit request sent. We will contact you to confirm." })}</p>
                   </div>
                 )}
                 {errors.depositOption && <p className="text-xs text-red-400 mt-2">{errors.depositOption}</p>}
@@ -5985,15 +5986,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             {showNoCauzionePopup && (
               <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowNoCauzionePopup(false)}>
                 <div className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
-                  <h3 className="text-lg font-bold text-white mb-3">Richiesta No Cauzione</h3>
+                  <h3 className="text-lg font-bold text-white mb-3">{t({ it: "Richiesta No Cauzione", en: "No-Deposit Request" })}</h3>
                   <p className="text-gray-400 text-sm mb-4">
                     L'opzione "Nessuna Cauzione" richiede l'approvazione del team DR7.
                     Invieremo la tua richiesta e sarai contattato per conferma.
                   </p>
-                  <p className="text-white text-sm mb-1">Supplemento: <span className="font-bold text-white">€{ACTIVE_NO_DEPOSIT_SURCHARGE}/giorno</span></p>
-                  <p className="text-gray-500 text-xs mb-4">Richiede Kasko attiva. Soggetto a verifica e approvazione del team DR7.</p>
+                  <p className="text-white text-sm mb-1">{t({ it: "Supplemento:", en: "Surcharge:" })} <span className="font-bold text-white">€{ACTIVE_NO_DEPOSIT_SURCHARGE}/giorno</span></p>
+                  <p className="text-gray-500 text-xs mb-4">{t({ it: "Richiede Kasko attiva. Soggetto a verifica e approvazione del team DR7.", en: "Requires active Kasko cover. Subject to review and approval by the DR7 team." })}</p>
                   <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
-                    <p className="text-red-400 text-xs font-bold mb-1">ATTENZIONE</p>
+                    <p className="text-red-400 text-xs font-bold mb-1">{t({ it: "ATTENZIONE", en: "WARNING" })}</p>
                     <p className="text-gray-300 text-xs leading-relaxed">
                       Il pagamento con carta prepagata comporta l'obbligo di cauzione secondo modalità standard.
                       Senza cauzione, il veicolo non verrà consegnato.
@@ -6026,22 +6027,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             {showVehicleDepositPopup && (
               <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { setShowVehicleDepositPopup(false); if (!vehicleDepositVerified) setFormData(prev => ({ ...prev, depositOption: '' })); }}>
                 <div className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
-                  <h3 className="text-lg font-bold text-white mb-3">Cauzione con Veicolo</h3>
+                  <h3 className="text-lg font-bold text-white mb-3">{t({ it: "Cauzione con Veicolo", en: "Vehicle as Deposit" })}</h3>
                   <p className="text-gray-400 text-sm mb-4">
-                    Il veicolo deve essere di proprietà e immatricolato dal <strong className="text-white">2020 in poi</strong>. Supplemento: <span className="font-bold text-white">€20/giorno</span>.
+                    Il veicolo deve essere di proprietà e immatricolato dal <strong className="text-white">{t({ it: "2020 in poi", en: "2020 or newer" })}</strong>{t({ it: ". Supplemento:", en: ". Surcharge:" })} <span className="font-bold text-white">{t({ it: "€20/giorno", en: "€20/day" })}</span>.
                   </p>
 
                   {/* Step 1: Enter targa */}
                   {!vehicleDepositVerified && (
                     <>
                       <div className="mb-4">
-                        <label className="block text-sm font-semibold text-white mb-2">Inserisci la Targa del tuo veicolo</label>
+                        <label className="block text-sm font-semibold text-white mb-2">{t({ it: "Inserisci la Targa del tuo veicolo", en: "Enter your vehicle's number plate" })}</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={vehicleDepositTarga}
                             onChange={e => { setVehicleDepositTarga(e.target.value.toUpperCase()); setVehicleDepositError(null); }}
-                            placeholder="es. AB123CD"
+                            placeholder={t({ it: "es. AB123CD", en: "e.g. AB123CD" })}
                             maxLength={8}
                             className="flex-1 px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white uppercase text-center font-bold text-lg tracking-widest"
                           />
@@ -6119,64 +6120,64 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             onChange={e => setVehicleDepositIsOwner(e.target.checked)}
                             className="w-5 h-5 rounded"
                           />
-                          <span className="text-white font-semibold text-sm">Sono il proprietario del veicolo</span>
+                          <span className="text-white font-semibold text-sm">{t({ it: "Sono il proprietario del veicolo", en: "I am the owner of the vehicle" })}</span>
                         </label>
                       </div>
 
                       {/* Different owner form */}
                       {!vehicleDepositIsOwner && (
                         <div className="mb-4 p-4 bg-gray-800/50 border border-gray-600 rounded-lg space-y-3">
-                          <p className="text-white font-semibold text-sm mb-2">Dati del Proprietario del Veicolo</p>
+                          <p className="text-white font-semibold text-sm mb-2">{t({ it: "Dati del Proprietario del Veicolo", en: "Vehicle Owner's Details" })}</p>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Nome *</label>
-                              <input type="text" value={vehicleDepositOwner.nome} onChange={e => setVehicleDepositOwner(p => ({ ...p, nome: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Nome" />
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Nome *", en: "First name *" })}</label>
+                              <input type="text" value={vehicleDepositOwner.nome} onChange={e => setVehicleDepositOwner(p => ({ ...p, nome: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder={t({ it: "Nome", en: "First name" })} />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Cognome *</label>
-                              <input type="text" value={vehicleDepositOwner.cognome} onChange={e => setVehicleDepositOwner(p => ({ ...p, cognome: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Cognome" />
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Cognome *", en: "Last name *" })}</label>
+                              <input type="text" value={vehicleDepositOwner.cognome} onChange={e => setVehicleDepositOwner(p => ({ ...p, cognome: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder={t({ it: "Cognome", en: "Last name" })} />
                             </div>
                           </div>
                           <div>
-                            <label className="text-xs text-gray-400 mb-1 block">Codice Fiscale *</label>
+                            <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
                             <input type="text" value={vehicleDepositOwner.codiceFiscale} onChange={e => setVehicleDepositOwner(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} maxLength={16} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm uppercase" placeholder="RSSMRA85M01H501Z" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Data di Nascita *</label>
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Data di Nascita *", en: "Date of birth *" })}</label>
                               <input type="date" value={vehicleDepositOwner.dataNascita} onChange={e => setVehicleDepositOwner(p => ({ ...p, dataNascita: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Luogo di Nascita *</label>
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Luogo di Nascita *", en: "Place of birth *" })}</label>
                               <input type="text" value={vehicleDepositOwner.luogoNascita} onChange={e => setVehicleDepositOwner(p => ({ ...p, luogoNascita: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Cagliari" />
                             </div>
                           </div>
                           <div>
-                            <label className="text-xs text-gray-400 mb-1 block">Indirizzo *</label>
+                            <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Indirizzo *", en: "Address *" })}</label>
                             <input type="text" value={vehicleDepositOwner.indirizzo} onChange={e => setVehicleDepositOwner(p => ({ ...p, indirizzo: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Via Roma 1" />
                           </div>
                           <div className="grid grid-cols-3 gap-3">
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Città *</label>
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Città *", en: "City *" })}</label>
                               <input type="text" value={vehicleDepositOwner.citta} onChange={e => setVehicleDepositOwner(p => ({ ...p, citta: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Cagliari" />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">CAP *</label>
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "CAP *", en: "Postcode *" })}</label>
                               <input type="text" value={vehicleDepositOwner.cap} onChange={e => setVehicleDepositOwner(p => ({ ...p, cap: e.target.value }))} maxLength={5} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="09100" />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Provincia</label>
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Provincia", en: "Province" })}</label>
                               <input type="text" value={vehicleDepositOwner.provincia} onChange={e => setVehicleDepositOwner(p => ({ ...p, provincia: e.target.value.toUpperCase() }))} maxLength={2} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm uppercase" placeholder="CA" />
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-xs text-gray-400 mb-1 block">Telefono *</label>
+                              <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Telefono *", en: "Phone *" })}</label>
                               <input type="tel" value={vehicleDepositOwner.telefono} onChange={e => setVehicleDepositOwner(p => ({ ...p, telefono: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="+39 333 1234567" />
                             </div>
                             <div>
                               <label className="text-xs text-gray-400 mb-1 block">Email</label>
-                              <input type="email" value={vehicleDepositOwner.email} onChange={e => setVehicleDepositOwner(p => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="email@esempio.it" />
+                              <input type="email" value={vehicleDepositOwner.email} onChange={e => setVehicleDepositOwner(p => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder={t({ it: "email@esempio.it", en: "email@example.com" })} />
                             </div>
                           </div>
                         </div>
@@ -6184,7 +6185,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                       {/* Upload libretto fronte */}
                       <div className="mb-3">
-                        <label className="block text-sm font-semibold text-white mb-2">Libretto di Circolazione — Fronte *</label>
+                        <label className="block text-sm font-semibold text-white mb-2">{t({ it: "Libretto di Circolazione — Fronte *", en: "Vehicle registration document — Front *" })}</label>
                         <input
                           type="file"
                           accept="image/*,.pdf"
@@ -6198,7 +6199,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                       {/* Upload libretto verso */}
                       <div className="mb-4">
-                        <label className="block text-sm font-semibold text-white mb-2">Libretto di Circolazione — Verso <span className="text-gray-400 font-normal">(opzionale)</span></label>
+                        <label className="block text-sm font-semibold text-white mb-2">{t({ it: "Libretto di Circolazione — Verso", en: "Vehicle registration document — Back" })} <span className="text-gray-400 font-normal">{t({ it: "(opzionale)", en: "(optional)" })}</span></label>
                         <input
                           type="file"
                           accept="image/*,.pdf"
@@ -6211,16 +6212,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       </div>
 
                       {!vehicleDepositLibretto && (
-                        <p className="text-red-400 text-xs mb-3">* Il caricamento del Libretto di Circolazione (fronte) è obbligatorio per procedere</p>
+                        <p className="text-red-400 text-xs mb-3">{t({ it: "* Il caricamento del Libretto di Circolazione (fronte) è obbligatorio per procedere", en: "* Uploading the vehicle registration document (front) is required to continue" })}</p>
                       )}
 
                       {/* Reminder */}
                       <div className="p-3 bg-gray-800/40 border border-white/30 rounded-lg mb-6">
-                        <p className="text-white text-sm font-semibold">Ricordati di portare al ritiro:</p>
+                        <p className="text-white text-sm font-semibold">{t({ it: "Ricordati di portare al ritiro:", en: "Remember to bring at pick-up:" })}</p>
                         <ul className="mt-2 space-y-1 text-white text-sm">
-                          <li>• Libretto di Circolazione originale</li>
-                          <li>• Chiave del veicolo</li>
-                          <li>• Veicolo (la macchina deve essere presente al ritiro)</li>
+                          <li>{t({ it: "• Libretto di Circolazione originale", en: "• The original vehicle registration document" })}</li>
+                          <li>{t({ it: "• Chiave del veicolo", en: "• The vehicle key" })}</li>
+                          <li>{t({ it: "• Veicolo (la macchina deve essere presente al ritiro)", en: "• The vehicle (the car must be present at pick-up)" })}</li>
                         </ul>
                       </div>
 
@@ -6282,8 +6283,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* === F. SERVIZI EXPERIENCE (hidden for VIP) === */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-2">F. SERVIZI EXPERIENCE</h3>
-              <p className="text-sm text-gray-400 mb-4">Personalizza la tua esperienza con servizi esclusivi.</p>
+              <h3 className="text-lg font-bold text-white mb-2">{t({ it: "F. SERVIZI EXPERIENCE", en: "F. EXPERIENCE SERVICES" })}</h3>
+              <p className="text-sm text-gray-400 mb-4">{t({ it: "Personalizza la tua esperienza con servizi esclusivi.", en: "Personalise your experience with exclusive services." })}</p>
               <div className="space-y-3">
                 {experienceServices.map(svc => {
                   const qty = formData.selectedExperiences[svc.id] || 0;
@@ -6351,7 +6352,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-white">Richiesta Inviata!</h2>
+                <h2 className="text-2xl font-bold text-white">{t({ it: "Richiesta Inviata!", en: "Request sent." })}</h2>
                 <p className="text-gray-400 max-w-md mx-auto">
                   La tua richiesta per la formula senza cauzione è stata registrata. Il team DR7 la contatterà via WhatsApp con l'esito e, in caso di approvazione, il link di pagamento.
                 </p>
@@ -6373,21 +6374,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Riepilogo Preventivo</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{t({ it: "Riepilogo Preventivo", en: "Quote Summary" })}</h3>
                 <p className="text-gray-400 text-sm mb-6">
                   Cliccando "Salva Preventivo" la tua richiesta verrà inviata al team DR7 per approvazione. Riceverai un messaggio WhatsApp con l'esito.
                 </p>
               </div>
 
               <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-gray-400">Veicolo</span><span className="text-white font-semibold">{item.name}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Ritiro</span><span className="text-white">{formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.pickupTime || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Riconsegna</span><span className="text-white">{formData.returnDate ? new Date(formData.returnDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.returnTime || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Durata</span><span className="text-white">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Veicolo", en: "Vehicle" })}</span><span className="text-white font-semibold">{item.name}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Ritiro", en: "Pick-up" })}</span><span className="text-white">{formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.pickupTime || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Riconsegna", en: "Drop-off" })}</span><span className="text-white">{formData.returnDate ? new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.returnTime || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Durata", en: "Duration" })}</span><span className="text-white">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</span></div>
                 <hr className="border-gray-600 my-1" />
                 <div className="flex justify-between"><span className="text-gray-400">Noleggio {item.name}</span><span className="text-white">{formatPrice(rentalCost)}</span></div>
                 {insuranceCost > 0 && <div className="flex justify-between"><span className="text-gray-400">Assicurazione {(() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || formData.insuranceOption?.replace(/_/g, ' '); })()}</span><span className="text-white">{formatPrice(insuranceCost)}</span></div>}
-                {lavaggioFee > 0 && <div className="flex justify-between"><span className="text-gray-400">Lavaggio</span><span className="text-white">{formatPrice(lavaggioFee)}</span></div>}
+                {lavaggioFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Lavaggio", en: "Car wash" })}</span><span className="text-white">{formatPrice(lavaggioFee)}</span></div>}
                 {/* 2026-05-16: Quando il cliente sceglie un pacchetto, mostriamo
                     SIA la riga "X km inclusi" (totale post-somma con il pacchetto)
                     SIA la riga del pacchetto col prezzo. Per Km illimitati si
@@ -6400,7 +6401,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   //   - oppure "Km illimitati" se attivo
                   const isIllimitati = formData.kmPackageType === 'unlimited'
                   if (isIllimitati && kmPackageCost > 0) {
-                    return <div className="flex justify-between"><span className="text-gray-400">Km illimitati</span><span className="text-white">{formatPrice(kmPackageCost)}</span></div>
+                    return <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Km illimitati", en: "Unlimited km" })}</span><span className="text-white">{formatPrice(kmPackageCost)}</span></div>
                   }
                   const rawCat = String((item as any).category ?? '').toLowerCase().trim()
                   const pkgsList = resolvePacchetti(rawCat, configOverlay?.pacchettiByCategory)
@@ -6412,7 +6413,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   return (
                     <>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Chilometri</span>
+                        <span className="text-gray-400">{t({ it: "Chilometri", en: "Mileage" })}</span>
                         <span className="text-white">{baseKm >= 9999 ? 'Illimitati inclusi' : `${baseKm} km inclusi`}</span>
                       </div>
                       {selectedPkgs.map(({ pkg, qty }) => (
@@ -6426,10 +6427,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </>
                   )
                 })()}
-                <div className="flex justify-between"><span className="text-green-400">Supplemento No Cauzione</span><span className="text-green-400">{formatPrice(noDepositSurcharge)}</span></div>
+                <div className="flex justify-between"><span className="text-green-400">{t({ it: "Supplemento No Cauzione", en: "No-Deposit surcharge" })}</span><span className="text-green-400">{formatPrice(noDepositSurcharge)}</span></div>
                 {hasDynamicDiscount && <div className="flex justify-between text-blue-400"><span>Sconto Revenue ({dynamicDiscountPct}%)</span><span>-{formatPrice(listSubtotal - subtotal)}</span></div>}
                 <hr className="border-gray-600 my-1" />
-                <div className="flex justify-between text-lg font-bold"><span className="text-white">TOTALE</span><span className="text-white">{formatPrice(grandTotal)}</span></div>
+                <div className="flex justify-between text-lg font-bold"><span className="text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span><span className="text-white">{formatPrice(grandTotal)}</span></div>
               </div>
 
               <button
@@ -6446,7 +6447,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     const pickupDateTime = new Date(`${pDate}T${pTime}:00`);
                     const dropoffDateTime = new Date(`${rDate}T${rTime}:00`);
                     if (isNaN(pickupDateTime.getTime()) || isNaN(dropoffDateTime.getTime())) {
-                      throw new Error('Date o orari non validi. Torna allo step 1 e seleziona date e orari.');
+                      throw new Error(t({ it: "Date o orari non validi. Torna allo step 1 e seleziona date e orari.", en: "Invalid dates or times. Go back to step 1 and select dates and times." }));
                     }
                     const bookingData = {
                       service_type: 'car_rental',
@@ -6532,7 +6533,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         return (
           <div className="space-y-8">
             <section>
-              <h3 className="text-lg font-bold text-white mb-4">METODO DI PAGAMENTO</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h3>
               <div className="flex border-b border-gray-700 mb-6">
                 <button
                   type="button"
@@ -6552,7 +6553,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               {/* DR7 Club separate payment notice */}
               {formData.extras.some(e => e.startsWith('subscription_')) && (
                 <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg text-sm">
-                  <p className="text-white font-semibold">DR7 Club — Pagamento separato</p>
+                  <p className="text-white font-semibold">{t({ it: "DR7 Club — Pagamento separato", en: "DR7 Club — Separate payment" })}</p>
                   <p className="text-white/70 text-xs mt-1">
                     {formData.paymentMethod === 'credit'
                       ? 'Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club (€39/anno) con carta.'
@@ -6570,12 +6571,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       </div>
                     ) : (
                       <>
-                        <p className="text-sm text-gray-400 mb-2">Saldo Disponibile</p>
+                        <p className="text-sm text-gray-400 mb-2">{t({ it: "Saldo Disponibile", en: "Available Balance" })}</p>
                         <p className="text-4xl font-bold text-white mb-4">€{creditBalance.toFixed(2)}</p>
                         {creditBalance < total ? (
                           <p className="text-sm text-red-400">Credito insufficiente. Richiesto: €{total.toFixed(2)}</p>
                         ) : (
-                          <p className="text-sm text-green-400">✓ Saldo sufficiente</p>
+                          <p className="text-sm text-green-400">{t({ it: "✓ Saldo sufficiente", en: "✓ Sufficient balance" })}</p>
                         )}
                       </>
                     )}
@@ -6587,7 +6588,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   </div>
                 ) : (
                   <>
-                    <h4 className="text-base font-semibold text-white mb-3">METODO DI PAGAMENTO</h4>
+                    <h4 className="text-base font-semibold text-white mb-3">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h4>
                     <div className="p-4 bg-gray-800 rounded-lg">
                       <div className="flex items-center justify-center gap-3 mb-3">
                         <svg viewBox="0 0 131.39 86.9" className="h-6 opacity-70" aria-label="Mastercard"><rect width="131.39" height="86.9" rx="8" fill="#000"/><circle cx="48.37" cy="43.45" r="27.5" fill="#eb001b"/><circle cx="83.02" cy="43.45" r="27.5" fill="#f79e1b"/><path d="M65.7 20.8a27.4 27.4 0 0 0-10.2 21.4c0 8.6 3.9 16.3 10.2 21.4a27.4 27.4 0 0 0 10.2-21.4c0-8.6-3.9-16.3-10.2-21.4Z" fill="#ff5f00"/></svg>
@@ -6604,7 +6605,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             </section >
 
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4 uppercase">Conferme Finali</h3>
+              <h3 className="text-lg font-bold text-white mb-4 uppercase">{t({ it: "Conferme Finali", en: "Final confirmations" })}</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-start">
@@ -6619,7 +6620,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex items-start">
                     <input id="agrees-to-terms" name="agreesToTerms" type="checkbox" checked={formData.agreesToTerms} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
                     <label htmlFor="agrees-to-terms" className="ml-3 block text-sm font-medium text-white">
-                      Ho letto e accetto i <Link to="/rental-agreement" target="_blank" className="underline hover:text-white">termini e le condizioni di noleggio</Link>.
+                      Ho letto e accetto i <Link to="/rental-agreement" target="_blank" className="underline hover:text-white">{t({ it: "termini e le condizioni di noleggio", en: "rental terms and conditions" })}</Link>.
                     </label>
                   </div>
                   {errors.agreesToTerms && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToTerms}</p>}
@@ -6628,7 +6629,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex items-start">
                     <input id="agrees-to-privacy" name="agreesToPrivacy" type="checkbox" checked={formData.agreesToPrivacy} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
                     <label htmlFor="agrees-to-privacy" className="ml-3 block text-sm font-medium text-white">
-                      Ho letto e accetto l'<Link to="/privacy-policy" target="_blank" className="underline hover:text-white">informativa sulla privacy</Link>.
+                      Ho letto e accetto l'<Link to="/privacy-policy" target="_blank" className="underline hover:text-white">{t({ it: "informativa sulla privacy", en: "privacy policy" })}</Link>.
                     </label>
                   </div>
                   {errors.agreesToPrivacy && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToPrivacy}</p>}
@@ -6637,35 +6638,35 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             </section>
 
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4 uppercase">Riepilogo Completo Prenotazione</h3>
+              <h3 className="text-lg font-bold text-white mb-4 uppercase">{t({ it: "Riepilogo Completo Prenotazione", en: "Full Booking Summary" })}</h3>
               <div className="p-6 bg-gray-800/50 rounded-lg border border-gray-700 space-y-6 text-sm">
                 <div>
-                  <p className="font-bold text-base text-white mb-2">VEICOLO SELEZIONATO</p>
+                  <p className="font-bold text-base text-white mb-2">{t({ it: "VEICOLO SELEZIONATO", en: "SELECTED VEHICLE" })}</p>
                   <hr className="border-gray-600 mb-2" />
                   <p>{item.name}</p>
                 </div>
 
                 <div>
-                  <p className="font-bold text-base text-white mb-2">DATE E LOCALITÀ</p>
+                  <p className="font-bold text-base text-white mb-2">{t({ it: "DATE E LOCALITÀ", en: "DATES AND LOCATIONS" })}</p>
                   <hr className="border-gray-600 mb-2" />
-                  <p>Ritiro: {formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} alle {formData.pickupTime || '—'} - {pickupLocs.find(l => l.id === formData.pickupLocation)?.label?.it || formData.pickupLocation}</p>
-                  <p>Riconsegna: {formData.returnDate ? new Date(formData.returnDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} alle {formData.returnTime || '—'} - {returnLocs.find(l => l.id === formData.returnLocation)?.label?.it || formData.returnLocation}</p>
+                  <p>Ritiro: {formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} alle {formData.pickupTime || '—'} - {pickupLocs.find(l => l.id === formData.pickupLocation)?.label?.it || formData.pickupLocation}</p>
+                  <p>Riconsegna: {formData.returnDate ? new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} alle {formData.returnTime || '—'} - {returnLocs.find(l => l.id === formData.returnLocation)?.label?.it || formData.returnLocation}</p>
                   <p>Durata: {Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</p>
                   {extraDayApplied && (
                     <div className="mt-1 p-2 bg-amber-900/30 border border-amber-500/50 rounded">
-                      <p className="text-amber-300 text-xs font-semibold">L'orario di riconsegna supera il margine di 1h30 prima del ritiro: viene conteggiato 1 giorno aggiuntivo.</p>
+                      <p className="text-amber-300 text-xs font-semibold">{t({ it: "L'orario di riconsegna supera il margine di 1h30 prima del ritiro: viene conteggiato 1 giorno aggiuntivo.", en: "The drop-off time exceeds the 1h30 margin before pick-up: one extra day is charged." })}</p>
                     </div>
                   )}
                   <p>Pacchetto km: {(formData.kmPackageType === 'unlimited' || includedKm >= 9999) ? 'ILLIMITATI' : `${includedKm} km`}</p>
                 </div>
 
                 <div>
-                  <p className="font-bold text-base text-white mb-2">CONDUCENTE/I</p>
+                  <p className="font-bold text-base text-white mb-2">{t({ it: "CONDUCENTE/I", en: "DRIVER(S)" })}</p>
                   <hr className="border-gray-600 mb-2" />
                   <p>Principale: {formData.firstName} {formData.lastName}</p>
                   <p className="text-xs text-gray-400">{formData.email} - {formData.phone}</p>
                   <p className="text-xs text-gray-400">{driverAge} anni - Patente: {licenseYears} anni</p>
-                  {(formData.licenseImage || formData.idImage) && <p className="text-xs text-green-400">Documenti caricati</p>}
+                  {(formData.licenseImage || formData.idImage) && <p className="text-xs text-green-400">{t({ it: "Documenti caricati", en: "Documents uploaded" })}</p>}
                   {formData.addSecondDriver && (
                     <div className="mt-2">
                       <p>Secondo: {formData.secondDriver.firstName} {formData.secondDriver.lastName}</p>
@@ -6678,7 +6679,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                 {/* DETTAGLIO COSTI — Full itemized breakdown */}
                 <div>
-                  <p className="font-bold text-base text-white mb-2">DETTAGLIO COSTI</p>
+                  <p className="font-bold text-base text-white mb-2">{t({ it: "DETTAGLIO COSTI", en: "COST BREAKDOWN" })}</p>
                   <hr className="border-gray-600 mb-2" />
 
                   {/* Noleggio base */}
@@ -6715,7 +6716,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                   {/* KM — show inclusi line + pacchetto/illimitati line */}
                   {(() => {
-                    const t = String(formData.kmPackageType || '')
                     const isIllimitati = formData.kmPackageType === 'unlimited'
                     if (isIllimitati && kmPackageCost > 0) {
                       return (
@@ -6736,7 +6736,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     return (
                       <>
                         <div className="flex justify-between">
-                          <span>Km inclusi nel noleggio</span>
+                          <span>{t({ it: "Km inclusi nel noleggio", en: "Km included in the rental" })}</span>
                           <span>{baseKm} km</span>
                         </div>
                         {selectedPkgs.map(({ pkg, qty }) => (
@@ -6747,7 +6747,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         ))}
                         {selectedPkgs.length > 0 && (
                           <div className="flex justify-between pt-1 mt-1 border-t border-gray-700/60 font-semibold">
-                            <span className="text-dr7-gold">Totale km disponibili</span>
+                            <span className="text-dr7-gold">{t({ it: "Totale km disponibili", en: "Total km available" })}</span>
                             <span className="text-dr7-gold">{baseKm + pkgKmSum} km</span>
                           </div>
                         )}
@@ -6755,7 +6755,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     )
                   })()}
                   {formData.kmPackageType === '50km' && (
-                    <div className="flex justify-between text-gray-400"><span>Pacchetto km (50 km/giorno)</span> <span>Incluso nel noleggio</span></div>
+                    <div className="flex justify-between text-gray-400"><span>{t({ it: "Pacchetto km (50 km/giorno)", en: "Km package (50 km/day)" })}</span> <span>{t({ it: "Incluso nel noleggio", en: "Included in the rental" })}</span></div>
                   )}
 
                   {/* Secondo guidatore */}
@@ -6769,7 +6769,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {/* Lavaggio / pulizia finale */}
                   {lavaggioFee > 0 && (
                     <div className="flex justify-between">
-                      <span>Pulizia finale</span>
+                      <span>{t({ it: "Pulizia finale", en: "Final cleaning" })}</span>
                       <span>{formatPrice(lavaggioFee)}</span>
                     </div>
                   )}
@@ -6815,7 +6815,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {hasDynamicDiscount && (
                     <>
                       <div className="flex justify-between text-gray-500 text-sm">
-                        <span>Prezzo listino</span>
+                        <span>{t({ it: "Prezzo listino", en: "List price" })}</span>
                         <span className="line-through">{formatPrice(listSubtotal)}</span>
                       </div>
                       <div className="flex justify-between text-green-400 text-sm">
@@ -6830,7 +6830,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </>
                   )}
                   {!hasDynamicDiscount && (
-                    <div className="flex justify-between text-gray-400"><span>Subtotale</span> <span>{formatPrice(uncappedSubtotal || finalTotal)}</span></div>
+                    <div className="flex justify-between text-gray-400"><span>{t({ it: "Subtotale", en: "Subtotal" })}</span> <span>{formatPrice(uncappedSubtotal || finalTotal)}</span></div>
                   )}
 
                   {/* Coefficient breakdown — toggle reveals each coefficient
@@ -6850,7 +6850,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         <div className="space-y-1 pt-2 mt-1 border-t border-gray-700">
                           {dynamicPricing.selectedBaseRateEur != null && (
                             <div className="flex justify-between">
-                              <span className="text-gray-400">Base selezionata</span>
+                              <span className="text-gray-400">{t({ it: "Base selezionata", en: "Selected base" })}</span>
                               <span className="text-white">€{dynamicPricing.selectedBaseRateEur.toFixed(2)}/g</span>
                             </div>
                           )}
@@ -6863,7 +6863,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             </div>
                           ))}
                           <div className="flex justify-between pt-1 border-t border-gray-700/50">
-                            <span className="text-gray-400">Coefficiente combinato</span>
+                            <span className="text-gray-400">{t({ it: "Coefficiente combinato", en: "Combined coefficient" })}</span>
                             <span className="font-mono text-white">
                               ×{(dynamicPricing.breakdown.reduce((acc, b) => acc * b.coeff, 1)).toFixed(3)}
                             </span>
@@ -6898,10 +6898,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             return (
                               <div className="pt-2 mt-1 border-t border-gray-700/50 space-y-0.5">
                                 <div className="text-[11px] text-gray-400">
-                                  <span className="text-emerald-400">Incluse nel coefficiente:</span> Noleggio{inList.length > 0 ? `, ${inList.join(', ')}` : ''}
+                                  <span className="text-emerald-400">{t({ it: "Incluse nel coefficiente:", en: "Included in the coefficient:" })}</span> Noleggio{inList.length > 0 ? `, ${inList.join(', ')}` : ''}
                                 </div>
                                 <div className="text-[11px] text-gray-400">
-                                  <span className="text-rose-400">Escluse (a listino):</span> {outList.length > 0 ? outList.join(', ') : '—'}
+                                  <span className="text-rose-400">{t({ it: "Escluse (a listino):", en: "Excluded (list price):" })}</span> {outList.length > 0 ? outList.join(', ') : '—'}
                                 </div>
                               </div>
                             )
@@ -6926,7 +6926,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         </span>
                       </div>
                       <div className="flex justify-between text-white font-semibold">
-                        <span>Nuovo totale</span>
+                        <span>{t({ it: "Nuovo totale", en: "New total" })}</span>
                         <span>{formatPrice(subtotal)}</span>
                       </div>
                     </>
@@ -6940,7 +6940,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )}
                   {onlineDiscountAmount > 0 && (
                     <div className="flex justify-between text-green-400 text-sm">
-                      <span>Sconto Online -5%</span>
+                      <span>{t({ it: "Sconto Online -5%", en: "Online discount -5%" })}</span>
                       <span>-{formatPrice(onlineDiscountAmount)}</span>
                     </div>
                   )}
@@ -6958,12 +6958,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )}
 
                   <hr className="border-gray-500 my-2" />
-                  <div className="flex justify-between font-bold text-lg text-white"><span>TOTALE</span> <span>{formatPrice(grandTotal)}</span></div>
+                  <div className="flex justify-between font-bold text-lg text-white"><span>{t({ it: "TOTALE", en: "TOTAL" })}</span> <span>{formatPrice(grandTotal)}</span></div>
 
                   {/* DR7 Club reward preview */}
                   {grandTotal > 0 && (
                     <div className="flex justify-between text-green-400 text-sm mt-1">
-                      <span>Guadagna fino al 4% in credito wallet con DR7 Club</span>
+                      <span>{t({ it: "Guadagna fino al 4% in credito wallet con DR7 Club", en: "Earn up to 4% in wallet credit with DR7 Club" })}</span>
                       <span>fino a +€{(Math.floor(grandTotal * 4) / 100).toFixed(2)}</span>
                     </div>
                   )}
@@ -6973,9 +6973,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     if (formData.depositOption === 'no_deposit') {
                       return (
                         <div className="mt-3 p-3 bg-green-900/30 border border-green-500/30 rounded-lg">
-                          <p className="text-sm font-semibold text-green-400">NESSUNA CAUZIONE</p>
+                          <p className="text-sm font-semibold text-green-400">{t({ it: "NESSUNA CAUZIONE", en: "NO DEPOSIT" })}</p>
                           <p className="text-sm text-white mt-1">Supplemento: €{ACTIVE_NO_DEPOSIT_SURCHARGE}/giorno ({Math.max(1, duration.days)} gg = {formatPrice(noDepositSurcharge)})</p>
-                          <p className="text-xs text-gray-500 mt-1">Richiede approvazione DR7</p>
+                          <p className="text-xs text-gray-500 mt-1">{t({ it: "Richiede approvazione DR7", en: "Requires DR7 approval" })}</p>
                         </div>
                       );
                     }
@@ -6993,7 +6993,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       const optLabel = opt?.label || formData.depositOption;
                       return (
                         <div className="mt-3 p-3 bg-gray-700/50 rounded-lg">
-                          <p className="text-sm font-semibold text-white">CAUZIONE AL RITIRO</p>
+                          <p className="text-sm font-semibold text-white">{t({ it: "CAUZIONE AL RITIRO", en: "DEPOSIT AT PICK-UP" })}</p>
                           {optAmount > 0 && (
                             <p className="text-sm text-gray-300 mt-1">Importo: €{optAmount.toLocaleString()}</p>
                           )}
@@ -7009,7 +7009,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                 {/* Codice Sconto - Available for ALL customers */}
                 <div className="border-t border-gray-600 pt-4">
-                  <p className="font-bold text-base text-white mb-3">CODICE SCONTO</p>
+                  <p className="font-bold text-base text-white mb-3">{t({ it: "CODICE SCONTO", en: "DISCOUNT CODE" })}</p>
                   {appliedDiscount ? (
                     <div className="flex items-center justify-between p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
                       <div>
@@ -7025,7 +7025,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         onClick={removeDiscount}
                         className="text-red-400 hover:text-red-300 text-sm underline"
                       >
-                        Rimuovi
+                        {t({ it: "Rimuovi", en: "Remove" })}
                       </button>
                     </div>
                   ) : (
@@ -7034,7 +7034,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         type="text"
                         value={discountCode}
                         onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                        placeholder="Inserisci codice (es. BDAY-XXXX-XXXX)"
+                        placeholder={t({ it: "Inserisci codice (es. BDAY-XXXX-XXXX)", en: "Enter code (e.g. BDAY-XXXX-XXXX)" })}
                         className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm uppercase"
                       />
                       <button
@@ -7081,7 +7081,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   if (authLoading) {
     return (
       <div className="bg-gray-900/50 p-8 rounded-lg border border-gray-800 relative text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Loading...</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">{t('Loading')}</h2>
       </div>
     );
   }
@@ -7093,17 +7093,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-          aria-label="Chiudi"
+          aria-label={t({ it: "Chiudi", en: "Close" })}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <h2 className="text-2xl font-bold text-white mb-4">Accesso Richiesto</h2>
-        <p className="text-gray-300 mb-6">Devi effettuare l'accesso o registrarti per poter completare una prenotazione.</p>
+        <h2 className="text-2xl font-bold text-white mb-4">{t({ it: "Accesso Richiesto", en: "Sign-in required" })}</h2>
+        <p className="text-gray-300 mb-6">{t({ it: "Devi effettuare l'accesso o registrarti per poter completare una prenotazione.", en: "You must sign in or create an account to complete a booking." })}</p>
         <div className="flex justify-center space-x-4">
-          <Link to="/signin" onClick={onClose} className="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">Accedi</Link>
-          <Link to="/signup" onClick={onClose} className="px-8 py-3 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors">Registrati</Link>
+          <Link to="/signin" onClick={onClose} className="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">{t({ it: "Accedi", en: "Sign in" })}</Link>
+          <Link to="/signup" onClick={onClose} className="px-8 py-3 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors">{t({ it: "Registrati", en: "Create account" })}</Link>
         </div>
       </div>
     );
@@ -7157,7 +7157,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {/* Header image */}
                     <img
                       src="/prime-wash-header.jpeg"
-                      alt="Lavaggio & Meccanica"
+                      alt={t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}
                       className="w-full h-48 sm:h-56 object-cover rounded-xl mb-5"
                     />
 
@@ -7171,7 +7171,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         Grazie per aver prenotato il tuo noleggio.
                       </p>
                       <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-md mx-auto mt-1">
-                        Mentre ti godi la tua {categoryContext === 'urban-cars' || categoryContext === 'corporate-fleet' ? 'utilitaria' : 'supercar'}, lascia a noi la cura della <strong className="text-white">tua auto</strong>.
+                        Mentre ti godi la tua {categoryContext === 'urban-cars' || categoryContext === 'corporate-fleet' ? 'utilitaria' : 'supercar'}, lascia a noi la cura della <strong className="text-white">{t({ it: "tua auto", en: "your car" })}</strong>.
                       </p>
                       <p className="text-white font-semibold text-base sm:text-lg mt-3">
                         Solo per i clienti noleggio: <span className="text-green-400">–10%</span> su qualsiasi servizio lavaggio.
@@ -7206,7 +7206,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       {upsellTargaError && (
                         <div className="mt-3 text-center">
                           <p className="text-red-400 text-sm mb-2">{upsellTargaError}</p>
-                          <p className="text-gray-400 text-xs mb-2">Seleziona manualmente la categoria del tuo veicolo:</p>
+                          <p className="text-gray-400 text-xs mb-2">{t({ it: "Seleziona manualmente la categoria del tuo veicolo:", en: "Select your vehicle category manually:" })}</p>
                           <div className="flex justify-center gap-2">
                             <button
                               type="button"
@@ -7247,7 +7247,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               <span className="text-gray-400 text-xs">{upsellCarModel}</span>
                             )}
                           </div>
-                          <p className="text-gray-400 text-xs mb-2">Seleziona manualmente la categoria:</p>
+                          <p className="text-gray-400 text-xs mb-2">{t({ it: "Seleziona manualmente la categoria:", en: "Select the category manually:" })}</p>
                           <div className="flex justify-center gap-2">
                             <button
                               type="button"
@@ -7313,7 +7313,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {/* Servizi Aggiuntivi — multi-select extras */}
                     {upsellCarCategory && (
                       <div className="mb-5">
-                        <h4 className="text-white font-bold text-sm tracking-widest mb-3">SERVIZI AGGIUNTIVI</h4>
+                        <h4 className="text-white font-bold text-sm tracking-widest mb-3">{t({ it: "SERVIZI AGGIUNTIVI", en: "ADDITIONAL SERVICES" })}</h4>
                         <div className="grid grid-cols-2 gap-3">
                           {upsellExtras.map((svc) => {
                             const discountedPrice = roundToTwoDecimals(svc.price * 0.90);
@@ -7431,11 +7431,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-white font-bold text-base">Mensile</p>
-                            <p className="text-gray-400 text-xs mt-0.5">Cancella quando vuoi, senza vincoli</p>
+                            <p className="text-white font-bold text-base">{t({ it: "Mensile", en: "Monthly" })}</p>
+                            <p className="text-gray-400 text-xs mt-0.5">{t({ it: "Cancella quando vuoi, senza vincoli", en: "Cancel whenever you like, no commitment" })}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white font-bold text-lg">€4,90<span className="text-gray-400 text-xs font-normal">/mese</span></p>
+                            <p className="text-white font-bold text-lg">€4,90<span className="text-gray-400 text-xs font-normal">{t({ it: "/mese", en: "/month" })}</span></p>
                           </div>
                         </div>
                       </button>
@@ -7455,12 +7455,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-white font-bold text-base">Annuale</p>
-                            <p className="text-gray-400 text-xs mt-0.5">Paga 6 mesi, ricevi 12 — il piano migliore</p>
+                            <p className="text-white font-bold text-base">{t({ it: "Annuale", en: "Annual" })}</p>
+                            <p className="text-gray-400 text-xs mt-0.5">{t({ it: "Paga 6 mesi, ricevi 12 — il piano migliore", en: "Pay 6 months, get 12 — the best plan" })}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white font-bold text-lg">€39<span className="text-gray-400 text-xs font-normal">/anno</span></p>
-                            <p className="text-gray-500 line-through text-xs">€58,80/anno</p>
+                            <p className="text-white font-bold text-lg">€39<span className="text-gray-400 text-xs font-normal">{t({ it: "/anno", en: "/year" })}</span></p>
+                            <p className="text-gray-500 line-through text-xs">{t({ it: "€58,80/anno", en: "€58.80/year" })}</p>
                           </div>
                         </div>
                       </button>
@@ -7468,12 +7468,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                     {/* What you get */}
                     <div className="bg-gray-800/50 rounded-xl p-4 mb-5 text-sm">
-                      <p className="text-white font-semibold mb-2">Con DR7 Club ottieni:</p>
+                      <p className="text-white font-semibold mb-2">{t({ it: "Con DR7 Club ottieni:", en: "With DR7 Club you get:" })}</p>
                       <ul className="space-y-1.5 text-gray-300">
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> Fino a €{subscriptionWalletCredit.toFixed(2)} di credito wallet (4% del totale)</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> Sconti esclusivi su noleggi e lavaggi</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> Accesso prioritario alle nuove supercar</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> Promozioni riservate ai membri</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Sconti esclusivi su noleggi e lavaggi", en: "Exclusive discounts on rentals and washes" })}</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Accesso prioritario alle nuove supercar", en: "Priority access to new supercars" })}</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Promozioni riservate ai membri", en: "Members-only promotions" })}</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Bonus fino al 33%</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Privilege fino al 36%</li>
                       </ul>
@@ -7528,18 +7528,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               {step === 4 && (
                 <aside className="hidden lg:block lg:col-span-1 lg:sticky lg:top-32 self-start mb-8 lg:mb-0">
                   <div className="bg-gray-900/50 p-6 rounded-lg border border-gray-800">
-                    <p className="text-xs text-green-400 font-medium mb-2">Prezzo dinamico attivo, blocca ORA, potrebbe aumentare</p>
-                    <h2 className="text-2xl font-bold text-white mb-4">RIEPILOGO COSTI</h2>
+                    <p className="text-xs text-green-400 font-medium mb-2">{t({ it: "Prezzo dinamico attivo, blocca ORA, potrebbe aumentare", en: "Dynamic pricing active — lock it in NOW, it may rise" })}</p>
+                    <h2 className="text-2xl font-bold text-white mb-4">{t({ it: "RIEPILOGO COSTI", en: "COST SUMMARY" })}</h2>
                     <img src={item.image} alt={item.name} className="w-full h-40 object-contain rounded-md mb-4 bg-gray-800/30" />
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-gray-400">Durata noleggio:</span><span className="text-white font-medium">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Durata noleggio:", en: "Rental duration:" })}</span><span className="text-white font-medium">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</span></div>
                       {extraDayApplied && (
                         <div className="p-2 bg-amber-900/30 border border-amber-500/50 rounded">
-                          <p className="text-amber-300 text-xs font-semibold">+1 giorno: l'orario di riconsegna supera il margine di 1h30 prima dell'orario di ritiro.</p>
+                          <p className="text-amber-300 text-xs font-semibold">{t({ it: "+1 giorno: l'orario di riconsegna supera il margine di 1h30 prima dell'orario di ritiro.", en: "+1 day: the drop-off time exceeds the 1h30 margin before the pick-up time." })}</p>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Km pacchetto:</span>
+                        <span className="text-gray-400">{t({ it: "Km pacchetto:", en: "Package km:" })}</span>
                         <span className="text-white font-medium">
                           {(formData.kmPackageType === 'unlimited' || (includedKm && includedKm >= 9999)) ? 'ILLIMITATI' : `${includedKm} km`}
                         </span>
@@ -7550,8 +7550,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <div className="flex justify-between"><span className="text-gray-400">Noleggio {item.name}</span><span className="text-white font-medium">{formatPrice(rentalCost)}</span></div>
                       <div className="flex justify-between"><span className="text-gray-400 notranslate">Assicurazione {(() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || formData.insuranceOption?.replace(/_/g, ' '); })()}</span><span className="text-white font-medium">{formatPrice(insuranceCost)}</span></div>
                       {/* Lavaggio is now included in the price - no additional fee */}
-                      {pickupFee > 0 && <div className="flex justify-between"><span className="text-gray-400">Spese di ritiro</span><span className="text-white font-medium">{formatPrice(pickupFee)}</span></div>}
-                      {dropoffFee > 0 && <div className="flex justify-between"><span className="text-gray-400">Spese di riconsegna</span><span className="text-white font-medium">{formatPrice(dropoffFee)}</span></div>}
+                      {pickupFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Spese di ritiro", en: "Pick-up fee" })}</span><span className="text-white font-medium">{formatPrice(pickupFee)}</span></div>}
+                      {dropoffFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Spese di riconsegna", en: "Drop-off fee" })}</span><span className="text-white font-medium">{formatPrice(dropoffFee)}</span></div>}
                       {formData.pickupLocation === 'home_delivery' && formData.deliveryPickupKm > 0 && (
                         <div className="flex justify-between">
                           <span className="text-gray-400">Consegna a domicilio ({formData.deliveryPickupKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM})</span>
@@ -7564,18 +7564,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <span className="text-white font-medium">{formatPrice(formData.deliveryReturnKm * ACTIVE_DELIVERY_PRICE_PER_KM)}</span>
                         </div>
                       )}
-                      {secondDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">Secondo guidatore</span><span className="text-white font-medium">{formatPrice(secondDriverFee)}</span></div>}
-                      {youngDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">Supplemento under 25</span><span className="text-white font-medium">{formatPrice(youngDriverFee)}</span></div>}
-                      {recentLicenseFee > 0 && <div className="flex justify-between"><span className="text-gray-400">Supplemento patente recente</span><span className="text-white font-medium">{formatPrice(recentLicenseFee)}</span></div>}
+                      {secondDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Secondo guidatore", en: "Second driver" })}</span><span className="text-white font-medium">{formatPrice(secondDriverFee)}</span></div>}
+                      {youngDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento under 25", en: "Under-25 surcharge" })}</span><span className="text-white font-medium">{formatPrice(youngDriverFee)}</span></div>}
+                      {recentLicenseFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento patente recente", en: "New-licence surcharge" })}</span><span className="text-white font-medium">{formatPrice(recentLicenseFee)}</span></div>}
                       {noDepositSurcharge > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-white">Supplemento cauzione</span>
+                          <span className="text-white">{t({ it: "Supplemento cauzione", en: "Deposit surcharge" })}</span>
                           <span className="text-white font-medium">{formatPrice(noDepositSurcharge)}</span>
                         </div>
                       )}
                       {selectedUpsellWash && (
                         <div className="flex justify-between">
-                          <span className="text-blue-400">Lavaggio auto (-10%)</span>
+                          <span className="text-blue-400">{t({ it: "Lavaggio auto (-10%)", en: "Car wash (-10%)" })}</span>
                           <span className="text-blue-400 font-medium">{formatPrice(washUpsellCost)}</span>
                         </div>
                       )}
@@ -7591,7 +7591,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       {/* Dynamic pricing: prezzo barrato */}
                       {hasDynamicDiscount && (
                         <div className="flex justify-between items-center text-sm mb-1">
-                          <span className="text-gray-500">Prezzo listino</span>
+                          <span className="text-gray-500">{t({ it: "Prezzo listino", en: "List price" })}</span>
                           <span className="text-gray-500 line-through">{formatPrice(listSubtotal)}</span>
                         </div>
                       )}
@@ -7617,7 +7617,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             </span>
                           </div>
                           <div className="flex justify-between text-white font-semibold">
-                            <span>Nuovo totale</span>
+                            <span>{t({ it: "Nuovo totale", en: "New total" })}</span>
                             <span>{formatPrice(subtotal)}</span>
                           </div>
                         </>
@@ -7625,59 +7625,59 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                       {membershipDiscount > 0 ? (
                         <>
-                          <div className="flex justify-between text-gray-400 line-through text-sm"><span>Totale</span><span>{formatPrice(originalTotal)}</span></div>
+                          <div className="flex justify-between text-gray-400 line-through text-sm"><span>{t({ it: "Totale", en: "Total" })}</span><span>{formatPrice(originalTotal)}</span></div>
                           <div className="flex justify-between text-green-400 text-sm">
                             <span>Sconto {membershipTier}</span>
                             <span>-{formatPrice(membershipDiscount)}</span>
                           </div>
                           {onlineDiscountAmount > 0 && (
                             <div className="flex justify-between text-green-400 text-sm">
-                              <span>Sconto Online -5%</span>
+                              <span>{t({ it: "Sconto Online -5%", en: "Online discount -5%" })}</span>
                               <span>-{formatPrice(onlineDiscountAmount)}</span>
                             </div>
                           )}
                           {discountAmount > 0 && (
                             <div className="flex justify-between text-white text-sm">
-                              <span>Codice Sconto</span>
+                              <span>{t({ it: "Codice Sconto", en: "Discount Code" })}</span>
                               <span>-{formatPrice(discountAmount)}</span>
                             </div>
                           )}
                           {(selectedUpsellWash || selectedUpsellExtras.length > 0) && (
                             <div className="flex justify-between text-blue-400 text-sm">
-                              <span>Lavaggio + Servizi (-10%)</span>
+                              <span>{t({ it: "Lavaggio + Servizi (-10%)", en: "Wash + Services (-10%)" })}</span>
                               <span>+{formatPrice(totalWashUpsellCost)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-xl font-bold">
-                      <span className="text-white">TOTALE</span>
+                      <span className="text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span>
                       <span className="text-white">{formatPrice(grandTotal)}</span>
                     </div>
                         </>
                       ) : (
                         <>
                           {!hasDynamicDiscount && (
-                            <div className="flex justify-between text-gray-400 text-sm"><span>Subtotale</span><span>{formatPrice(finalTotal)}</span></div>
+                            <div className="flex justify-between text-gray-400 text-sm"><span>{t({ it: "Subtotale", en: "Subtotal" })}</span><span>{formatPrice(finalTotal)}</span></div>
                           )}
                           {onlineDiscountAmount > 0 && (
                             <div className="flex justify-between text-green-400 text-sm">
-                              <span>Sconto Online -5%</span>
+                              <span>{t({ it: "Sconto Online -5%", en: "Online discount -5%" })}</span>
                               <span>-{formatPrice(onlineDiscountAmount)}</span>
                             </div>
                           )}
                           {discountAmount > 0 && (
                             <div className="flex justify-between text-white text-sm">
-                              <span>Codice Sconto</span>
+                              <span>{t({ it: "Codice Sconto", en: "Discount Code" })}</span>
                               <span>-{formatPrice(discountAmount)}</span>
                             </div>
                           )}
                           {(selectedUpsellWash || selectedUpsellExtras.length > 0) && (
                             <div className="flex justify-between text-blue-400 text-sm">
-                              <span>Lavaggio + Servizi (-10%)</span>
+                              <span>{t({ it: "Lavaggio + Servizi (-10%)", en: "Wash + Services (-10%)" })}</span>
                               <span>+{formatPrice(totalWashUpsellCost)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-xl font-bold">
-                      <span className="text-white">TOTALE</span>
+                      <span className="text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span>
                       <span className="text-white">{formatPrice(grandTotal)}</span>
                     </div>
                         </>
@@ -7697,10 +7697,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         return (
                           <div className="mt-2 pt-2 border-t border-gray-700">
                             <div className="flex justify-between text-sm">
-                              <span className="text-gray-400">Cauzione al ritiro</span>
+                              <span className="text-gray-400">{t({ it: "Cauzione al ritiro", en: "Deposit at pick-up" })}</span>
                               <span className="text-white font-medium">€{dep.toLocaleString('it-IT')}</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Restituita dopo la riconsegna</p>
+                            <p className="text-xs text-gray-500 mt-1">{t({ it: "Restituita dopo la riconsegna", en: "Refunded after drop-off" })}</p>
                           </div>
                         );
                       })()}
@@ -7746,7 +7746,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           type="button"
                           onClick={handleBack}
                           className="absolute top-2 right-12 sm:top-4 sm:right-14 text-gray-400 hover:text-white transition-colors z-10 p-2"
-                          aria-label="Indietro"
+                          aria-label={t({ it: "Indietro", en: "Back" })}
                         >
                           <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -7757,7 +7757,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         type="button"
                         onClick={onClose}
                         className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-white transition-colors z-10 p-2"
-                        aria-label="Chiudi"
+                        aria-label={t({ it: "Chiudi", en: "Close" })}
                       >
                         <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -7782,8 +7782,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {/* FIX 5: WhatsApp fallback button if popup was blocked after successful booking */}
                   {whatsAppFallbackUrl && (
                     <div className="mt-4 p-4 bg-green-900/20 border border-green-500/50 rounded-lg text-center">
-                      <p className="text-green-300 text-sm font-semibold mb-2">Prenotazione completata ✓</p>
-                      <p className="text-gray-400 text-xs mb-3">Il popup WhatsApp è stato bloccato dal browser.</p>
+                      <p className="text-green-300 text-sm font-semibold mb-2">{t({ it: "Prenotazione completata ✓", en: "Booking completed ✓" })}</p>
+                      <p className="text-gray-400 text-xs mb-3">{t({ it: "Il popup WhatsApp è stato bloccato dal browser.", en: "The WhatsApp pop-up was blocked by your browser." })}</p>
                       <a
                         href={whatsAppFallbackUrl}
                         target="_blank"
@@ -7837,8 +7837,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         {noCauzioneRequested && formData.depositOption === 'no_deposit' ? null : preventivoSaved ? (
                           <div className="w-full flex flex-col gap-3">
                             <div className="text-center py-4 bg-green-500/10 border border-green-500/30 rounded-2xl">
-                              <p className="text-green-400 font-bold text-base">Preventivo salvato!</p>
-                              <p className="text-gray-400 text-sm mt-1">Puoi trovarlo nel tuo account in "I Miei Preventivi"</p>
+                              <p className="text-green-400 font-bold text-base">{t({ it: "Preventivo salvato!", en: "Quote saved." })}</p>
+                              <p className="text-gray-400 text-sm mt-1">{t({ it: 'Puoi trovarlo nel tuo account in "I Miei Preventivi"', en: 'You can find it in your account under "My Quotes"' })}</p>
                             </div>
                             <button
                               type="button"
@@ -7846,7 +7846,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               className="w-full px-6 py-3 bg-white text-black text-sm sm:text-base font-bold rounded-full hover:bg-gray-200 transition-colors"
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
-                              Chiudi
+                              {t({ it: "Chiudi", en: "Close" })}
                             </button>
                           </div>
                         ) : (
@@ -7902,7 +7902,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-[17px] font-semibold text-white mb-2">Veicolo non disponibile</h3>
+              <h3 className="text-[17px] font-semibold text-white mb-2">{t({ it: "Veicolo non disponibile", en: "Vehicle not available" })}</h3>
               <p className="text-[13px] text-gray-400 leading-relaxed">
                 I veicoli della categoria Urban & Utilitarie non sono disponibili oltre il <span className="text-white">25 marzo 2026</span>.
               </p>

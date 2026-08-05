@@ -80,7 +80,7 @@ const VerificationForm: React.FC = () => {
         <div className="border-b border-gray-700 pb-6">
           <h3 className="text-xl font-bold text-white mb-4">{t('Upload_Registration_Document')}</h3>
           {formData.registrationDoc ? (
-            <div className="relative"><div className="bg-gray-800 p-3 rounded-md text-sm text-green-400 border border-green-700">Document uploaded.</div><button type="button" onClick={() => setFormData(p => ({...p, registrationDoc: ''}))} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 text-xs hover:bg-black">✕</button></div>
+            <div className="relative"><div className="bg-gray-800 p-3 rounded-md text-sm text-green-400 border border-green-700">{t('Document_uploaded')}</div><button type="button" onClick={() => setFormData(p => ({...p, registrationDoc: ''}))} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 text-xs hover:bg-black">✕</button></div>
           ) : (
             <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-6 text-center"><p className="text-sm text-gray-400 mb-4">{t('Please_upload_your_business_registration')}</p><Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>{t('Upload_File')}</Button><input type="file" accept=".pdf,.png,.jpg,.jpeg" ref={fileInputRef} onChange={handleFileChange} className="hidden" /></div>
           )}

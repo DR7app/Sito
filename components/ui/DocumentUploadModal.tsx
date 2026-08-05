@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XIcon } from '../icons/Icons';
 import { supabase } from '../../supabaseClient';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DocumentUploadModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ const FUNCTIONS_BASE =
     : window.location.origin);
 
 const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClose, userId }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'welcome' | 'upload' | 'confirm-skip'>('welcome');
   const [patenteFront, setPatenteFront] = useState<File | null>(null);
   const [patenteBack, setPatenteBack] = useState<File | null>(null);
@@ -69,7 +71,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
 
   const handleSubmit = async () => {
     if (!patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscale) {
-      alert('Per favore carica tutti i documenti richiesti');
+      alert(t({ it: "Per favore carica tutti i documenti richiesti", en: "Please upload all the required documents" }));
       return;
     }
 
@@ -88,14 +90,14 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
       const allSuccess = results.every(r => r === true);
 
       if (allSuccess) {
-        alert('Documenti caricati con successo! Il nostro team li verificherà a breve.');
+        alert(t({ it: "Documenti caricati con successo! Il nostro team li verificherà a breve.", en: "Documents uploaded successfully! Our team will review them shortly." }));
         onClose();
       } else {
-        alert('Errore nel caricamento di alcuni documenti. Riprova.');
+        alert(t({ it: "Errore nel caricamento di alcuni documenti. Riprova.", en: "Error uploading some documents. Please try again." }));
       }
     } catch (error) {
       console.error('Error uploading documents:', error);
-      alert('Errore nel caricamento dei documenti');
+      alert(t({ it: "Errore nel caricamento dei documenti", en: "Error uploading the documents" }));
     } finally {
       setUploading(false);
     }
@@ -135,44 +137,44 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
               <div className="p-6 md:p-8">
                 <div className="text-center mb-6">
                   <div className="inline-block bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-lg mb-4">
-                    FINO A 60€ DI VANTAGGI
+                    {t({ it: 'FINO A 60€ DI VANTAGGI', en: 'UP TO €60 IN BENEFITS' })}
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                    Grazie per esserti iscritto al sito ufficiale DR7 S.p.A.
+                    {t({ it: 'Grazie per esserti iscritto al sito ufficiale DR7 S.p.A.', en: 'Thank you for signing up on the official DR7 S.p.A. website.' })}
                   </h2>
                 </div>
 
                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-6 text-left">
                   <p className="text-white mb-4">
-                    Per completare il tuo profilo ed accedere ai vantaggi esclusivi riservati ai membri registrati, ti chiediamo di caricare i tuoi documenti nell'area personale:
+                    {t({ it: "Per completare il tuo profilo ed accedere ai vantaggi esclusivi riservati ai membri registrati, ti chiediamo di caricare i tuoi documenti nell'area personale:", en: 'To complete your profile and access the exclusive benefits reserved for registered members, please upload your documents in your personal area:' })}
                   </p>
 
                   <div className="mb-4">
-                    <p className="font-semibold text-white mb-2">Documenti necessari (fronte e retro):</p>
+                    <p className="font-semibold text-white mb-2">{t({ it: "Documenti necessari (fronte e retro):", en: "Required documents (front and back):" })}</p>
                     <ul className="list-disc list-inside text-gray-300 space-y-1">
-                      <li>Carta d'Identità</li>
-                      <li>Codice Fiscale</li>
-                      <li>Patente di guida</li>
+                      <li>{t({ it: "Carta d'Identità", en: "ID card" })}</li>
+                      <li>{t({ it: "Codice Fiscale", en: "Tax code" })}</li>
+                      <li>{t({ it: "Patente di guida", en: "Driving licence" })}</li>
                     </ul>
                   </div>
 
                   <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-4 mb-4">
-                    <p className="text-white font-semibold mb-2">Una volta caricati i documenti, riceverai:</p>
+                    <p className="text-white font-semibold mb-2">{t({ it: "Una volta caricati i documenti, riceverai:", en: "Once your documents are uploaded, you will receive:" })}</p>
                     <ul className="text-gray-300 space-y-1">
-                      <li>✓ <span className="text-yellow-500 font-bold">10€</span> sui lavaggi</li>
-                      <li>✓ fino a <span className="text-yellow-500 font-bold">50€</span> sui noleggi</li>
+                      <li>✓ <span className="text-yellow-500 font-bold">10€</span> {t({ it: "sui lavaggi", en: "on car washes" })}</li>
+                      <li>✓ {t({ it: "fino a", en: "up to" })} <span className="text-yellow-500 font-bold">50€</span> {t({ it: "sui noleggi", en: "on rentals" })}</li>
                     </ul>
                   </div>
 
                   <div className="text-gray-300 text-sm">
-                    <p className="mb-2"><strong>Inoltre:</strong></p>
-                    <p>7 giorni prima del tuo compleanno riceverai un nostro messaggio dedicato con un <strong className="text-yellow-500">Buono Auguri DR7</strong>, utilizzabile su qualunque servizio.</p>
+                    <p className="mb-2"><strong>{t({ it: "Inoltre:", en: "Also:" })}</strong></p>
+                    <p>{t({ it: '7 giorni prima del tuo compleanno riceverai un nostro messaggio dedicato con un', en: '7 days before your birthday you will receive a dedicated message from us with a' })} <strong className="text-yellow-500">{t({ it: 'Buono Auguri DR7', en: 'DR7 Birthday Voucher' })}</strong>{t({ it: ', utilizzabile su qualunque servizio.', en: ', usable on any service.' })}</p>
                   </div>
                 </div>
 
                 <p className="text-center text-gray-400 mb-6 italic">
-                  Grazie per aver scelto DR7 S.p.A.<br />
-                  La nuova esperienza della mobilità di lusso in Italia.
+                  {t({ it: 'Grazie per aver scelto DR7 S.p.A.', en: 'Thank you for choosing DR7 S.p.A.' })}<br />
+                  {t({ it: 'La nuova esperienza della mobilità di lusso in Italia.', en: 'The new luxury mobility experience in Italy.' })}
                 </p>
 
                 <div className="flex gap-3">
@@ -180,13 +182,13 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onClick={handleSkip}
                     className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors"
                   >
-                    Salto
+                    {t({ it: 'Salto', en: 'Skip' })}
                   </button>
                   <button
                     onClick={() => setStep('upload')}
                     className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-600 transition-colors"
                   >
-                    Carica Documenti
+                    {t({ it: 'Carica Documenti', en: 'Upload Documents' })}
                   </button>
                 </div>
               </div>
@@ -222,14 +224,14 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     <span className="text-4xl text-red-500 font-bold">!</span>
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-4">
-                    Sei sicuro di voler continuare senza caricare i tuoi documenti?
+                    {t({ it: 'Sei sicuro di voler continuare senza caricare i tuoi documenti?', en: 'Are you sure you want to continue without uploading your documents?' })}
                   </h2>
                   <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-4 mb-4 text-left">
                     <p className="text-white mb-3">
-                      Caricandoli ora <strong>(CI, CF, Patente)</strong> attivi subito <strong className="text-yellow-500">10€ sui lavaggi e fino a 50€ sui noleggi</strong> e ottieni l'accesso completo ai nostri servizi premium.
+                      {t({ it: 'Caricandoli ora', en: 'Uploading them now' })} <strong>{t({ it: '(CI, CF, Patente)', en: '(ID, tax code, licence)' })}</strong> {t({ it: 'attivi subito', en: 'instantly unlocks' })} <strong className="text-yellow-500">{t({ it: '10€ sui lavaggi e fino a 50€ sui noleggi', en: '€10 on car washes and up to €50 on rentals' })}</strong> {t({ it: 'e ottieni l\'accesso completo ai nostri servizi premium.', en: 'and gives you full access to our premium services.' })}
                     </p>
                     <p className="text-red-400 font-semibold">
-                      Non perdere il tuo vantaggio esclusivo.
+                      {t({ it: 'Non perdere il tuo vantaggio esclusivo.', en: 'Do not miss out on your exclusive benefit.' })}
                     </p>
                   </div>
                 </div>
@@ -239,13 +241,13 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onClick={handleConfirmSkip}
                     className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors"
                   >
-                    Continua Senza Caricare
+                    {t({ it: 'Continua Senza Caricare', en: 'Continue Without Uploading' })}
                   </button>
                   <button
                     onClick={handleCancelSkip}
                     className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-600 transition-colors"
                   >
-                    Torna Indietro
+                    {t({ it: 'Torna Indietro', en: 'Go Back' })}
                   </button>
                 </div>
               </div>
@@ -277,7 +279,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
             <button
               onClick={handleSkip}
               className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
-              aria-label="Chiudi"
+              aria-label={t({ it: "Chiudi", en: "Close" })}
             >
               <XIcon className="w-6 h-6" />
             </button>
@@ -285,13 +287,13 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
             <div className="p-6 md:p-8">
               <div className="text-center mb-6">
                 <div className="inline-block bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-lg mb-4">
-                  FINO A 60€ DI VANTAGGI
+                  {t({ it: 'FINO A 60€ DI VANTAGGI', en: 'UP TO €60 IN BENEFITS' })}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                  Carica i Tuoi Documenti
+                  {t({ it: 'Carica i Tuoi Documenti', en: 'Upload Your Documents' })}
                 </h2>
                 <p className="text-gray-300">
-                  Carica i tuoi documenti ora e ricevi 10€ sui lavaggi e fino a 50€ sui noleggi!
+                  {t({ it: 'Carica i tuoi documenti ora e ricevi 10€ sui lavaggi e fino a 50€ sui noleggi!', en: 'Upload your documents now and get €10 on car washes and up to €50 on rentals!' })}
                 </p>
               </div>
 
@@ -299,7 +301,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 {/* Patente Front */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    Patente (Fronte) <span className="text-red-500">*</span>
+                    {t({ it: 'Patente (Fronte)', en: 'Licence (Front)' })} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
@@ -318,7 +320,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 {/* Patente Back */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    Patente (Retro) <span className="text-red-500">*</span>
+                    {t({ it: 'Patente (Retro)', en: 'Licence (Back)' })} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
@@ -337,7 +339,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 {/* Carta Identità Front */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    Carta d'Identità (Fronte) <span className="text-red-500">*</span>
+                    {t({ it: "Carta d'Identità (Fronte)", en: 'ID card (Front)' })} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
@@ -356,7 +358,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 {/* Carta Identità Back */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    Carta d'Identità (Retro) <span className="text-red-500">*</span>
+                    {t({ it: "Carta d'Identità (Retro)", en: 'ID card (Back)' })} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
@@ -375,7 +377,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 {/* Codice Fiscale */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    Codice Fiscale <span className="text-red-500">*</span>
+                    {t({ it: 'Codice Fiscale', en: 'Tax code' })} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
@@ -397,14 +399,14 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                   onClick={handleSkip}
                   className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors"
                 >
-                  Salta
+                  {t({ it: 'Salta', en: 'Skip' })}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={uploading || !patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscale}
                   className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? 'Caricamento...' : 'Carica Documenti'}
+                  {uploading ? t({ it: "Caricamento...", en: "Uploading..." }) : t({ it: "Carica Documenti", en: "Upload Documents" })}
                 </button>
               </div>
 

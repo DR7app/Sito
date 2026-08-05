@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from '../hooks/useTranslation';
 
 const AuthCallbackPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth(); // facultatif pour la redirection finale
 
@@ -47,7 +49,7 @@ const AuthCallbackPage: React.FC = () => {
 
       if (!freshUser) {
         console.error('[Auth] No session after callback');
-        navigate('/signin', { replace: true, state: { error: 'Verifica non riuscita. Prova ad accedere.' } });
+        navigate('/signin', { replace: true, state: { error: t({ it: 'Verifica non riuscita. Prova ad accedere.', en: 'Verification failed. Please try signing in.' }) } });
         return;
       }
 
@@ -69,8 +71,8 @@ const AuthCallbackPage: React.FC = () => {
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-12 h-12 border-4 border-t-white border-gray-700 rounded-full mb-6"
         />
-        <h1 className="text-3xl font-bold">Autenticazione in corso...</h1>
-        <p className="text-gray-400 mt-2">Attendi, accesso sicuro in corso.</p>
+        <h1 className="text-3xl font-bold">{t({ it: "Autenticazione in corso...", en: "Signing you in..." })}</h1>
+        <p className="text-gray-400 mt-2">{t({ it: "Attendi, accesso sicuro in corso.", en: "Please wait, secure sign-in in progress." })}</p>
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ const MembershipEnrollmentPage: React.FC = () => {
         setIsProcessing(true);
 
         if (!tier || !user?.id) {
-            setPaymentError("Sistema di pagamento non pronto.");
+            setPaymentError(t({ it: "Sistema di pagamento non pronto.", en: "Payment system not ready." }));
             setIsProcessing(false);
             return;
         }
@@ -119,7 +119,7 @@ const MembershipEnrollmentPage: React.FC = () => {
         }
     };
 
-    if (!tier) return <div className="pt-32 text-center text-white">Piano non trovato.</div>;
+    if (!tier) return <div className="pt-32 text-center text-white">{t({ it: "Piano non trovato.", en: "Plan not found." })}</div>;
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-24 bg-black min-h-screen">

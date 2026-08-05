@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
+import { dateLocale } from '../../utils/i18nDate';
 import { supabase } from '../../supabaseClient';
 import { Link } from 'react-router-dom';
 import { getMembershipTierName } from '../../utils/membershipDiscounts';
@@ -93,7 +94,7 @@ interface Booking {
 
 const MyBookings = () => {
   const { user } = useAuth();
-  const { t, lang } = useTranslation();
+  const { t, lang, getTranslated } = useTranslation();
   // DR7 Flex rules (refund %, price, tier) come from Centralina Pro.
   const { overlay: proOverlay, snapshot: proSnapshot } = useCentralinaProOverlay();
   // Mappa chiave Experience -> nome, per riconoscere DR7 Flex sulle prenotazioni
@@ -178,7 +179,7 @@ const MyBookings = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-US', {
+    return date.toLocaleDateString(dateLocale(lang), {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
@@ -188,7 +189,7 @@ const MyBookings = () => {
   };
 
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat(lang === 'it' ? 'it-IT' : 'en-US', {
+    return new Intl.NumberFormat(dateLocale(lang), {
       style: 'currency',
       currency: currency || 'EUR',
     }).format(cents / 100);
@@ -509,7 +510,7 @@ const MyBookings = () => {
       const newDropoffIso = new Date(`${rentalDropoffDate}T${rentalDropoffTime}:00${offset}`).toISOString();
 
       if (new Date(newDropoffIso) <= new Date(newPickupIso)) {
-        throw new Error('La riconsegna deve essere successiva al ritiro.');
+        throw new Error(t({ it: "La riconsegna deve essere successiva al ritiro.", en: "The drop-off must be after the pick-up." }));
       }
 
       // Availability check (skip self)
@@ -530,14 +531,14 @@ const MyBookings = () => {
         if (availRes.ok) {
           const data = await availRes.json();
           if (Array.isArray(data.conflicts) && data.conflicts.length > 0 && !data.availableFrom) {
-            throw new Error('Il veicolo non è disponibile per le date selezionate.');
+            throw new Error(t({ it: "Il veicolo non è disponibile per le date selezionate.", en: "The vehicle is not available for the selected dates." }));
           }
         }
       }
 
       // Recalculate total with new dates
       const newTotalEur = rentalRecalcTotal ?? await recalculateRentalTotal(modifyingBooking, newPickupIso, newDropoffIso);
-      if (newTotalEur == null) throw new Error('Impossibile ricalcolare il prezzo.');
+      if (newTotalEur == null) throw new Error(t({ it: "Impossibile ricalcolare il prezzo.", en: "Unable to recalculate the price." }));
 
       const paidEur = (modifyingBooking.price_total || 0) / 100;
       const diffEur = Math.round((newTotalEur - paidEur) * 100) / 100;
@@ -555,7 +556,7 @@ const MyBookings = () => {
           // populated only for car_wash / mechanical).
           const modifyLabel = modifyingBooking.service_name || modifyingBooking.vehicle_name || 'Prenotazione';
           const ded = await deductCredits(user!.id, diffEur, `Modifica prenotazione — ${modifyLabel}`, modifyingBooking.id, 'booking_modify');
-          if (!ded.success) throw new Error(ded.error || 'Errore addebito wallet.');
+          if (!ded.success) throw new Error(ded.error || t({ it: 'Errore addebito wallet.', en: 'Wallet charge failed.' }));
           paymentMethodUsed = 'wallet';
         } else {
           // Card: create Nexi payment link for the difference
@@ -570,10 +571,10 @@ const MyBookings = () => {
               customerEmail: modifyingBooking.customer_email,
             }),
           });
-          if (!nexiRes.ok) throw new Error('Impossibile creare il link di pagamento.');
+          if (!nexiRes.ok) throw new Error(t({ it: "Impossibile creare il link di pagamento.", en: "Unable to create the payment link." }));
           const nexiData = await nexiRes.json();
           const payUrl = nexiData.hostedPageUrl || nexiData.url || nexiData.paymentUrl;
-          if (!payUrl) throw new Error('Nessun link di pagamento ricevuto.');
+          if (!payUrl) throw new Error(t({ it: "Nessun link di pagamento ricevuto.", en: "No payment link received." }));
           // Hand off to Nexi; booking will be updated by the callback + fattura generated there.
           window.location.href = payUrl;
           return;
@@ -941,7 +942,7 @@ const MyBookings = () => {
                             {lang === 'it' ? 'Data Appuntamento' : 'Appointment'}:
                           </p>
                           <p className="text-white">
-                            {new Date(booking.appointment_date).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-US', {
+                            {new Date(booking.appointment_date).toLocaleDateString(dateLocale(lang), {
                               day: '2-digit',
                               month: 'long',
                               year: 'numeric',
@@ -1060,7 +1061,7 @@ const MyBookings = () => {
                                 }
                                 if (!label && dep) label = dep.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                                 const amountStr = typeof amount === 'number' && amount > 0
-                                  ? `€${amount.toLocaleString('it-IT')}`
+                                  ? `€${amount.toLocaleString(dateLocale(lang))}`
                                   : '';
                                 if (!label) return amountStr || 'N/A';
                                 return amountStr ? `${label} — ${amountStr}` : label;
@@ -1144,7 +1145,7 @@ const MyBookings = () => {
                                 onClick={() => setConfirmCancelId(null)}
                                 className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
                               >
-                                Annulla
+                                {t({ it: "Annulla", en: "Cancel" })}
                               </button>
                             </div>
                           </div>
@@ -1215,7 +1216,7 @@ const MyBookings = () => {
           return (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModifyingBooking(null)}>
               <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <h3 className="text-lg font-bold text-white mb-2">Modifica Prenotazione</h3>
+                <h3 className="text-lg font-bold text-white mb-2">{t({ it: "Modifica Prenotazione", en: "Modify Booking" })}</h3>
                 <p className="text-gray-400 text-sm mb-4">
                   {modifyingBooking.vehicle_name || modifyingBooking.service_name}
                 </p>
@@ -1223,34 +1224,34 @@ const MyBookings = () => {
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-gray-400 mb-1 block">Ritiro — Data</label>
+                      <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Ritiro — Data", en: "Pick-up — Date" })}</label>
                       <input type="date" value={rentalPickupDate} min={new Date().toISOString().split('T')[0]} onChange={e => setRentalPickupDate(e.target.value)} className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white" />
                     </div>
                     <div>
-                      <label className="text-sm text-gray-400 mb-1 block">Ritiro — Orario</label>
+                      <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Ritiro — Orario", en: "Pick-up — Time" })}</label>
                       <input type="time" value={rentalPickupTime} onChange={e => setRentalPickupTime(e.target.value)} className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 mb-1 block">Luogo di ritiro</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Luogo di ritiro", en: "Pick-up location" })}</label>
                     <select value={rentalPickupLocation} onChange={e => setRentalPickupLocation(e.target.value)} className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white">
-                      {pickupLocs.map(l => <option key={l.id} value={l.id}>{l.label.it}</option>)}
+                      {pickupLocs.map(l => <option key={l.id} value={l.id}>{getTranslated(l.label)}</option>)}
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-gray-400 mb-1 block">Riconsegna — Data</label>
+                      <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Riconsegna — Data", en: "Drop-off — Date" })}</label>
                       <input type="date" value={rentalDropoffDate} min={rentalPickupDate || new Date().toISOString().split('T')[0]} onChange={e => setRentalDropoffDate(e.target.value)} className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white" />
                     </div>
                     <div>
-                      <label className="text-sm text-gray-400 mb-1 block">Riconsegna — Orario</label>
+                      <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Riconsegna — Orario", en: "Drop-off — Time" })}</label>
                       <input type="time" value={rentalDropoffTime} onChange={e => setRentalDropoffTime(e.target.value)} className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400 mb-1 block">Luogo di riconsegna</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Luogo di riconsegna", en: "Drop-off location" })}</label>
                     <select value={rentalDropoffLocation} onChange={e => setRentalDropoffLocation(e.target.value)} className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white">
-                      {returnLocs.map(l => <option key={l.id} value={l.id}>{l.label.it}</option>)}
+                      {returnLocs.map(l => <option key={l.id} value={l.id}>{getTranslated(l.label)}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1258,26 +1259,26 @@ const MyBookings = () => {
                 {/* Price summary — only shows diff when new total > paid; otherwise keeps paid amount silently */}
                 <div className="p-4 rounded-lg bg-gray-800/60 border border-gray-700 mb-4 text-sm space-y-1">
                   {rentalRecalcing ? (
-                    <div className="text-gray-500 text-xs">Ricalcolo in corso…</div>
+                    <div className="text-gray-500 text-xs">{t({ it: "Ricalcolo in corso…", en: "Recalculating…" })}</div>
                   ) : diff > 0 ? (
                     <>
-                      <div className="flex justify-between"><span className="text-gray-400">Prezzo pagato</span><span className="text-white">€{paidEur.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Nuovo totale</span><span className="text-white">€{(newTotal as number).toFixed(2)}</span></div>
-                      <div className="flex justify-between text-amber-400"><span>Differenza da pagare</span><span>+€{diff.toFixed(2)}</span></div>
-                      {willPayByWallet && <div className="text-green-400 text-xs mt-1">Addebito dal DR7 Wallet (saldo: €{rentalWalletBalance.toFixed(2)}). Nessuna fattura.</div>}
-                      {willPayByCard && <div className="text-blue-400 text-xs mt-1">Saldo wallet insufficiente → pagamento con carta. Verrà generata fattura.</div>}
+                      <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Prezzo pagato", en: "Price paid" })}</span><span className="text-white">€{paidEur.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Nuovo totale", en: "New total" })}</span><span className="text-white">€{(newTotal as number).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-amber-400"><span>{t({ it: "Differenza da pagare", en: "Difference to pay" })}</span><span>+€{diff.toFixed(2)}</span></div>
+                      {willPayByWallet && <div className="text-green-400 text-xs mt-1">{t({ it: "Addebito dal DR7 Wallet (saldo:", en: "Charged to DR7 Wallet (balance:" })} €{rentalWalletBalance.toFixed(2)}). {t({ it: "Nessuna fattura.", en: "No invoice." })}</div>}
+                      {willPayByCard && <div className="text-blue-400 text-xs mt-1">{t({ it: "Saldo wallet insufficiente → pagamento con carta. Verrà generata fattura.", en: "Insufficient wallet balance → card payment. An invoice will be issued." })}</div>}
                     </>
                   ) : (
-                    <div className="flex justify-between font-semibold"><span className="text-gray-300">Totale</span><span className="text-white">€{paidEur.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold"><span className="text-gray-300">{t({ it: "Totale", en: "Total" })}</span><span className="text-white">€{paidEur.toFixed(2)}</span></div>
                   )}
                 </div>
 
                 {modifyError && <p className="text-red-400 text-sm mb-4">{modifyError}</p>}
 
                 <div className="flex gap-3">
-                  <button onClick={() => setModifyingBooking(null)} className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors">Annulla</button>
+                  <button onClick={() => setModifyingBooking(null)} className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors">{t({ it: "Annulla", en: "Cancel" })}</button>
                   <button onClick={handleModify} disabled={modifySaving || !rentalPickupDate || !rentalPickupTime || !rentalDropoffDate || !rentalDropoffTime || rentalRecalcing} className="flex-1 py-3 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50">
-                    {modifySaving ? 'Salvataggio…' : willPayByCard ? 'Paga differenza con carta' : diff > 0 ? 'Conferma e paga dal wallet' : 'Conferma modifica'}
+                    {modifySaving ? t({ it: "Salvataggio…", en: "Saving…" }) : willPayByCard ? t({ it: "Paga differenza con carta", en: "Pay difference by card" }) : diff > 0 ? t({ it: "Conferma e paga dal wallet", en: "Confirm and pay from wallet" }) : t({ it: "Conferma modifica", en: "Confirm change" })}
                   </button>
                 </div>
               </div>
@@ -1288,14 +1289,14 @@ const MyBookings = () => {
         {modifyingBooking && modifyingBooking.service_type !== 'car_rental' && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModifyingBooking(null)}>
             <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-              <h3 className="text-lg font-bold text-white mb-2">Modifica Appuntamento</h3>
+              <h3 className="text-lg font-bold text-white mb-2">{t({ it: "Modifica Appuntamento", en: "Modify Appointment" })}</h3>
               <p className="text-gray-400 text-sm mb-4">
-                {modifyingBooking.service_name} — Prime Flex attivo
+                {modifyingBooking.service_name} — {t({ it: 'Prime Flex attivo', en: 'Prime Flex active' })}
               </p>
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Nuova data</label>
+                  <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Nuova data", en: "New date" })}</label>
                   <input
                     type="date"
                     value={modifyDate}
@@ -1305,7 +1306,7 @@ const MyBookings = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Nuovo orario</label>
+                  <label className="text-sm text-gray-400 mb-1 block">{t({ it: "Nuovo orario", en: "New time" })}</label>
                   <select
                     value={modifyTime}
                     onChange={e => setModifyTime(e.target.value)}
@@ -1328,14 +1329,14 @@ const MyBookings = () => {
                   onClick={() => setModifyingBooking(null)}
                   className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors"
                 >
-                  Annulla
+                  {t({ it: "Annulla", en: "Cancel" })}
                 </button>
                 <button
                   onClick={handleModify}
                   disabled={modifySaving || !modifyDate || !modifyTime}
                   className="flex-1 py-3 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
-                  {modifySaving ? 'Salvataggio...' : 'Conferma modifica'}
+                  {modifySaving ? t({ it: "Salvataggio...", en: "Saving..." }) : t({ it: "Conferma modifica", en: "Confirm change" })}
                 </button>
               </div>
             </div>

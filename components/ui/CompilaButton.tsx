@@ -13,6 +13,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from '../../hooks/useTranslation';
 
 export interface ExtractedData {
   // Personal
@@ -176,6 +177,7 @@ export default function CompilaButton({
   className = '',
   disabled = false,
 }: CompilaButtonProps) {
+  const { t } = useTranslation()
   const [isExtracting, setIsExtracting] = useState(false)
   const [conflicts, setConflicts] = useState<DataConflict[]>([])
   const [showConflicts, setShowConflicts] = useState(false)
@@ -362,9 +364,9 @@ export default function CompilaButton({
       {showConflicts && conflicts.length > 0 && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white">Conflitto dati rilevato</h3>
+            <h3 className="text-lg font-bold text-white">{t({ it: "Conflitto dati rilevato", en: "Data conflict detected" })}</h3>
             <p className="text-sm text-gray-400">
-              Alcuni dati estratti dal documento differiscono da quelli già presenti nel form.
+              {t({ it: 'Alcuni dati estratti dal documento differiscono da quelli già presenti nel form.', en: 'Some data extracted from the document differs from what is already in the form.' })}
             </p>
 
             <div className="space-y-3 max-h-60 overflow-y-auto">
@@ -373,11 +375,11 @@ export default function CompilaButton({
                   <p className="text-xs text-gray-400 font-semibold mb-1">{FIELD_LABELS[c.field] || c.field}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-gray-500 text-xs">Attuale:</span>
+                      <span className="text-gray-500 text-xs">{t({ it: "Attuale:", en: "Current:" })}</span>
                       <p className="text-white">{c.currentValue}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500 text-xs">Dal documento:</span>
+                      <span className="text-gray-500 text-xs">{t({ it: "Dal documento:", en: "From the document:" })}</span>
                       <p className="text-yellow-400">{c.extractedValue}</p>
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface AppleStyleSelectProps {
     label: string;
@@ -22,6 +23,7 @@ export const AppleStyleSelect: React.FC<AppleStyleSelectProps> = ({
     className = '',
     error
 }) => {
+    const { t } = useTranslation();
     return (
         <div className={`relative ${className}`}>
             <div className={`
@@ -46,7 +48,7 @@ export const AppleStyleSelect: React.FC<AppleStyleSelectProps> = ({
             cursor-pointer
           "
                 >
-                    <option value="" disabled hidden className="text-gray-500 bg-gray-800">Seleziona...</option>
+                    <option value="" disabled hidden className="text-gray-500 bg-gray-800">{t({ it: "Seleziona...", en: "Select..." })}</option>
                     {options.map((option) => (
                         <option key={option} value={option} className="bg-gray-800 text-white">
                             {option}

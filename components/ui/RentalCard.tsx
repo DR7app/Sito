@@ -99,13 +99,13 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
               <div>
                 {totalPrice && totalDays ? (
                   <div>
-                    <p className="text-[11px] text-gray-500 italic mb-0.5">o similare</p>
+                    <p className="text-[11px] text-gray-500 italic mb-0.5">{t({ it: "o similare", en: "or similar" })}</p>
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-bold text-white">{formatPrice(totalPrice)}</span>
-                      <span className="text-sm text-gray-400">totale</span>
+                      <span className="text-sm text-gray-400">{t({ it: "totale", en: "total" })}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {totalDays} {totalDays === 1 ? 'giorno' : 'giorni'}
+                      {totalDays} {totalDays === 1 ? t({ it: "giorno", en: "day" }) : t({ it: "giorni", en: "days" })}
                       {item.pricePerDay && (
                         <> — {formatPrice(item.pricePerDay[currency])}/giorno</>
                       )}
@@ -139,7 +139,7 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
                   <svg className="h-4 w-4 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span>Assicurazione inclusa</span>
+                  <span>{t({ it: "Assicurazione inclusa", en: "Insurance included" })}</span>
                 </div>
               )}
             </>

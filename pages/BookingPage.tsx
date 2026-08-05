@@ -14,6 +14,7 @@ import BookingErrorBoundary from '../components/ui/BookingErrorBoundary';
 import HelicopterBookingForm from '../components/ui/HelicopterBookingForm';
 import { getBookingCopy, type BookingCopy, getMessageTemplateBody } from '../utils/siteCopy';
 import { getAirports, getYachtMarinas, getHeliDeparturePoints, getHeliArrivalPoints } from '../utils/getLocations';
+import { dateLocale } from '../utils/i18nDate';
 
 // Token substitution for WhatsApp templates loaded from system_messages.
 function applyTokens(tpl: string, tokens: Record<string, string>): string {
@@ -192,7 +193,7 @@ const BookingPage: React.FC = () => {
   useEffect(() => { if (user) { setFormData(prev => ({ ...prev, fullName: user.fullName || '', email: user.email || '' })); } }, [user]);
 
   const formatPrice = (price: number) => new Intl.NumberFormat(currency === 'eur' ? 'it-IT' : 'en-US', { style: 'currency', currency: currency.toUpperCase(), minimumFractionDigits: 2 }).format(price);
-  const formatDate = (date: string) => new Date(date).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const formatDate = (date: string) => new Date(date).toLocaleDateString(dateLocale(lang), { year: 'numeric', month: 'long', day: 'numeric' });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -368,7 +369,7 @@ const BookingPage: React.FC = () => {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} className="w-16 h-16 bg-gray-500/20 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg></motion.div>
           <h2 className="text-3xl font-bold text-white mb-2">{t('Inquiry_Sent')}</h2>
           <p className="text-gray-300 max-w-md mx-auto">{t('Our_team_will_contact_you_shortly_with_a_quote')}</p>
-          <button type="button" onClick={() => navigate('/')} className="mt-8 bg-white text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-gray-200 transition-colors">Go to Home</button>
+          <button type="button" onClick={() => navigate('/')} className="mt-8 bg-white text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-gray-200 transition-colors">{t('Go_to_Home')}</button>
         </div>
       );
       return (

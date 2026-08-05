@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LegalPageLayout from '../components/layout/LegalPageLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchGoogleReviews } from '../services/googleReviews';
-import { getFranchisingCopy, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
+import { getFranchisingCopy, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
 
 const ExpansionIcon: React.FC<{ icon: FranchisingExpansionIcon }> = ({ icon }) => {
     if (icon === 'square') return <div className="w-8 h-8 bg-white rounded-sm" />;
@@ -39,7 +39,7 @@ const BenefitIcon: React.FC<{ icon: FranchisingBenefitIcon }> = ({ icon }) => {
 };
 
 const FranchisingPage: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, lang } = useTranslation();
     const [reviewCount, setReviewCount] = useState(246);
     const [copy, setCopy] = useState<FranchisingCopy | null>(null);
 
@@ -61,7 +61,7 @@ const FranchisingPage: React.FC = () => {
     if (!copy) {
         return (
             <LegalPageLayout title={t('Franchising')}>
-                <p className="text-gray-400 text-sm">Caricamento…</p>
+                <p className="text-gray-400 text-sm">{t('Loading')}</p>
             </LegalPageLayout>
         );
     }
@@ -79,34 +79,34 @@ const FranchisingPage: React.FC = () => {
                 {/* Hero Statement */}
                 <div className="text-center py-6 md:py-8 border-b border-gray-800">
                     <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 px-4">
-                        {copy.hero_h2}
+                        {bilingual(copy, 'hero_h2', lang)}
                     </h2>
                     <p className="text-lg md:text-xl text-gray-300 px-4 mb-2">
-                        {copy.hero_p1}
+                        {bilingual(copy, 'hero_p1', lang)}
                     </p>
                     <p className="text-base md:text-lg text-gray-400 px-4 whitespace-pre-line">
-                        {copy.hero_p2}
+                        {bilingual(copy, 'hero_p2', lang)}
                     </p>
                 </div>
 
                 {/* Stats */}
                 <div className="text-center mb-4">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{copy.stats_heading}</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{bilingual(copy, 'stats_heading', lang)}</h3>
                 </div>
                 <div className="space-y-3 text-gray-300 px-4">
-                    {copy.stats_lines.map((line, i) => (
+                    {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
                         <p key={i}>{resolveReviewCount(line)}</p>
                     ))}
                 </div>
 
                 <div className="text-center py-4">
-                    <p className="text-base md:text-lg text-gray-300">{copy.stats_footer_main}</p>
-                    <p className="text-sm text-gray-400 mt-2">{copy.stats_footer_sub}</p>
+                    <p className="text-base md:text-lg text-gray-300">{bilingual(copy, 'stats_footer_main', lang)}</p>
+                    <p className="text-sm text-gray-400 mt-2">{bilingual(copy, 'stats_footer_sub', lang)}</p>
                 </div>
 
                 {/* Expansion Plan */}
                 <div className="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-2xl p-6 md:p-8">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center">{copy.expansion_heading}</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center">{bilingual(copy, 'expansion_heading', lang)}</h3>
                     {/* Whitelist for Tailwind JIT: md:grid-cols-1 md:grid-cols-2 md:grid-cols-3 md:grid-cols-4 */}
                     <div className={`grid grid-cols-1 ${
                         copy.expansion_locations.length >= 4 ? 'md:grid-cols-4'
@@ -119,8 +119,8 @@ const FranchisingPage: React.FC = () => {
                                 <div className="w-16 h-16 bg-gradient-to-br from-white/20 to-white/10 border border-white/30 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <ExpansionIcon icon={loc.icon} />
                                 </div>
-                                <h4 className="text-lg font-semibold text-white mb-2">{loc.name}</h4>
-                                <p className="text-gray-400 text-sm">{loc.description}</p>
+                                <h4 className="text-lg font-semibold text-white mb-2">{bilingual(loc, 'name', lang)}</h4>
+                                <p className="text-gray-400 text-sm">{bilingual(loc, 'description', lang)}</p>
                             </div>
                         ))}
                     </div>
@@ -128,9 +128,9 @@ const FranchisingPage: React.FC = () => {
 
                 {/* About DR7 */}
                 <div className="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-2xl p-6 md:p-8">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6">{copy.about_heading}</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6">{bilingual(copy, 'about_heading', lang)}</h3>
                     <div className="space-y-4 text-gray-300">
-                        {copy.about_paragraphs.map((p, i) => (
+                        {bilingualList(copy, 'about_paragraphs', lang).map((p, i) => (
                             <p key={i}>{p}</p>
                         ))}
                     </div>
@@ -145,8 +145,8 @@ const FranchisingPage: React.FC = () => {
                                     <BenefitIcon icon={benefit.icon} />
                                 </div>
                                 <div>
-                                    <h4 className="text-lg md:text-xl font-bold text-white mb-2">{benefit.title}</h4>
-                                    <p className="text-sm md:text-base text-gray-400">{benefit.description}</p>
+                                    <h4 className="text-lg md:text-xl font-bold text-white mb-2">{bilingual(benefit, 'title', lang)}</h4>
+                                    <p className="text-sm md:text-base text-gray-400">{bilingual(benefit, 'description', lang)}</p>
                                 </div>
                             </div>
                         </div>
@@ -156,26 +156,26 @@ const FranchisingPage: React.FC = () => {
                 {/* Call to Action */}
                 <div className="bg-gradient-to-br from-white/10 to-white/5 border-2 border-white/30 rounded-2xl p-6 md:p-8 text-center">
                     <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
-                        {copy.cta_heading}
+                        {bilingual(copy, 'cta_heading', lang)}
                     </h3>
                     <p className="text-sm md:text-base text-gray-300 mb-6">
-                        {copy.cta_intro}
+                        {bilingual(copy, 'cta_intro', lang)}
                     </p>
                     <div className="inline-block bg-white/10 border border-white/30 rounded-xl p-4 md:p-6 mb-6">
                         <p className="text-sm md:text-base text-white font-semibold mb-2">
-                            {copy.cta_box_main}
+                            {bilingual(copy, 'cta_box_main', lang)}
                         </p>
                         <p className="text-gray-400 text-xs md:text-sm">
-                            {copy.cta_box_sub}
+                            {bilingual(copy, 'cta_box_sub', lang)}
                         </p>
                     </div>
                 </div>
 
                 {/* Contact Section */}
                 <div className="bg-gradient-to-br from-gray-900/80 to-black/80 border-2 border-gray-800 rounded-2xl p-6 md:p-8 text-center">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-4">{copy.contact_heading}</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-4">{bilingual(copy, 'contact_heading', lang)}</h3>
                     <p className="text-sm md:text-base text-gray-300 mb-6">
-                        {copy.contact_intro}
+                        {bilingual(copy, 'contact_intro', lang)}
                     </p>
                     <div className="flex justify-center">
                         <a
@@ -190,7 +190,7 @@ const FranchisingPage: React.FC = () => {
                 {/* Footer Statement */}
                 <div className="text-center py-8 border-t border-gray-800">
                     <p className="text-sm text-gray-300 mb-4 whitespace-pre-line">
-                        {copy.footer_statement}
+                        {bilingual(copy, 'footer_statement', lang)}
                     </p>
                 </div>
             </div>

@@ -100,8 +100,6 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
         });
     };
 
-    const categoryLabel = category === 'urban-cars' ? 'Urban' : category === 'corporate-fleet' ? 'Flotta Aziendale' : 'Supercar & Luxury';
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -110,17 +108,17 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
             className="max-w-5xl mx-auto bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-2xl p-5 md:p-8"
         >
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                {t('Search_Available_Vehicles') || `Cerca ${categoryLabel}`}
+                {t('Search_Available_Vehicles')}
             </h2>
             <p className="text-gray-400 text-sm mb-6">
-                {t('Select_dates_and_verify') || 'Seleziona le date e verifica la disponibilità'}
+                {t('Select_dates_and_verify')}
             </p>
 
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Pickup Location */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">Luogo Ritiro</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Luogo Ritiro', en: 'Pick-up location' })}</label>
                         <select
                             value={formData.pickupLocation}
                             onChange={e => update('pickupLocation', e.target.value)}
@@ -134,7 +132,7 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
 
                     {/* Pickup Date */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">Data Ritiro</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Data Ritiro', en: 'Pick-up date' })}</label>
                         <input
                             type="date"
                             value={formData.pickupDate}
@@ -143,13 +141,13 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                             className={`w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-white ${pickupClosedFor(formData.pickupDate) ? 'border-red-500' : ''}`}
                         />
                         {pickupClosedFor(formData.pickupDate) && (
-                            <p className="text-xs text-red-400 mt-1">Chiuso in questa data</p>
+                            <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiuso in questa data', en: 'Closed on this date' })}</p>
                         )}
                     </div>
 
                     {/* Pickup Time */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">Ora Ritiro</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Ora Ritiro', en: 'Pick-up time' })}</label>
                         <select
                             value={formData.pickupTime}
                             onChange={e => update('pickupTime', e.target.value)}
@@ -157,7 +155,7 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-white focus:border-white transition disabled:opacity-50"
                         >
                             {pickupTimesForDay.length === 0 ? (
-                                <option>Chiuso</option>
+                                <option>{t({ it: 'Chiuso', en: 'Closed' })}</option>
                             ) : (
                                 pickupTimesForDay.map(time => (
                                     <option key={time} value={time}>{time}</option>
@@ -168,21 +166,21 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
 
                     {/* Age Bracket */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">Età Conducente</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Età Conducente', en: 'Driver age' })}</label>
                         <select
                             value={formData.ageBracket}
                             onChange={e => update('ageBracket', e.target.value)}
                             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-white focus:border-white transition"
                         >
-                            <option value="under26">21-25 anni</option>
-                            <option value="26to69">26-69 anni</option>
+                            <option value="under26">{t({ it: '21-25 anni', en: '21-25 years' })}</option>
+                            <option value="26to69">{t({ it: '26-69 anni', en: '26-69 years' })}</option>
                         </select>
                     </div>
 
                     {/* Return Location (if different) */}
                     {!sameLocation && (
                         <div>
-                            <label className="block text-sm text-gray-400 mb-1.5">Luogo Riconsegna</label>
+                            <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Luogo Riconsegna', en: 'Drop-off location' })}</label>
                             <select
                                 value={formData.returnLocation}
                                 onChange={e => update('returnLocation', e.target.value)}
@@ -197,7 +195,7 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
 
                     {/* Return Date */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">Data Riconsegna</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Data Riconsegna', en: 'Drop-off date' })}</label>
                         <input
                             type="date"
                             value={formData.returnDate}
@@ -206,13 +204,13 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                             className={`w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-white ${returnClosedFor(formData.returnDate) ? 'border-red-500' : ''}`}
                         />
                         {returnClosedFor(formData.returnDate) && (
-                            <p className="text-xs text-red-400 mt-1">Chiuso in questa data</p>
+                            <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiuso in questa data', en: 'Closed on this date' })}</p>
                         )}
                     </div>
 
                     {/* Return Time */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">Ora Riconsegna</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">{t({ it: 'Ora Riconsegna', en: 'Drop-off time' })}</label>
                         <select
                             value={formData.returnTime}
                             onChange={e => update('returnTime', e.target.value)}
@@ -220,7 +218,7 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-white focus:border-white transition disabled:opacity-50"
                         >
                             {returnTimesForDay.length === 0 ? (
-                                <option>Chiuso</option>
+                                <option>{t({ it: 'Chiuso', en: 'Closed' })}</option>
                             ) : (
                                 returnTimesForDay.map(time => (
                                     <option key={time} value={time}>{time}</option>
@@ -239,7 +237,7 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                             onChange={e => setSameLocation(e.target.checked)}
                             className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-white focus:ring-white"
                         />
-                        <span>Stessa sede per ritiro e riconsegna</span>
+                        <span>{t({ it: 'Stessa sede per ritiro e riconsegna', en: 'Same location for pick-up and drop-off' })}</span>
                     </label>
                 </div>
 
@@ -256,10 +254,10 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                Verifica in corso...
+                                {t({ it: 'Verifica in corso...', en: 'Checking...' })}
                             </>
                         ) : (
-                            'VERIFICA DISPONIBILITÀ'
+                            t({ it: 'VERIFICA DISPONIBILITÀ', en: 'CHECK AVAILABILITY' })
                         )}
                     </button>
                 </div>

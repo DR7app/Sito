@@ -93,7 +93,7 @@ const TermsOfServicePage: React.FC = () => {
     if (copy === undefined) {
         return (
             <LegalPageLayout title={t('Terms_of_Service')}>
-                <p className="text-gray-500 text-sm">Caricamento…</p>
+                <p className="text-gray-500 text-sm">{t('Loading')}</p>
             </LegalPageLayout>
         );
     }
@@ -103,7 +103,7 @@ const TermsOfServicePage: React.FC = () => {
     if (!copy) {
         return (
             <LegalPageLayout title={t('Terms_of_Service')}>
-                <p>I termini di servizio non sono ancora pubblicati. Contatta info@dr7.app per maggiori informazioni.</p>
+                <p>{t({ it: 'I termini di servizio non sono ancora pubblicati. Contatta info@dr7.app per maggiori informazioni.', en: 'The terms of service have not been published yet. Contact info@dr7.app for more information.' })}</p>
             </LegalPageLayout>
         );
     }

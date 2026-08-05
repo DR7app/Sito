@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Message {
   id: string;
@@ -76,6 +77,7 @@ interface DR7AIChatProps {
 }
 
 const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +96,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
       // Welcome message
       const welcomeMessage: Message = {
         id: '1',
-        content: "Benvenuto in DR7.\nCome posso assisterLa?\n\n⚠️ _Questo assistente è un'intelligenza artificiale. I prezzi e le informazioni fornite sono puramente indicativi e non vincolanti. Solo il prezzo mostrato nella pagina di prenotazione fa fede._",
+        content: t({ it: "Benvenuto in DR7.\nCome posso assisterLa?\n\n⚠️ _Questo assistente è un'intelligenza artificiale. I prezzi e le informazioni fornite sono puramente indicativi e non vincolanti. Solo il prezzo mostrato nella pagina di prenotazione fa fede._", en: "Welcome to DR7.\nHow may I assist you?\n\n⚠️ _This assistant is an artificial intelligence. Prices and information provided are indicative only and not binding. Only the price shown on the booking page is authoritative._" }),
         isUser: false,
         timestamp: new Date()
       };
@@ -132,7 +134,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to get AI response');
+      if (!response.ok) throw new Error(t('AI_response_failed'));
 
       const data = await response.json();
 
@@ -148,7 +150,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
       console.error('Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Mi dispiace, si è verificato un errore. Riprova tra poco.",
+        content: t({ it: "Mi dispiace, si è verificato un errore. Riprova tra poco.", en: "Sorry, something went wrong. Please try again shortly." }),
         isUser: false,
         timestamp: new Date()
       };
@@ -166,10 +168,10 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
   };
 
   const quickQuestions = [
-    "Quali auto esotiche avete?",
-    "Info sui jet privati",
-    "Cos'è DR7 Token?",
-    "Prezzi membership"
+    t({ it: "Quali auto esotiche avete?", en: "Which exotic cars do you have?" }),
+    t({ it: "Info sui jet privati", en: "Private jet information" }),
+    t({ it: "Cos'è DR7 Token?", en: "What is DR7 Token?" }),
+    t({ it: "Prezzi membership", en: "Membership pricing" })
   ];
 
   if (!isOpen) return null;
@@ -203,7 +205,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <h3 className="text-black font-bold text-lg">DR7 AI Assistant</h3>
-                <p className="text-black/70 text-xs">Sempre al tuo servizio</p>
+                <p className="text-black/70 text-xs">{t({ it: "Sempre al tuo servizio", en: "Always at your service" })}</p>
               </div>
             </div>
             <button
@@ -283,7 +285,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Scrivi un messaggio..."
+                placeholder={t({ it: "Scrivi un messaggio...", en: "Type a message..." })}
                 className="flex-1 bg-gray-900 border border-gray-800 text-white px-4 py-3 rounded-full focus:outline-none focus:border-white transition-colors placeholder-gray-500"
                 disabled={isLoading}
               />
@@ -304,6 +306,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
 
 // Floating Chat Button Component
 export const DR7AIFloatingButton: React.FC = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -353,12 +356,12 @@ export const DR7AIFloatingButton: React.FC = () => {
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full shadow-2xl hover:shadow-white/20 transition-all border-2 border-white overflow-hidden"
-        title="Chatta con DR7 AI"
+        title={t({ it: "Chatta con DR7 AI", en: "Chat with DR7 AI" })}
         style={{ pointerEvents: isVisible ? 'auto' : 'none' }}
       >
         <img
           src="/Valerio.jpg"
-          alt="Chatta con Valerio"
+          alt={t({ it: "Chatta con Valerio", en: "Chat with Valerio" })}
           className="w-full h-full object-cover object-top"
         />
       </motion.button>

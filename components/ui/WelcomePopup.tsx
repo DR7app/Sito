@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const WelcomePopup: React.FC = () => {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const { user } = useAuth();
 
@@ -34,7 +36,7 @@ const WelcomePopup: React.FC = () => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-lg"
           role="dialog"
           aria-live="polite"
-          aria-label="Messaggio di benvenuto"
+          aria-label={t({ it: "Messaggio di benvenuto", en: "Welcome message" })}
         >
           <div className="text-center">
             <h2 className="text-4xl font-bold text-white uppercase tracking-widest">

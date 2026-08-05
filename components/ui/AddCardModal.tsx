@@ -62,13 +62,13 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
     event.preventDefault();
 
     if (!stripe || !elements || !clientSecret || !user) {
-      setError("Il sistema di pagamento non è pronto. Riprova tra un istante.");
+      setError(t({ it: "Il sistema di pagamento non è pronto. Riprova tra un istante.", en: "The payment system is not ready. Please try again in a moment." }));
       return;
     }
 
     const cardElement = elements.getElement(CardElement);
     if (!cardElement) {
-        setError("Impossibile trovare i dati della carta. Riprova.");
+        setError(t({ it: "Impossibile trovare i dati della carta. Riprova.", en: "Could not find the card details. Please try again." }));
         return;
     }
 

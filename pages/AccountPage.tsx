@@ -16,8 +16,8 @@ const AccountPage = () => {
         { path: '/account/club', label: 'DR7 Club' },
         { path: '/account/membership', label: t('My_Membership') },
         { path: '/account/bookings', label: t('My_Bookings') },
-        { path: '/account/preventivi', label: 'I Miei Preventivi' },
-        { path: '/account/referral', label: 'Invita un Amico' },
+        { path: '/account/preventivi', label: t({ it: 'I Miei Preventivi', en: 'My Quotes' }) },
+        { path: '/account/referral', label: t({ it: 'Invita un Amico', en: 'Invite a Friend' }) },
         { path: '/account/notifications', label: t('Notifications') },
     ];
 

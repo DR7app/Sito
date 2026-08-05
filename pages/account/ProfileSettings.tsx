@@ -369,8 +369,8 @@ const ProfileSettings = () => {
             {/* Credit Wallet Card */}
             <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg overflow-hidden">
                 <div className="p-4 md:p-6 border-b border-gray-800">
-                    <h2 className="text-xl font-bold text-white">DR7 Credit Wallet</h2>
-                    <p className="text-sm text-gray-400 mt-1">Your available credits for DR7 services</p>
+                    <h2 className="text-xl font-bold text-white">{t({ it: "DR7 Credit Wallet", en: "DR7 Credit Wallet" })}</h2>
+                    <p className="text-sm text-gray-400 mt-1">{t({ it: "I tuoi crediti disponibili per i servizi DR7", en: "Your available credits for DR7 services" })}</p>
                 </div>
                 <div className="p-4 md:p-6">
                     {isLoadingCredits ? (
@@ -417,7 +417,7 @@ const ProfileSettings = () => {
                                         )}
                                     </div>
                                     <div className="border-t border-gray-700 pt-2 flex items-baseline gap-3">
-                                        <p className="text-sm text-gray-400 w-40">Saldo Disponibile</p>
+                                        <p className="text-sm text-gray-400 w-40">{t({ it: "Saldo Disponibile", en: "Available Balance" })}</p>
                                         <p className="text-4xl font-bold text-white">€{creditBalance.toFixed(2)}</p>
                                     </div>
                                 </div>
@@ -553,12 +553,12 @@ const ProfileSettings = () => {
                                     Fidelity Card
                                 </span>
                                 <div>
-                                    <p className="text-white font-bold">Programma Fedeltà Prime Wash</p>
-                                    <p className="text-gray-400 text-xs">1 € speso al lavaggio = 1 punto · A 250 punti ricevi un buono di €25</p>
+                                    <p className="text-white font-bold">{t({ it: "Programma Fedeltà Prime Wash", en: "Prime Wash Loyalty Programme" })}</p>
+                                    <p className="text-gray-400 text-xs">{t({ it: "1 € speso al lavaggio = 1 punto · A 250 punti ricevi un buono di €25", en: "€1 spent on a wash = 1 point · At 250 points you get a €25 voucher" })}</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-gray-400 text-xs">Punti accumulati</p>
+                                <p className="text-gray-400 text-xs">{t({ it: "Punti accumulati", en: "Points earned" })}</p>
                                 <p className="text-white font-bold text-2xl tabular-nums">
                                     {points}<span className="text-gray-500 text-lg"> / {FIDELITY_MAX}</span>
                                 </p>
@@ -595,7 +595,7 @@ const ProfileSettings = () => {
                 <div className="p-4 md:p-6 space-y-6">
 
                     {isLoadingProfile ? (
-                        <div className="text-center py-4 text-gray-400">Caricamento dati profilo...</div>
+                        <div className="text-center py-4 text-gray-400">{t({ it: "Caricamento dati profilo...", en: "Loading profile data..." })}</div>
                     ) : extendedProfile ? (
                         <>
                             {/* --- Status Badge (Member/Elite) --- */}
@@ -614,11 +614,11 @@ const ProfileSettings = () => {
                             {/* --- Basic Info Section --- */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400">Tipo Cliente</label>
+                                    <label className="block text-sm font-medium text-gray-400">{t({ it: "Tipo Cliente", en: "Customer Type" })}</label>
                                     <p className="mt-1 text-white font-semibold capitalize">{extendedProfile.tipo_cliente?.replace('_', ' ')}</p>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400">Nazione</label>
+                                    <label className="block text-sm font-medium text-gray-400">{t({ it: "Nazione", en: "Country" })}</label>
                                     <p className="mt-1 text-white">{extendedProfile.nazione || '-'}</p>
                                 </div>
                             </div>
@@ -626,66 +626,66 @@ const ProfileSettings = () => {
                             {/* --- Personal / Company Details --- */}
                             {extendedProfile.tipo_cliente === 'persona_fisica' && (
                                 <div className="border-t border-gray-800 pt-4">
-                                    <h3 className="text-lg font-semibold text-white mb-4">Dati Personali</h3>
+                                    <h3 className="text-lg font-semibold text-white mb-4">{t({ it: "Dati Personali", en: "Personal Details" })}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label className="text-sm text-gray-400">Nome</label><input type="text" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Cognome</label><input type="text" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div className="md:col-span-2"><label className="text-sm text-gray-400">Codice Fiscale</label><div className="flex flex-col sm:flex-row gap-2 mt-1"><input type="text" value={formData.codiceFiscale} onChange={handleChange} name="codiceFiscale" className="flex-1 bg-gray-800 border-gray-700 rounded-md text-white p-2 font-mono uppercase min-h-[44px]" maxLength={16} /><CalcolaCFButton className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md whitespace-nowrap transition-colors" config={{ getCognome: () => formData.lastName, getNome: () => formData.firstName, getDataNascita: () => formData.dataNascita, getSesso: () => formData.sesso, getLuogoNascita: () => formData.cittaNascita, getCodiceFiscale: () => formData.codiceFiscale, setCodiceFiscale: (v) => setFormData(p => ({ ...p, codiceFiscale: v })), setSesso: (v) => setFormData(p => ({ ...p, sesso: v })), setDataNascita: (v) => setFormData(p => ({ ...p, dataNascita: v })), setLuogoNascita: (v) => setFormData(p => ({ ...p, cittaNascita: v })), setProvinciaNascita: (v) => setFormData(p => ({ ...p, provinciaNascita: v })), }} /></div></div>
-                                        <div><label className="text-sm text-gray-400">Sesso</label><select value={formData.sesso} onChange={(e) => setFormData({ ...formData, sesso: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]"><option value="">Seleziona...</option><option value="M">Maschio</option><option value="F">Femmina</option></select></div>
-                                        <div><label className="text-sm text-gray-400">Data di Nascita</label><input type="date" value={formData.dataNascita} onChange={(e) => setFormData({ ...formData, dataNascita: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Città di Nascita</label><input type="text" value={formData.cittaNascita} onChange={(e) => setFormData({ ...formData, cittaNascita: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Provincia di Nascita</label><input type="text" value={formData.provinciaNascita} onChange={(e) => setFormData({ ...formData, provinciaNascita: e.target.value })} maxLength={2} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 uppercase" /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Nome", en: "First name" })}</label><input type="text" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Cognome", en: "Last name" })}</label><input type="text" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div className="md:col-span-2"><label className="text-sm text-gray-400">{t({ it: "Codice Fiscale", en: "Tax Code" })}</label><div className="flex flex-col sm:flex-row gap-2 mt-1"><input type="text" value={formData.codiceFiscale} onChange={handleChange} name="codiceFiscale" className="flex-1 bg-gray-800 border-gray-700 rounded-md text-white p-2 font-mono uppercase min-h-[44px]" maxLength={16} /><CalcolaCFButton className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md whitespace-nowrap transition-colors" config={{ getCognome: () => formData.lastName, getNome: () => formData.firstName, getDataNascita: () => formData.dataNascita, getSesso: () => formData.sesso, getLuogoNascita: () => formData.cittaNascita, getCodiceFiscale: () => formData.codiceFiscale, setCodiceFiscale: (v) => setFormData(p => ({ ...p, codiceFiscale: v })), setSesso: (v) => setFormData(p => ({ ...p, sesso: v })), setDataNascita: (v) => setFormData(p => ({ ...p, dataNascita: v })), setLuogoNascita: (v) => setFormData(p => ({ ...p, cittaNascita: v })), setProvinciaNascita: (v) => setFormData(p => ({ ...p, provinciaNascita: v })), }} /></div></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label><select value={formData.sesso} onChange={(e) => setFormData({ ...formData, sesso: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]"><option value="">{t({ it: "Seleziona...", en: "Select..." })}</option><option value="M">{t({ it: "Maschio", en: "Male" })}</option><option value="F">{t({ it: "Femmina", en: "Female" })}</option></select></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Data di Nascita", en: "Date of Birth" })}</label><input type="date" value={formData.dataNascita} onChange={(e) => setFormData({ ...formData, dataNascita: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Città di Nascita", en: "Place of Birth" })}</label><input type="text" value={formData.cittaNascita} onChange={(e) => setFormData({ ...formData, cittaNascita: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Provincia di Nascita", en: "Province of Birth" })}</label><input type="text" value={formData.provinciaNascita} onChange={(e) => setFormData({ ...formData, provinciaNascita: e.target.value })} maxLength={2} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 uppercase" /></div>
                                     </div>
 
-                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">Residenza</h3>
+                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">{t({ it: "Residenza", en: "Residence" })}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label className="text-sm text-gray-400">Indirizzo</label><input type="text" value={formData.indirizzo} onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Numero Civico</label><input type="text" value={formData.numeroCivico} onChange={(e) => setFormData({ ...formData, numeroCivico: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Città</label><input type="text" value={formData.cittaResidenza} onChange={(e) => setFormData({ ...formData, cittaResidenza: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Provincia</label><input type="text" value={formData.provinciaResidenza} onChange={(e) => setFormData({ ...formData, provinciaResidenza: e.target.value })} maxLength={2} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 uppercase" /></div>
-                                        <div><label className="text-sm text-gray-400">CAP</label><input type="text" value={formData.codicePostale} onChange={(e) => setFormData({ ...formData, codicePostale: e.target.value })} maxLength={5} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Indirizzo", en: "Address" })}</label><input type="text" value={formData.indirizzo} onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Numero Civico", en: "Street number" })}</label><input type="text" value={formData.numeroCivico} onChange={(e) => setFormData({ ...formData, numeroCivico: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Città", en: "City" })}</label><input type="text" value={formData.cittaResidenza} onChange={(e) => setFormData({ ...formData, cittaResidenza: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Provincia", en: "Province" })}</label><input type="text" value={formData.provinciaResidenza} onChange={(e) => setFormData({ ...formData, provinciaResidenza: e.target.value })} maxLength={2} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 uppercase" /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "CAP", en: "Postcode" })}</label><input type="text" value={formData.codicePostale} onChange={(e) => setFormData({ ...formData, codicePostale: e.target.value })} maxLength={5} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
                                     </div>
 
-                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">Patente di Guida</h3>
+                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">{t({ it: "Patente di Guida", en: "Driving Licence" })}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label className="text-sm text-gray-400">Tipo Patente</label><input type="text" value={formData.tipoPatente} onChange={(e) => setFormData({ ...formData, tipoPatente: e.target.value })} placeholder="es. B" className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Numero</label><input type="text" value={formData.numeroPatente} onChange={(e) => setFormData({ ...formData, numeroPatente: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 font-mono" /></div>
-                                        <div><label className="text-sm text-gray-400">Rilasciata da</label><input type="text" value={formData.patenteEmessaDa} onChange={(e) => setFormData({ ...formData, patenteEmessaDa: e.target.value })} placeholder="es. MIT" className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Data Rilascio</label><input type="date" value={formData.patenteDataRilascio} onChange={(e) => setFormData({ ...formData, patenteDataRilascio: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="text-sm text-gray-400">Scadenza</label><input type="date" value={formData.patenteScadenza} onChange={(e) => setFormData({ ...formData, patenteScadenza: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Tipo Patente", en: "Licence type" })}</label><input type="text" value={formData.tipoPatente} onChange={(e) => setFormData({ ...formData, tipoPatente: e.target.value })} placeholder={t({ it: "es. B", en: "e.g. B" })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Numero", en: "Number" })}</label><input type="text" value={formData.numeroPatente} onChange={(e) => setFormData({ ...formData, numeroPatente: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 font-mono" /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Rilasciata da", en: "Issued by" })}</label><input type="text" value={formData.patenteEmessaDa} onChange={(e) => setFormData({ ...formData, patenteEmessaDa: e.target.value })} placeholder={t({ it: "es. MIT", en: "e.g. MIT" })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Data Rilascio", en: "Issue date" })}</label><input type="date" value={formData.patenteDataRilascio} onChange={(e) => setFormData({ ...formData, patenteDataRilascio: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Scadenza", en: "Expiry" })}</label><input type="date" value={formData.patenteScadenza} onChange={(e) => setFormData({ ...formData, patenteScadenza: e.target.value })} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white p-2 min-h-[44px]" style={{ colorScheme: 'dark' }} /></div>
                                     </div>
                                 </div>
                             )}
 
                             {extendedProfile.tipo_cliente === 'azienda' && (
                                 <div className="border-t border-gray-800 pt-4">
-                                    <h3 className="text-lg font-semibold text-white mb-4">Dati Aziendali</h3>
+                                    <h3 className="text-lg font-semibold text-white mb-4">{t({ it: "Dati Aziendali", en: "Company Details" })}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="md:col-span-2"><label className="text-sm text-gray-400">Ragione Sociale</label><p className="text-white">{extendedProfile.denominazione}</p></div>
-                                        <div><label className="text-sm text-gray-400">Partita IVA</label><p className="text-white font-mono">{extendedProfile.partita_iva}</p></div>
-                                        <div><label className="text-sm text-gray-400">Codice Fiscale</label><p className="text-white font-mono">{extendedProfile.codice_fiscale}</p></div>
-                                        <div><label className="text-sm text-gray-400">Codice SDI</label><p className="text-white font-mono">{extendedProfile.codice_destinatario}</p></div>
+                                        <div className="md:col-span-2"><label className="text-sm text-gray-400">{t({ it: "Ragione Sociale", en: "Company name" })}</label><p className="text-white">{extendedProfile.denominazione}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Partita IVA", en: "VAT number" })}</label><p className="text-white font-mono">{extendedProfile.partita_iva}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Codice Fiscale", en: "Tax Code" })}</label><p className="text-white font-mono">{extendedProfile.codice_fiscale}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Codice SDI", en: "SDI code" })}</label><p className="text-white font-mono">{extendedProfile.codice_destinatario}</p></div>
                                         <div><label className="text-sm text-gray-400">PEC</label><p className="text-white">{extendedProfile.pec || '-'}</p></div>
                                     </div>
 
-                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">Sede Legale & Operativa</h3>
+                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">{t({ it: "Sede Legale & Operativa", en: "Registered & Operating Office" })}</h3>
                                     <div className="space-y-4">
-                                        <div><label className="text-sm text-gray-400">Sede Legale</label><p className="text-white">{extendedProfile.indirizzo}</p></div>
-                                        {extendedProfile.sede_operativa && <div><label className="text-sm text-gray-400">Sede Operativa</label><p className="text-white">{extendedProfile.sede_operativa}</p></div>}
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Sede Legale", en: "Registered office" })}</label><p className="text-white">{extendedProfile.indirizzo}</p></div>
+                                        {extendedProfile.sede_operativa && <div><label className="text-sm text-gray-400">{t({ it: "Sede Operativa", en: "Operating office" })}</label><p className="text-white">{extendedProfile.sede_operativa}</p></div>}
                                     </div>
 
-                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">Rappresentante Legale</h3>
+                                    <h3 className="text-lg font-semibold text-white mt-6 mb-4">{t({ it: "Rappresentante Legale", en: "Legal Representative" })}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label className="text-sm text-gray-400">Nome</label><p className="text-white">{extendedProfile.rappresentante_nome} {extendedProfile.rappresentante_cognome}</p></div>
-                                        <div><label className="text-sm text-gray-400">Codice Fiscale</label><p className="text-white font-mono">{extendedProfile.rappresentante_cf}</p></div>
-                                        <div><label className="text-sm text-gray-400">Ruolo</label><p className="text-white">{extendedProfile.rappresentante_ruolo}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Nome", en: "First name" })}</label><p className="text-white">{extendedProfile.rappresentante_nome} {extendedProfile.rappresentante_cognome}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Codice Fiscale", en: "Tax Code" })}</label><p className="text-white font-mono">{extendedProfile.rappresentante_cf}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: "Ruolo", en: "Role" })}</label><p className="text-white">{extendedProfile.rappresentante_ruolo}</p></div>
                                     </div>
                                 </div>
                             )}
 
                             {/* --- Contact Info (Editable) --- */}
                             <div className="border-t border-gray-800 pt-6 mt-6">
-                                <h3 className="text-lg font-semibold text-white mb-4">Informazioni di Contatto (Modificabili)</h3>
+                                <h3 className="text-lg font-semibold text-white mb-4">{t({ it: "Informazioni di Contatto (Modificabili)", en: "Contact Information (Editable)" })}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label htmlFor="email" className="block text-sm font-medium text-gray-300">{t('Email_Address')}</label>

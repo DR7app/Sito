@@ -83,7 +83,7 @@ const MECCANICA_CATEGORIES = [
 ];
 
 const CarWashServicesPage: React.FC = () => {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const contact = useContactInfo();
   const [copy, setCopy] = useState<CarWashCopy | null>(null);
@@ -417,8 +417,8 @@ const CarWashServicesPage: React.FC = () => {
           <img src="/servizi-lavaggio.jpeg" alt="" className="w-full h-40 md:h-56 object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-end p-5 md:p-7">
             <div>
-              <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">Servizi</p>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">Lavaggio &amp; Meccanica</h1>
+              <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">{t({ it: "Servizi", en: "Services" })}</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">{t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}</h1>
             </div>
           </div>
         </div>

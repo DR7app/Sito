@@ -12,6 +12,31 @@
 
 import { supabase } from '../supabaseClient';
 
+// ─── Bilingual field helper ─────────────────────────────────────────────────
+/**
+ * Reads a CMS text field in the active language.
+ *
+ * Prefers `<base>_it` / `<base>_en`; falls back to the legacy single-language
+ * `<base>` when an override stored in the DB predates the bilingual split, so
+ * existing `centralina_pro_config` rows keep rendering instead of going blank.
+ */
+export function bilingual(obj: Record<string, any> | null | undefined, base: string, lang: string): string {
+  if (!obj) return '';
+  const localized = obj[`${base}_${lang === 'en' ? 'en' : 'it'}`];
+  if (typeof localized === 'string' && localized.trim()) return localized;
+  const legacy = obj[base];
+  return typeof legacy === 'string' ? legacy : '';
+}
+
+/** Array-valued variant of `bilingual` (e.g. paragraph lists). */
+export function bilingualList(obj: Record<string, any> | null | undefined, base: string, lang: string): string[] {
+  if (!obj) return [];
+  const localized = obj[`${base}_${lang === 'en' ? 'en' : 'it'}`];
+  if (Array.isArray(localized) && localized.length) return localized;
+  const legacy = obj[base];
+  return Array.isArray(legacy) ? legacy : [];
+}
+
 // ─── Schemas ────────────────────────────────────────────────────────────────
 export interface FaqEntry {
   id: string;
@@ -995,37 +1020,58 @@ export interface FranchisingExpansionLocation {
   id: string;
   icon: FranchisingExpansionIcon;
   name: string;
+  name_it?: string; name_en?: string;
   description: string;
+  description_it?: string; description_en?: string;
 }
 
 export interface FranchisingBenefit {
   id: string;
   icon: FranchisingBenefitIcon;
   title: string;
+  title_it?: string; title_en?: string;
   description: string;
+  description_it?: string; description_en?: string;
 }
 
 export interface FranchisingCopy {
   hero_h2: string;
+  hero_h2_it?: string; hero_h2_en?: string;
   hero_p1: string;
+  hero_p1_it?: string; hero_p1_en?: string;
   hero_p2: string;
+  hero_p2_it?: string; hero_p2_en?: string;
   stats_heading: string;
+  stats_heading_it?: string; stats_heading_en?: string;
   stats_lines: string[];               // supports {reviewCount}
+  stats_lines_it?: string[]; stats_lines_en?: string[];
   stats_footer_main: string;
+  stats_footer_main_it?: string; stats_footer_main_en?: string;
   stats_footer_sub: string;
+  stats_footer_sub_it?: string; stats_footer_sub_en?: string;
   expansion_heading: string;
+  expansion_heading_it?: string; expansion_heading_en?: string;
   expansion_locations: FranchisingExpansionLocation[];
   about_heading: string;
+  about_heading_it?: string; about_heading_en?: string;
   about_paragraphs: string[];
+  about_paragraphs_it?: string[]; about_paragraphs_en?: string[];
   benefits: FranchisingBenefit[];
   cta_heading: string;
+  cta_heading_it?: string; cta_heading_en?: string;
   cta_intro: string;
+  cta_intro_it?: string; cta_intro_en?: string;
   cta_box_main: string;
+  cta_box_main_it?: string; cta_box_main_en?: string;
   cta_box_sub: string;
+  cta_box_sub_it?: string; cta_box_sub_en?: string;
   contact_heading: string;
+  contact_heading_it?: string; contact_heading_en?: string;
   contact_intro: string;
+  contact_intro_it?: string; contact_intro_en?: string;
   contact_email: string;
   footer_statement: string;
+  footer_statement_it?: string; footer_statement_en?: string;
 }
 
 // ─── Investitori (IT-only sales page) ──────────────────────────────────────
@@ -1036,32 +1082,49 @@ export interface FranchisingCopy {
 export interface InvestitoriStrength {
   id: string;
   title: string;
+  title_it?: string; title_en?: string;
   description: string;
+  description_it?: string; description_en?: string;
 }
 
 export interface InvestitoriInfoItem {
   label: string;
+  label_it?: string; label_en?: string;
   value: string;
+  value_it?: string; value_en?: string;
 }
 
 export interface InvestitoriCopy {
   hero_title: string;
+  hero_title_it?: string; hero_title_en?: string;
   hero_subtitle: string;
+  hero_subtitle_it?: string; hero_subtitle_en?: string;
   intro_paragraphs: string[];
+  intro_paragraphs_it?: string[]; intro_paragraphs_en?: string[];
   opportunity_heading: string;
+  opportunity_heading_it?: string; opportunity_heading_en?: string;
   opportunity_paragraphs: string[];
+  opportunity_paragraphs_it?: string[]; opportunity_paragraphs_en?: string[];
   strength_heading: string;
+  strength_heading_it?: string; strength_heading_en?: string;
   strength_points: InvestitoriStrength[];
   cta_heading: string;
+  cta_heading_it?: string; cta_heading_en?: string;
   cta_paragraphs: string[];
+  cta_paragraphs_it?: string[]; cta_paragraphs_en?: string[];
   cta_button_label: string;
+  cta_button_label_it?: string; cta_button_label_en?: string;
   cta_whatsapp_url: string;
   cta_email: string;
   info_heading: string;
+  info_heading_it?: string; info_heading_en?: string;
   info_items: InvestitoriInfoItem[];
   info_footnote: string;
+  info_footnote_it?: string; info_footnote_en?: string;
   legal_heading: string;
+  legal_heading_it?: string; legal_heading_en?: string;
   legal_paragraphs: string[];
+  legal_paragraphs_it?: string[]; legal_paragraphs_en?: string[];
 }
 
 // ─── Car Wash chrome (catalog stays in car_wash_services table) ────────────
@@ -1159,6 +1222,7 @@ export interface ContactCopy {
   office_address_it: string; office_address_en: string;
   office_piva: string;
   map_title: string;
+  map_title_it?: string; map_title_en?: string;
   map_iframe_url: string;
 }
 
@@ -1220,11 +1284,15 @@ export interface FooterLink {
 export interface FooterCopy {
   // Network band
   network_title: string;
+  network_title_it?: string;
+  network_title_en?: string;
   network_text_it: string;
   network_text_en: string;
   social_links: FooterSocialLink[];
   // Reviews band header
   reviews_title: string;
+  reviews_title_it?: string;
+  reviews_title_en?: string;
   reviews_text_it: string;
   reviews_text_en: string;
   // Contact band
@@ -1247,7 +1315,11 @@ export interface FooterCopy {
   legal_links: FooterLink[];
   // Bottom band
   bottom_brand_line: string;           // "DR7 Cagliari – Global Mobility..."
+  bottom_brand_line_it?: string;
+  bottom_brand_line_en?: string;
   bottom_copyright: string;            // "© 2024 - 2026 DR7 Cagliari. All Rights Reserved."
+  bottom_copyright_it?: string;
+  bottom_copyright_en?: string;
 }
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -2525,9 +2597,17 @@ export async function getAviationQuoteTemplate(): Promise<string> {
 // ─── Default Franchising seed ──────────────────────────────────────────────
 const DEFAULT_FRANCHISING: FranchisingCopy = {
   hero_h2: 'Vuoi aprire la tua sede DR7 nella tua città?',
+  hero_h2_it: 'Vuoi aprire la tua sede DR7 nella tua città?',
+  hero_h2_en: 'Want to open your own DR7 location in your city?',
   hero_p1: 'Diventa partner del gruppo che sta rivoluzionando il concetto di lusso in Italia.',
+  hero_p1_it: 'Diventa partner del gruppo che sta rivoluzionando il concetto di lusso in Italia.',
+  hero_p1_en: 'Become a partner of the group that is redefining luxury in Italy.',
   hero_p2: 'Nessun investimento impossibile, supporto totale della casa madre\ne un brand che cresce ogni singolo giorno.',
+  hero_p2_it: 'Nessun investimento impossibile, supporto totale della casa madre\ne un brand che cresce ogni singolo giorno.',
+  hero_p2_en: 'No impossible investment, full support from head office\nand a brand that grows every single day.',
   stats_heading: 'In soli 18 mesi di attività',
+  stats_heading_it: 'In soli 18 mesi di attività',
+  stats_heading_en: 'In just 18 months of operation',
   stats_lines: [
     '* oltre 1.800 contratti firmati',
     '* più di €1.500.000 di fatturato netto',
@@ -2538,75 +2618,177 @@ const DEFAULT_FRANCHISING: FranchisingCopy = {
     '* Valutazione brand: oltre €4.000.000',
     '* Da S.R.L. a S.P.A. in un solo anno.',
   ],
+  stats_lines_it: [
+    '* oltre 1.800 contratti firmati',
+    '* più di €1.500.000 di fatturato netto',
+    '* oltre €1.500.000 in parco auto',
+    '* più di 900 clienti attivi',
+    '* {reviewCount} recensioni a 5 stelle reali',
+    '* Valutazione aziendale: €15.000.000',
+    '* Valutazione brand: oltre €4.000.000',
+    '* Da S.R.L. a S.P.A. in un solo anno.',
+  ],
+  stats_lines_en: [
+    '* over 1,800 signed contracts',
+    '* more than €1,500,000 in net revenue',
+    '* over €1,500,000 in fleet value',
+    '* more than 900 active clients',
+    '* {reviewCount} genuine 5-star reviews',
+    '* Company valuation: €15,000,000',
+    '* Brand valuation: over €4,000,000',
+    '* From S.R.L. to S.P.A. in a single year.',
+  ],
   stats_footer_main: 'Il brand di lusso più riconosciuto d\'Italia.',
+  stats_footer_main_it: 'Il brand di lusso più riconosciuto d\'Italia.',
+  stats_footer_main_en: 'The most recognised luxury brand in Italy.',
   stats_footer_sub: 'Italia • Dubai Rent 7.0 S.p.A.',
+  stats_footer_sub_it: 'Italia • Dubai Rent 7.0 S.p.A.',
+  stats_footer_sub_en: 'Italy • Dubai Rent 7.0 S.p.A.',
   expansion_heading: 'Il Nostro Piano di Espansione',
+  expansion_heading_it: 'Il Nostro Piano di Espansione',
+  expansion_heading_en: 'Our Expansion Plan',
   expansion_locations: [
-    { id: 'cagliari', icon: 'square',  name: 'Cagliari', description: 'Sede Principale' },
-    { id: 'iglesias', icon: 'diamond', name: 'Iglesias', description: 'Franchising Operativo' },
-    { id: 'target',   icon: 'lines',   name: '300 Sedi',  description: 'Obiettivo Italia' },
+    { id: 'cagliari', icon: 'square',  name: 'Cagliari', name_it: 'Cagliari', name_en: 'Cagliari', description: 'Sede Principale', description_it: 'Sede Principale', description_en: 'Headquarters' },
+    { id: 'iglesias', icon: 'diamond', name: 'Iglesias', name_it: 'Iglesias', name_en: 'Iglesias', description: 'Franchising Operativo', description_it: 'Franchising Operativo', description_en: 'Operating Franchise' },
+    { id: 'target',   icon: 'lines',   name: '300 Sedi',  name_it: '300 Sedi', name_en: '300 Locations', description: 'Obiettivo Italia', description_it: 'Obiettivo Italia', description_en: 'Italy Target' },
   ],
   about_heading: 'L\'Impero DR7',
+  about_heading_it: 'L\'Impero DR7',
+  about_heading_en: 'The DR7 Empire',
   about_paragraphs: [
     'Nata come Dubai Rent 7.0 S.p.A., oggi DR7 è un impero del lusso e della mobilità. Non un marchio. Non un esperimento. Ma una macchina che funziona, cresce e domina.',
     'Abbiamo costruito un modello che integra mobilità, lusso ed esperienza in un solo ecosistema: auto, supercar, yacht, elicotteri, jet privati e ville di lusso. Un sistema già operativo, già profittevole, già riconosciuto.',
   ],
+  about_paragraphs_it: [
+    'Nata come Dubai Rent 7.0 S.p.A., oggi DR7 è un impero del lusso e della mobilità. Non un marchio. Non un esperimento. Ma una macchina che funziona, cresce e domina.',
+    'Abbiamo costruito un modello che integra mobilità, lusso ed esperienza in un solo ecosistema: auto, supercar, yacht, elicotteri, jet privati e ville di lusso. Un sistema già operativo, già profittevole, già riconosciuto.',
+  ],
+  about_paragraphs_en: [
+    'Born as Dubai Rent 7.0 S.p.A., DR7 is today an empire of luxury and mobility. Not a label. Not an experiment. A machine that works, grows and dominates.',
+    'We have built a model that integrates mobility, luxury and experience into a single ecosystem: cars, supercars, yachts, helicopters, private jets and luxury villas. A system already operating, already profitable, already recognised.',
+  ],
   benefits: [
-    { id: 'brand', icon: 'check', title: 'Più di un Brand', description: 'Un metodo, una struttura, una reputazione. Un nome sinonimo di dominio.' },
+    { id: 'brand', icon: 'check', title: 'Più di un Brand', title_it: 'Più di un Brand', title_en: 'More Than a Brand', description: 'Un metodo, una struttura, una reputazione. Un nome sinonimo di dominio.', description_it: 'Un metodo, una struttura, una reputazione. Un nome sinonimo di dominio.', description_en: 'A method, a structure, a reputation. A name synonymous with dominance.' },
   ],
   cta_heading: 'Cerchiamo Dominatori di Mercato',
+  cta_heading_it: 'Cerchiamo Dominatori di Mercato',
+  cta_heading_en: 'We Are Looking for Market Leaders',
   cta_intro: 'Non affiliati. Imprenditori pronti a portare il nome DR7 Luxury Empire nel proprio territorio.',
+  cta_intro_it: 'Non affiliati. Imprenditori pronti a portare il nome DR7 Luxury Empire nel proprio territorio.',
+  cta_intro_en: 'Not affiliates. Entrepreneurs ready to bring the DR7 Luxury Empire name to their own territory.',
   cta_box_main: 'Se vuoi entrare in un impero destinato a durare, il momento è ora.',
+  cta_box_main_it: 'Se vuoi entrare in un impero destinato a durare, il momento è ora.',
+  cta_box_main_en: 'If you want to join an empire built to last, the time is now.',
   cta_box_sub: 'I posti sono limitati. Le sedi non si conquistano due volte.',
+  cta_box_sub_it: 'I posti sono limitati. Le sedi non si conquistano due volte.',
+  cta_box_sub_en: 'Places are limited. A location is never won twice.',
   contact_heading: 'Invia la tua candidatura',
+  contact_heading_it: 'Invia la tua candidatura',
+  contact_heading_en: 'Send your application',
   contact_intro: 'e scopri come aprire la tua sede ufficiale DR7.',
+  contact_intro_it: 'e scopri come aprire la tua sede ufficiale DR7.',
+  contact_intro_en: 'and find out how to open your official DR7 location.',
   contact_email: 'franchising@dr7.app',
   footer_statement: '-\n> "Solo per veri imprenditori. Posti limitati per le nuove aperture 2025."',
+  footer_statement_it: '-\n> "Solo per veri imprenditori. Posti limitati per le nuove aperture 2025."',
+  footer_statement_en: '-\n> "For genuine entrepreneurs only. Limited places for new 2025 openings."',
 };
 
 // ─── Default Investitori seed ──────────────────────────────────────────────
 const DEFAULT_INVESTITORI: InvestitoriCopy = {
   hero_title: 'SEZIONE INVESTITORI',
+  hero_title_it: 'SEZIONE INVESTITORI',
+  hero_title_en: 'INVESTOR RELATIONS',
   hero_subtitle: 'Partecipa alla crescita del gruppo DR7',
+  hero_subtitle_it: 'Partecipa alla crescita del gruppo DR7',
+  hero_subtitle_en: 'Take part in the growth of the DR7 group',
+  intro_paragraphs_it: [
+    'Dubai Rent 7.0 S.p.A. rappresenta il cuore del progetto DR7 Luxury Empire, una realtà italiana in espansione internazionale nel settore Luxury Mobility & Lifestyle.',
+    'Fondata da Valerio Saia, la società persegue l\'obiettivo di costruire entro il 2030 un gruppo di riferimento nel panorama del lusso globale, integrando noleggio supercar, yacht, elicotteri, ville di pregio e servizi di concierge in un\'unica piattaforma.',
+  ],
+  intro_paragraphs_en: [
+    'Dubai Rent 7.0 S.p.A. is the heart of the DR7 Luxury Empire project, an Italian company expanding internationally in the Luxury Mobility & Lifestyle sector.',
+    'Founded by Valerio Saia, the company aims to build by 2030 a benchmark group in the global luxury landscape, integrating supercar rental, yachts, helicopters, prestige villas and concierge services into a single platform.',
+  ],
   intro_paragraphs: [
     'Dubai Rent 7.0 S.p.A. rappresenta il cuore del progetto DR7 Luxury Empire, una realtà italiana in espansione internazionale nel settore Luxury Mobility & Lifestyle.',
     'Fondata da Valerio Saia, la società persegue l\'obiettivo di costruire entro il 2030 un gruppo di riferimento nel panorama del lusso globale, integrando noleggio supercar, yacht, elicotteri, ville di pregio e servizi di concierge in un\'unica piattaforma.',
   ],
   opportunity_heading: 'Opportunità di partecipazione al capitale',
+  opportunity_heading_it: 'Opportunità di partecipazione al capitale',
+  opportunity_heading_en: 'Equity participation opportunity',
+  opportunity_paragraphs_it: [
+    'Il Consiglio di Amministrazione di Dubai Rent 7.0 S.p.A. ha deliberato l\'apertura selettiva del capitale sociale a investitori privati e partner strategici, con l\'intento di favorire la crescita e l\'espansione del brand a livello internazionale.',
+    'L\'ingresso nel capitale è riservato a soggetti qualificati, selezionati direttamente dalla Direzione Generale, nel rispetto delle normative vigenti e delle procedure interne di valutazione.',
+    'L\'obiettivo è consolidare la struttura patrimoniale della società e accelerare il piano Vision 2030, che prevede il rafforzamento delle attività operative, lo sviluppo di nuove divisioni e, in prospettiva, la quotazione in mercati regolamentati.',
+  ],
+  opportunity_paragraphs_en: [
+    'The Board of Directors of Dubai Rent 7.0 S.p.A. has resolved to selectively open the share capital to private investors and strategic partners, with the aim of supporting the growth and international expansion of the brand.',
+    'Entry into the share capital is reserved for qualified parties, selected directly by General Management, in compliance with applicable regulations and internal assessment procedures.',
+    'The objective is to strengthen the company\'s capital structure and accelerate the Vision 2030 plan, which foresees reinforcing operations, developing new divisions and, in due course, listing on regulated markets.',
+  ],
   opportunity_paragraphs: [
     'Il Consiglio di Amministrazione di Dubai Rent 7.0 S.p.A. ha deliberato l\'apertura selettiva del capitale sociale a investitori privati e partner strategici, con l\'intento di favorire la crescita e l\'espansione del brand a livello internazionale.',
     'L\'ingresso nel capitale è riservato a soggetti qualificati, selezionati direttamente dalla Direzione Generale, nel rispetto delle normative vigenti e delle procedure interne di valutazione.',
     'L\'obiettivo è consolidare la struttura patrimoniale della società e accelerare il piano Vision 2030, che prevede il rafforzamento delle attività operative, lo sviluppo di nuove divisioni e, in prospettiva, la quotazione in mercati regolamentati.',
   ],
   strength_heading: 'Punti di forza',
+  strength_heading_it: 'Punti di forza',
+  strength_heading_en: 'Key strengths',
   strength_points: [
-    { id: 'crescita',         title: 'Crescita documentata',          description: 'Fatturato in costante incremento con proiezione di sviluppo superiore al +100% annuo.' },
-    { id: 'posizionamento',   title: 'Posizionamento strategico',     description: 'Brand di riferimento nel comparto luxury mobility in Italia e in Europa.' },
-    { id: 'espansione',       title: 'Espansione internazionale',     description: 'Apertura verso mercati ad alto potenziale, tra cui Emirati Arabi Uniti e Francia.' },
-    { id: 'integrazione',     title: 'Integrazione verticale',        description: 'Un unico ecosistema che combina mobilità di lusso, hospitality e servizi esperienziali.' },
-    { id: 'visione',          title: 'Visione a lungo termine',       description: 'Programma industriale orientato alla creazione di valore e alla sostenibilità economica del gruppo.' },
+    { id: 'crescita',         title: 'Crescita documentata',          title_it: 'Crescita documentata',        title_en: 'Documented growth',           description: 'Fatturato in costante incremento con proiezione di sviluppo superiore al +100% annuo.', description_it: 'Fatturato in costante incremento con proiezione di sviluppo superiore al +100% annuo.', description_en: 'Steadily increasing revenue with projected growth above +100% per year.' },
+    { id: 'posizionamento',   title: 'Posizionamento strategico',     title_it: 'Posizionamento strategico',   title_en: 'Strategic positioning',       description: 'Brand di riferimento nel comparto luxury mobility in Italia e in Europa.', description_it: 'Brand di riferimento nel comparto luxury mobility in Italia e in Europa.', description_en: 'A benchmark brand in the luxury mobility sector in Italy and Europe.' },
+    { id: 'espansione',       title: 'Espansione internazionale',     title_it: 'Espansione internazionale',   title_en: 'International expansion',     description: 'Apertura verso mercati ad alto potenziale, tra cui Emirati Arabi Uniti e Francia.', description_it: 'Apertura verso mercati ad alto potenziale, tra cui Emirati Arabi Uniti e Francia.', description_en: 'Opening towards high-potential markets, including the United Arab Emirates and France.' },
+    { id: 'integrazione',     title: 'Integrazione verticale',        title_it: 'Integrazione verticale',      title_en: 'Vertical integration',        description: 'Un unico ecosistema che combina mobilità di lusso, hospitality e servizi esperienziali.', description_it: 'Un unico ecosistema che combina mobilità di lusso, hospitality e servizi esperienziali.', description_en: 'A single ecosystem combining luxury mobility, hospitality and experiential services.' },
+    { id: 'visione',          title: 'Visione a lungo termine',       title_it: 'Visione a lungo termine',     title_en: 'Long-term vision',            description: 'Programma industriale orientato alla creazione di valore e alla sostenibilità economica del gruppo.', description_it: 'Programma industriale orientato alla creazione di valore e alla sostenibilità economica del gruppo.', description_en: 'An industrial programme focused on value creation and the economic sustainability of the group.' },
   ],
   cta_heading: 'Modalità di adesione',
+  cta_heading_it: 'Modalità di adesione',
+  cta_heading_en: 'How to apply',
+  cta_paragraphs_it: [
+    'Gli interessati possono inoltrare richiesta di ammissione al Club Azionisti DR7, compilando il modulo dedicato e avviando la fase di verifica da parte dell\'Ufficio Investor Relations.',
+    'Ogni proposta di partecipazione viene valutata singolarmente in base ai requisiti dell\'investitore, alla compatibilità strategica e alle disponibilità di quote.',
+  ],
+  cta_paragraphs_en: [
+    'Interested parties may submit an application to join the DR7 Shareholders Club by completing the dedicated form and starting the verification process with the Investor Relations Office.',
+    'Each participation proposal is assessed individually based on the investor\'s profile, strategic fit and share availability.',
+  ],
   cta_paragraphs: [
     'Gli interessati possono inoltrare richiesta di ammissione al Club Azionisti DR7, compilando il modulo dedicato e avviando la fase di verifica da parte dell\'Ufficio Investor Relations.',
     'Ogni proposta di partecipazione viene valutata singolarmente in base ai requisiti dell\'investitore, alla compatibilità strategica e alle disponibilità di quote.',
   ],
   cta_button_label: 'RICHIEDI ACCESSO INVESTITORI',
+  cta_button_label_it: 'RICHIEDI ACCESSO INVESTITORI',
+  cta_button_label_en: 'REQUEST INVESTOR ACCESS',
   cta_whatsapp_url: 'https://wa.me/393457905205?text=Buongiorno%2C%20sono%20interessato%20ad%20entrare%20nel%20Club%20Azionisti%20DR7.%20Vorrei%20ricevere%20maggiori%20informazioni%20sulle%20opportunit%C3%A0%20di%20investimento%20e%20partecipazione%20al%20capitale.',
   cta_email: 'investor@dr7.app',
   info_heading: 'Informazioni sintetiche',
+  info_heading_it: 'Informazioni sintetiche',
+  info_heading_en: 'Summary information',
   info_items: [
-    { label: 'Denominazione',                 value: 'Dubai Rent 7.0 S.p.A.' },
-    { label: 'Sede legale',                   value: 'Cagliari, Italia' },
-    { label: 'Settore',                       value: 'Luxury Mobility & Lifestyle' },
-    { label: 'Forma giuridica',               value: 'Società per Azioni' },
-    { label: 'Capitale sociale',              value: 'In aumento progressivo secondo piano Vision 2030' },
-    { label: 'Tipologia quote',               value: 'Azioni ordinarie nominative' },
-    { label: 'Investimento minimo indicativo', value: 'Da €25.000' },
-    { label: 'Distribuzione utili',           value: 'Secondo deliberazioni dell\'Assemblea e risultati di bilancio' },
+    { label: 'Denominazione',                 label_it: 'Denominazione',                 label_en: 'Company name',                value: 'Dubai Rent 7.0 S.p.A.', value_it: 'Dubai Rent 7.0 S.p.A.', value_en: 'Dubai Rent 7.0 S.p.A.' },
+    { label: 'Sede legale',                   label_it: 'Sede legale',                   label_en: 'Registered office',           value: 'Cagliari, Italia', value_it: 'Cagliari, Italia', value_en: 'Cagliari, Italy' },
+    { label: 'Settore',                       label_it: 'Settore',                       label_en: 'Sector',                      value: 'Luxury Mobility & Lifestyle', value_it: 'Luxury Mobility & Lifestyle', value_en: 'Luxury Mobility & Lifestyle' },
+    { label: 'Forma giuridica',               label_it: 'Forma giuridica',               label_en: 'Legal form',                  value: 'Società per Azioni', value_it: 'Società per Azioni', value_en: 'Joint-stock company (S.p.A.)' },
+    { label: 'Capitale sociale',              label_it: 'Capitale sociale',              label_en: 'Share capital',               value: 'In aumento progressivo secondo piano Vision 2030', value_it: 'In aumento progressivo secondo piano Vision 2030', value_en: 'Progressively increasing under the Vision 2030 plan' },
+    { label: 'Tipologia quote',               label_it: 'Tipologia quote',               label_en: 'Share type',                  value: 'Azioni ordinarie nominative', value_it: 'Azioni ordinarie nominative', value_en: 'Registered ordinary shares' },
+    { label: 'Investimento minimo indicativo', label_it: 'Investimento minimo indicativo', label_en: 'Indicative minimum investment', value: 'Da €25.000', value_it: 'Da €25.000', value_en: 'From €25,000' },
+    { label: 'Distribuzione utili',           label_it: 'Distribuzione utili',           label_en: 'Profit distribution',         value: 'Secondo deliberazioni dell\'Assemblea e risultati di bilancio', value_it: 'Secondo deliberazioni dell\'Assemblea e risultati di bilancio', value_en: 'As resolved by the Shareholders Meeting and based on financial results' },
   ],
   info_footnote: 'I dettagli economico-finanziari completi, nonché la documentazione ufficiale, sono forniti esclusivamente su richiesta riservata e previa verifica dei requisiti soggettivi dell\'investitore.',
+  info_footnote_it: 'I dettagli economico-finanziari completi, nonché la documentazione ufficiale, sono forniti esclusivamente su richiesta riservata e previa verifica dei requisiti soggettivi dell\'investitore.',
+  info_footnote_en: 'Full financial details and official documentation are provided exclusively upon confidential request and after verification of the investor\'s eligibility.',
   legal_heading: 'Avvertenza legale',
+  legal_heading_it: 'Avvertenza legale',
+  legal_heading_en: 'Legal disclaimer',
+  legal_paragraphs_it: [
+    'Le informazioni contenute in questa sezione hanno finalità esclusivamente informative e non costituiscono, in alcun modo, un\'offerta pubblica di sottoscrizione o una sollecitazione all\'investimento ai sensi dell\'art. 94 del D.Lgs. 58/1998 (TUF) e della normativa europea vigente.',
+    'L\'adesione a operazioni di partecipazione al capitale è riservata a soggetti selezionati, previa valutazione da parte di Dubai Rent 7.0 S.p.A. e nel pieno rispetto delle procedure legali e regolamentari applicabili.',
+  ],
+  legal_paragraphs_en: [
+    'The information in this section is provided for information purposes only and does not constitute, in any way, a public offer of subscription or an investment solicitation under art. 94 of Italian Legislative Decree 58/1998 (TUF) or applicable European regulations.',
+    'Participation in equity transactions is reserved for selected parties, subject to assessment by Dubai Rent 7.0 S.p.A. and in full compliance with the applicable legal and regulatory procedures.',
+  ],
   legal_paragraphs: [
     'Le informazioni contenute in questa sezione hanno finalità esclusivamente informative e non costituiscono, in alcun modo, un\'offerta pubblica di sottoscrizione o una sollecitazione all\'investimento ai sensi dell\'art. 94 del D.Lgs. 58/1998 (TUF) e della normativa europea vigente.',
     'L\'adesione a operazioni di partecipazione al capitale è riservata a soggetti selezionati, previa valutazione da parte di Dubai Rent 7.0 S.p.A. e nel pieno rispetto delle procedure legali e regolamentari applicabili.',
@@ -2804,12 +2986,16 @@ const DEFAULT_CONTACT: ContactCopy = {
   office_address_en: 'Viale Marconi, 229 – 09131 Cagliari (CA), Italy',
   office_piva: 'P.IVA / C.F.: 04104640927',
   map_title: 'DR7 – Sede Operativa Cagliari',
+  map_title_it: 'DR7 – Sede Operativa Cagliari',
+  map_title_en: 'DR7 – Cagliari Operating Office',
   map_iframe_url: 'https://www.openstreetmap.org/export/embed.html?bbox=9.1000%2C39.2200%2C9.1300%2C39.2300&layer=mapnik&marker=39.2253%2C9.1150',
 };
 
 // ─── Default Footer seed ────────────────────────────────────────────────────
 const DEFAULT_FOOTER: FooterCopy = {
   network_title: 'Join the DR7 Network',
+  network_title_it: 'Entra nel Network DR7',
+  network_title_en: 'Join the DR7 Network',
   network_text_it: 'Entra nel nostro ecosistema globale e segui i nostri canali social per contenuti esclusivi e aggiornamenti dal mondo DR7 Cagliari.',
   network_text_en: 'Join our global ecosystem and follow our social channels for exclusive content and updates from the DR7 Cagliari world.',
   social_links: [
@@ -2817,6 +3003,8 @@ const DEFAULT_FOOTER: FooterCopy = {
     { id: 'tt', label: 'Tiktok',    href: 'https://www.tiktok.com/@dr7luxuryempire',           icon: 'tiktok' },
   ],
   reviews_title: 'A Global Standard of Excellence',
+  reviews_title_it: 'Uno Standard Globale di Eccellenza',
+  reviews_title_en: 'A Global Standard of Excellence',
   reviews_text_it: 'DR7 Cagliari mantiene un rating impeccabile di 5.0/5.0 su quasi 300 recensioni verificate, confermandosi un punto di riferimento nel settore della luxury mobility.',
   reviews_text_en: 'DR7 Cagliari maintains a flawless 5.0/5.0 rating across nearly 300 verified reviews, confirming itself as a benchmark in the luxury mobility sector.',
   contact_title: 'Contact',
@@ -2833,7 +3021,7 @@ const DEFAULT_FOOTER: FooterCopy = {
   contact_disclaimer_it: 'Società appartenente al progetto di sviluppo\nDR7 HOLDING S.p.A.',
   contact_disclaimer_en: 'Company belonging to the development project of\nDR7 HOLDING S.p.A.',
   division_links: [
-    { id: 'div-1', label_it: 'Supercar & Luxury Division', label_en: 'Supercar & Luxury Division', to: '/supercar-luxury' },
+    { id: 'div-1', label_it: 'Divisione Supercar & Luxury', label_en: 'Supercar & Luxury Division', to: '/supercar-luxury' },
     { id: 'div-2', label_it: 'Lavaggio & Meccanica',        label_en: 'Car Wash & Mechanics',        to: '/prime-wash' },
     { id: 'div-3', label_it: 'Contattaci',                  label_en: 'Contact us',                  to: '/contact' },
   ],
@@ -2849,7 +3037,11 @@ const DEFAULT_FOOTER: FooterCopy = {
     { id: 'leg-4', label_it: 'Politica di Cancellazione',   label_en: 'Cancellation Policy',        to: '/cancellation-policy' },
   ],
   bottom_brand_line: 'DR7 Cagliari – Global Mobility & Luxury Lifestyle Group',
+  bottom_brand_line_it: 'DR7 Cagliari – Gruppo di Mobilità Globale e Luxury Lifestyle',
+  bottom_brand_line_en: 'DR7 Cagliari – Global Mobility & Luxury Lifestyle Group',
   bottom_copyright: '© 2024 - 2026 DR7 Cagliari. All Rights Reserved.',
+  bottom_copyright_it: '© 2024 - 2026 DR7 Cagliari. Tutti i diritti riservati.',
+  bottom_copyright_en: '© 2024 - 2026 DR7 Cagliari. All Rights Reserved.',
 };
 
 // ─── Default About seed ─────────────────────────────────────────────────────
@@ -2922,7 +3114,7 @@ const DEFAULT_HOME: HomeCopy = {
     { id: 'corporate-fleet',      display_title_it: 'DR7 Corporate & Utility Fleet Division', display_title_en: 'DR7 Corporate & Utility Fleet Division', image_src: '/utili.jpeg' },
     { id: 'yachts',               display_title_it: 'DR7 Yachting Division',                  display_title_en: 'DR7 Yachting Division',                  image_src: '/yacht.jpeg' },
     { id: 'jets',                 display_title_it: 'DR7 Aviation Division',                  display_title_en: 'DR7 Aviation Division',                  image_src: '/privatejet.jpeg' },
-    { id: 'car-wash-services',    display_title_it: 'Lavaggio Meccanica',                     display_title_en: 'Lavaggio Meccanica',                     image_src: '/servizi-lavaggio.jpeg' },
+    { id: 'car-wash-services',    display_title_it: 'Lavaggio & Meccanica',                   display_title_en: 'Car Wash & Mechanics',                   image_src: '/servizi-lavaggio.jpeg' },
     { id: 'mechanical-services',  display_title_it: 'DR7 Rapid Response Services',            display_title_en: 'DR7 Rapid Response Services',            image_src: '/rapids.jpeg' },
     { id: 'membership',           display_title_it: 'DR7 Exclusive Members Club',             display_title_en: 'DR7 Exclusive Members Club',             image_src: '/exclusivemc.jpeg' },
     { id: 'credit-wallet',        display_title_it: 'DR7 Credit Wallet',                      display_title_en: 'DR7 Credit Wallet',                      image_src: '/cwallet.jpeg' },

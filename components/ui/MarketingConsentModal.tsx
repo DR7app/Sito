@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XIcon } from '../icons/Icons';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface MarketingConsentModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ interface MarketingConsentModalProps {
 const CONSENT_TEXT = "Acconsento a ricevere offerte e comunicazioni promozionali da partner selezionati da DR7 tramite email, telefono, SMS o WhatsApp.";
 
 const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, onClose, onConfirm, userId }) => {
+    const { t } = useTranslation();
     const [isSaving, setIsSaving] = useState(false);
 
     const handleConfirm = async () => {
@@ -73,31 +75,31 @@ const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, o
                         <button
                             onClick={onClose}
                             className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-10"
-                            aria-label="Chiudi"
+                            aria-label={t({ it: "Chiudi", en: "Close" })}
                         >
                             <XIcon className="w-5 h-5" />
                         </button>
 
                         <div className="p-5 md:p-8">
                             <div className="text-center mb-6">
-                                <h2 className="text-2xl font-bold text-white mb-4">Rimani Aggiornato</h2>
+                                <h2 className="text-2xl font-bold text-white mb-4">{t({ it: "Rimani Aggiornato", en: "Stay Updated" })}</h2>
                             </div>
 
                             <div className="bg-gray-900/50 rounded-lg p-4 mb-4 border border-gray-800">
                                 <p className="text-gray-300 text-sm leading-relaxed">
-                                    Acconsento a ricevere offerte e comunicazioni promozionali da partner selezionati da DR7 tramite email, telefono, SMS o WhatsApp.
+                                    {t({ it: 'Acconsento a ricevere offerte e comunicazioni promozionali da partner selezionati da DR7 tramite email, telefono, SMS o WhatsApp.', en: 'I consent to receiving offers and promotional communications from partners selected by DR7 via email, phone, SMS or WhatsApp.' })}
                                 </p>
                                 <p className="text-gray-400 text-xs mt-2">
-                                    Consenso facoltativo e revocabile in qualsiasi momento. <a href="/privacy-policy" className="text-white underline hover:text-gray-300">Privacy Policy</a>
+                                    {t({ it: 'Consenso facoltativo e revocabile in qualsiasi momento.', en: 'Consent is optional and can be withdrawn at any time.' })} <a href="/privacy-policy" className="text-white underline hover:text-gray-300">Privacy Policy</a>
                                 </p>
                             </div>
 
                             <div className="bg-gray-900/50 rounded-lg p-4 mb-6 border border-gray-800">
-                                <p className="text-white font-semibold text-sm mb-3">Vantaggi immediati:</p>
+                                <p className="text-white font-semibold text-sm mb-3">{t({ it: "Vantaggi immediati:", en: "Immediate benefits:" })}</p>
                                 <ul className="text-gray-300 text-sm space-y-2">
-                                    <li>• Credito immediato ogni volta che acquisti</li>
-                                    <li>• Accesso a premi ed estrazioni riservate gratuite ogni mese</li>
-                                    <li>• Sconti esclusivi e priorità sulle offerte</li>
+                                    <li>• {t({ it: "Credito immediato ogni volta che acquisti", en: "Instant credit every time you buy" })}</li>
+                                    <li>• {t({ it: "Accesso a premi ed estrazioni riservate gratuite ogni mese", en: "Access to free prizes and members-only draws every month" })}</li>
+                                    <li>• {t({ it: "Sconti esclusivi e priorità sulle offerte", en: "Exclusive discounts and priority on offers" })}</li>
                                 </ul>
                             </div>
 

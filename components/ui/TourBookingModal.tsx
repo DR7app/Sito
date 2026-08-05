@@ -3,6 +3,8 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 import { getUserCreditBalance } from '../../utils/creditWallet';
 import type { NoleggioCatalogItem, TourDuration } from '../../hooks/useNoleggioCatalog';
+import { useTranslation } from '../../hooks/useTranslation';
+import { dateLocale } from '../../utils/i18nDate';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -34,9 +36,9 @@ function seatIsAvailable(s: Seat): boolean {
 function eur(cents: number): string {
   return (cents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 }
-function fmtDate(ymd: string): string {
+function fmtDate(ymd: string, lang: string): string {
   const d = new Date(`${ymd}T00:00:00`);
-  return d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+  return d.toLocaleDateString(dateLocale(lang), { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 interface Props {
@@ -56,6 +58,7 @@ const HELI_407_SEATS: Record<number, { x: number; y: number }> = {
 };
 
 export default function TourBookingModal({ item, waHref, onClose, selectedDuration }: Props) {
+  const { t, lang } = useTranslation();
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState<string>('');
@@ -192,13 +195,13 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
   // effettivo se ok, altrimenti imposta l'errore e ritorna null.
   function validate(): string | null {
     setError('');
-    if (selected.size === 0) { setError('Seleziona almeno un posto.'); return null; }
+    if (selected.size === 0) { setError(t({ it: "Seleziona almeno un posto.", en: "Select at least one seat." })); return null; }
     // Loggato: l'identità arriva dall'account (nome/email), serve solo il
     // telefono per la conferma WhatsApp. Non loggato: nome + telefono.
-    if (!cust.phone.trim()) { setError('Inserisci il numero di telefono.'); return null; }
-    if (!user && !cust.name.trim()) { setError('Inserisci nome e telefono.'); return null; }
+    if (!cust.phone.trim()) { setError(t({ it: "Inserisci il numero di telefono.", en: "Enter your phone number." })); return null; }
+    if (!user && !cust.name.trim()) { setError(t({ it: "Inserisci nome e telefono.", en: "Enter your name and phone number." })); return null; }
     // Nome effettivo: quello del profilo, altrimenti l'email dell'account.
-    return cust.name.trim() || cust.email.trim() || 'Cliente';
+    return cust.name.trim() || cust.email.trim() || t({ it: 'Cliente', en: 'Customer' });
   }
 
   // Pagamento con Credit Wallet: book-tour fa tutto server-side (valida posti,
@@ -283,44 +286,44 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
       <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-lg p-6 my-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <h3 className="text-xl font-semibold text-white">Prenota: {item.name}</h3>
+            <h3 className="text-xl font-semibold text-white">{t({ it: "Prenota:", en: "Book:" })} {item.name}</h3>
             {selectedDuration && (
-              <p className="text-sm text-gray-400 mt-0.5">Volo {selectedDuration.label} — {eur(Math.round(selectedDuration.price * 100))}/persona</p>
+              <p className="text-sm text-gray-400 mt-0.5">{t({ it: "Volo", en: "Flight" })} {selectedDuration.label} — {eur(Math.round(selectedDuration.price * 100))}{t({ it: "/persona", en: "/person" })}</p>
             )}
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-gray-400">Caricamento date…</div>
+          <div className="py-12 text-center text-gray-400">{t({ it: "Caricamento date…", en: "Loading dates…" })}</div>
         ) : success ? (
           <div className="py-8 text-center space-y-4">
             <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 text-3xl">✓</div>
-            <h4 className="text-lg font-semibold text-white">Prenotazione confermata</h4>
+            <h4 className="text-lg font-semibold text-white">{t({ it: "Prenotazione confermata", en: "Booking confirmed" })}</h4>
             <p className="text-gray-400 text-sm">
-              Pagamento effettuato con Credit Wallet. Riceverai la conferma su WhatsApp.
+              {t({ it: 'Pagamento effettuato con Credit Wallet. Riceverai la conferma su WhatsApp.', en: 'Payment made with Credit Wallet. You will receive the confirmation on WhatsApp.' })}
             </p>
             <button onClick={onClose} className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90">
-              Chiudi
+              {t({ it: "Chiudi", en: "Close" })}
             </button>
           </div>
         ) : departures.length === 0 ? (
           <div className="py-8 text-center space-y-4">
-            <p className="text-gray-400">Nessuna data disponibile al momento.</p>
+            <p className="text-gray-400">{t({ it: "Nessuna data disponibile al momento.", en: "No dates available at the moment." })}</p>
             <a href={waHref} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-5 py-3 rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">
-              Richiedi su WhatsApp
+              {t({ it: "Richiedi su WhatsApp", en: "Request on WhatsApp" })}
             </a>
           </div>
         ) : (
           <div className="space-y-5">
             {/* 1. Data */}
             <div>
-              <label className="text-xs text-gray-400 uppercase tracking-wider">1. Scegli la data</label>
+              <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "1. Scegli la data", en: "1. Choose the date" })}</label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {dates.map(d => (
                   <button key={d} onClick={() => { setDate(d); setDepartureId(''); }}
                     className={`px-3 py-2 rounded-lg border text-sm capitalize ${date === d ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
-                    {fmtDate(d)}
+                    {fmtDate(d, lang)}
                   </button>
                 ))}
               </div>
@@ -329,7 +332,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
             {/* 2. Orario */}
             {date && (
               <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider">2. Scegli l'orario</label>
+                <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "2. Scegli l'orario", en: "2. Choose the time" })}</label>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {timesForDate.map(t => (
                     <button key={t.id} onClick={() => setDepartureId(t.id)}
@@ -344,12 +347,12 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
             {/* 3. Posti */}
             {departureId && (
               <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider">3. Scegli i posti</label>
+                <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "3. Scegli i posti", en: "3. Choose the seats" })}</label>
                 {seatsLoading ? (
-                  <div className="mt-2 text-gray-400 text-sm">Caricamento posti…</div>
+                  <div className="mt-2 text-gray-400 text-sm">{t({ it: "Caricamento posti…", en: "Loading seats…" })}</div>
                 ) : item.service_type === 'heli_rental' && seats.some(s => HELI_407_SEATS[s.seat_position]) ? (
                   <div className="mt-3 relative mx-auto w-full max-w-[260px] select-none">
-                    <img src="/heli-407-seatmap.png" alt="Mappa posti elicottero" draggable={false}
+                    <img src="/heli-407-seatmap.png" alt={t({ it: "Mappa posti elicottero", en: "Helicopter seat map" })} draggable={false}
                       className="w-full rounded-xl border border-gray-800" />
                     {seats.map(s => {
                       const posn = HELI_407_SEATS[s.seat_position];
@@ -390,22 +393,22 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
             {/* 4. Cliente */}
             {selected.size > 0 && (
               <div className="space-y-2">
-                <label className="text-xs text-gray-400 uppercase tracking-wider">4. I tuoi dati</label>
+                <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "4. I tuoi dati", en: "4. Your details" })}</label>
                 {user ? (
                   <>
                     {/* Loggato: nome + email dall'account, chiediamo solo il telefono. */}
                     {(cust.name || cust.email) && (
                       <div className="text-xs text-gray-400">
-                        Prenoti come <span className="text-white">{cust.name || cust.email}</span>{cust.name && cust.email ? ` · ${cust.email}` : ''}
+                        {t({ it: 'Prenoti come', en: 'Booking as' })} <span className="text-white">{cust.name || cust.email}</span>{cust.name && cust.email ? ` · ${cust.email}` : ''}
                       </div>
                     )}
-                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Telefono (WhatsApp)" value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Telefono (WhatsApp)", en: "Phone (WhatsApp)" })} value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
                   </>
                 ) : (
                   <>
-                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Nome e cognome" value={cust.name} onChange={e => setCust({ ...cust, name: e.target.value })} />
-                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Telefono (WhatsApp)" value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
-                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder="Email (opzionale)" value={cust.email} onChange={e => setCust({ ...cust, email: e.target.value })} />
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Nome e cognome", en: "Full name" })} value={cust.name} onChange={e => setCust({ ...cust, name: e.target.value })} />
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Telefono (WhatsApp)", en: "Phone (WhatsApp)" })} value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
+                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Email (opzionale)", en: "Email (optional)" })} value={cust.email} onChange={e => setCust({ ...cust, email: e.target.value })} />
                   </>
                 )}
               </div>
@@ -422,12 +425,12 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                 <div className="border-t border-gray-800 pt-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-white">
-                      <div className="text-sm text-gray-400">{selected.size} posto/i</div>
-                      <div className="text-xl font-bold">{totalCents > 0 ? eur(totalCents) : 'Prezzo da definire'}</div>
+                      <div className="text-sm text-gray-400">{selected.size} {t({ it: "posto/i", en: "seat(s)" })}</div>
+                      <div className="text-xl font-bold">{totalCents > 0 ? eur(totalCents) : t({ it: 'Prezzo da definire', en: 'Price to be confirmed' })}</div>
                     </div>
                     <button onClick={submit} disabled={submitting || totalCents <= 0}
                       className="px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 disabled:opacity-50">
-                      {submitting ? 'Attendi…' : 'Prenota e paga'}
+                      {submitting ? t({ it: "Attendi…", en: "Please wait…" }) : t({ it: "Prenota e paga", en: "Book and pay" })}
                     </button>
                   </div>
 
@@ -435,17 +438,17 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                   {walletLoaded && (
                     <div className="rounded-lg border border-gray-800 bg-white/5 p-3 space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Saldo Credit Wallet</span>
+                        <span className="text-gray-400">{t({ it: "Saldo Credit Wallet", en: "Credit Wallet balance" })}</span>
                         <span className="text-white font-semibold">{eur(walletBalanceCents as number)}</span>
                       </div>
                       <button onClick={submitWallet} disabled={submitting || totalCents <= 0 || !sufficient}
                         className="w-full px-6 py-3 rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-white">
-                        {submitting ? 'Attendi…' : !sufficient ? 'Credito insufficiente' : 'Paga con Credit Wallet'}
+                        {submitting ? t({ it: "Attendi…", en: "Please wait…" }) : !sufficient ? t({ it: "Credito insufficiente", en: "Insufficient credit" }) : t({ it: "Paga con Credit Wallet", en: "Pay with Credit Wallet" })}
                       </button>
                       {!sufficient && totalCents > 0 && (
                         <p className="text-xs text-gray-400 text-center">
-                          Ricarica il tuo Credit Wallet per pagare questo tour.{' '}
-                          <a href="/credit-wallet" className="underline hover:text-white">Ricarica</a>
+                          {t({ it: 'Ricarica il tuo Credit Wallet per pagare questo tour.', en: 'Top up your Credit Wallet to pay for this tour.' })}{' '}
+                          <a href="/credit-wallet" className="underline hover:text-white">{t({ it: "Ricarica", en: "Top up" })}</a>
                         </p>
                       )}
                     </div>

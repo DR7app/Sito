@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PHONE_COUNTRIES, type PhoneCountry } from '../../utils/phoneCountries';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface PhoneInputProps {
   value: string;
@@ -10,6 +11,7 @@ interface PhoneInputProps {
 }
 
 const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = '', required, placeholder }) => {
+  const { t } = useTranslation();
   // Parse initial value to extract country code
   const getInitialCountry = (): PhoneCountry => {
     if (!value) return PHONE_COUNTRIES[0]; // Italia
@@ -119,7 +121,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cerca paese..."
+              placeholder={t({ it: "Cerca paese...", en: "Search country..." })}
               className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white text-sm placeholder-gray-500 outline-none"
             />
           </div>
@@ -143,7 +145,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
               </button>
             ))}
             {filteredCountries.length === 0 && (
-              <p className="text-center text-gray-500 text-sm py-4">Nessun risultato</p>
+              <p className="text-center text-gray-500 text-sm py-4">{t({ it: "Nessun risultato", en: "No results" })}</p>
             )}
           </div>
         </div>

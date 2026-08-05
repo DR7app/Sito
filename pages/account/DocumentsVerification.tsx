@@ -24,12 +24,12 @@ const DocumentsVerification = () => {
 
     // Define upload steps
     const uploadSteps = [
-        { key: 'cartaIdentitaFront', label: 'Carta d\'Identità (Fronte)', bucket: 'carta-identita', required: true },
-        { key: 'cartaIdentitaBack', label: 'Carta d\'Identità (Retro)', bucket: 'carta-identita', required: true },
-        { key: 'codiceFiscaleFront', label: 'Codice Fiscale (Fronte)', bucket: 'codice-fiscale', required: true },
-        { key: 'codiceFiscaleBack', label: 'Codice Fiscale (Retro)', bucket: 'codice-fiscale', required: true },
-        { key: 'patenteFront', label: 'Patente (Fronte) - Opzionale', bucket: 'driver-licenses', required: false },
-        { key: 'patenteBack', label: 'Patente (Retro) - Opzionale', bucket: 'driver-licenses', required: false }
+        { key: 'cartaIdentitaFront', label: t({ it: "Carta d'Identità (Fronte)", en: 'ID card (Front)' }), bucket: 'carta-identita', required: true },
+        { key: 'cartaIdentitaBack', label: t({ it: "Carta d'Identità (Retro)", en: 'ID card (Back)' }), bucket: 'carta-identita', required: true },
+        { key: 'codiceFiscaleFront', label: t({ it: 'Codice Fiscale (Fronte)', en: 'Tax code (Front)' }), bucket: 'codice-fiscale', required: true },
+        { key: 'codiceFiscaleBack', label: t({ it: 'Codice Fiscale (Retro)', en: 'Tax code (Back)' }), bucket: 'codice-fiscale', required: true },
+        { key: 'patenteFront', label: t({ it: 'Patente (Fronte) - Opzionale', en: 'Licence (Front) - Optional' }), bucket: 'driver-licenses', required: false },
+        { key: 'patenteBack', label: t({ it: 'Patente (Retro) - Opzionale', en: 'Licence (Back) - Optional' }), bucket: 'driver-licenses', required: false }
     ];
 
     // Refresh user session on component mount
@@ -146,13 +146,13 @@ const DocumentsVerification = () => {
                 // Clear file
                 setFiles(prev => ({ ...prev, [stepIndex]: null }));
 
-                alert(`${step.label} caricato con successo!`);
+                alert(`${step.label} — ${t({ it: 'caricato con successo!', en: 'uploaded successfully!' })}`);
             } else {
-                throw new Error('Upload response not OK');
+                throw new Error(t({ it: "Caricamento non riuscito", en: "Upload failed" }));
             }
         } catch (error: any) {
             console.error(`Exception uploading ${step.key}:`, error);
-            alert(`Errore nel caricamento: ${error.message || 'Caricamento non riuscito'}`);
+            alert(`${t({ it: 'Errore nel caricamento:', en: 'Upload error:' })} ${error.message || t({ it: 'Caricamento non riuscito', en: 'Upload failed' })}`);
         } finally {
             setUploading(false);
         }
@@ -166,7 +166,7 @@ const DocumentsVerification = () => {
                 .createSignedUrl(doc.file_path, 3600);
 
             if (error) throw error;
-            if (!data || !data.signedUrl) throw new Error('No signed URL returned');
+            if (!data || !data.signedUrl) throw new Error(t({ it: "URL del documento non disponibile", en: "Document URL not available" }));
 
             console.log('Opening document URL:', data.signedUrl);
             window.open(data.signedUrl, '_blank');
@@ -198,15 +198,15 @@ const DocumentsVerification = () => {
             {hasUploadedDocs && (
                 <div className="bg-gray-900/50 border border-gray-800 rounded-lg">
                     <div className="p-4 md:p-6 border-b border-gray-800">
-                        <h2 className="text-xl font-bold text-white">I Tuoi Documenti</h2>
-                        <p className="text-sm text-gray-400 mt-1">Documenti caricati e il loro stato di verifica</p>
+                        <h2 className="text-xl font-bold text-white">{t({ it: "I Tuoi Documenti", en: "Your Documents" })}</h2>
+                        <p className="text-sm text-gray-400 mt-1">{t({ it: "Documenti caricati e il loro stato di verifica", en: "Uploaded documents and their verification status" })}</p>
                     </div>
 
                     <div className="p-4 md:p-6">
                         {loadingDocuments ? (
                             <div className="text-center py-8">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                                <p className="text-gray-400">Caricamento documenti...</p>
+                                <p className="text-gray-400">{t({ it: "Caricamento documenti...", en: "Loading documents..." })}</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -264,8 +264,8 @@ const DocumentsVerification = () => {
             {/* Upload New Documents Section - All at Once */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg">
                 <div className="p-4 md:p-6 border-b border-gray-800">
-                    <h2 className="text-xl font-bold text-white">Carica Documenti</h2>
-                    <p className="text-sm text-gray-400 mt-1">Seleziona e carica i tuoi documenti per la verifica</p>
+                    <h2 className="text-xl font-bold text-white">{t({ it: "Carica Documenti", en: "Upload Documents" })}</h2>
+                    <p className="text-sm text-gray-400 mt-1">{t({ it: "Seleziona e carica i tuoi documenti per la verifica", en: "Select and upload your documents for verification" })}</p>
                 </div>
 
                 <div className="p-4 md:p-6 space-y-4">

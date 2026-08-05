@@ -283,9 +283,9 @@ const AnimatedRoutes = () => {
         <Route path="/flotta" element={<FlottaIndexPage />} />
         {/* Noleggio Mare / Aria — pagine DINAMICHE dal catalogo admin
             (noleggio_catalog). Catalogo vuoto => pagina non mostra nulla. */}
-        <Route path="/noleggio-mare" element={<NoleggioServicePage serviceType="boat_rental" title="Noleggio Mare" subtitle="La nostra selezione di imbarcazioni per il tuo charter in Sardegna." asset="la barca" />} />
-        <Route path="/noleggio-aria" element={<NoleggioServicePage serviceType="heli_rental" title="Noleggio Aria" subtitle="Elicotteri e voli privati su misura, con il nostro servizio dedicato." asset="l'elicottero" />} />
-        <Route path="/soggiorni" element={<NoleggioServicePage serviceType="stay_rental" title="Soggiorni & Ospitalità" subtitle="Case, ville e alloggi selezionati per il tuo soggiorno in Sardegna." asset="l'alloggio" />} />
+        <Route path="/noleggio-mare" element={<NoleggioServicePage serviceType="boat_rental" title={{ it: "Noleggio Mare", en: "Sea Rentals" }} subtitle={{ it: "La nostra selezione di imbarcazioni per il tuo charter in Sardegna.", en: "Our selection of boats for your charter in Sardinia." }} asset={{ it: "la barca", en: "the boat" }} />} />
+        <Route path="/noleggio-aria" element={<NoleggioServicePage serviceType="heli_rental" title={{ it: "Noleggio Aria", en: "Air Rentals" }} subtitle={{ it: "Elicotteri e voli privati su misura, con il nostro servizio dedicato.", en: "Helicopters and bespoke private flights, with our dedicated service." }} asset={{ it: "l'elicottero", en: "the helicopter" }} />} />
+        <Route path="/soggiorni" element={<NoleggioServicePage serviceType="stay_rental" title={{ it: "Soggiorni & Ospitalità", en: "Stays & Hospitality" }} subtitle={{ it: "Case, ville e alloggi selezionati per il tuo soggiorno in Sardegna.", en: "Selected homes, villas and accommodation for your stay in Sardinia." }} asset={{ it: "l'alloggio", en: "the accommodation" }} />} />
         <Route path="/supercar-luxury" element={<RentalPage categoryId="cars" />} />
         <Route path="/urban" element={<Navigate to="/supercar-luxury" replace />} />
         <Route path="/prime-wash" element={<CarWashServicesPage />} />

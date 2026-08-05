@@ -167,7 +167,7 @@ const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: Cr
 const CreditWalletPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const [selectedSeries, setSelectedSeries] = useState<string>('all');
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -391,7 +391,7 @@ const CreditWalletPage: React.FC = () => {
 
       if (dbError) {
         console.error('Database error:', dbError);
-        throw new Error('Failed to save purchase record');
+        throw new Error(t('Purchase_record_failed'));
       }
 
       console.log('Purchase record saved:', data.id);

@@ -9,7 +9,7 @@ import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance }
 
 
 const MechanicalBookingPage: React.FC = () => {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
@@ -398,7 +398,7 @@ const MechanicalBookingPage: React.FC = () => {
       if (!isRedirecting) {
         isSubmittingRef.current = false;
         setIsProcessing(false);
-        setPaymentError('Timeout — riprova il pagamento.');
+        setPaymentError(t({ it: "Timeout — riprova il pagamento.", en: "Timeout — please retry the payment." }));
       }
     }, 120000);
 
@@ -409,7 +409,7 @@ const MechanicalBookingPage: React.FC = () => {
         // Credit wallet payment
         if (!user?.id) {
           clearTimeout(safetyTimer);
-          throw new Error('User not logged in');
+          throw new Error(t('User_not_logged_in'));
         }
 
         const totalAmount = discountedPrice;
@@ -452,7 +452,7 @@ const MechanicalBookingPage: React.FC = () => {
         // Nexi card payment
         if (!user?.id) {
           clearTimeout(safetyTimer);
-          throw new Error('User not logged in');
+          throw new Error(t('User_not_logged_in'));
         }
 
         // 1. Generate nexi_order_id
@@ -1014,18 +1014,18 @@ const MechanicalBookingPage: React.FC = () => {
 
             {/* Codice Sconto */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-4">
-              <p className="font-bold text-base text-white mb-3">CODICE SCONTO</p>
+              <p className="font-bold text-base text-white mb-3">{t({ it: "CODICE SCONTO", en: "DISCOUNT CODE" })}</p>
               {appliedDiscount ? (
                 <div className="flex items-center justify-between p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
                   <div>
                     <p className="text-green-400 font-bold">{appliedDiscount.code}</p>
                     <p className="text-green-300 text-sm">
                       {appliedDiscount.type === 'percentage'
-                        ? `Sconto del ${Math.round(Number(appliedDiscount.amount))}% applicato (-€${discountAmount.toFixed(2)})`
-                        : `Sconto di €${Number(appliedDiscount.amount).toFixed(2)} applicato`}
+                        ? `${t({ it: 'Sconto del', en: 'Discount of' })} ${Math.round(Number(appliedDiscount.amount))}% ${t({ it: 'applicato', en: 'applied' })} (-€${discountAmount.toFixed(2)})`
+                        : `${t({ it: 'Sconto di', en: 'Discount of' })} €${Number(appliedDiscount.amount).toFixed(2)} ${t({ it: 'applicato', en: 'applied' })}`}
                     </p>
                   </div>
-                  <button type="button" onClick={removeDiscount} className="text-red-400 hover:text-red-300 text-sm underline">Rimuovi</button>
+                  <button type="button" onClick={removeDiscount} className="text-red-400 hover:text-red-300 text-sm underline">{t({ it: "Rimuovi", en: "Remove" })}</button>
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -1033,7 +1033,7 @@ const MechanicalBookingPage: React.FC = () => {
                     type="text"
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                    placeholder="Inserisci codice sconto"
+                    placeholder={t({ it: "Inserisci codice sconto", en: "Enter discount code" })}
                     className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm uppercase"
                   />
                   <button
@@ -1118,11 +1118,11 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div className="border-t border-gray-700 my-3"></div>
                 <div className="flex justify-between text-sm text-gray-300 mb-1">
-                  <span>Subtotale:</span>
+                  <span>{t({ it: "Subtotale:", en: "Subtotal:" })}</span>
                   <span>€{selectedService?.price.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-green-400 mb-1">
-                  <span>Sconto Online -5%:</span>
+                  <span>{t({ it: "Sconto Online -5%:", en: "Online discount -5%:" })}</span>
                   <span>-€{onlineDiscountAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-white">

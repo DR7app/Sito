@@ -300,7 +300,7 @@ const MyPreventivi: React.FC = () => {
                     <div className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
                       <p className="text-green-400 text-sm font-semibold mb-1">{t({ it: "Sconto del 5% attivato per te!", en: "A 5% discount has been activated for you!" })}</p>
                       <p className="text-white text-lg font-bold font-mono tracking-wider">{code}</p>
-                      <p className="text-gray-400 text-xs mt-1">{t({ it: "Inserisci il codice al checkout per ottenere lo sconto.", en: "Enter the code at checkout to get the discount." })}</p>
+                      <p className="text-gray-400 text-xs mt-1">{t({ it: "Inserisci il codice al momento del pagamento per ottenere lo sconto.", en: "Enter the code at checkout to get the discount." })}</p>
                     </div>
                   );
                 })()}

@@ -1930,7 +1930,7 @@ const DEFAULT_PAYMENT_CANCEL: PaymentCancelCopy = {
   title_it: 'Pagamento Annullato', title_en: 'Payment Cancelled',
   body_it: 'Il pagamento è stato annullato. Nessun addebito è stato effettuato.',
   body_en: 'The payment was cancelled. No charge was made.',
-  cta_home_it: 'Torna alla Home', cta_home_en: 'Back to Home',
+  cta_home_it: 'Torna alla pagina iniziale', cta_home_en: 'Back to Home',
   cta_retry_it: 'Riprova il Pagamento', cta_retry_en: 'Retry Payment',
 };
 
@@ -2149,7 +2149,7 @@ const DEFAULT_TOKEN: TokenCopy = {
   hero_eyebrow_it: 'Prossimamente', hero_eyebrow_en: 'Coming Soon',
   body_message_it: 'Il sistema DR7 Token è in fase di sviluppo. Tornate presto per scoprire la moneta digitale del lusso reale.',
   body_message_en: 'The DR7 Token system is under development. Come back soon to discover the digital currency of real luxury.',
-  cta_button_it: 'Torna alla Home', cta_button_en: 'Back to Home',
+  cta_button_it: 'Torna alla pagina iniziale', cta_button_en: 'Back to Home',
 };
 
 // ─── Default Credit Wallet seed ──────────────────────────────────────────
@@ -2190,7 +2190,7 @@ const DEFAULT_CREDIT_WALLET: CreditWalletCopy = {
   advantage_2_body_it: 'Utilizza il credito per qualunque servizio DR7, in qualunque momento.',
   advantage_2_body_en: 'Use the credit on any DR7 service, whenever you want.',
   advantage_3_title_it: 'Pagamento Veloce', advantage_3_title_en: 'Fast Checkout',
-  advantage_3_body_it: 'Salda le prenotazioni con un click usando il tuo wallet DR7.',
+  advantage_3_body_it: 'Salda le prenotazioni con un clic usando il tuo wallet DR7.',
   advantage_3_body_en: 'Settle bookings in one click using your DR7 wallet.',
   advantage_4_title_it: 'Storico Completo', advantage_4_title_en: 'Full History',
   advantage_4_body_it: 'Ogni ricarica e ogni utilizzo sono tracciati e consultabili dall\'account.',
@@ -2250,7 +2250,7 @@ const DEFAULT_BOOKING: BookingCopy = {
   booking_confirmed_body_en: 'Your booking has been confirmed.',
   booking_confirmed_cta_bookings_it: 'Vedi le Mie Prenotazioni',
   booking_confirmed_cta_bookings_en: 'View My Bookings',
-  inquiry_sent_cta_home_it: 'Torna alla Home', inquiry_sent_cta_home_en: 'Go to Home',
+  inquiry_sent_cta_home_it: 'Torna alla pagina iniziale', inquiry_sent_cta_home_en: 'Go to Home',
   quote_review_title_it: 'Riepilogo Richiesta',
   quote_review_title_en: 'Review Your Inquiry',
   quote_review_body_it: 'Verifica i dettagli prima di inviare la richiesta di preventivo. Il nostro team ti contatterà a breve con prezzi e disponibilità.',
@@ -2293,7 +2293,7 @@ const DEFAULT_PAYMENT_SUCCESS: PaymentSuccessCopy = {
   transaction_order_id_label_it: 'ID Ordine:', transaction_order_id_label_en: 'Order ID:',
   transaction_amount_label_it: 'Importo:', transaction_amount_label_en: 'Amount:',
   transaction_auth_code_label_it: 'Codice Autorizzazione:', transaction_auth_code_label_en: 'Authorization Code:',
-  cta_home_it: 'Torna alla Home', cta_home_en: 'Back to Home',
+  cta_home_it: 'Torna alla pagina iniziale', cta_home_en: 'Back to Home',
   cta_whatsapp_it: 'Conferma su WhatsApp', cta_whatsapp_en: 'Confirm on WhatsApp',
   cta_membership_it: 'Vai alla Membership', cta_membership_en: 'Go to Membership',
   cta_wallet_it: 'Vai al Wallet', cta_wallet_en: 'Go to Wallet',
@@ -2504,7 +2504,7 @@ const DEFAULT_CHECK_EMAIL: CheckEmailCopy = {
   title_it: 'Controlla la tua email', title_en: 'Check Your Email',
   body_it: 'Ti abbiamo inviato un link di verifica all\'indirizzo email che hai indicato. Clicca sul link per attivare il tuo account.',
   body_en: 'We\'ve sent a verification link to your email. Click the link to activate your account.',
-  back_link_it: 'Torna al Login', back_link_en: 'Back to Sign In',
+  back_link_it: 'Torna all\'accesso', back_link_en: 'Back to Sign In',
 };
 
 // ─── Default Aviation Quote seed ───────────────────────────────────────────
@@ -2839,7 +2839,7 @@ const DEFAULT_MECHANICAL: MechanicalCopy = {
   how_heading_it: 'Come Funziona',
   how_heading_en: 'How It Works',
   how_steps: [
-    { title_it: '1. Prenota Online', title_en: '1. Book Online', text_it: 'Scegli il servizio e prenota in pochi click', text_en: 'Choose your service and book in a few clicks' },
+    { title_it: '1. Prenota Online', title_en: '1. Book Online', text_it: 'Scegli il servizio e prenota in pochi clic', text_en: 'Choose your service and book in a few clicks' },
     { title_it: '2. Vieni da Noi', title_en: '2. Come to Us', text_it: 'Arrivi all\'orario prenotato, niente attese', text_en: 'Arrive at your booked time, no waiting' },
     { title_it: '3. Lavoro Rapido', title_en: '3. Quick Service', text_it: 'Completiamo il lavoro velocemente e torni in strada', text_en: 'We complete the job quickly and you\'re back on the road' },
   ],
@@ -3128,7 +3128,7 @@ const DEFAULT_MEMBERSHIP: MembershipCopy = {
   hero_title: 'DR7 CLUB',
   hero_subtitle_it: 'Ogni prenotazione ti premia. Ogni servizio ti ripaga.',
   hero_subtitle_en: 'Every booking rewards you. Every service pays you back.',
-  hero_opener_it: 'Attiva il tuo wallet reward a partire da soli €{monthlyPrice}/mese',
+  hero_opener_it: 'Attiva i premi del tuo wallet a partire da soli €{monthlyPrice}/mese',
   hero_opener_en: 'Activate your reward wallet starting from just €{monthlyPrice}/month',
 
   pricing_card_title: 'DR7 CLUB',
@@ -3234,9 +3234,9 @@ const DEFAULT_MEMBERSHIP: MembershipCopy = {
   elite_cta_logged_in_it: 'Vai al tuo Wallet',
   elite_cta_logged_in_en: 'Go to your Wallet',
 
-  reward_title_it: 'Come funziona il Reward',
+  reward_title_it: 'Come funzionano i premi',
   reward_title_en: 'How Rewards Work',
-  reward_intro_it: 'Accumula credito nel tuo wallet ad ogni prenotazione e servizio. Il reward dipende dal tuo comportamento, non dal metodo di pagamento.',
+  reward_intro_it: 'Accumula credito nel tuo wallet ad ogni prenotazione e servizio. Il premio dipende dal tuo comportamento, non dal metodo di pagamento.',
   reward_intro_en: 'Earn wallet credit on every booking and service. Rewards are based on your behavior, not your payment method.',
   reward_items: [
     { label_it: 'Pagamento anticipato (100%)', label_en: 'Full prepayment (100%)', reward: '2%', note_it: 'fino al 4% per livelli più alti', note_en: 'up to 4% at higher levels' },
@@ -3244,7 +3244,7 @@ const DEFAULT_MEMBERSHIP: MembershipCopy = {
     { label_it: 'Servizi extra', label_en: 'Extra services', reward: '2%', note_it: null, note_en: null },
     { label_it: 'Lavaggio & Meccanica', label_en: 'Car Wash & Mechanics', reward: '3%', note_it: null, note_en: null },
   ],
-  reward_footnote_it: 'Senza DR7 Club il sistema reward non è attivo.',
+  reward_footnote_it: 'Senza DR7 Club il sistema premi non è attivo.',
   reward_footnote_en: 'Without DR7 Club the reward system is not active.',
 };
 
@@ -3597,7 +3597,7 @@ const DEFAULT_LEGAL: LegalCopy = {
         { id: 'scelte', heading_it: '4. Le Tue Scelte e Gestione dei Cookie', heading_en: '4. Your Choices and Cookie Management',
           blocks: [
             { type: 'p',
-              text_it: 'Hai il diritto di decidere se accettare o rifiutare i cookie. Puoi esercitare le tue preferenze sui cookie utilizzando le impostazioni del tuo browser web. La maggior parte dei browser ti consente di controllare i cookie attraverso le loro impostazioni di preferenza. Tuttavia, se limiti la capacità dei siti web di impostare cookie, potresti peggiorare la tua esperienza utente complessiva, poiché non sarà più personalizzata per te. Potrebbe anche impedirti di salvare impostazioni personalizzate come le informazioni di login.',
+              text_it: 'Hai il diritto di decidere se accettare o rifiutare i cookie. Puoi esercitare le tue preferenze sui cookie utilizzando le impostazioni del tuo browser web. La maggior parte dei browser ti consente di controllare i cookie attraverso le loro impostazioni di preferenza. Tuttavia, se limiti la capacità dei siti web di impostare cookie, potresti peggiorare la tua esperienza utente complessiva, poiché non sarà più personalizzata per te. Potrebbe anche impedirti di salvare impostazioni personalizzate come le informazioni di accesso.',
               text_en: 'You have the right to decide whether to accept or refuse cookies. You can exercise your cookie preferences using your web browser settings. Most browsers allow you to control cookies through their preference settings. However, if you limit the ability of websites to set cookies, you may worsen your overall user experience, since it will no longer be personalized for you. It may also prevent you from saving customized settings such as login information.' },
             { type: 'p',
               text_it: 'Per saperne di più sui cookie, incluso come vedere quali cookie sono stati impostati e come gestirli ed eliminarli, visita [www.allaboutcookies.org](https://www.allaboutcookies.org).',

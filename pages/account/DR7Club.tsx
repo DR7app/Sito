@@ -263,7 +263,7 @@ const DR7Club = () => {
               </span>
               <div>
                 <p className="text-white font-bold">{t({ it: "Livello", en: "Tier" })} {tierInfo.label}</p>
-                <p className="text-gray-400 text-sm">{t({ it: "Reward:", en: "Reward:" })} {tierInfo.rewardPercent}% {t({ it: "su ogni noleggio", en: "on every rental" })}</p>
+                <p className="text-gray-400 text-sm">{t({ it: "Premio:", en: "Reward:" })} {tierInfo.rewardPercent}% {t({ it: "su ogni noleggio", en: "on every rental" })}</p>
               </div>
             </div>
             <div className="text-right">
@@ -292,7 +292,7 @@ const DR7Club = () => {
           )}
 
           {!tierInfo.nextTier && (
-            <p className="mt-3 text-sm text-[#D4B896] font-medium">{t({ it: "Hai raggiunto il livello massimo!", en: "You have reached the top tier!" })} {tierInfo.rewardPercent}% {t({ it: "di reward su ogni noleggio.", en: "reward on every rental." })}</p>
+            <p className="mt-3 text-sm text-[#D4B896] font-medium">{t({ it: "Hai raggiunto il livello massimo!", en: "You have reached the top tier!" })} {tierInfo.rewardPercent}% {t({ it: "di premio su ogni noleggio.", en: "reward on every rental." })}</p>
           )}
         </div>
       )}
@@ -317,7 +317,7 @@ const DR7Club = () => {
               <p className={`text-2xl font-bold mt-2 ${tierInfo?.tier === tier.tier ? 'text-[#D4B896]' : 'text-gray-500'}`}>
                 {tier.rewardPercent}%
               </p>
-              <p className="text-gray-500 text-xs">{t({ it: 'reward', en: 'reward' })}</p>
+              <p className="text-gray-500 text-xs">{t({ it: 'premio', en: 'reward' })}</p>
             </div>
           ))}
         </div>
@@ -435,19 +435,19 @@ const DR7Club = () => {
         <ul className="space-y-2 text-sm text-gray-400">
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: 'Pagamento anticipato (100%): reward base fino al', en: 'Full upfront payment (100%): base reward up to' })} {TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1].rewardPercent}%</span>
+            <span>{t({ it: 'Pagamento anticipato (100%): premio base fino al', en: 'Full upfront payment (100%): base reward up to' })} {TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1].rewardPercent}%</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: "Pagamento con acconto (30%): reward dimezzato (min 1%)", en: "Deposit payment (30%): reward halved (min 1%)" })}</span>
+            <span>{t({ it: "Pagamento con acconto (30%): premio dimezzato (min 1%)", en: "Deposit payment (30%): reward halved (min 1%)" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: "Servizi Lavaggio & Meccanica: reward 3%", en: "Car Wash & Mechanics services: 3% reward" })}</span>
+            <span>{t({ it: "Servizi Lavaggio & Meccanica: premio 3%", en: "Car Wash & Mechanics services: 3% reward" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: "Servizi extra: reward 2%", en: "Extra services: 2% reward" })}</span>
+            <span>{t({ it: "Servizi extra: premio 2%", en: "Extra services: 2% reward" })}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-[#D4B896] mt-0.5">!</span>

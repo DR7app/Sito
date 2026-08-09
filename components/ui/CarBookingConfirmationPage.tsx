@@ -144,7 +144,7 @@ const CarBookingConfirmationPage: React.FC = () => {
             onClick={() => navigate('/')}
             className="w-full md:w-auto px-6 py-3 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors"
           >
-            {t({ it: "Torna alla Home", en: "Back to Home" })}
+            {t({ it: "Torna alla pagina iniziale", en: "Back to Home" })}
           </button>
         </div>
       </div>

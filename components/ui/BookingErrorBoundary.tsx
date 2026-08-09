@@ -96,7 +96,7 @@ const BookingErrorFallback: React.FC<{ whatsappUrl: string; onRetry: () => void 
             onClick={() => window.location.href = '/'}
             className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
           >
-            {t({ it: 'Torna alla home', en: 'Back to home' })}
+            {t({ it: 'Torna alla pagina iniziale', en: 'Back to home' })}
           </button>
         </div>
       </div>

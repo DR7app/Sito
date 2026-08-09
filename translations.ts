@@ -372,7 +372,7 @@ export const translations: Translations = {
 
   // Account -> Payment Methods
   Saved_Payment_Methods: { en: "Saved Payment Methods", it: "Metodi di Pagamento Salvati" },
-  Manage_your_saved_payment_methods: { en: "Manage your saved payment methods for faster checkout.", it: "Gestisci i tuoi metodi di pagamento per un checkout più veloce." },
+  Manage_your_saved_payment_methods: { en: "Manage your saved payment methods for faster checkout.", it: "Gestisci i tuoi metodi di pagamento per un pagamento più rapido." },
   Add_New_Card: { en: "Add New Card", it: "Aggiungi Nuova Carta" },
   Default: { en: "Default", it: "Predefinito" },
   Set_as_Default: { en: "Set as Default", it: "Imposta come Predefinito" },
@@ -501,7 +501,7 @@ export const translations: Translations = {
 
   // Generic states / errors
   Loading: { en: "Loading…", it: "Caricamento…" },
-  Go_to_Home: { en: "Go to Home", it: "Vai alla Home" },
+  Go_to_Home: { en: "Go to Home", it: "Vai alla pagina iniziale" },
   Category_not_found: { en: "Category not found.", it: "Categoria non trovata." },
   Unexpected_error: { en: "An unexpected error occurred", it: "Si è verificato un errore imprevisto" },
   User_not_logged_in: { en: "User not logged in", it: "Utente non autenticato" },

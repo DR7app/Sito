@@ -1204,7 +1204,7 @@ const CarWashBookingPage: React.FC = () => {
         // Credit wallet payment requires login
         if (!user?.id) {
           clearTimeout(safetyTimer);
-          throw new Error(t({ it: "Devi effettuare il login per procedere.", en: "You must sign in to continue." }));
+          throw new Error(t({ it: "Devi accedere per procedere.", en: "You must sign in to continue." }));
         }
 
         const totalAmount = calculateTotal();

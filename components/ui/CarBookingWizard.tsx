@@ -6806,7 +6806,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )}
 
                   {/* Additional surcharges from ours */}
-                  {youngDriverFee > 0 && <div className="flex justify-between"><span>Supplemento under 25 ({Math.max(1, duration.days)} gg × €10)</span> <span>{formatPrice(youngDriverFee)}</span></div>}
+                  {youngDriverFee > 0 && <div className="flex justify-between"><span>Supplemento sotto i 25 anni ({Math.max(1, duration.days)} gg × €10)</span> <span>{formatPrice(youngDriverFee)}</span></div>}
                   {recentLicenseFee > 0 && <div className="flex justify-between"><span>Supplemento patente recente ({Math.max(1, duration.days)} gg × €20)</span> <span>{formatPrice(recentLicenseFee)}</span></div>}
 
                   <hr className="border-gray-500 my-2" />
@@ -7565,7 +7565,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         </div>
                       )}
                       {secondDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Secondo guidatore", en: "Second driver" })}</span><span className="text-white font-medium">{formatPrice(secondDriverFee)}</span></div>}
-                      {youngDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento under 25", en: "Under-25 surcharge" })}</span><span className="text-white font-medium">{formatPrice(youngDriverFee)}</span></div>}
+                      {youngDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento sotto i 25 anni", en: "Under-25 surcharge" })}</span><span className="text-white font-medium">{formatPrice(youngDriverFee)}</span></div>}
                       {recentLicenseFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento patente recente", en: "New-licence surcharge" })}</span><span className="text-white font-medium">{formatPrice(recentLicenseFee)}</span></div>}
                       {noDepositSurcharge > 0 && (
                         <div className="flex justify-between">

@@ -1776,7 +1776,7 @@ const DEFAULT_HEADER: HeaderCopy = {
   logo_alt: 'DR7 Logo',
   open_menu_aria_it: 'Apri menu', open_menu_aria_en: 'Open menu',
   close_menu_aria_it: 'Chiudi menu', close_menu_aria_en: 'Close menu',
-  explore_label_it: 'EXPLORE', explore_label_en: 'EXPLORE',
+  explore_label_it: 'ESPLORA', explore_label_en: 'EXPLORE',
   credit_wallet_label_it: 'Credit Wallet', credit_wallet_label_en: 'Credit Wallet',
   drawer_book_cta_it: 'Prenota Ora', drawer_book_cta_en: 'Book Now',
   flotta_label_it: 'La Nostra Flotta', flotta_label_en: 'Our Fleet',
@@ -1784,7 +1784,7 @@ const DEFAULT_HEADER: HeaderCopy = {
   esperienze_heading_it: 'Esperienze & Accesso Esclusivo', esperienze_heading_en: 'Experiences & Exclusive Access',
   prime_wash_heading_it: 'Lavaggio & Meccanica', prime_wash_heading_en: 'Car Wash & Mechanics',
   business_heading_it: 'Business & Corporate', business_heading_en: 'Business & Corporate',
-  digital_heading_it: 'Digital Innovation', digital_heading_en: 'Digital Innovation',
+  digital_heading_it: 'Innovazione Digitale', digital_heading_en: 'Digital Innovation',
   contact_cta_it: 'Contattaci', contact_cta_en: 'Contact us',
   popup_title_it: 'Prenota Ora', popup_title_en: 'Book Now',
   popup_subtitle_it: 'Seleziona date e orari', popup_subtitle_en: 'Select dates and times',
@@ -2146,7 +2146,7 @@ const DEFAULT_FIRMA: FirmaCopy = {
 // ─── Default Token seed (Coming Soon landing) ───────────────────────────
 const DEFAULT_TOKEN: TokenCopy = {
   hero_title_it: 'DR7 TOKEN', hero_title_en: 'DR7 TOKEN',
-  hero_eyebrow_it: 'Coming Soon', hero_eyebrow_en: 'Coming Soon',
+  hero_eyebrow_it: 'Prossimamente', hero_eyebrow_en: 'Coming Soon',
   body_message_it: 'Il sistema DR7 Token è in fase di sviluppo. Tornate presto per scoprire la moneta digitale del lusso reale.',
   body_message_en: 'The DR7 Token system is under development. Come back soon to discover the digital currency of real luxury.',
   cta_button_it: 'Torna alla Home', cta_button_en: 'Back to Home',
@@ -3123,7 +3123,7 @@ const DEFAULT_HOME: HomeCopy = {
 
 // ─── Default Membership seed ────────────────────────────────────────────────
 const DEFAULT_MEMBERSHIP: MembershipCopy = {
-  hero_eyebrow_it: 'Exclusive',
+  hero_eyebrow_it: 'Esclusivo',
   hero_eyebrow_en: 'Exclusive',
   hero_title: 'DR7 CLUB',
   hero_subtitle_it: 'Ogni prenotazione ti premia. Ogni servizio ti ripaga.',

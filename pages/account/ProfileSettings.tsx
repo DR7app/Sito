@@ -5,6 +5,7 @@ import { getUserCreditBalance, getCreditTransactions } from '../../utils/creditW
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import type { CreditTransaction } from '../../utils/creditWallet';
+import { splitWalletBalance } from '../../utils/walletCredit';
 import CalcolaCFButton from '../../components/ui/CalcolaCFButton';
 
 interface CustomerExtended {
@@ -125,57 +126,25 @@ const ProfileSettings = () => {
                 setCreditBalance(balance);
                 setRecentTransactions(transactions);
 
-                // Compute lifetime bonus credits = sum of credit transactions
-                // whose reference_type is in the BONUS list. The "card-paid"
-                // portion is then balance - bonus (capped at 0). Same rule
-                // the daily club-interest cron uses, so the breakdown shown
-                // here matches what earns 0,1%/giorno for club members.
-                const BONUS_REFS = new Set([
-                    'card_bonus', 'admin_manual', 'admin_credit',
-                    'referral', 'referral_bonus', 'milestone',
-                    'registration_bonus', 'club_interest_payout',
-                    'gift', 'voucher', 'compensation',
-                ]);
+                // 2026-08-08: la classificazione credito reale / bonus vive in
+                // UN SOLO posto (utils/walletCredit.ts), mirrorato lato admin in
+                // netlify/functions/utils/walletCredit.ts. Prima questa lista era
+                // ricopiata qui a mano e non coincideva con quella del cron
+                // interessi: mancava 'wallet_package_bonus' (il bonus pacchetto
+                // finiva nel credito reale) mentre 'admin_manual' era sempre
+                // bonus (una ricarica reale registrata a mano finiva nel bonus).
+                // Da qui l'inversione ricarica/bonus vista sul profilo.
                 const { data: allTxs } = await supabase
                     .from('credit_transactions')
                     .select('amount, transaction_type, reference_type, description')
                     .eq('user_id', user.id);
-                let lifetimeBonus = 0;
-                const breakdown = new Map<string, { amount: number; count: number }>();
-                for (const t of (allTxs || [])) {
-                    if (t.transaction_type !== 'credit') continue;
-                    const ref = String(t.reference_type || '').toLowerCase();
-                    if (BONUS_REFS.has(ref)) {
-                        const amt = Number(t.amount || 0);
-                        lifetimeBonus += amt;
-                        const cur = breakdown.get(ref) || { amount: 0, count: 0 };
-                        breakdown.set(ref, { amount: cur.amount + amt, count: cur.count + 1 });
-                    }
-                }
-                // Cap at current balance (bonuses can't exceed total).
-                setBonusTotal(Math.min(balance, lifetimeBonus));
-                // Map raw reference_types to friendly Italian labels.
-                const REF_LABELS: Record<string, string> = {
-                    'card_bonus':           'Cashback pagamento con carta',
-                    'admin_manual':         'Credito manuale (admin)',
-                    'admin_credit':         'Credito manuale (admin)',
-                    'referral':             'Bonus invito amico',
-                    'referral_bonus':       'Bonus invito amico',
-                    'milestone':            'Traguardo invito amico',
-                    'registration_bonus':   'Bonus registrazione',
-                    'club_interest_payout': 'Interesse DR7 CLUB PRIVILEGE',
-                    'gift':                 'Regalo / omaggio',
-                    'voucher':              'Buono / voucher',
-                    'compensation':         'Indennizzo',
-                };
-                const breakdownArr = Array.from(breakdown.entries())
-                    .map(([source, v]) => ({
-                        source: REF_LABELS[source] || source,
-                        amount: Math.round(v.amount * 100) / 100,
-                        count: v.count,
-                    }))
-                    .sort((a, b) => b.amount - a.amount);
-                setBonusBreakdown(breakdownArr);
+                const split = splitWalletBalance(balance, allTxs);
+                setBonusTotal(split.bonusEur);
+                setBonusBreakdown(split.bonusBreakdown.map(b => ({
+                    source: b.label,
+                    amount: b.amount,
+                    count: b.count,
+                })));
 
                 // Fetch Extended Profile
                 const { data, error } = await supabase

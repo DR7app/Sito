@@ -260,17 +260,31 @@ export async function getAnnualSpend(userId: string, email?: string | null): Pro
   // 2. Wallet recharges paid by card — recharge_amount is euros actually paid.
   //    received_amount includes the package bonus; we exclude the bonus
   //    (not real spend, just a reward).
-  const { data: purchases, error: purchErr } = await supabase
+  // La colonna excluded_from_tier (migrazione 20260808000000) marca in modo
+  // permanente le ricariche registrate in doppio. Se non c'è ancora si ripiega
+  // sulla lista statica DUPLICATE_PURCHASE_IDS.
+  let purchases: Array<{ id: string; recharge_amount: unknown; excluded_from_tier?: boolean }> | null = null
+  const withFlag = await supabase
     .from('credit_wallet_purchases')
-    .select('id, recharge_amount')
+    .select('id, recharge_amount, excluded_from_tier')
     .eq('user_id', userId)
     .eq('payment_status', 'succeeded')
     .gte('created_at', cutoffIso)
-
-  if (purchErr) {
-    console.error('[dr7club] Error fetching wallet recharges:', purchErr)
+  if (withFlag.error) {
+    const fallback = await supabase
+      .from('credit_wallet_purchases')
+      .select('id, recharge_amount')
+      .eq('user_id', userId)
+      .eq('payment_status', 'succeeded')
+      .gte('created_at', cutoffIso)
+    if (fallback.error) console.error('[dr7club] Error fetching wallet recharges:', fallback.error)
+    purchases = fallback.data
+  } else {
+    purchases = withFlag.data
   }
+
   const rechargeEur = (purchases || []).reduce((sum, p) => {
+    if (p.excluded_from_tier === true) return sum // doppione marcato a DB
     if (DUPLICATE_PURCHASE_IDS.has(String(p.id))) return sum // doppione: non contare
     const raw = p.recharge_amount
     const n = typeof raw === 'number' ? raw : parseFloat(String(raw ?? 0))

@@ -452,19 +452,47 @@ const PaymentSuccessPage: React.FC = () => {
                             console.error('Error updating purchase:', upErr);
                             setUpdateError(s('err_purchase_update_it', 'err_purchase_update_en'));
                         } else if (updatedPurchase) {
-                            // Abbiamo vinto la race -> accredita
+                            // Abbiamo vinto la race -> accredita.
+                            // 2026-08-08 FIX: qui veniva accreditato l'INTERO
+                            // received_amount (ricarica + bonus pacchetto) come
+                            // un'unica riga 'wallet_purchase' = credito reale.
+                            // Il bonus del pacchetto finiva quindi nel capitale
+                            // (maturando interessi) e spariva dal conteggio bonus.
+                            // Il webhook nexi-callback fa lo SPLIT dal 2026-07-13:
+                            // qui replichiamo lo stesso split, altrimenti il modo
+                            // in cui la ricarica viene registrata dipende da chi
+                            // vince la race (browser o webhook).
+                            const rechargeEur = parseFloat(String(purchase.recharge_amount ?? purchase.received_amount));
+                            const receivedEur = parseFloat(String(purchase.received_amount));
+                            const bonusEur = Math.round((receivedEur - rechargeEur) * 100) / 100;
+
+                            // PRINCIPALE = importo pagato con carta.
                             const result = await addCredits(
                                 purchase.user_id,
-                                purchase.received_amount,
-                                `Ricarica ${purchase.package_name} - Bonus ${purchase.bonus_percentage}%`,
+                                rechargeEur,
+                                `Ricarica ${purchase.package_name} (€${rechargeEur.toFixed(2)})`,
                                 purchase.id,
                                 'wallet_purchase'
                             );
                             if (result.success) {
-                                console.log(`Credits added: €${purchase.received_amount} (new balance: €${result.newBalance})`);
+                                console.log(`Credits added: €${rechargeEur} (new balance: €${result.newBalance})`);
                             } else {
                                 console.error('Error adding credits:', result.error);
                                 setUpdateError(s('err_credit_add_it', 'err_credit_add_en'));
+                            }
+
+                            // BONUS pacchetto = omaggio -> NON capitale, niente interessi.
+                            if (bonusEur > 0) {
+                                const bonusRes = await addCredits(
+                                    purchase.user_id,
+                                    bonusEur,
+                                    `Bonus ricarica ${purchase.bonus_percentage}% (€${bonusEur.toFixed(2)})`,
+                                    purchase.id,
+                                    'wallet_package_bonus'
+                                );
+                                if (!bonusRes.success) {
+                                    console.error('Error adding package bonus:', bonusRes.error);
+                                }
                             }
                         } else {
                             console.log('Purchase credits already processed by callback');

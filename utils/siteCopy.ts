@@ -3115,7 +3115,7 @@ const DEFAULT_HOME: HomeCopy = {
     { id: 'yachts',               display_title_it: 'DR7 Yachting Division',                  display_title_en: 'DR7 Yachting Division',                  image_src: '/yacht.jpeg' },
     { id: 'jets',                 display_title_it: 'DR7 Aviation Division',                  display_title_en: 'DR7 Aviation Division',                  image_src: '/privatejet.jpeg' },
     { id: 'car-wash-services',    display_title_it: 'Lavaggio & Meccanica',                   display_title_en: 'Car Wash & Mechanics',                   image_src: '/servizi-lavaggio.jpeg' },
-    { id: 'mechanical-services',  display_title_it: 'DR7 Rapid Response Services',            display_title_en: 'DR7 Rapid Response Services',            image_src: '/rapids.jpeg' },
+    { id: 'mechanical-services',  display_title_it: 'Meccanica',                              display_title_en: 'Mechanics',                              image_src: '/rapids.jpeg' },
     { id: 'membership',           display_title_it: 'DR7 Exclusive Members Club',             display_title_en: 'DR7 Exclusive Members Club',             image_src: '/exclusivemc.jpeg' },
     { id: 'credit-wallet',        display_title_it: 'DR7 Credit Wallet',                      display_title_en: 'DR7 Credit Wallet',                      image_src: '/cwallet.jpeg' },
   ],

@@ -187,9 +187,29 @@ const handler: Handler = async (event) => {
   const templateKey: string | undefined = body.templateKey || body.messageKey;
 
   // ── Target phone ──
-  let targetPhone: string = String(customPhone || NOTIFICATION_PHONE).replace(/[\s\-+]/g, '');
+  // 2026-08-13: si tengono SOLO le cifre. Prima si toglievano spazi, trattini
+  // e '+', e basta: qualsiasi altro carattere restava dentro e finiva nel
+  // chatId, che Green API rifiuta. Bastava un numero in rubrica scritto
+  // "(+39) 340..." o incollato da iPhone/Android con un LEFT-TO-RIGHT
+  // OVERRIDE (U+202D) invisibile davanti al '+' — che NON e' uno spazio,
+  // quindi \s non lo prendeva — perche' la conferma non partisse, mentre lo
+  // stesso identico flusso funzionava per un altro cliente. Il corpo del
+  // messaggio veniva gia' ripulito dagli invisibili (vedi piu' sotto); il
+  // numero no.
+  let targetPhone: string = String(customPhone || NOTIFICATION_PHONE).replace(/\D/g, '');
+  // Prefisso internazionale in forma 00: 003934012... -> 3934012...
+  if (targetPhone.startsWith('00')) targetPhone = targetPhone.substring(2);
   if (targetPhone.startsWith('0')) targetPhone = '39' + targetPhone.substring(1);
   if (!targetPhone.startsWith('39') && targetPhone.length === 10) targetPhone = '39' + targetPhone;
+  // Numero inutilizzabile: si esce con un motivo esplicito invece di
+  // chiamare Green API con un chatId rotto e lasciare un errore generico.
+  if (targetPhone.length < 8) {
+    console.error('[send-whatsapp] numero non valido dopo la pulizia:', JSON.stringify(customPhone), '->', targetPhone);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: false, skipped: true, reason: 'invalid_phone', phone: targetPhone }),
+    };
+  }
 
   const isCustomerMessage = !!customPhone;
 

@@ -115,7 +115,10 @@ exports.handler = async (event) => {
       // --- Send WhatsApp reminder to customer ---
       if (userPhone && greenInstanceId && greenToken) {
         // Clean phone for Green API
-        let cleanPhone = userPhone.replace(/[\s\-\+]/g, '');
+        // Solo cifre: \s non prende gli invisibili (es. U+202D) che i
+        // telefoni infilano nei contatti, e restavano nel chatId.
+        let cleanPhone = userPhone.replace(/\D/g, '');
+        if (cleanPhone.startsWith('00')) cleanPhone = cleanPhone.substring(2);
         if (cleanPhone.startsWith('0')) {
           cleanPhone = '39' + cleanPhone.substring(1);
         }

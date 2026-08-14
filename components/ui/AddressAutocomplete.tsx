@@ -58,9 +58,20 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     try {
       // No country lock: foreign customers must be able to find their own
       // address (a hardcoded countrycodes=it hid every non-Italian result).
+      //
+      // 2026-08-14: `viewbox` sulla Sardegna. Nominatim ordina per rilevanza
+      // generale, quindi sui nomi comuni vinceva sempre la penisola: cercando
+      // "Marina Piccola" uscivano Ardea, Sorrento, Capri, Arenzano e Bari, e
+      // quella di Cagliari non entrava nei primi 5. Il cliente concludeva che
+      // non esistesse.
+      //
+      // Senza `bounded=1` resta una PREFERENZA, non un filtro: i risultati
+      // sardi salgono in cima e un indirizzo estero si trova ancora — che e'
+      // il motivo per cui qui non c'e' il lock sul paese.
+      const VIEWBOX_SARDEGNA = '8.10,41.30,9.90,38.80';
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`,
+        `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&viewbox=${VIEWBOX_SARDEGNA}`,
         { headers: { 'Accept-Language': 'it' } }
       );
       if (!res.ok) return;

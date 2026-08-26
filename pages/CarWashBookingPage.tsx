@@ -4,6 +4,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
+import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import type { Service } from './CarWashServicesPage';
 import { useCarWashServices } from '../hooks/useCarWashServices';
 import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate } from '../utils/lavaggioHours';
@@ -430,39 +431,28 @@ const CarWashBookingPage: React.FC = () => {
       phone: user.phone || ''
     }));
 
-    // Then fetch full customer data from customers_extended (admin-editable)
-    const fetchCustomerData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('customers_extended')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+    // Precompila i dati fattura: scheda cliente del gestionale e, in riserva,
+    // i metadati dell'iscrizione al sito (utils/datiFatturaCliente.ts). Chi ha
+    // gia' dato CF e indirizzo non se li vede richiedere una seconda volta.
+    let annullato = false;
+    (async () => {
+      const dati = await caricaDatiFatturaCliente(user.id);
+      if (annullato) return;
+      setFormData(prev => ({
+        ...prev,
+        fullName: dati.fullName || prev.fullName,
+        email: dati.email || prev.email,
+        phone: dati.phone || prev.phone,
+        codiceFiscale: dati.codiceFiscale || prev.codiceFiscale,
+        indirizzo: dati.indirizzo || prev.indirizzo,
+        numeroCivico: dati.numeroCivico || prev.numeroCivico,
+        cittaResidenza: dati.cittaResidenza || prev.cittaResidenza,
+        codicePostale: dati.codicePostale || prev.codicePostale,
+        provinciaResidenza: dati.provinciaResidenza || prev.provinciaResidenza,
+      }));
+    })();
 
-        if (error || !data) return;
-
-        const fullName = data.tipo_cliente === 'azienda'
-          ? (data.denominazione || data.ragione_sociale || '')
-          : `${data.nome || ''} ${data.cognome || ''}`.trim();
-
-        setFormData(prev => ({
-          ...prev,
-          fullName: fullName || prev.fullName,
-          email: data.email || prev.email,
-          phone: data.telefono || prev.phone,
-          codiceFiscale: data.codice_fiscale || prev.codiceFiscale,
-          indirizzo: data.indirizzo || prev.indirizzo,
-          numeroCivico: data.numero_civico || prev.numeroCivico,
-          cittaResidenza: data.citta_residenza || data.citta || prev.cittaResidenza,
-          codicePostale: data.codice_postale || data.cap || prev.codicePostale,
-          provinciaResidenza: data.provincia_residenza || data.provincia || prev.provinciaResidenza,
-        }));
-      } catch (err) {
-        console.error('Error fetching customer data:', err);
-      }
-    };
-
-    fetchCustomerData();
+    return () => { annullato = true; };
   }, [user]);
 
   // Fetch existing clients for selection

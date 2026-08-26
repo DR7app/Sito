@@ -4,6 +4,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
+import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { getMechanicalServices, type MechanicalServiceItem } from '../utils/siteCopy';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 
@@ -153,14 +154,37 @@ const MechanicalBookingPage: React.FC = () => {
   }, [selectedService, navigate]);
 
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+
+    setFormData(prev => ({
+      ...prev,
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || ''
+    }));
+
+    // Precompila i dati fattura: scheda cliente del gestionale e, in riserva,
+    // i metadati dell'iscrizione al sito (utils/datiFatturaCliente.ts). Chi ha
+    // gia' dato CF e indirizzo non se li vede richiedere una seconda volta.
+    let annullato = false;
+    (async () => {
+      const dati = await caricaDatiFatturaCliente(user.id);
+      if (annullato) return;
       setFormData(prev => ({
         ...prev,
-        fullName: user.fullName || '',
-        email: user.email || '',
-        phone: user.phone || ''
+        fullName: dati.fullName || prev.fullName,
+        email: dati.email || prev.email,
+        phone: dati.phone || prev.phone,
+        codiceFiscale: dati.codiceFiscale || prev.codiceFiscale,
+        indirizzo: dati.indirizzo || prev.indirizzo,
+        numeroCivico: dati.numeroCivico || prev.numeroCivico,
+        cittaResidenza: dati.cittaResidenza || prev.cittaResidenza,
+        codicePostale: dati.codicePostale || prev.codicePostale,
+        provinciaResidenza: dati.provinciaResidenza || prev.provinciaResidenza,
       }));
-    }
+    })();
+
+    return () => { annullato = true; };
   }, [user]);
 
   // Fetch credit balance

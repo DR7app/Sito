@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { addCredits } from '../utils/creditWallet';
+import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { useTranslation } from '../hooks/useTranslation';
 import { getCreditWalletCopy, type CreditWalletCopy, type CreditPackage } from '../utils/siteCopy';
 
@@ -117,137 +118,35 @@ const CreditWalletPage: React.FC = () => {
     codicePostale: '',
     provinciaResidenza: ''
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
 
 
-  // Pre-fill user data from customers_extended table
+  // Precompila i dati fattura del cliente loggato. La fonte non e' solo la
+  // scheda cliente: chi si e' iscritto dal sito ha gia' inserito CF e
+  // indirizzo, che restano nei metadati auth anche quando il salvataggio
+  // della scheda e' fallito. Vedi utils/datiFatturaCliente.ts.
   useEffect(() => {
-    if (user) {
-      const fetchCustomerData = async () => {
-        try {
-          // 1. Try to get customer data from customers_extended table
-          let { data: customerData, error } = await supabase
-            .from('customers_extended')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
+    if (!user) return;
 
-          // 2. If not found, try 'clienti_estesi' (legacy/alternative table)
-          if (!customerData) {
-            const { data: legacyData } = await supabase
-              .from('clienti_estesi')
-              .select('*')
-              .eq('user_id', user.id)
-              .maybeSingle();
+    let annullato = false;
+    (async () => {
+      const dati = await caricaDatiFatturaCliente(user.id);
+      if (annullato) return;
+      setFormData(prev => ({
+        fullName: dati.fullName || user.fullName || prev.fullName,
+        email: dati.email || user.email || prev.email,
+        phone: dati.phone || user.phone || prev.phone,
+        codiceFiscale: dati.codiceFiscale || prev.codiceFiscale,
+        indirizzo: dati.indirizzo || prev.indirizzo,
+        numeroCivico: dati.numeroCivico || prev.numeroCivico,
+        cittaResidenza: dati.cittaResidenza || prev.cittaResidenza,
+        codicePostale: dati.codicePostale || prev.codicePostale,
+        provinciaResidenza: dati.provinciaResidenza || prev.provinciaResidenza,
+      }));
+    })();
 
-            if (legacyData) {
-              customerData = legacyData;
-            }
-          }
-
-          if (customerData) {
-            // Pre-fill all fields from database
-            setFormData({
-              fullName: customerData.tipo_cliente === 'azienda'
-                ? customerData.denominazione || customerData.ragione_sociale || ''
-                : `${customerData.nome || ''} ${customerData.cognome || ''}`.trim(),
-              email: customerData.email || user.email || '',
-              phone: customerData.telefono || user.phone || '',
-              codiceFiscale: customerData.codice_fiscale || customerData.codice_fiscale_pa || customerData.partita_iva || '',
-              indirizzo: customerData.indirizzo || customerData.indirizzo_azienda || '',
-              numeroCivico: customerData.numero_civico || '',
-              cittaResidenza: customerData.citta || customerData.citta_residenza || '',
-              codicePostale: customerData.cap || customerData.codice_postale || '',
-              provinciaResidenza: customerData.provincia || customerData.provincia_residenza || ''
-            });
-
-
-          } else {
-            // Fallback to basic user data from Auth
-            setFormData(prev => ({
-              ...prev,
-              fullName: user.fullName || '',
-              email: user.email || '',
-              phone: user.phone || ''
-            }));
-
-
-          }
-        } catch (err) {
-          console.error('Error fetching customer data:', err);
-          // Fallback to basic user data
-          setFormData(prev => ({
-            ...prev,
-            fullName: user.fullName || '',
-            email: user.email || '',
-            phone: user.phone || ''
-          }));
-
-        }
-      };
-
-      fetchCustomerData();
-    }
+    return () => { annullato = true; };
   }, [user]);
-
-  // Validation functions
-  const validateCodiceFiscale = (cf: string): boolean => {
-    const cfRegex = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i;
-    return cf.length === 16 && cfRegex.test(cf.toUpperCase());
-  };
-
-  const validateItalianPhone = (phone: string): boolean => {
-    const phoneRegex = /^(\+39|0039)?[\s]?[0-9]{9,13}$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    let newValue = value;
-
-    if (name === 'codiceFiscale' || name === 'provinciaResidenza') {
-      newValue = value.toUpperCase();
-    }
-
-    setFormData(prev => ({ ...prev, [name]: newValue }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.fullName) newErrors.fullName = w('err_name_required_it', 'err_name_required_en');
-    if (!formData.email) newErrors.email = w('err_email_required_it', 'err_email_required_en');
-
-    // Phone validation (optional but validated if present)
-    if (formData.phone && !validateItalianPhone(formData.phone)) {
-      newErrors.phone = w('err_phone_invalid_it', 'err_phone_invalid_en');
-    }
-
-    // Codice Fiscale + indirizzo OBBLIGATORI: ogni ricarica pagata con carta
-    // deve emettere fattura, che richiede CF + indirizzo del cliente. Per i
-    // clienti loggati questi campi sono già precompilati dal profilo
-    // (customers_extended) → non li reinseriscono una seconda volta.
-    if (!formData.codiceFiscale || !formData.codiceFiscale.trim()) {
-      newErrors.codiceFiscale = lang === 'it' ? 'Il codice fiscale è obbligatorio per la fattura' : 'Codice Fiscale is required for the invoice';
-    } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
-      newErrors.codiceFiscale = w('err_cf_invalid_it', 'err_cf_invalid_en');
-    }
-    if (!formData.indirizzo || !formData.indirizzo.trim()) {
-      newErrors.indirizzo = lang === 'it' ? 'L\'indirizzo è obbligatorio per la fattura' : 'Address is required for the invoice';
-    }
-    if (!formData.cittaResidenza || !formData.cittaResidenza.trim()) {
-      newErrors.cittaResidenza = lang === 'it' ? 'La città è obbligatoria per la fattura' : 'City is required for the invoice';
-    }
-    if (!formData.codicePostale || !formData.codicePostale.trim()) {
-      newErrors.codicePostale = lang === 'it' ? 'Il CAP è obbligatorio per la fattura' : 'Postal code is required for the invoice';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSelectPackage = (packageId: string) => {
     if (user) {
@@ -264,7 +163,6 @@ const CreditWalletPage: React.FC = () => {
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate()) return;
     if (!selectedPackage || !user?.id) {
       setPaymentError(w('err_payment_not_ready_it', 'err_payment_not_ready_en'));
       return;
@@ -289,9 +187,9 @@ const CreditWalletPage: React.FC = () => {
           payment_status: 'pending',
           payment_method: 'nexi',
           currency: 'EUR',
-          customer_name: formData.fullName,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
+          customer_name: formData.fullName || user.fullName || '',
+          customer_email: formData.email || user.email || '',
+          customer_phone: formData.phone || user.phone || '',
           customer_codice_fiscale: formData.codiceFiscale,
           customer_indirizzo: formData.indirizzo,
           customer_numero_civico: formData.numeroCivico,
@@ -330,8 +228,8 @@ const CreditWalletPage: React.FC = () => {
           amount: Math.round(selectedPackage.rechargeAmount * 100),
           currency: 'EUR',
           description: `Credit Wallet - ${selectedPackage.name}`,
-          customerEmail: formData.email,
-          customerName: formData.fullName,
+          customerEmail: formData.email || user.email || '',
+          customerName: formData.fullName || user.fullName || '',
           recurringType: 'MIT_UNSCHEDULED'
         })
       });
@@ -631,52 +529,6 @@ const CreditWalletPage: React.FC = () => {
                     {paymentError && <p className="text-xs text-red-400 mt-2">{paymentError}</p>}
                   </div>
                 </div>
-
-                {/* Dati per la fattura — obbligatori per emettere fattura sulla
-                    ricarica (pagamento con carta). Mostrati SOLO se mancano nel
-                    profilo del cliente: se sono già presenti (precompilati da
-                    customers_extended) non vengono richiesti una seconda volta. */}
-                {(() => {
-                  const fiscalComplete = !!(formData.codiceFiscale.trim() && formData.indirizzo.trim() && formData.cittaResidenza.trim() && formData.codicePostale.trim());
-                  if (fiscalComplete) {
-                    return (
-                      <div className="bg-gray-800/40 border border-gray-700 rounded-lg p-3 text-xs text-gray-400">
-                        {lang === 'it' ? 'Dati per la fattura: completi (dal tuo profilo).' : 'Invoice details: complete (from your profile).'}
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-bold text-white">{lang === 'it' ? 'Dati per la fattura' : 'Invoice details'}</h3>
-                      <div>
-                        <input name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} maxLength={16} placeholder={lang === 'it' ? 'Codice Fiscale *' : 'Tax Code *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase" />
-                        {errors.codiceFiscale && <p className="text-xs text-red-400 mt-1">{errors.codiceFiscale}</p>}
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2">
-                          <input name="indirizzo" value={formData.indirizzo} onChange={handleChange} placeholder={lang === 'it' ? 'Indirizzo *' : 'Address *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
-                          {errors.indirizzo && <p className="text-xs text-red-400 mt-1">{errors.indirizzo}</p>}
-                        </div>
-                        <div className="col-span-1">
-                          <input name="numeroCivico" value={formData.numeroCivico} onChange={handleChange} placeholder={lang === 'it' ? 'N. civico' : 'No.'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <input name="codicePostale" value={formData.codicePostale} onChange={handleChange} maxLength={5} placeholder={lang === 'it' ? 'CAP *' : 'ZIP *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
-                          {errors.codicePostale && <p className="text-xs text-red-400 mt-1">{errors.codicePostale}</p>}
-                        </div>
-                        <div>
-                          <input name="cittaResidenza" value={formData.cittaResidenza} onChange={handleChange} placeholder={lang === 'it' ? 'Città *' : 'City *'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white" />
-                          {errors.cittaResidenza && <p className="text-xs text-red-400 mt-1">{errors.cittaResidenza}</p>}
-                        </div>
-                        <div>
-                          <input name="provinciaResidenza" value={formData.provinciaResidenza} onChange={handleChange} maxLength={2} placeholder={lang === 'it' ? 'Prov.' : 'Prov.'} className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
 
                 {/* Action Buttons */}
                 <div className="flex gap-4">

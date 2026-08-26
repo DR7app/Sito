@@ -1157,6 +1157,42 @@ const CarWashBookingPage: React.FC = () => {
 
     console.log('Complete booking data being prepared:', JSON.stringify(bookingData, null, 2));
 
+    // 26/08/2026 — I dati compilati qui finivano SOLO dentro la prenotazione:
+    // la scheda cliente restava vuota, e un cliente poteva iscriversi, pagare
+    // un lavaggio e comparire in anagrafica come "Cliente" senza telefono ne'
+    // codice fiscale. Ora completano anche la sua scheda (solo i campi vuoti).
+    // Non si aspetta l'esito e non si blocca nulla: la prenotazione viene
+    // prima di tutto.
+    if (user?.id) {
+      void (async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) return;
+          await fetch('/.netlify/functions/completa-scheda-cliente', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              dati: {
+                fullName: formData.fullName,
+                telefono: formData.phone,
+                codiceFiscale: formData.codiceFiscale,
+                indirizzo: formData.indirizzo,
+                numeroCivico: formData.numeroCivico,
+                cittaResidenza: formData.cittaResidenza,
+                codicePostale: formData.codicePostale,
+                provinciaResidenza: formData.provinciaResidenza,
+              },
+            }),
+          });
+        } catch (e) {
+          console.warn('[carwash] scheda cliente non completata (non blocca la prenotazione):', e);
+        }
+      })();
+    }
+
     console.log('Setting pending booking data and opening modal');
     setPendingBookingData(bookingData);
     setShowPaymentModal(true);

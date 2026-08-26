@@ -39,7 +39,7 @@ async function sendIngressoDR7ClubToCustomer(sb, userId, siteUrl) {
   try {
     const { data: cust } = await sb
       .from('customers_extended')
-      .select('nome, cognome, telefono, full_name')
+      .select('nome, cognome, telefono, denominazione, ragione_sociale')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -62,7 +62,7 @@ async function sendIngressoDR7ClubToCustomer(sb, userId, siteUrl) {
     }
 
     const firstName = (cust && cust.nome)
-      || (cust && cust.full_name ? String(cust.full_name).split(' ')[0] : '')
+      || (cust && (cust.denominazione || cust.ragione_sociale) ? String(cust.denominazione || cust.ragione_sociale).split(' ')[0] : '')
       || '';
     const message = String(tpl.message_body).replace(/\{nome\}/g, firstName);
     if (!message.trim()) return;
@@ -1162,7 +1162,7 @@ exports.handler = async (event) => {
           try {
             const { data: cliente } = await supabase
               .from('customers_extended')
-              .select('nome, cognome, telefono, full_name')
+              .select('nome, cognome, telefono, denominazione, ragione_sociale')
               .eq('user_id', purchase.user_id)
               .maybeSingle();
 
@@ -1204,10 +1204,12 @@ exports.handler = async (event) => {
 
             const nomeCompleto = [cliente && cliente.nome, cliente && cliente.cognome]
               .filter(Boolean).join(' ').trim()
-              || (cliente && cliente.full_name)
+              || (cliente && (cliente.denominazione || cliente.ragione_sociale))
               || purchase.customer_name
               || 'Cliente';
             const nome = String(nomeCompleto).split(' ')[0] || 'Cliente';
+
+            console.log(`[nexi-callback] Avviso ricarica: scheda ${cliente ? 'trovata' : 'assente'}, telefono ${telefono || '(nessuno)'}, ricarica ${ricaricaEur} bonus ${bonusPacchetto} cashback ${cashbackAccreditato} saldo ${saldo}`);
 
             await sendProEventsToCustomer(supabase, ['on_wallet_recharge', 'wallet_bonus_credit'], telefono, {
               nome,

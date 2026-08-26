@@ -1166,7 +1166,30 @@ exports.handler = async (event) => {
               .eq('user_id', purchase.user_id)
               .maybeSingle();
 
-            const telefono = (cliente && cliente.telefono) || purchase.customer_phone || '';
+            // 26/08/2026 — Il numero puo' non essere sulla scheda: molte schede
+            // nascono vuote (i dati restano nei metadati auth o dentro le
+            // prenotazioni). Senza telefono il messaggio non parte affatto,
+            // quindi si cerca in tutte le fonti prima di rinunciare.
+            let telefono = (cliente && cliente.telefono) || purchase.customer_phone || '';
+            if (!telefono) {
+              try {
+                const { data: acc } = await supabase.auth.admin.getUserById(purchase.user_id);
+                const m = (acc && acc.user && acc.user.user_metadata) || {};
+                telefono = m.telefono || m.phone || (acc && acc.user && acc.user.phone) || '';
+              } catch (e) {
+                console.warn('[nexi-callback] telefono dai metadati non letto:', e && e.message);
+              }
+            }
+            if (!telefono) {
+              const { data: ultimaPren } = await supabase
+                .from('bookings')
+                .select('customer_phone')
+                .eq('user_id', purchase.user_id)
+                .not('customer_phone', 'is', null)
+                .order('created_at', { ascending: false })
+                .limit(1);
+              telefono = (ultimaPren && ultimaPren[0] && ultimaPren[0].customer_phone) || '';
+            }
 
             const { data: saldoRow } = await supabase
               .from('user_credit_balance')

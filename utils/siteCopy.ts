@@ -1596,7 +1596,13 @@ export async function getCreditWalletCopy(): Promise<CreditWalletCopy> {
   return DEFAULT_CREDIT_WALLET;
 }
 
-/** Scarta le righe incomplete e riempie i derivati mancanti (bonus, ricevuto). */
+/**
+ * Scarta le righe incomplete e riempie i derivati mancanti (bonus, ricevuto).
+ *
+ * Chiave assente = config salvata prima dei pacchetti editabili -> seed.
+ * Lista vuota = scelta dell'admin (ha cancellato tutto) -> si rispetta,
+ * altrimenti i nove pacchetti di fabbrica tornerebbero da soli sul sito.
+ */
 function normalizeCreditPackages(raw: unknown): CreditPackage[] {
   if (!Array.isArray(raw)) return DEFAULT_CREDIT_WALLET.packages;
   const num = (v: unknown): number => (typeof v === 'number' && isFinite(v) ? v : Number(v) || 0);
@@ -1619,7 +1625,7 @@ function normalizeCreditPackages(raw: unknown): CreditPackage[] {
       };
     })
     .filter(p => p.id && p.rechargeAmount > 0);
-  return out.length ? out : DEFAULT_CREDIT_WALLET.packages;
+  return out;
 }
 
 /** Token page (DR7 Coin / Up / APP manifesto) — chrome only. */

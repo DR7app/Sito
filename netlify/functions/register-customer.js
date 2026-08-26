@@ -101,6 +101,37 @@ exports.handler = async (event) => {
 
         const userId = authData.user.id;
 
+        // 1b. BONUS BENVENUTO SUBITO (26/08/2026).
+        //
+        // Prima stava al punto 4, DOPO il salvataggio del profilo. Quando il
+        // profilo non si salvava la function usciva con un 500 e il bonus non
+        // veniva mai accreditato: l'utente esisteva, i 10€ no. Il bonus
+        // dipende solo dall'utente, quindi si accredita appena l'utente c'e'.
+        // La RPC e' idempotente (reference_type = 'welcome_bonus'), quindi
+        // resta impossibile accreditarlo due volte.
+        let bonusAccreditato = false;
+        try {
+            const { data: bonusResult, error: bonusError } = await supabase
+                .rpc('grant_welcome_bonus', { p_user_id: userId });
+
+            if (bonusError) {
+                console.error('[register-customer] BONUS NON ACCREDITATO — RPC error:', bonusError.message, 'user:', userId);
+            } else if (bonusResult && bonusResult[0]) {
+                const r = bonusResult[0];
+                if (r.already_granted) {
+                    bonusAccreditato = true;
+                    console.log('[register-customer] Bonus gia\' accreditato per', userId);
+                } else if (r.success) {
+                    bonusAccreditato = true;
+                    console.log('[register-customer] Bonus 10€ accreditato a', userId, 'saldo:', r.new_balance);
+                } else {
+                    console.error('[register-customer] BONUS NON ACCREDITATO:', r.error_message, 'user:', userId);
+                }
+            }
+        } catch (bonusErr) {
+            console.error('[register-customer] BONUS NON ACCREDITATO — eccezione:', bonusErr.message, 'user:', userId);
+        }
+
         // 2. Generate confirmation link and send verification email
         console.log('=== EMAIL STEP START ===');
         console.log('RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
@@ -195,6 +226,9 @@ exports.handler = async (event) => {
         console.log('=== EMAIL STEP END ===');
 
         // 3. Wait briefly for trigger to complete, then update with full data
+        // `profileError`: se resta valorizzato, il profilo e' incompleto e la
+        // risposta lo dice invece di far credere che sia tutto a posto.
+        let profileError = null;
         if (customerData) {
             // Small delay to let the trigger create the initial record
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -226,32 +260,60 @@ exports.handler = async (event) => {
                 .select();
 
             if (updateError) {
-                console.error('Profile UPDATE error:', updateError);
-                console.error('Customer data that failed:', JSON.stringify(updatePayload, null, 2));
+                console.error('[register-customer] Profile UPDATE error:', updateError);
+                console.error('[register-customer] Payload rifiutato:', JSON.stringify(updatePayload, null, 2));
 
-                // Fallback: INSERT if the trigger didn't create the record
-                console.log('Attempting INSERT as fallback...');
-                customerData.user_id = userId;
-                const { error: insertError } = await supabase
-                    .from('customers_extended')
-                    .insert(customerData);
-
-                if (insertError) {
-                    console.error('INSERT also failed:', insertError);
-                    return {
-                        statusCode: 500,
-                        body: JSON.stringify({
-                            error: 'Account created but failed to save profile data. Please contact support.',
-                            userId: userId,
-                            details: updateError.message,
-                            code: updateError.code,
-                            hint: updateError.hint,
-                            dbDetails: updateError.details
-                        })
-                    };
+                // 26/08/2026 — QUI si perdevano i dati obbligatori.
+                //
+                // Un solo valore rifiutato dal database (un CAP piu' lungo del
+                // campo, un carattere fuori da un check, una data vuota) faceva
+                // fallire l'INTERA UPDATE: nessun campo veniva scritto. Il
+                // fallback era una INSERT, che pero' non poteva riuscire —
+                // il trigger la riga l'aveva gia' creata — e la function usciva
+                // con un 500 prima del bonus e prima del messaggio di
+                // benvenuto. Risultato: utente registrato, scheda mezza vuota,
+                // 10€ mai accreditati.
+                //
+                // Ora: si riprova con i soli dati ANAGRAFICI ESSENZIALI, cosi'
+                // il campo problematico (sempre un dato accessorio) non si
+                // porta dietro nome, cognome, telefono e codice fiscale.
+                const essenziali = {};
+                for (const campo of ['tipo_cliente', 'nome', 'cognome', 'denominazione', 'ente_ufficio',
+                                     'email', 'telefono', 'codice_fiscale', 'partita_iva', 'source']) {
+                    if (updatePayload[campo] !== undefined && updatePayload[campo] !== '') {
+                        essenziali[campo] = updatePayload[campo];
+                    }
                 }
+                const { error: minimoError } = await supabase
+                    .from('customers_extended')
+                    .update(essenziali)
+                    .eq('user_id', userId);
 
-                console.log('INSERT fallback succeeded!');
+                if (minimoError) {
+                    console.error('[register-customer] Anche i dati essenziali sono stati rifiutati:', minimoError);
+                    // Ultima spiaggia: la riga potrebbe non esistere affatto.
+                    const { data: esistente } = await supabase
+                        .from('customers_extended')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .maybeSingle();
+                    if (!esistente) {
+                        const { error: insertError } = await supabase
+                            .from('customers_extended')
+                            .insert({ ...essenziali, user_id: userId });
+                        if (insertError) {
+                            console.error('[register-customer] INSERT di riserva fallita:', insertError);
+                        } else {
+                            console.log('[register-customer] Riga creata con i soli dati essenziali');
+                        }
+                    }
+                } else {
+                    console.log('[register-customer] Salvati i dati essenziali; rifiutato un dato accessorio');
+                }
+                // NON si esce: l'utente esiste, il bonus e' gia' accreditato e
+                // il messaggio di benvenuto deve partire lo stesso. Il profilo
+                // incompleto viene segnalato nella risposta.
+                profileError = updateError.message;
             } else if (!updatedData || updatedData.length === 0) {
                 // UPDATE matched 0 rows — trigger didn't create the record yet
                 console.log('UPDATE matched 0 rows, inserting...');
@@ -261,9 +323,9 @@ exports.handler = async (event) => {
                     .insert(customerData);
 
                 if (insertError) {
-                    console.error('INSERT after 0-row update failed:', insertError);
-                    // Non-fatal: the auth user exists, profile can be completed later
-                    console.warn('Profile data not saved, but auth user created successfully');
+                    console.error('[register-customer] INSERT dopo 0 righe aggiornate fallita:', insertError);
+                    console.warn('[register-customer] Profilo NON salvato (utente creato):', userId);
+                    profileError = insertError.message;
                 } else {
                     console.log('INSERT succeeded after 0-row update');
                 }
@@ -303,27 +365,7 @@ exports.handler = async (event) => {
             }
         }
 
-        // 4. Grant €10 welcome bonus (idempotent — safe to call multiple times)
-        try {
-            const { data: bonusResult, error: bonusError } = await supabase
-                .rpc('grant_welcome_bonus', { p_user_id: userId });
-
-            if (bonusError) {
-                console.warn('Welcome bonus RPC error (non-fatal):', bonusError.message);
-            } else if (bonusResult && bonusResult[0]) {
-                const r = bonusResult[0];
-                if (r.already_granted) {
-                    console.log('Welcome bonus already granted for user:', userId);
-                } else if (r.success) {
-                    console.log('Welcome bonus €10 credited for user:', userId, 'new balance:', r.new_balance);
-                } else {
-                    console.warn('Welcome bonus failed:', r.error_message);
-                }
-            }
-        } catch (bonusErr) {
-            // Non-fatal: account is created, bonus can be retried
-            console.warn('Welcome bonus error (non-fatal):', bonusErr.message);
-        }
+        // 4. Il bonus benvenuto e' gia' stato accreditato al punto 1b.
 
         // 5. Send welcome message via WhatsApp (or email fallback)
         try {
@@ -385,7 +427,16 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ success: true, user: authData.user })
+            body: JSON.stringify({
+                success: true,
+                user: authData.user,
+                // 26/08/2026: la risposta dice com'e' andata davvero. Prima era
+                // sempre "success" oppure un 500 che nascondeva un account gia'
+                // creato.
+                bonusAccreditato,
+                profiloCompleto: !profileError,
+                profileError: profileError || undefined,
+            })
         };
 
     } catch (error) {

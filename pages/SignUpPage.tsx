@@ -344,6 +344,19 @@ const SignUpPage: React.FC = () => {
 
       try { localStorage.removeItem('dr7_referral_code'); } catch {}
 
+      // 26/08/2026: la registrazione puo' riuscire con la scheda incompleta
+      // (un dato accessorio rifiutato dal database). Prima il caso finiva in
+      // un errore che nascondeva l'account gia' creato; adesso l'account c'e',
+      // il bonus e' accreditato, e all'utente si dice cosa manca invece di
+      // lasciarlo con una scheda a meta' senza saperlo.
+      if (result?.profiloCompleto === false) {
+        console.warn('[SignUp] profilo incompleto:', result.profileError);
+        setGeneralError(
+          'Account creato e credito di benvenuto accreditato, ma alcuni dati non sono stati salvati. ' +
+          'Completali dalla tua area personale (Il mio account) o scrivici: info@dr7.app'
+        );
+      }
+
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password

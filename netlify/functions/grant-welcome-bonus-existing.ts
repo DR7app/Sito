@@ -27,18 +27,26 @@ const handler: Handler = async (event) => {
   }
 
   try {
-    // Get all auth users who have a customers_extended record (source = website)
-    const { data: customers, error: fetchError } = await supabase
-      .from('customers_extended')
-      .select('user_id')
-      .not('user_id', 'is', null)
+    // 26/08/2026 — si parte dagli UTENTI, non dalle schede cliente.
+    //
+    // Prima la lista arrivava da `customers_extended`: proprio chi non aveva
+    // ricevuto il bonus era, nella maggior parte dei casi, chi la scheda non
+    // ce l'aveva (la registrazione usciva con un errore prima di scriverla).
+    // Il recupero saltava esattamente le persone da recuperare. Ora si scorre
+    // l'elenco degli account: se esiste l'utente, il bonus gli spetta.
+    const customers: { user_id: string }[] = []
+    for (let page = 1; page <= 50; page++) {
+      const { data: pagina, error: usersError } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+      if (usersError) throw usersError
+      const utenti = pagina?.users || []
+      for (const u of utenti) if (u.id) customers.push({ user_id: u.id })
+      if (utenti.length < 1000) break
+    }
 
-    if (fetchError) throw fetchError
-
-    if (!customers || customers.length === 0) {
+    if (customers.length === 0) {
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: 'No customers found', granted: 0, skipped: 0, errors: 0 })
+        body: JSON.stringify({ message: 'Nessun utente trovato', granted: 0, skipped: 0, errors: 0 })
       }
     }
 

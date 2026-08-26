@@ -11,6 +11,13 @@ import { getCreditWalletCopy, type CreditWalletCopy, type CreditPackage } from '
 // centralina_pro_config.site_copy.creditWallet.packages). getCreditWalletCopy
 // ricade sul seed di siteCopy.ts finche' l'admin non ne salva di suoi.
 
+// Migliaia e decimali secondo la lingua della pagina: in italiano "10.000",
+// in inglese "10,000". Senza locale esplicita toLocaleString usava quella del
+// browser e un pacchetto da diecimila euro appariva "10,000" a un cliente
+// italiano, che legge dieci.
+const formatAmount = (n: number, lang: 'it' | 'en'): string =>
+  n.toLocaleString(lang === 'it' ? 'it-IT' : 'en-GB', { maximumFractionDigits: 2 });
+
 const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: CreditWalletCopy; lang: 'it' | 'en' }> = ({ pkg, onSelect, copy, lang }) => {
   const c = (it: keyof CreditWalletCopy, en: keyof CreditWalletCopy): string =>
     (copy as Record<string, string>)[(lang === 'it' ? it : en) as string];
@@ -36,7 +43,7 @@ const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: Cr
 
       <div className="mb-4">
         <div className="text-xs text-gray-500 mb-1">{c('card_recharge_label_it', 'card_recharge_label_en')}</div>
-        <div className="text-xl font-semibold text-gray-300">{pkg.rechargeAmount.toLocaleString()}</div>
+        <div className="text-xl font-semibold text-gray-300">{formatAmount(pkg.rechargeAmount, lang)}</div>
       </div>
 
       <div className="flex items-center justify-center py-2">
@@ -47,9 +54,9 @@ const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: Cr
 
       <div className="mb-4 pb-4 border-b border-gray-700">
         <div className="text-sm text-gray-400 mb-1">{c('card_receive_label_it', 'card_receive_label_en')}</div>
-        <div className="text-5xl font-extrabold text-white">{pkg.receivedAmount.toLocaleString()}</div>
+        <div className="text-5xl font-extrabold text-white">{formatAmount(pkg.receivedAmount, lang)}</div>
         <div className="text-lg text-white mt-3 font-bold">
-          +{pkg.bonusPercentage}% {c('card_bonus_suffix_it', 'card_bonus_suffix_en')} ({pkg.bonus})
+          +{pkg.bonusPercentage}% {c('card_bonus_suffix_it', 'card_bonus_suffix_en')} ({formatAmount(pkg.bonus, lang)})
         </div>
       </div>
 
@@ -599,16 +606,16 @@ const CreditWalletPage: React.FC = () => {
                 <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400 text-xs">{w('modal_recharge_label_it', 'modal_recharge_label_en')}</span>
-                    <span className="text-gray-300 font-semibold">{selectedPackage.rechargeAmount}</span>
+                    <span className="text-gray-300 font-semibold">{formatAmount(selectedPackage.rechargeAmount, lang)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">{w('modal_bonus_label_it', 'modal_bonus_label_en')} (+{selectedPackage.bonusPercentage}%)</span>
-                    <span className="text-white font-bold text-xl">{selectedPackage.bonus}</span>
+                    <span className="text-white font-bold text-xl">{formatAmount(selectedPackage.bonus, lang)}</span>
                   </div>
                   <div className="border-t border-gray-700 my-2"></div>
                   <div className="flex justify-between items-center">
                     <span className="text-white font-semibold text-lg">{w('modal_receive_label_it', 'modal_receive_label_en')}</span>
-                    <span className="text-white font-bold text-3xl">{selectedPackage.receivedAmount}</span>
+                    <span className="text-white font-bold text-3xl">{formatAmount(selectedPackage.receivedAmount, lang)}</span>
                   </div>
                 </div>
 
@@ -684,7 +691,7 @@ const CreditWalletPage: React.FC = () => {
                   >
                     {isProcessing
                       ? w('modal_processing_it', 'modal_processing_en')
-                      : w('modal_pay_template_it', 'modal_pay_template_en').split('{amount}').join(String(selectedPackage.rechargeAmount))}
+                      : w('modal_pay_template_it', 'modal_pay_template_en').split('{amount}').join(formatAmount(selectedPackage.rechargeAmount, lang))}
                   </button>
                 </div>
               </form>

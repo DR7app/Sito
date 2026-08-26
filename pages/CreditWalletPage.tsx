@@ -38,7 +38,10 @@ const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: Cr
         </div>
       )}
 
-      <div className="text-xs text-gray-400 font-semibold mb-2">{pkg.series}</div>
+      {/* La serie e' un'etichetta di sezione: sempre in maiuscolo, qualunque
+          cosa sia finita in configurazione (una salvata prima che il
+          gestionale normalizzasse restava "dr7 maxi" sulla card). */}
+      <div className="text-xs text-gray-400 font-semibold mb-2 uppercase">{pkg.series}</div>
       <h3 className="text-2xl font-bold text-white mb-4">{pkg.name}</h3>
 
       <div className="mb-4">
@@ -452,7 +455,7 @@ const CreditWalletPage: React.FC = () => {
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                     }`}
                 >
-                  {s === 'all' ? w('packages_filter_all_it', 'packages_filter_all_en') : s}
+                  {s === 'all' ? w('packages_filter_all_it', 'packages_filter_all_en') : <span className="uppercase">{s}</span>}
                 </button>
               ))}
             </div>

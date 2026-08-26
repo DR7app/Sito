@@ -5,108 +5,11 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { addCredits } from '../utils/creditWallet';
 import { useTranslation } from '../hooks/useTranslation';
-import { getCreditWalletCopy, type CreditWalletCopy } from '../utils/siteCopy';
+import { getCreditWalletCopy, type CreditWalletCopy, type CreditPackage } from '../utils/siteCopy';
 
-interface CreditPackage {
-  id: string;
-  series: string;
-  name: string;
-  rechargeAmount: number;
-  receivedAmount: number;
-  bonus: number;
-  bonusPercentage: number;
-  popular?: boolean;
-}
-
-const CREDIT_PACKAGES: CreditPackage[] = [
-  // STARTER SERIES
-  {
-    id: 'starter-50',
-    series: 'STARTER SERIES',
-    name: 'Starter 50',
-    rechargeAmount: 50,
-    receivedAmount: 60,
-    bonus: 10,
-    bonusPercentage: 20
-  },
-  {
-    id: 'starter-100',
-    series: 'STARTER SERIES',
-    name: 'Starter 100',
-    rechargeAmount: 100,
-    receivedAmount: 120,
-    bonus: 20,
-    bonusPercentage: 20
-  },
-  // BOOSTER SERIES
-  {
-    id: 'booster-200',
-    series: 'BOOSTER SERIES',
-    name: 'Booster 200',
-    rechargeAmount: 200,
-    receivedAmount: 240,
-    bonus: 40,
-    bonusPercentage: 20
-  },
-  {
-    id: 'booster-300',
-    series: 'BOOSTER SERIES',
-    name: 'Booster 300',
-    rechargeAmount: 300,
-    receivedAmount: 369,
-    bonus: 69,
-    bonusPercentage: 23,
-    popular: true
-  },
-  // POWER SERIES
-  {
-    id: 'power-500',
-    series: 'POWER SERIES',
-    name: 'Power 500',
-    rechargeAmount: 500,
-    receivedAmount: 625,
-    bonus: 125,
-    bonusPercentage: 25
-  },
-  {
-    id: 'power-750',
-    series: 'POWER SERIES',
-    name: 'Power 750',
-    rechargeAmount: 750,
-    receivedAmount: 952.50,
-    bonus: 202.50,
-    bonusPercentage: 27
-  },
-  // PREMIUM SERIES
-  {
-    id: 'premium-1000',
-    series: 'PREMIUM SERIES',
-    name: 'Premium 1.000',
-    rechargeAmount: 1000,
-    receivedAmount: 1290,
-    bonus: 290,
-    bonusPercentage: 29
-  },
-  {
-    id: 'premium-2000',
-    series: 'PREMIUM SERIES',
-    name: 'Premium 2.000',
-    rechargeAmount: 2000,
-    receivedAmount: 2620,
-    bonus: 620,
-    bonusPercentage: 31
-  },
-  // ELITE SERIES
-  {
-    id: 'elite-5000',
-    series: 'ELITE SERIES',
-    name: 'Elite 5.000',
-    rechargeAmount: 5000,
-    receivedAmount: 6650,
-    bonus: 1650,
-    bonusPercentage: 33
-  }
-];
+// I pacchetti arrivano dal CMS (admin > Sito > Credit Wallet, salvati in
+// centralina_pro_config.site_copy.creditWallet.packages). getCreditWalletCopy
+// ricade sul seed di siteCopy.ts finche' l'admin non ne salva di suoi.
 
 const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: CreditWalletCopy; lang: 'it' | 'en' }> = ({ pkg, onSelect, copy, lang }) => {
   const c = (it: keyof CreditWalletCopy, en: keyof CreditWalletCopy): string =>
@@ -183,6 +86,7 @@ const CreditWalletPage: React.FC = () => {
     if (!cur) return '';
     return cur[lang === 'it' ? it : en] as string;
   };
+  const packages: CreditPackage[] = copy?.packages ?? [];
   // Nexi payment - no stripe needed
   // Nexi payment - no elements needed
   // Nexi payment - no card element needed
@@ -337,7 +241,7 @@ const CreditWalletPage: React.FC = () => {
 
   const handleSelectPackage = (packageId: string) => {
     if (user) {
-      const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
+      const pkg = packages.find(p => p.id === packageId);
       if (pkg) {
         setSelectedPackage(pkg);
         setShowPaymentModal(true);
@@ -447,10 +351,14 @@ const CreditWalletPage: React.FC = () => {
     }
   };
 
-  const series = ['all', 'STARTER SERIES', 'BOOSTER SERIES', 'POWER SERIES', 'PREMIUM SERIES', 'ELITE SERIES'];
+  // Le serie sono dedotte dai pacchetti: aggiungerne una in admin basta a far
+  // comparire il filtro, senza toccare il codice.
+  const series = ['all', ...packages.reduce<string[]>((acc, pkg) => (
+    pkg.series && !acc.includes(pkg.series) ? [...acc, pkg.series] : acc
+  ), [])];
   const filteredPackages = selectedSeries === 'all'
-    ? CREDIT_PACKAGES
-    : CREDIT_PACKAGES.filter(pkg => pkg.series === selectedSeries);
+    ? packages
+    : packages.filter(pkg => pkg.series === selectedSeries);
 
   return (
     <motion.div

@@ -573,10 +573,28 @@ export interface TokenCopy {
 }
 
 // ─── Credit Wallet page (recharge funnel + benefits + checkout modal) ────
-// CREDIT_PACKAGES array (amounts/bonuses) stays in code as product config —
-// only the marketing copy + checkout chrome is editable here. Brand vocab
-// "DR7", "DR7 Credit Wallet", "Nexi" stays hardcoded in the page template.
-// `{amount}` token in modal pay CTA resolved at render.
+// Marketing copy + checkout chrome + i pacchetti di ricarica (importi e
+// percentuali di bonus), tutto editabile da admin > Sito > Credit Wallet.
+// Brand vocab "DR7", "DR7 Credit Wallet", "Nexi" stays hardcoded in the
+// page template. `{amount}` token in modal pay CTA resolved at render.
+
+/**
+ * Un pacchetto di ricarica del Credit Wallet. `receivedAmount` e `bonus`
+ * sono derivati da `rechargeAmount` + `bonusPercentage` (l'editor admin li
+ * ricalcola a ogni modifica) ma restano persistiti perche' la pagina e le
+ * righe di `credit_wallet_purchases` li usano cosi' come sono.
+ */
+export interface CreditPackage {
+  id: string;
+  series: string;
+  name: string;
+  rechargeAmount: number;
+  receivedAmount: number;
+  bonus: number;
+  bonusPercentage: number;
+  popular?: boolean;
+}
+
 export interface CreditWalletCopy {
   // Hero
   hero_title_eyebrow_it: string; hero_title_eyebrow_en: string;
@@ -596,6 +614,8 @@ export interface CreditWalletCopy {
   // Package selection
   packages_section_label_it: string; packages_section_label_en: string;
   packages_filter_all_it: string; packages_filter_all_en: string;
+  // Pacchetti di ricarica (serie, importi, bonus %) — editabili da admin
+  packages: CreditPackage[];
   // Promo footer slogans
   promo_line1_it: string; promo_line1_en: string;
   promo_line2_it: string; promo_line2_en: string;
@@ -1561,12 +1581,45 @@ export async function getBookingCopy(): Promise<BookingCopy> {
   return DEFAULT_BOOKING;
 }
 
-/** Credit Wallet page (marketing copy + checkout modal). Package data
- * stays in CREDIT_PACKAGES (product config), not edited here. */
+/**
+ * Credit Wallet page (marketing copy + checkout modal + pacchetti).
+ *
+ * `packages` e' arrivato dopo: le righe gia' salvate in
+ * `site_copy.creditWallet` non ce l'hanno, quindi si ricade sempre sul seed
+ * finche' l'admin non salva la sua lista — mai una griglia vuota.
+ */
 export async function getCreditWalletCopy(): Promise<CreditWalletCopy> {
   const snap = await loadOnce();
-  if (snap.creditWallet && snap.creditWallet.hero_intro_it) return snap.creditWallet;
+  if (snap.creditWallet && snap.creditWallet.hero_intro_it) {
+    return { ...snap.creditWallet, packages: normalizeCreditPackages(snap.creditWallet.packages) };
+  }
   return DEFAULT_CREDIT_WALLET;
+}
+
+/** Scarta le righe incomplete e riempie i derivati mancanti (bonus, ricevuto). */
+function normalizeCreditPackages(raw: unknown): CreditPackage[] {
+  if (!Array.isArray(raw)) return DEFAULT_CREDIT_WALLET.packages;
+  const num = (v: unknown): number => (typeof v === 'number' && isFinite(v) ? v : Number(v) || 0);
+  const out = raw
+    .filter((p): p is Record<string, unknown> => !!p && typeof p === 'object')
+    .map((p): CreditPackage => {
+      const rechargeAmount = num(p.rechargeAmount);
+      const bonusPercentage = num(p.bonusPercentage);
+      const bonus = p.bonus != null ? num(p.bonus) : Math.round(rechargeAmount * bonusPercentage) / 100;
+      const receivedAmount = p.receivedAmount != null ? num(p.receivedAmount) : rechargeAmount + bonus;
+      return {
+        id: String(p.id || ''),
+        series: String(p.series || ''),
+        name: String(p.name || ''),
+        rechargeAmount,
+        receivedAmount,
+        bonus,
+        bonusPercentage,
+        popular: p.popular === true,
+      };
+    })
+    .filter(p => p.id && p.rechargeAmount > 0);
+  return out.length ? out : DEFAULT_CREDIT_WALLET.packages;
 }
 
 /** Token page (DR7 Coin / Up / APP manifesto) — chrome only. */
@@ -2049,7 +2102,6 @@ const DEFAULT_REGISTRAZIONE_CLIENTE: RegistrazioneClienteCopy = {
   field_birth_city_placeholder_it: 'es. Cagliari, Torino…', field_birth_city_placeholder_en: 'e.g. Cagliari, Turin…',
   field_birth_province_it: 'Provincia di Nascita', field_birth_province_en: 'Province of Birth',
   field_birth_province_placeholder_it: 'CA (EE se nato all\'estero)', field_birth_province_placeholder_en: 'CA (EE if born abroad)',
-  field_birth_province_placeholder_it: 'es. CA, TO, MI…', field_birth_province_placeholder_en: 'e.g. CA, TO, MI…',
   // Azienda
   field_ragione_sociale_it: 'Ragione Sociale', field_ragione_sociale_en: 'Company Name',
   field_piva_it: 'P.IVA', field_piva_en: 'VAT Number',
@@ -2243,6 +2295,19 @@ const DEFAULT_CREDIT_WALLET: CreditWalletCopy = {
   err_payment_not_ready_en: 'Payment system is not ready.',
   err_payment_failed_it: 'Elaborazione del pagamento fallita.',
   err_payment_failed_en: 'Payment processing failed.',
+  // Seed dei pacchetti: identico a quello che il sito mostrava quando gli
+  // importi erano hardcoded in CreditWalletPage.tsx (CREDIT_PACKAGES).
+  packages: [
+    { id: 'starter-50',   series: 'STARTER SERIES', name: 'Starter 50',      rechargeAmount: 50,   receivedAmount: 60,     bonus: 10,     bonusPercentage: 20 },
+    { id: 'starter-100',  series: 'STARTER SERIES', name: 'Starter 100',     rechargeAmount: 100,  receivedAmount: 120,    bonus: 20,     bonusPercentage: 20 },
+    { id: 'booster-200',  series: 'BOOSTER SERIES', name: 'Booster 200',     rechargeAmount: 200,  receivedAmount: 240,    bonus: 40,     bonusPercentage: 20 },
+    { id: 'booster-300',  series: 'BOOSTER SERIES', name: 'Booster 300',     rechargeAmount: 300,  receivedAmount: 369,    bonus: 69,     bonusPercentage: 23, popular: true },
+    { id: 'power-500',    series: 'POWER SERIES',   name: 'Power 500',       rechargeAmount: 500,  receivedAmount: 625,    bonus: 125,    bonusPercentage: 25 },
+    { id: 'power-750',    series: 'POWER SERIES',   name: 'Power 750',       rechargeAmount: 750,  receivedAmount: 952.50, bonus: 202.50, bonusPercentage: 27 },
+    { id: 'premium-1000', series: 'PREMIUM SERIES', name: 'Premium 1.000',   rechargeAmount: 1000, receivedAmount: 1290,   bonus: 290,    bonusPercentage: 29 },
+    { id: 'premium-2000', series: 'PREMIUM SERIES', name: 'Premium 2.000',   rechargeAmount: 2000, receivedAmount: 2620,   bonus: 620,    bonusPercentage: 31 },
+    { id: 'elite-5000',   series: 'ELITE SERIES',   name: 'Elite 5.000',     rechargeAmount: 5000, receivedAmount: 6650,   bonus: 1650,   bonusPercentage: 33 },
+  ],
 };
 
 // ─── Default Booking seed (yacht/jet/heli auth gate + chrome + errors) ───

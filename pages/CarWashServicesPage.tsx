@@ -6,6 +6,7 @@ import { type VehicleCategory } from '../utils/vehicleClassification';
 import { classifyVehicle as classifyWashVehicle } from '../utils/classifyWashVehicle';
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../utils/lookupTarga';
 import { useCarWashServices } from '../hooks/useCarWashServices';
+import { immagineCatalogo } from '../utils/immagineCatalogo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
@@ -140,7 +141,7 @@ const CarWashServicesPage: React.FC = () => {
   // 2026-07-24: immagine "Absolute Detail" dal Catalogo Lavaggio se presente
   // (servizio con id/nome che contiene "absolute"), altrimenti fallback locale.
   const absoluteDetailService = dbServices.find(s => /absolute/i.test(s.id) || /absolute/i.test(s.name || '') || /absolute/i.test(s.nameEn || ''));
-  const absoluteDetailImage = absoluteDetailService?.image || '/absolute-detail.jpeg';
+  const absoluteDetailImage = immagineCatalogo(absoluteDetailService?.image) || '/absolute-detail.jpeg';
 
   // Targa lookup state
   const [targaInput, setTargaInput] = useState('');
@@ -414,7 +415,7 @@ const CarWashServicesPage: React.FC = () => {
       {/* Hero banner — Servizi: Lavaggio & Meccanica */}
       <div className="container mx-auto px-4 mb-8">
         <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden border border-white/10">
-          <img src="/servizi-lavaggio.jpeg" alt="" className="w-full h-40 md:h-56 object-cover" />
+          <img src="/servizi-lavaggio.jpeg" alt="" loading="lazy" decoding="async" className="w-full h-40 md:h-56 object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-end p-5 md:p-7">
             <div>
               <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">{t({ it: "Servizi", en: "Services" })}</p>
@@ -608,8 +609,10 @@ const CarWashServicesPage: React.FC = () => {
                     className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
                   >
                     <img
-                      src={autoService?.image || combo.image}
+                      src={immagineCatalogo(autoService?.image || combo.image)}
                       alt={lang === 'it' ? (autoService?.name || combo.name) : (autoService?.nameEn || combo.nameEn)}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-auto object-contain"
                     />
                     <div className="p-4">
@@ -697,8 +700,10 @@ const CarWashServicesPage: React.FC = () => {
                 {/* Service Image - full image display */}
                 <div className="relative">
                   <img
-                    src={service.image || '/luxurywash.jpeg'}
+                    src={immagineCatalogo(service.image) || '/luxurywash.jpeg'}
                     alt={lang === 'it' ? service.name : service.nameEn}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-auto object-contain"
                   />
                   {/* Single-price: overlay button at bottom */}
@@ -920,8 +925,10 @@ const CarWashServicesPage: React.FC = () => {
                         className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden flex flex-col"
                       >
                         <img
-                          src={extra.image || '/luxurywash.jpeg'}
+                          src={immagineCatalogo(extra.image, 500) || '/luxurywash.jpeg'}
                           alt={lang === 'it' ? extra.name : extra.nameEn}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-auto object-contain"
                         />
                         <div className="p-3 flex flex-col flex-grow">
@@ -976,8 +983,10 @@ const CarWashServicesPage: React.FC = () => {
                         className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden flex flex-col"
                       >
                         <img
-                          src={exp.image || '/luxurywash.jpeg'}
+                          src={immagineCatalogo(exp.image, 500) || '/luxurywash.jpeg'}
                           alt={lang === 'it' ? exp.name : exp.nameEn}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-auto object-contain"
                         />
                         <div className="p-3">

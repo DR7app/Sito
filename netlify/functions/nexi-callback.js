@@ -83,67 +83,97 @@ async function sendIngressoDR7ClubToCustomer(sb, userId, siteUrl) {
 }
 
 /**
- * Invia al cliente il messaggio configurato in "Messaggi di Sistema Pro" per un
- * evento, usando la stessa Programmazione dell'admin: vince il template che
- * dichiara l'evento in `handled_events` ("Eventi gestiti da questo template").
+ * Invia al cliente i messaggi configurati in "Messaggi di Sistema Pro" per una
+ * lista di eventi, usando la stessa Programmazione dell'admin: vince il
+ * template che dichiara l'evento in `handled_events` ("Eventi gestiti da
+ * questo template").
+ *
+ * Se piu' eventi della lista sono gestiti dallo STESSO template il messaggio
+ * parte una volta sola: la ricarica del sito accende sia "Wallet ricaricato
+ * dal cliente" sia "Bonus wallet", e finche' l'admin li tiene sulla stessa
+ * scheda il cliente non deve ricevere due WhatsApp identici.
  *
  * Nessun testo di riserva: se nessun template abilitato gestisce l'evento non
  * parte nulla. Best-effort, non lancia mai.
  */
-async function sendProEventToCustomer(sb, eventKey, phone, vars, siteUrl) {
+async function sendProEventsToCustomer(sb, eventKeys, phone, vars, siteUrl) {
   try {
+    const eventi = (Array.isArray(eventKeys) ? eventKeys : [eventKeys]).filter(Boolean);
+    if (eventi.length === 0) return;
+
     let digits = String(phone || '').replace(/\D/g, '');
     if (digits.startsWith('00')) digits = digits.substring(2);
     if (digits.length === 10) digits = '39' + digits;
     if (!digits) {
-      console.warn(`[nexi-callback] ${eventKey}: nessun telefono, invio saltato`);
+      console.warn(`[nexi-callback] ${eventi.join(', ')}: nessun telefono, invio saltato`);
       return;
     }
 
-    const { data: rows } = await sb
-      .from('system_messages')
-      .select('message_key, message_body, is_enabled, include_header, updated_at')
-      .contains('handled_events', [eventKey])
-      .like('message_key', 'pro_%')
-      .order('updated_at', { ascending: false });
-
-    const tpl = (rows || []).find(
-      r => r.is_enabled !== false && r.message_body && String(r.message_body).trim()
-    ) || null;
-    if (!tpl) {
-      console.log(`[nexi-callback] Nessun template Pro gestisce "${eventKey}" — niente invio`);
-      return;
-    }
-
-    let testo = String(tpl.message_body);
-    if (tpl.include_header) {
-      const { data: wrap } = await sb
+    // Template abilitato che gestisce l'evento, il piu' recente se sono piu' di uno
+    const risolvi = async eventKey => {
+      const { data: rows } = await sb
         .from('system_messages')
-        .select('message_key, message_body, is_enabled')
-        .in('message_key', ['pro_wrapper_header', 'pro_wrapper_footer']);
-      const parte = k => {
-        const w = (wrap || []).find(x => x.message_key === k && x.is_enabled !== false);
-        return w && w.message_body ? String(w.message_body) : '';
-      };
-      const header = parte('pro_wrapper_header');
-      const footer = parte('pro_wrapper_footer');
-      testo = [header, testo, footer].filter(t => t.trim()).join('\n\n');
-    }
+        .select('message_key, message_body, is_enabled, include_header, updated_at')
+        .contains('handled_events', [eventKey])
+        .like('message_key', 'pro_%')
+        .order('updated_at', { ascending: false });
+      return (rows || []).find(
+        r => r.is_enabled !== false && r.message_body && String(r.message_body).trim()
+      ) || null;
+    };
 
-    for (const chiave of Object.keys(vars || {})) {
-      const valore = vars[chiave] == null ? '' : String(vars[chiave]);
-      testo = testo.split(`{${chiave}}`).join(valore);
+    const daInviare = [];
+    for (const eventKey of eventi) {
+      const tpl = await risolvi(eventKey);
+      if (!tpl) {
+        console.log(`[nexi-callback] Nessun template Pro gestisce "${eventKey}" — niente invio`);
+        continue;
+      }
+      const gia = daInviare.find(x => x.tpl.message_key === tpl.message_key);
+      if (gia) {
+        gia.eventi.push(eventKey);
+        continue;
+      }
+      daInviare.push({ tpl, eventi: [eventKey] });
     }
-    if (!testo.trim()) return;
+    if (daInviare.length === 0) return;
 
-    await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customPhone: digits, customMessage: testo }),
-    });
-    console.log(`[nexi-callback] ${eventKey} → ${tpl.message_key} inviato a ${digits}`);
+    let wrap = null;
+    const wrapper = async k => {
+      if (!wrap) {
+        const { data } = await sb
+          .from('system_messages')
+          .select('message_key, message_body, is_enabled')
+          .in('message_key', ['pro_wrapper_header', 'pro_wrapper_footer']);
+        wrap = data || [];
+      }
+      const w = wrap.find(x => x.message_key === k && x.is_enabled !== false);
+      return w && w.message_body ? String(w.message_body) : '';
+    };
+
+    for (const { tpl, eventi: gestiti } of daInviare) {
+      let testo = String(tpl.message_body);
+      if (tpl.include_header) {
+        const header = await wrapper('pro_wrapper_header');
+        const footer = await wrapper('pro_wrapper_footer');
+        testo = [header, testo, footer].filter(t => t.trim()).join('\n\n');
+      }
+
+      for (const chiave of Object.keys(vars || {})) {
+        const valore = vars[chiave] == null ? '' : String(vars[chiave]);
+        testo = testo.split(`{${chiave}}`).join(valore);
+      }
+      if (!testo.trim()) continue;
+
+      await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customPhone: digits, customMessage: testo }),
+      });
+      console.log(`[nexi-callback] ${gestiti.join(' + ')} -> ${tpl.message_key} inviato a ${digits}`);
+    }
   } catch (e) {
-    console.error(`[nexi-callback] invio "${eventKey}" fallito (non bloccante):`, e);
+    console.error('[nexi-callback] invio messaggi Pro fallito (non bloccante):', e);
   }
 }
 
@@ -1121,10 +1151,13 @@ exports.handler = async (event) => {
         }
 
         // Avviso al cliente della ricarica andata a buon fine. Il testo e' il
-        // template Pro che gestisce l'evento "Wallet ricaricato dal cliente"
-        // (on_wallet_recharge) in Messaggi di Sistema Pro > Programmazione:
-        // finora l'evento non aveva nessun mittente, il credito veniva
-        // accreditato e il cliente non riceveva niente.
+        // template Pro che gestisce, in Messaggi di Sistema Pro >
+        // Programmazione, "Wallet ricaricato dal cliente" (on_wallet_recharge)
+        // e "Bonus wallet" (wallet_bonus_credit): una ricarica dal sito accende
+        // entrambi, perche' accredita ricarica + bonus pacchetto + cashback.
+        // Finora nessuno dei due aveva un mittente qui: il credito veniva
+        // accreditato e il cliente non riceveva niente. Se i due eventi stanno
+        // sulla stessa scheda parte un solo messaggio.
         if (purchase.user_id) {
           try {
             const { data: cliente } = await supabase
@@ -1153,7 +1186,7 @@ exports.handler = async (event) => {
               || 'Cliente';
             const nome = String(nomeCompleto).split(' ')[0] || 'Cliente';
 
-            await sendProEventToCustomer(supabase, 'on_wallet_recharge', telefono, {
+            await sendProEventsToCustomer(supabase, ['on_wallet_recharge', 'wallet_bonus_credit'], telefono, {
               nome,
               custName: nomeCompleto,
               customer_name: nomeCompleto,

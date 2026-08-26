@@ -995,6 +995,20 @@ exports.handler = async (event) => {
       // Skip if already completed (avoid double-crediting)
       if (purchase.payment_status === 'completed' || purchase.payment_status === 'succeeded' || purchase.payment_status === 'paid') {
         console.log('Purchase already completed, skipping');
+        // 26/08/2026 — Ma l'AVVISO al cliente deve partire lo stesso. A
+        // completare la ricarica e' quasi sempre il browser (la pagina di
+        // pagamento riuscito): il webhook arrivava qui, usciva, e il
+        // messaggio non partiva mai. La function e' idempotente: se ha gia'
+        // mandato lei non manda due volte.
+        try {
+          await fetch(`${process.env.URL || 'https://dr7.app'}/.netlify/functions/avvisa-ricarica-wallet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ purchaseId: purchase.id }),
+          });
+        } catch (e) {
+          console.error('[nexi-callback] avviso ricarica (gia completata) fallito:', e);
+        }
         return { statusCode: 200, body: 'OK' };
       }
 
@@ -1151,87 +1165,18 @@ exports.handler = async (event) => {
         }
 
         // Avviso al cliente della ricarica andata a buon fine. Il testo e' il
-        // template Pro che gestisce, in Messaggi di Sistema Pro >
-        // Programmazione, "Wallet ricaricato dal cliente" (on_wallet_recharge)
-        // e "Bonus wallet" (wallet_bonus_credit): una ricarica dal sito accende
-        // entrambi, perche' accredita ricarica + bonus pacchetto + cashback.
-        // Finora nessuno dei due aveva un mittente qui: il credito veniva
-        // accreditato e il cliente non riceveva niente. Se i due eventi stanno
-        // sulla stessa scheda parte un solo messaggio.
-        if (purchase.user_id) {
-          try {
-            const { data: cliente } = await supabase
-              .from('customers_extended')
-              .select('nome, cognome, telefono, denominazione, ragione_sociale')
-              .eq('user_id', purchase.user_id)
-              .maybeSingle();
-
-            // 26/08/2026 — Il numero puo' non essere sulla scheda: molte schede
-            // nascono vuote (i dati restano nei metadati auth o dentro le
-            // prenotazioni). Senza telefono il messaggio non parte affatto,
-            // quindi si cerca in tutte le fonti prima di rinunciare.
-            let telefono = (cliente && cliente.telefono) || purchase.customer_phone || '';
-            if (!telefono) {
-              try {
-                const { data: acc } = await supabase.auth.admin.getUserById(purchase.user_id);
-                const m = (acc && acc.user && acc.user.user_metadata) || {};
-                telefono = m.telefono || m.phone || (acc && acc.user && acc.user.phone) || '';
-              } catch (e) {
-                console.warn('[nexi-callback] telefono dai metadati non letto:', e && e.message);
-              }
-            }
-            if (!telefono) {
-              const { data: ultimaPren } = await supabase
-                .from('bookings')
-                .select('customer_phone')
-                .eq('user_id', purchase.user_id)
-                .not('customer_phone', 'is', null)
-                .order('created_at', { ascending: false })
-                .limit(1);
-              telefono = (ultimaPren && ultimaPren[0] && ultimaPren[0].customer_phone) || '';
-            }
-
-            const { data: saldoRow } = await supabase
-              .from('user_credit_balance')
-              .select('balance')
-              .eq('user_id', purchase.user_id)
-              .maybeSingle();
-            const saldo = saldoRow && saldoRow.balance ? parseFloat(saldoRow.balance) : 0;
-
-            const ricaricaEur = parseFloat(purchase.recharge_amount || purchase.received_amount || 0);
-            const ricevutoEur = parseFloat(purchase.received_amount || 0);
-            const bonusPacchetto = Math.round((ricevutoEur - ricaricaEur) * 100) / 100;
-
-            const nomeCompleto = [cliente && cliente.nome, cliente && cliente.cognome]
-              .filter(Boolean).join(' ').trim()
-              || (cliente && (cliente.denominazione || cliente.ragione_sociale))
-              || purchase.customer_name
-              || 'Cliente';
-            const nome = String(nomeCompleto).split(' ')[0] || 'Cliente';
-
-            console.log(`[nexi-callback] Avviso ricarica: scheda ${cliente ? 'trovata' : 'assente'}, telefono ${telefono || '(nessuno)'}, ricarica ${ricaricaEur} bonus ${bonusPacchetto} cashback ${cashbackAccreditato} saldo ${saldo}`);
-
-            await sendProEventsToCustomer(supabase, ['on_wallet_recharge', 'wallet_bonus_credit'], telefono, {
-              nome,
-              custName: nomeCompleto,
-              customer_name: nomeCompleto,
-              pacchetto: purchase.package_name || '',
-              package_name: purchase.package_name || '',
-              importo: ricaricaEur.toFixed(2),
-              amount: ricaricaEur.toFixed(2),
-              ricarica: ricaricaEur.toFixed(2),
-              bonus: bonusPacchetto.toFixed(2),
-              bonusEur: bonusPacchetto.toFixed(2),
-              percentLabel: `${purchase.bonus_percentage || 0}%`,
-              cashback: cashbackAccreditato.toFixed(2),
-              totale: ricevutoEur.toFixed(2),
-              saldo: saldo.toFixed(2),
-              newBalance: saldo.toFixed(2),
-              balance: saldo.toFixed(2),
-            }, process.env.URL || 'https://dr7.app');
-          } catch (avvisoErr) {
-            console.error('[nexi-callback] avviso ricarica wallet fallito (non bloccante):', avvisoErr);
-          }
+        // template di Messaggi di Sistema Pro che dichiara gli eventi "Wallet
+        // ricaricato dal cliente" / "Cashback wallet dopo pagamento carta".
+        // Sta in una function a se' perche' deve partire anche quando a
+        // completare la ricarica e' il browser e non questo webhook.
+        try {
+          await fetch(`${process.env.URL || 'https://dr7.app'}/.netlify/functions/avvisa-ricarica-wallet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ purchaseId: purchase.id }),
+          });
+        } catch (avvisoErr) {
+          console.error('[nexi-callback] avviso ricarica wallet fallito (non bloccante):', avvisoErr);
         }
 
         // Save the Nexi card token (contractId) to customers_extended.metadata

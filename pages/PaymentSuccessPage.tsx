@@ -499,6 +499,20 @@ const PaymentSuccessPage: React.FC = () => {
                         }
                     }
 
+                    // AVVISO WHATSAPP della ricarica: stessa ragione della
+                    // fattura qui sotto. Il messaggio stava solo nel webhook
+                    // nexi-callback, che pero' esce subito quando trova la
+                    // ricarica gia' completata — ed e' proprio questa pagina a
+                    // completarla quasi sempre. Risultato: il credito entrava e
+                    // il cliente non riceveva niente. La function e'
+                    // idempotente: se ha gia' mandato il webhook non manda due
+                    // volte. Non si aspetta l'esito.
+                    fetch(`${FUNCTIONS_BASE}/.netlify/functions/avvisa-ricarica-wallet`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ purchaseId: purchase.id }),
+                    }).catch(e => console.error('Avviso ricarica wallet error', e));
+
                     // FATTURA: genera SEMPRE (idempotente lato server via note
                     // 'wallet_purchase:{id}'). Il webhook nexi-callback puo' NON
                     // scattare/completare e questa pagina e' SEMPRE raggiunta dal

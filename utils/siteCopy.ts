@@ -810,6 +810,7 @@ export interface SignUpCopy {
   field_birth_date_it: string; field_birth_date_en: string;
   field_birth_city_it: string; field_birth_city_en: string;
   field_birth_province_it: string; field_birth_province_en: string;
+  field_birth_province_placeholder_it: string; field_birth_province_placeholder_en: string;
   field_address_it: string; field_address_en: string;
   field_address_placeholder_it: string; field_address_placeholder_en: string;
   field_civico_it: string; field_civico_en: string;
@@ -862,6 +863,9 @@ export interface SignUpCopy {
   err_civico_required_it: string; err_civico_required_en: string;
   err_cap_required_it: string; err_cap_required_en: string;
   err_province_required_it: string; err_province_required_en: string;
+  err_sesso_required_it: string; err_sesso_required_en: string;
+  err_birth_city_required_it: string; err_birth_city_required_en: string;
+  err_birth_province_required_it: string; err_birth_province_required_en: string;
   err_codice_univoco_required_it: string; err_codice_univoco_required_en: string;
   err_ente_required_it: string; err_ente_required_en: string;
   err_city_required_it: string; err_city_required_en: string;
@@ -2044,6 +2048,7 @@ const DEFAULT_REGISTRAZIONE_CLIENTE: RegistrazioneClienteCopy = {
   field_birth_city_it: 'Luogo di Nascita', field_birth_city_en: 'Place of Birth',
   field_birth_city_placeholder_it: 'es. Cagliari, Torino…', field_birth_city_placeholder_en: 'e.g. Cagliari, Turin…',
   field_birth_province_it: 'Provincia di Nascita', field_birth_province_en: 'Province of Birth',
+  field_birth_province_placeholder_it: 'CA (EE se nato all\'estero)', field_birth_province_placeholder_en: 'CA (EE if born abroad)',
   field_birth_province_placeholder_it: 'es. CA, TO, MI…', field_birth_province_placeholder_en: 'e.g. CA, TO, MI…',
   // Azienda
   field_ragione_sociale_it: 'Ragione Sociale', field_ragione_sociale_en: 'Company Name',
@@ -2404,6 +2409,7 @@ const DEFAULT_SIGNUP: SignUpCopy = {
   field_birth_date_it: 'Data di Nascita', field_birth_date_en: 'Date of Birth',
   field_birth_city_it: 'Città di Nascita', field_birth_city_en: 'Place of Birth',
   field_birth_province_it: 'Provincia di Nascita', field_birth_province_en: 'Province of Birth',
+  field_birth_province_placeholder_it: 'CA (EE se nato all\'estero)', field_birth_province_placeholder_en: 'CA (EE if born abroad)',
   field_address_it: 'Indirizzo (Residenza)', field_address_en: 'Address (Residence)',
   field_address_placeholder_it: 'Via Roma', field_address_placeholder_en: 'Via Roma',
   field_civico_it: 'Numero Civico', field_civico_en: 'Street Number',
@@ -2453,6 +2459,9 @@ const DEFAULT_SIGNUP: SignUpCopy = {
   err_civico_required_it: 'Numero civico è obbligatorio', err_civico_required_en: 'Street number is required',
   err_cap_required_it: 'CAP è obbligatorio', err_cap_required_en: 'Postal code is required',
   err_province_required_it: 'Provincia è obbligatoria', err_province_required_en: 'Province is required',
+  err_sesso_required_it: 'Sesso è obbligatorio', err_sesso_required_en: 'Gender is required',
+  err_birth_city_required_it: 'Città di Nascita è obbligatoria', err_birth_city_required_en: 'Place of birth is required',
+  err_birth_province_required_it: 'Provincia di Nascita è obbligatoria (EE se nato all\'estero)', err_birth_province_required_en: 'Province of birth is required (EE if born abroad)',
   err_codice_univoco_required_it: 'Codice Univoco è obbligatorio', err_codice_univoco_required_en: 'Unique code is required',
   err_ente_required_it: 'Ente o Ufficio è obbligatorio', err_ente_required_en: 'Agency or office is required',
   err_city_required_it: 'Città è obbligatorio', err_city_required_en: 'City is required',

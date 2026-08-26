@@ -219,6 +219,13 @@ const SignUpPage: React.FC = () => {
         } else if (formData.codiceFiscale && !validateCodiceFiscale(formData.codiceFiscale)) {
           newErrors.codiceFiscale = s('err_cf_invalid_it', 'err_cf_invalid_en');
         }
+        // 26/08/2026 (direzione): sesso, citta' e provincia di nascita erano
+        // facoltativi, quindi la scheda cliente nasceva senza i dati che
+        // compongono il codice fiscale e che il contratto stampa. La provincia
+        // vale anche per chi e' nato all'estero: la sigla e' EE.
+        if (!formData.sesso) newErrors.sesso = s('err_sesso_required_it', 'err_sesso_required_en');
+        if (!formData.cittaNascita) newErrors.cittaNascita = s('err_birth_city_required_it', 'err_birth_city_required_en');
+        if (!formData.provinciaNascita) newErrors.provinciaNascita = s('err_birth_province_required_it', 'err_birth_province_required_en');
         if (!formData.indirizzo) newErrors.indirizzo = s('err_residenza_required_it', 'err_residenza_required_en');
         if (inItalia) {
           if (!formData.numeroCivico) newErrors.numeroCivico = s('err_civico_required_it', 'err_civico_required_en');
@@ -301,7 +308,7 @@ const SignUpPage: React.FC = () => {
         customerData.sesso = formData.sesso;
         customerData.data_nascita = formData.dataNascita;
         customerData.citta_nascita = formData.cittaNascita;
-        if (formData.provinciaNascita) customerData.provincia_nascita = formData.provinciaNascita;
+        customerData.provincia_nascita = formData.provinciaNascita;
 
         if (formData.numeroCivico) customerData.numero_civico = formData.numeroCivico;
         customerData.codice_postale = formData.codicePostale;
@@ -746,7 +753,7 @@ const SignUpPage: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <AppleStyleSelect
-                      label={s('field_sesso_it', 'field_sesso_en')}
+                      label={`${s('field_sesso_it', 'field_sesso_en')} *`}
                       name="sesso"
                       value={formData.sesso === 'M' ? s('field_sesso_m_it', 'field_sesso_m_en') : formData.sesso === 'F' ? s('field_sesso_f_it', 'field_sesso_f_en') : ''}
                       onChange={(e) => {
@@ -775,7 +782,7 @@ const SignUpPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {s('field_birth_city_it', 'field_birth_city_en')}
+                        {s('field_birth_city_it', 'field_birth_city_en')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -788,13 +795,14 @@ const SignUpPage: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {s('field_birth_province_it', 'field_birth_province_en')}
+                        {s('field_birth_province_it', 'field_birth_province_en')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="provinciaNascita"
                         value={formData.provinciaNascita}
                         onChange={handleChange}
+                        placeholder={s('field_birth_province_placeholder_it', 'field_birth_province_placeholder_en')}
                         maxLength={2}
                         className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white uppercase"
                       />

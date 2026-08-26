@@ -156,6 +156,12 @@ const SignUpPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: newValue }));
   };
 
+  // 26/08/2026: per l'Italia il codice fiscale e l'indirizzo di residenza
+  // completo (via, civico, CAP, citta', provincia) sono obbligatori: senza
+  // di essi la scheda cliente nasce incompleta e non si puo' fatturare ne'
+  // intestare un contratto. Per l'estero restano facoltativi.
+  const inItalia = formData.nazione === 'Italia';
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
@@ -208,10 +214,18 @@ const SignUpPage: React.FC = () => {
         } else if (!validatePhone(formData.telefono)) {
           newErrors.telefono = s('err_phone_invalid_it', 'err_phone_invalid_en');
         }
-        if (formData.codiceFiscale && !validateCodiceFiscale(formData.codiceFiscale)) {
+        if (inItalia && !formData.codiceFiscale) {
+          newErrors.codiceFiscale = s('err_cf_required_it', 'err_cf_required_en');
+        } else if (formData.codiceFiscale && !validateCodiceFiscale(formData.codiceFiscale)) {
           newErrors.codiceFiscale = s('err_cf_invalid_it', 'err_cf_invalid_en');
         }
         if (!formData.indirizzo) newErrors.indirizzo = s('err_residenza_required_it', 'err_residenza_required_en');
+        if (inItalia) {
+          if (!formData.numeroCivico) newErrors.numeroCivico = s('err_civico_required_it', 'err_civico_required_en');
+          if (!formData.cittaResidenza) newErrors.cittaResidenza = s('err_city_required_it', 'err_city_required_en');
+          if (!formData.codicePostale) newErrors.codicePostale = s('err_cap_required_it', 'err_cap_required_en');
+          if (!formData.provinciaResidenza) newErrors.provinciaResidenza = s('err_province_required_it', 'err_province_required_en');
+        }
         // Email is already validated in common validations above
       }
 
@@ -809,7 +823,7 @@ const SignUpPage: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {s('field_civico_it', 'field_civico_en')}
+                        {s('field_civico_it', 'field_civico_en')} {inItalia && <span className="text-red-500">*</span>}
                       </label>
                       <input
                         type="text"
@@ -817,6 +831,7 @@ const SignUpPage: React.FC = () => {
                         value={formData.numeroCivico}
                         onChange={handleChange}
                         placeholder={copy?.field_civico_placeholder || ''}
+                        required={inItalia}
                         className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white"
                       />
                       {errors.numeroCivico && <p className="text-xs text-red-400 mt-1">{errors.numeroCivico}</p>}
@@ -826,7 +841,7 @@ const SignUpPage: React.FC = () => {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {s('field_city_it', 'field_city_en')}
+                        {s('field_city_it', 'field_city_en')} {inItalia && <span className="text-red-500">*</span>}
                       </label>
                       <input
                         type="text"
@@ -834,6 +849,7 @@ const SignUpPage: React.FC = () => {
                         value={formData.cittaResidenza}
                         onChange={handleChange}
                         placeholder={s('field_city_placeholder_it', 'field_city_placeholder_en')}
+                        required={inItalia}
                         className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white"
                       />
                       {errors.cittaResidenza && <p className="text-xs text-red-400 mt-1">{errors.cittaResidenza}</p>}
@@ -841,7 +857,7 @@ const SignUpPage: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {s('field_cap_it', 'field_cap_en')}
+                        {s('field_cap_it', 'field_cap_en')} {inItalia && <span className="text-red-500">*</span>}
                       </label>
                       <input
                         type="text"
@@ -850,6 +866,7 @@ const SignUpPage: React.FC = () => {
                         onChange={handleChange}
                         placeholder={copy?.field_cap_placeholder || ''}
                         maxLength={5}
+                        required={inItalia}
                         className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white"
                       />
                       {errors.codicePostale && <p className="text-xs text-red-400 mt-1">{errors.codicePostale}</p>}
@@ -857,7 +874,7 @@ const SignUpPage: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {s('field_province_it', 'field_province_en')}
+                        {s('field_province_it', 'field_province_en')} {inItalia && <span className="text-red-500">*</span>}
                       </label>
                         <input
                           type="text"
@@ -867,7 +884,7 @@ const SignUpPage: React.FC = () => {
                           placeholder={copy?.field_province_placeholder || ''}
                           maxLength={2}
                           className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white uppercase"
-                          required
+                          required={inItalia}
                         />
                       {errors.provinciaResidenza && <p className="text-xs text-red-400 mt-1">{errors.provinciaResidenza}</p>}
                     </div>

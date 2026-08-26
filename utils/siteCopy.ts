@@ -857,7 +857,11 @@ export interface SignUpCopy {
   err_nome_required_it: string; err_nome_required_en: string;
   err_cognome_required_it: string; err_cognome_required_en: string;
   err_cf_invalid_it: string; err_cf_invalid_en: string;
+  err_cf_required_it: string; err_cf_required_en: string;
   err_residenza_required_it: string; err_residenza_required_en: string;
+  err_civico_required_it: string; err_civico_required_en: string;
+  err_cap_required_it: string; err_cap_required_en: string;
+  err_province_required_it: string; err_province_required_en: string;
   err_codice_univoco_required_it: string; err_codice_univoco_required_en: string;
   err_ente_required_it: string; err_ente_required_en: string;
   err_city_required_it: string; err_city_required_en: string;
@@ -2444,7 +2448,11 @@ const DEFAULT_SIGNUP: SignUpCopy = {
   err_nome_required_it: 'Nome è obbligatorio', err_nome_required_en: 'First name is required',
   err_cognome_required_it: 'Cognome è obbligatorio', err_cognome_required_en: 'Last name is required',
   err_cf_invalid_it: 'Codice Fiscale non valido (16 caratteri alfanumerici)', err_cf_invalid_en: 'Invalid tax code (16 alphanumeric characters)',
+  err_cf_required_it: 'Codice Fiscale è obbligatorio', err_cf_required_en: 'Tax code is required',
   err_residenza_required_it: 'Residenza è obbligatoria', err_residenza_required_en: 'Residence is required',
+  err_civico_required_it: 'Numero civico è obbligatorio', err_civico_required_en: 'Street number is required',
+  err_cap_required_it: 'CAP è obbligatorio', err_cap_required_en: 'Postal code is required',
+  err_province_required_it: 'Provincia è obbligatoria', err_province_required_en: 'Province is required',
   err_codice_univoco_required_it: 'Codice Univoco è obbligatorio', err_codice_univoco_required_en: 'Unique code is required',
   err_ente_required_it: 'Ente o Ufficio è obbligatorio', err_ente_required_en: 'Agency or office is required',
   err_city_required_it: 'Città è obbligatorio', err_city_required_en: 'City is required',

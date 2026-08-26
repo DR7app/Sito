@@ -83,6 +83,71 @@ async function sendIngressoDR7ClubToCustomer(sb, userId, siteUrl) {
 }
 
 /**
+ * Invia al cliente il messaggio configurato in "Messaggi di Sistema Pro" per un
+ * evento, usando la stessa Programmazione dell'admin: vince il template che
+ * dichiara l'evento in `handled_events` ("Eventi gestiti da questo template").
+ *
+ * Nessun testo di riserva: se nessun template abilitato gestisce l'evento non
+ * parte nulla. Best-effort, non lancia mai.
+ */
+async function sendProEventToCustomer(sb, eventKey, phone, vars, siteUrl) {
+  try {
+    let digits = String(phone || '').replace(/\D/g, '');
+    if (digits.startsWith('00')) digits = digits.substring(2);
+    if (digits.length === 10) digits = '39' + digits;
+    if (!digits) {
+      console.warn(`[nexi-callback] ${eventKey}: nessun telefono, invio saltato`);
+      return;
+    }
+
+    const { data: rows } = await sb
+      .from('system_messages')
+      .select('message_key, message_body, is_enabled, include_header, updated_at')
+      .contains('handled_events', [eventKey])
+      .like('message_key', 'pro_%')
+      .order('updated_at', { ascending: false });
+
+    const tpl = (rows || []).find(
+      r => r.is_enabled !== false && r.message_body && String(r.message_body).trim()
+    ) || null;
+    if (!tpl) {
+      console.log(`[nexi-callback] Nessun template Pro gestisce "${eventKey}" — niente invio`);
+      return;
+    }
+
+    let testo = String(tpl.message_body);
+    if (tpl.include_header) {
+      const { data: wrap } = await sb
+        .from('system_messages')
+        .select('message_key, message_body, is_enabled')
+        .in('message_key', ['pro_wrapper_header', 'pro_wrapper_footer']);
+      const parte = k => {
+        const w = (wrap || []).find(x => x.message_key === k && x.is_enabled !== false);
+        return w && w.message_body ? String(w.message_body) : '';
+      };
+      const header = parte('pro_wrapper_header');
+      const footer = parte('pro_wrapper_footer');
+      testo = [header, testo, footer].filter(t => t.trim()).join('\n\n');
+    }
+
+    for (const chiave of Object.keys(vars || {})) {
+      const valore = vars[chiave] == null ? '' : String(vars[chiave]);
+      testo = testo.split(`{${chiave}}`).join(valore);
+    }
+    if (!testo.trim()) return;
+
+    await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customPhone: digits, customMessage: testo }),
+    });
+    console.log(`[nexi-callback] ${eventKey} → ${tpl.message_key} inviato a ${digits}`);
+  } catch (e) {
+    console.error(`[nexi-callback] invio "${eventKey}" fallito (non bloccante):`, e);
+  }
+}
+
+/**
  * Generate MAC to verify callback authenticity (old XPay format only)
  */
 function generateMAC(params, macKey) {
@@ -993,6 +1058,7 @@ exports.handler = async (event) => {
         // recharge_amount) is a separate reward; this adds club cashback
         // on top of it. Column is recharge_amount (euros paid on card),
         // NOT received_amount (which bakes in the package bonus).
+        let cashbackAccreditato = 0;
         if (purchase.user_id && parseFloat(purchase.recharge_amount || 0) > 0) {
           try {
             // Idempotency: accept legacy 'cashback_3_percent' too so
@@ -1042,6 +1108,7 @@ exports.handler = async (event) => {
                       reference_type: 'card_bonus'
                     });
 
+                  cashbackAccreditato = cashbackAmount;
                   console.log(`[nexi-callback] Wallet recharge DR7 Club cashback ${cashbackPct}% = €${cashbackAmount.toFixed(2)} credited to user ${purchase.user_id}`);
                 }
               }
@@ -1050,6 +1117,62 @@ exports.handler = async (event) => {
             }
           } catch (cashbackErr) {
             console.error('[nexi-callback] Wallet recharge cashback failed (non-blocking):', cashbackErr);
+          }
+        }
+
+        // Avviso al cliente della ricarica andata a buon fine. Il testo e' il
+        // template Pro che gestisce l'evento "Wallet ricaricato dal cliente"
+        // (on_wallet_recharge) in Messaggi di Sistema Pro > Programmazione:
+        // finora l'evento non aveva nessun mittente, il credito veniva
+        // accreditato e il cliente non riceveva niente.
+        if (purchase.user_id) {
+          try {
+            const { data: cliente } = await supabase
+              .from('customers_extended')
+              .select('nome, cognome, telefono, full_name')
+              .eq('user_id', purchase.user_id)
+              .maybeSingle();
+
+            const telefono = (cliente && cliente.telefono) || purchase.customer_phone || '';
+
+            const { data: saldoRow } = await supabase
+              .from('user_credit_balance')
+              .select('balance')
+              .eq('user_id', purchase.user_id)
+              .maybeSingle();
+            const saldo = saldoRow && saldoRow.balance ? parseFloat(saldoRow.balance) : 0;
+
+            const ricaricaEur = parseFloat(purchase.recharge_amount || purchase.received_amount || 0);
+            const ricevutoEur = parseFloat(purchase.received_amount || 0);
+            const bonusPacchetto = Math.round((ricevutoEur - ricaricaEur) * 100) / 100;
+
+            const nomeCompleto = [cliente && cliente.nome, cliente && cliente.cognome]
+              .filter(Boolean).join(' ').trim()
+              || (cliente && cliente.full_name)
+              || purchase.customer_name
+              || 'Cliente';
+            const nome = String(nomeCompleto).split(' ')[0] || 'Cliente';
+
+            await sendProEventToCustomer(supabase, 'on_wallet_recharge', telefono, {
+              nome,
+              custName: nomeCompleto,
+              customer_name: nomeCompleto,
+              pacchetto: purchase.package_name || '',
+              package_name: purchase.package_name || '',
+              importo: ricaricaEur.toFixed(2),
+              amount: ricaricaEur.toFixed(2),
+              ricarica: ricaricaEur.toFixed(2),
+              bonus: bonusPacchetto.toFixed(2),
+              bonusEur: bonusPacchetto.toFixed(2),
+              percentLabel: `${purchase.bonus_percentage || 0}%`,
+              cashback: cashbackAccreditato.toFixed(2),
+              totale: ricevutoEur.toFixed(2),
+              saldo: saldo.toFixed(2),
+              newBalance: saldo.toFixed(2),
+              balance: saldo.toFixed(2),
+            }, process.env.URL || 'https://dr7.app');
+          } catch (avvisoErr) {
+            console.error('[nexi-callback] avviso ricarica wallet fallito (non bloccante):', avvisoErr);
           }
         }
 

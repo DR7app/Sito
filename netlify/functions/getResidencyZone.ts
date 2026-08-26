@@ -65,11 +65,33 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         console.log('[getResidencyZone] Fetching residency zone', { userId, timestamp: new Date().toISOString() });
 
         // Query customers_extended table
-        const { data, error } = await supabase
+        const COLONNE = 'residency_zone, nome, cognome, email, telefono, data_nascita, codice_fiscale, indirizzo, numero_civico, citta_residenza, provincia_residenza, codice_postale, cap, citta, provincia, metadata, id'
+        let { data, error } = await supabase
             .from('customers_extended')
-            .select('residency_zone, nome, cognome, email, telefono, data_nascita, codice_fiscale, indirizzo, numero_civico, citta_residenza, provincia_residenza, codice_postale, cap, citta, provincia, metadata, id')
+            .select(COLONNE)
             .eq('user_id', userId)
             .maybeSingle(); // Use maybeSingle to handle no rows gracefully
+
+        // 26/08/2026 — La scheda si cercava SOLO per user_id. Una scheda
+        // compilata dal gestionale (tab Clienti) spesso non ha quel legame:
+        // il cliente si ritrovava a riscrivere codice fiscale e residenza al
+        // pagamento, benche' in azienda fossero gia' stati inseriti. Quindi:
+        // se per user_id non c'e' nulla, si cerca per email dell'account.
+        // Email confrontata senza distinzione fra maiuscole e minuscole (un
+        // `eq` la distingue, ed e' bastato quello per far fallire il
+        // riconoscimento di clienti gia' registrati).
+        if (!error && !data && authUser.email) {
+            const { data: perEmail } = await supabase
+                .from('customers_extended')
+                .select(COLONNE)
+                .ilike('email', authUser.email)
+                .order('codice_fiscale', { ascending: false, nullsFirst: false })
+                .limit(1);
+            if (perEmail && perEmail.length > 0) {
+                data = perEmail[0];
+                console.log('[getResidencyZone] Scheda trovata per email (user_id non collegato)', { userId });
+            }
+        }
 
         if (error) {
             console.warn('[getResidencyZone] Supabase error (returning default):', {

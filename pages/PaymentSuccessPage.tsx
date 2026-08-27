@@ -74,7 +74,7 @@ const PaymentSuccessPage: React.FC = () => {
     const contact = useContactInfo();
     const [updating, setUpdating] = useState(true);
     const [updateError, setUpdateError] = useState<string | null>(null);
-    const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | null>(null);
+    const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | 'cauzione' | null>(null);
     const [walletInfo, setWalletInfo] = useState<{ packageName: string; receivedAmount: number } | null>(null);
     const [membershipInfo, setMembershipInfo] = useState<{ tierName: string; billingCycle: string } | null>(null);
     const [copy, setCopy] = useState<PaymentSuccessCopy | null>(null);
@@ -102,6 +102,10 @@ const PaymentSuccessPage: React.FC = () => {
     const pendingType = sessionStorage.getItem('dr7_pending_type');
     const amount = searchParams.get('importo');
     const authCode = searchParams.get('codAut');
+    // Pre-autorizzazione cauzione: il link arriva dal gestionale
+    // (nexi-create-preauth / nexi-create-preauth-on-token) e non ha ne'
+    // prenotazione ne' ricarica da aggiornare qui.
+    const isCauzione = searchParams.get('tipo') === 'cauzione';
 
     // URL base per le Netlify Functions
     const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_BASE ?? (window.location.hostname === 'localhost' ? 'http://localhost:8888' : window.location.origin);
@@ -113,6 +117,15 @@ const PaymentSuccessPage: React.FC = () => {
             // Clean up sessionStorage after reading
             sessionStorage.removeItem('dr7_pending_order');
             sessionStorage.removeItem('dr7_pending_type');
+
+            // Cauzione: la riga `cauzioni` la aggiorna il callback server
+            // (nexi-preauth-callback). Qui mostriamo solo l'esito al cliente,
+            // che spesso non ha nemmeno un account sul sito.
+            if (isCauzione) {
+                setPurchaseType('cauzione');
+                setUpdating(false);
+                return;
+            }
 
             if (!orderId) {
                 // Last resort: if no orderId but we know it was a membership, look up by user
@@ -613,7 +626,7 @@ const PaymentSuccessPage: React.FC = () => {
         };
 
         updatePaymentStatus();
-    }, [orderId, authCode]);
+    }, [orderId, authCode, isCauzione]);
 
     if (updating) {
         return (
@@ -646,11 +659,15 @@ const PaymentSuccessPage: React.FC = () => {
                     </div>
 
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        {s('success_title_it', 'success_title_en')}
+                        {purchaseType === 'cauzione'
+                            ? s('success_title_cauzione_it', 'success_title_cauzione_en')
+                            : s('success_title_it', 'success_title_en')}
                     </h1>
 
                     <p className="text-gray-600 mb-8">
-                        {purchaseType === 'dr7_club'
+                        {purchaseType === 'cauzione'
+                            ? s('body_cauzione_it', 'body_cauzione_en')
+                            : purchaseType === 'dr7_club'
                             ? s('body_dr7_club_it', 'body_dr7_club_en')
                             : purchaseType === 'membership'
                             ? applyTokens(s('body_membership_template_it', 'body_membership_template_en'), {
@@ -713,7 +730,7 @@ const PaymentSuccessPage: React.FC = () => {
                             </a>
                         )}
 
-                        {purchaseType === 'membership' ? (
+                        {purchaseType === 'cauzione' ? null : purchaseType === 'membership' ? (
                             <button
                                 onClick={() => navigate('/account/membership')}
                                 className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-all"

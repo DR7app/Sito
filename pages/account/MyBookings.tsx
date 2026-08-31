@@ -10,6 +10,7 @@ import { useCancellationRules, pickRule } from '../../hooks/useCancellationPolic
 import { addCredits, deductCredits, getUserCreditBalance } from '../../utils/creditWallet';
 import { PICKUP_LOCATIONS as DEFAULT_PICKUP_LOCATIONS, RETURN_LOCATIONS as DEFAULT_RETURN_LOCATIONS } from '../../constants';
 import { getPickupLocations, getReturnLocations } from '../../utils/getLocations';
+import { dataRoma, isoRoma } from '../../utils/oraRoma';
 
 /**
  * Detect DR7 Flex on a booking — supports BOTH the legacy boolean shape
@@ -295,11 +296,8 @@ const MyBookings = () => {
   useEffect(() => {
     if (!modifyingBooking || modifyingBooking.service_type !== 'car_rental') return;
     if (!rentalPickupDate || !rentalPickupTime || !rentalDropoffDate || !rentalDropoffTime) return;
-    const timeZoneName = new Intl.DateTimeFormat('it-IT', { timeZoneName: 'short', timeZone: 'Europe/Rome' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
-    const isDST = timeZoneName.includes('CEST') || timeZoneName.includes('+2');
-    const offset = isDST ? '+02:00' : '+01:00';
-    const pickupIso = new Date(`${rentalPickupDate}T${rentalPickupTime}:00${offset}`).toISOString();
-    const dropoffIso = new Date(`${rentalDropoffDate}T${rentalDropoffTime}:00${offset}`).toISOString();
+    const pickupIso = isoRoma(rentalPickupDate, rentalPickupTime);
+    const dropoffIso = isoRoma(rentalDropoffDate, rentalDropoffTime);
     if (new Date(dropoffIso) <= new Date(pickupIso)) { setRentalRecalcTotal(null); return; }
     let cancelled = false;
     setRentalRecalcing(true);
@@ -433,10 +431,7 @@ const MyBookings = () => {
     setModifySaving(true);
     setModifyError(null);
     try {
-      const timeZoneName = new Intl.DateTimeFormat('it-IT', { timeZoneName: 'short', timeZone: 'Europe/Rome' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
-      const isDST = timeZoneName.includes('CEST') || timeZoneName.includes('+2');
-      const offset = isDST ? '+02:00' : '+01:00';
-      const newAppointment = new Date(`${modifyDate}T${modifyTime}:00${offset}`);
+      const newAppointment = dataRoma(modifyDate, modifyTime);
 
       // Conta gli spostamenti gia' fatti su questa prenotazione: la policy
       // Prime Flex consente 1 solo spostamento gratuito. canModify() controlla
@@ -503,11 +498,8 @@ const MyBookings = () => {
     setModifyError(null);
     try {
       // Build Rome-timezone ISO strings for new pickup/dropoff
-      const timeZoneName = new Intl.DateTimeFormat('it-IT', { timeZoneName: 'short', timeZone: 'Europe/Rome' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
-      const isDST = timeZoneName.includes('CEST') || timeZoneName.includes('+2');
-      const offset = isDST ? '+02:00' : '+01:00';
-      const newPickupIso = new Date(`${rentalPickupDate}T${rentalPickupTime}:00${offset}`).toISOString();
-      const newDropoffIso = new Date(`${rentalDropoffDate}T${rentalDropoffTime}:00${offset}`).toISOString();
+      const newPickupIso = isoRoma(rentalPickupDate, rentalPickupTime);
+      const newDropoffIso = isoRoma(rentalDropoffDate, rentalDropoffTime);
 
       if (new Date(newDropoffIso) <= new Date(newPickupIso)) {
         throw new Error(t({ it: "La riconsegna deve essere successiva al ritiro.", en: "The drop-off must be after the pick-up." }));

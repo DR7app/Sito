@@ -11,6 +11,7 @@ import { seatListLabel } from '../utils/seatPlan';
 import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate } from '../utils/lavaggioHours';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
+import { dataRoma } from '../utils/oraRoma';
 
 interface CartItem {
   serviceId: string;
@@ -1050,23 +1051,10 @@ const CarWashBookingPage: React.FC = () => {
     console.log('User object:', user);
     console.log('User ID:', user?.id);
 
-    // Create full appointment timestamp in Europe/Rome timezone
-    // This ensures the time is always interpreted as Italy time, regardless of user's browser timezone
-    // Determine DST by checking the UTC offset for the selected date in Europe/Rome
-    const testDate = new Date(`${formData.appointmentDate}T12:00:00`);
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Europe/Rome',
-      timeZoneName: 'short'
-    });
-    const parts = formatter.formatToParts(testDate);
-    const timeZoneName = parts.find(part => part.type === 'timeZoneName')?.value || 'GMT+1';
-
-    // Europe/Rome is UTC+1 in winter (CET) and UTC+2 in summer (CEST)
-    const isDST = timeZoneName.includes('CEST') || timeZoneName.includes('+2');
-    const timezoneOffset = isDST ? '+02:00' : '+01:00';
-
-    // Create ISO string with explicit Italy timezone offset
-    const adjustedDateTime = new Date(`${formData.appointmentDate}T${formData.appointmentTime}:00${timezoneOffset}`);
+    // L'appuntamento e' sempre ora di ROMA, qualunque fuso abbia il browser
+    // del cliente. 31/08/2026: il calcolo dell'offset (corretto) stava qui in
+    // copia; ora e' in utils/oraRoma, uno solo per tutto il sito.
+    const adjustedDateTime = dataRoma(formData.appointmentDate, formData.appointmentTime);
 
     // Build service name and ID based on cart items or single service
     const getServiceNames = () => {

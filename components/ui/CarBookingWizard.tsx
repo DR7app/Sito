@@ -38,6 +38,7 @@ import type { WashService } from '../../pages/CarWashServicesPage';
 import { classifyVehicle as classifyWashVehicle } from '../../utils/classifyWashVehicle';
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../../utils/lookupTarga';
 import CalcolaCFButton from './CalcolaCFButton';
+import RiquadroCatalogo from './RiquadroCatalogo';
 import { useCentralinaProOverlay } from '../../hooks/useCentralinaProConfig';
 import { getPickupTimesForDateString, getReturnTimesForDateString } from '../../utils/noleggioHours';
 
@@ -7293,10 +7294,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                   : 'border-gray-700 hover:border-gray-500'
                               }`}
                             >
-                              <img
-                                src={svc.image || '/luxurywash.jpeg'}
+                              <RiquadroCatalogo
+                                src={svc.image}
+                                fallback="/luxurywash.jpeg"
+                                larghezza={400}
                                 alt={svc.name}
-                                className="w-full h-auto object-contain"
                               />
                               <div className="p-2.5">
                                 <div className="flex items-baseline gap-1.5">
@@ -7331,10 +7333,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                     : 'border-gray-700 hover:border-gray-500'
                                 }`}
                               >
-                                <img
-                                  src={svc.image || '/luxurywash.jpeg'}
+                                <RiquadroCatalogo
+                                  src={svc.image}
+                                  fallback="/luxurywash.jpeg"
+                                  larghezza={400}
                                   alt={svc.name}
-                                  className="w-full h-auto object-contain"
                                 />
                                 <div className="p-2.5">
                                   <p className="text-white text-[11px] font-semibold leading-tight mb-1">{svc.name}</p>

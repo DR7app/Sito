@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import type { Service } from './CarWashServicesPage';
 import { useCarWashServices } from '../hooks/useCarWashServices';
+import { seatListLabel } from '../utils/seatPlan';
 import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate } from '../utils/lavaggioHours';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
@@ -17,6 +18,16 @@ interface CartItem {
   price: number;
   quantity: number;
   option?: string;
+  /** Sigle dei sedili scelti sulla pianta, per i servizi venduti a sedile.
+   *  Arrivano in `booking_details.cart_items[].seats` e servono a chi lavora
+   *  il veicolo: la quantita' da sola non dice QUALI sedili trattare. */
+  seats?: string[];
+}
+
+/** "PRIME SEAT CLEAN (Guidatore, Posteriore destro)" per i messaggi. */
+function serviceNameWithSeats(item: CartItem, lang: string): string {
+  const seats = seatListLabel(item.seats || [], lang);
+  return seats ? `${item.serviceName} (${seats})` : item.serviceName;
 }
 
 const CarWashBookingPage: React.FC = () => {
@@ -1064,7 +1075,12 @@ const CarWashBookingPage: React.FC = () => {
           const name = item.serviceName;
           const qty = item.quantity > 1 ? ` x${item.quantity}` : '';
           const opt = item.option ? ` (${item.option})` : '';
-          return `${name}${qty}${opt}`;
+          // I sedili scelti finiscono nel nome del servizio: e' il campo che
+          // arriva su WhatsApp, in calendario e sul contratto, dove sapere
+          // QUALI sedili trattare conta quanto quanti.
+          const seatNames = seatListLabel(item.seats || [], lang);
+          const seats = seatNames ? ` [${seatNames}]` : '';
+          return `${name}${qty}${opt}${seats}`;
         }).join(', ');
       }
       return lang === 'it' ? selectedService!.name : selectedService!.nameEn;
@@ -1247,7 +1263,7 @@ const CarWashBookingPage: React.FC = () => {
 
         // Deduct credits
         const serviceName = hasCartItems
-          ? cartItems.map(i => i.serviceName).join(', ')
+          ? cartItems.map(i => serviceNameWithSeats(i, lang)).join(', ')
           : (lang === 'it' ? selectedService?.name : selectedService?.nameEn);
         const deductResult = await deductCredits(
           user.id,
@@ -1470,7 +1486,7 @@ const CarWashBookingPage: React.FC = () => {
         console.log('Pending booking stored with nexiOrderId:', nexiOrderId);
 
         const nexiServiceName = hasCartItems
-          ? cartItems.map(i => i.serviceName).join(', ')
+          ? cartItems.map(i => serviceNameWithSeats(i, lang)).join(', ')
           : (lang === 'it' ? selectedService?.name : selectedService?.nameEn);
 
         const nexiResponse = await fetch('/.netlify/functions/create-nexi-payment', {
@@ -1621,6 +1637,11 @@ const CarWashBookingPage: React.FC = () => {
                       {item.serviceName}
                       {item.option && <span className="text-gray-400 text-sm ml-2">({item.option})</span>}
                       {item.quantity > 1 && <span className="text-gray-400 text-sm ml-2">x{item.quantity}</span>}
+                      {item.seats && item.seats.length > 0 && (
+                        <span className="block text-gray-400 text-xs">
+                          {seatListLabel(item.seats, lang, ' · ')}
+                        </span>
+                      )}
                     </span>
                     <span className="font-bold">€{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
@@ -2137,6 +2158,11 @@ const CarWashBookingPage: React.FC = () => {
                             {item.serviceName}
                             {item.option && <span className="text-gray-400 ml-1">({item.option})</span>}
                             {item.quantity > 1 && <span className="text-gray-400 ml-1">x{item.quantity}</span>}
+                            {item.seats && item.seats.length > 0 && (
+                              <span className="block text-gray-400 text-xs">
+                                {seatListLabel(item.seats, lang, ' · ')}
+                              </span>
+                            )}
                           </span>
                           <span className="text-white">€{(item.price * item.quantity).toFixed(2)}</span>
                         </div>

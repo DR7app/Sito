@@ -6,6 +6,8 @@ import { type VehicleCategory } from '../utils/vehicleClassification';
 import { classifyVehicle as classifyWashVehicle } from '../utils/classifyWashVehicle';
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../utils/lookupTarga';
 import { useCarWashServices } from '../hooks/useCarWashServices';
+import SeatPlanPicker from '../components/ui/SeatPlanPicker';
+import { seatLabel, isSeatPricedUnit } from '../utils/seatPlan';
 import { immagineCatalogo } from '../utils/immagineCatalogo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
@@ -33,7 +35,18 @@ interface CartItem {
   service: WashService;
   quantity: number;
   selectedOption?: { label: string; price: number };
+  /** Sigle dei sedili scelti sulla pianta (solo servizi venduti a sedile).
+   *  Quando c'e', `quantity` e' sempre `seats.length`. */
+  seats?: string[];
 }
+
+/**
+ * Servizi venduti a sedile: si riconoscono dall'unita' di prezzo del
+ * catalogo (`price_unit` = "a sedile" / "per seat"), non da una lista di id
+ * scritta qui. Cosi' un nuovo servizio a sedile aggiunto dall'admin apre la
+ * pianta senza toccare il codice.
+ */
+const isSeatService = (s: WashService): boolean => isSeatPricedUnit(s.priceUnit);
 
 // COMBINED WASH SERVICES (Urban + Maxi paired) — UI scaffolding for the
 // side-by-side comparison cards. Service data (price, features) comes
@@ -104,6 +117,11 @@ const CarWashServicesPage: React.FC = () => {
   const [meccanicaCategory, setMeccanicaCategory] = useState<MeccanicaCategory>('tech');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  // Pianta sedili aperta: `index` valorizzato = si sta modificando una riga
+  // gia' nel carrello, altrimenti si sta aggiungendo.
+  const [seatPicker, setSeatPicker] = useState<
+    { service: WashService; index: number | null; initial: string[]; fromUpsell: boolean } | null
+  >(null);
   const [showUpsell, setShowUpsell] = useState(false);
   const [upsellStep, setUpsellStep] = useState<1 | 2>(1);
   const [upsellSelectedService, setUpsellSelectedService] = useState<WashService | null>(null);
@@ -231,7 +249,47 @@ const CarWashServicesPage: React.FC = () => {
   };
 
   const MAX_QTY_IDS = ['extra-seat-clean', 'extra-seat-protect', 'extra-child', 'extra-engine', 'extra-odor'];
+
+  /**
+   * Aggiunge o aggiorna la riga di un servizio a sedile. La quantita' non si
+   * tocca a mano: e' il numero di sedili scelti sulla pianta.
+   */
+  const applySeatSelection = (
+    service: WashService,
+    index: number | null,
+    seats: string[],
+    fromUpsell: boolean,
+  ) => {
+    setCart(prev => {
+      if (index != null && prev[index]) {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], quantity: seats.length, seats };
+        return updated;
+      }
+      const existing = prev.findIndex(i => i.service.id === service.id && !i.selectedOption);
+      if (existing >= 0) {
+        const updated = [...prev];
+        updated[existing] = { ...updated[existing], quantity: seats.length, seats };
+        return updated;
+      }
+      return [...prev, { service, quantity: seats.length, seats }];
+    });
+    // Se la pianta e' stata aperta dall'upsell, la card deve passare a
+    // "Aggiunto": il carrello e quella lista sono due stati separati.
+    setUpsellAddedExtras(prev => new Set(prev).add(service.id));
+    setSeatPicker(null);
+    // Dall'upsell non si apre il carrello: la card passa gia' a "Aggiunto" e
+    // il pannello finirebbe nascosto sotto l'overlay a tutto schermo.
+    if (!fromUpsell) setShowCart(true);
+  };
+
   const addToCart = (service: WashService, selectedOption?: { label: string; price: number }) => {
+    // Servizio a sedile: prima si sceglie QUALE sedile sulla pianta.
+    if (isSeatService(service)) {
+      const existing = cart.findIndex(i => i.service.id === service.id && !i.selectedOption);
+      setSeatPicker({ service, index: null, initial: existing >= 0 ? (cart[existing].seats || []) : [], fromUpsell: false });
+      return;
+    }
     setCart(prev => {
       const existingIndex = prev.findIndex(item =>
         item.service.id === service.id &&
@@ -305,6 +363,13 @@ const CarWashServicesPage: React.FC = () => {
   const handleUpsellToggleExtra = (extra: WashService, selectedOption?: { label: string; price: number }) => {
     const trackingKey = selectedOption ? `${extra.id}:${selectedOption.label}` : extra.id;
     const isCurrentlyAdded = upsellAddedExtras.has(trackingKey);
+    // Servizio a sedile ancora da aggiungere: apri la pianta invece di
+    // metterne uno solo nel carrello.
+    if (!isCurrentlyAdded && !selectedOption && isSeatService(extra)) {
+      const existing = cart.findIndex(i => i.service.id === extra.id && !i.selectedOption);
+      setSeatPicker({ service: extra, index: null, initial: existing >= 0 ? (cart[existing].seats || []) : [], fromUpsell: true });
+      return;
+    }
     if (isCurrentlyAdded) {
       // Remove from cart
       setCart(prev => prev.filter(item =>
@@ -377,7 +442,8 @@ const CarWashServicesPage: React.FC = () => {
           serviceName: lang === 'it' ? item.service.name : item.service.nameEn,
           price: item.selectedOption?.price || item.service.price,
           quantity: item.quantity,
-          option: item.selectedOption?.label
+          option: item.selectedOption?.label,
+          ...(item.seats ? { seats: item.seats } : {})
         })),
         total: getCartTotal(),
         ...(targaResult ? {
@@ -803,22 +869,42 @@ const CarWashServicesPage: React.FC = () => {
                           {cw('cart_remove_it', 'cart_remove_en', 'Rimuovi')}
                         </button>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => updateQuantity(index, -1)}
-                            className="w-8 h-8 rounded-full border border-gray-600 text-white hover:bg-gray-800"
-                          >
-                            -
-                          </button>
-                          <span className="text-white font-bold">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(index, 1)}
-                            className="w-8 h-8 rounded-full border border-gray-600 text-white hover:bg-gray-800"
-                          >
-                            +
-                          </button>
+                      {item.seats && item.seats.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {item.seats.map(id => (
+                            <span key={id} className="px-2 py-0.5 rounded-full bg-white/10 border border-gray-700 text-gray-200 text-[11px]">
+                              {seatLabel(id, lang)}
+                            </span>
+                          ))}
                         </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        {item.seats ? (
+                          // Servizio a sedile: la quantita' e' il numero di
+                          // sedili scelti, si cambia solo dalla pianta.
+                          <button
+                            onClick={() => setSeatPicker({ service: item.service, index, initial: item.seats || [], fromUpsell: false })}
+                            className="text-xs px-3 py-1.5 rounded-full border border-gray-600 text-white hover:bg-gray-800 transition-colors"
+                          >
+                            {lang === 'it' ? 'Modifica sedili' : 'Edit seats'}
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => updateQuantity(index, -1)}
+                              className="w-8 h-8 rounded-full border border-gray-600 text-white hover:bg-gray-800"
+                            >
+                              -
+                            </button>
+                            <span className="text-white font-bold">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(index, 1)}
+                              className="w-8 h-8 rounded-full border border-gray-600 text-white hover:bg-gray-800"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
                         <span className="text-white font-bold">
                           €{((item.selectedOption?.price || item.service.price) * item.quantity).toFixed(2)}
                         </span>
@@ -846,6 +932,18 @@ const CarWashServicesPage: React.FC = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* Pianta sedili — servizi venduti a sedile (PRIME SEAT CLEAN/PROTECT).
+          z-[100]: deve stare sopra il carrello e sopra l'overlay upsell. */}
+      {seatPicker && (
+        <SeatPlanPicker
+          serviceName={lang === 'it' ? seatPicker.service.name : seatPicker.service.nameEn}
+          unitPrice={seatPicker.service.price}
+          initialSeats={seatPicker.initial}
+          onConfirm={seats => applySeatSelection(seatPicker.service, seatPicker.index, seats, seatPicker.fromUpsell)}
+          onClose={() => setSeatPicker(null)}
+        />
+      )}
 
       {/* Extra Care Upsell Overlay */}
       <AnimatePresence>

@@ -1,0 +1,81 @@
+/*
+ * Foglio di stile unico del sito.
+ *
+ * Prima Tailwind arrivava da <script src="https://cdn.tailwindcss.com">
+ * (Play CDN) che compilava il CSS nel browser a ogni render. Ora il CSS
+ * viene generato durante la build da PostCSS + Tailwind 3.4.17, la stessa
+ * versione che serviva il CDN, con il preset di default e nessun plugin:
+ * il risultato visivo e' identico.
+ *
+ * Gli stili sotto le direttive @tailwind erano inline in index.html e sono
+ * stati spostati qui SENZA modifiche. Devono restare DOPO `@tailwind
+ * utilities` perche' alcuni (es. .h-screen in @supports) sovrascrivono
+ * di proposito un'utility Tailwind a parita' di specificita'.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* iOS Safari auto-zooms input fields when font-size < 16px.
+   This was causing every form tap in the wizard / profile / etc.
+   to zoom-in and visually break the layout. Force 16px on mobile,
+   keep Tailwind's responsive sizes on tablet+ where zoom doesn't apply. */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="password"],
+  input[type="url"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Use the dynamic viewport height where supported (iOS Safari hides
+   the bottom URL bar but `100vh` still includes that area, so any
+   `h-screen` element gets ~75px clipped under the chrome). `100dvh`
+   is the modern way to size to the visible viewport. */
+@supports (height: 100dvh) {
+  .h-screen { height: 100dvh; }
+  .min-h-screen { min-height: 100dvh; }
+}
+
+body {
+  font-family: 'Exo 2', sans-serif;
+}
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+.rajdhani-font {
+  font-family: 'Rajdhani', sans-serif;
+}
+@keyframes marqueeMobile {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap-mobile, 12px))); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap, 20px))); }
+}
+.animate-marquee {
+  animation: marqueeMobile var(--speed-mobile, 15s) linear infinite;
+}
+@media (min-width: 768px) {
+  .animate-marquee {
+    animation: marquee var(--speed, 25s) linear infinite;
+  }
+}
+/* Hide scrollbar for swipeable carousel */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

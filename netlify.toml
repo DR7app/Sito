@@ -67,7 +67,7 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://aistudiocdn.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.green-api.com https://api.stripe.com https://*.googleapis.com https://platform.dr7.app https://platform.dr7ai.com https://nominatim.openstreetmap.org https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; frame-src https://js.stripe.com https://hooks.stripe.com"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://aistudiocdn.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.green-api.com https://api.stripe.com https://*.googleapis.com https://platform.dr7.app https://platform.dr7ai.com https://nominatim.openstreetmap.org https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; frame-src https://js.stripe.com https://hooks.stripe.com"
 
 [functions."send-membership-reminders"]
   schedule = "0 6 * * *"

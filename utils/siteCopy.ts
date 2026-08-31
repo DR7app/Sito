@@ -58,7 +58,22 @@ export interface FaqCopy {
   entries: FaqEntry[];
 }
 
+/**
+ * Selezione delle categorie veicolo visibili sul sito (admin > Sito > Flotta).
+ *
+ * `mode` rende esplicita l'intenzione dell'operatore, cosa che la sola lista
+ * non poteva fare: un array vuoto significava insieme "mai configurato" e
+ * "non mostrare nulla". Campo opzionale e additivo — le righe salvate prima
+ * della sua introduzione non ce l'hanno e restano valide.
+ *
+ *   assente   riga vecchia: lista piena = whitelist, lista vuota = tutte
+ *   'all'     mostra tutte le categorie del catalogo
+ *   'custom'  mostra esattamente `visible_category_ids`, vuoto compreso
+ *
+ * La regola completa (e il fail-safe sugli errori) sta in utils/flottaConfig.ts.
+ */
 interface FlottaCopy {
+  mode?: 'all' | 'custom';
   visible_category_ids: string[];
 }
 
@@ -1388,40 +1403,74 @@ const DEFAULT_FAQ: FaqCopy = {
   entries: DEFAULT_FAQ_ENTRIES,
 };
 
-// ─── Cache ───────────────────────────────────────────────────────────────────
-let CACHE: SiteCopySnapshot | null = null;
-let pending: Promise<SiteCopySnapshot> | null = null;
+// ─── Cache config ────────────────────────────────────────────────────────────
+// Il tipo di ritorno resta scritto per esteso, senza `interface`/`type`
+// dichiarati: questo file e' la sorgente di scripts/genSiteCopyDefaults.mjs
+// nel repo admin, che copia nel CMS ogni tipo dichiarato qui. Li' devono
+// finire solo gli schemi della copy.
+let CONFIG_CACHE: { config: Record<string, unknown>; ok: boolean } | null = null;   // solo i successi
+let configPending: Promise<{ config: Record<string, unknown>; ok: boolean }> | null = null;
+/** Ultimo fallimento: evita che 30 getter falliti facciano 30 richieste. */
+let lastConfigFailureAt = 0;
+const CONFIG_RETRY_COOLDOWN_MS = 5000;
 
-async function loadOnce(): Promise<SiteCopySnapshot> {
-  if (CACHE) return CACHE;
-  if (pending) return pending;
-  pending = (async () => {
+/**
+ * Legge UNA volta sola la riga `centralina_pro_config` (id = 'main') e la
+ * tiene in cache per tutta la vita della pagina. Tutti i getter di questo
+ * file, e il gate della Flotta, passano di qui: una sola richiesta invece di
+ * una per consumer.
+ *
+ * `ok` distingue "config letta davvero" da "lettura fallita": senza quel flag
+ * un errore di rete e una config vuota arrivano ai consumer nello stesso
+ * identico modo (`{}`) e chi deve decidere cosa mostrare non puo' comportarsi
+ * diversamente nei due casi. Serve al gate della Flotta
+ * (utils/flottaConfig.ts) per non spalancare tutte le categorie quando in
+ * realta' la configurazione non e' stata letta.
+ *
+ * I successi restano in cache; i fallimenti no, ma per 5 secondi si risponde
+ * con l'errore gia' noto senza ripartire con la rete.
+ */
+export async function loadCentralinaConfigOnce(): Promise<{ config: Record<string, unknown>; ok: boolean }> {
+  if (CONFIG_CACHE) return CONFIG_CACHE;
+  if (configPending) return configPending;
+  if (Date.now() - lastConfigFailureAt < CONFIG_RETRY_COOLDOWN_MS) {
+    return { config: {}, ok: false };
+  }
+  configPending = (async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('centralina_pro_config')
         .select('config')
         .eq('id', 'main')
         .maybeSingle();
+      if (error) throw error;
       const cfg = (data?.config ?? null) as Record<string, unknown> | null;
-      const sc = cfg?.site_copy as SiteCopySnapshot | undefined;
-      CACHE = sc ?? {};
-      return CACHE;
-    } catch {
-      CACHE = {};
-      return CACHE;
+      // Riga assente non e' un errore: e' un'istanza non ancora configurata.
+      CONFIG_CACHE = { config: cfg ?? {}, ok: true };
+      return CONFIG_CACHE;
+    } catch (err) {
+      lastConfigFailureAt = Date.now();
+      console.error('[siteCopy] lettura centralina_pro_config fallita:', err);
+      return { config: {}, ok: false };
     } finally {
-      pending = null;
+      configPending = null;
     }
   })();
-  return pending;
+  return configPending;
+}
+
+async function loadOnce(): Promise<SiteCopySnapshot> {
+  const { config } = await loadCentralinaConfigOnce();
+  return (config.site_copy as SiteCopySnapshot | undefined) ?? {};
 }
 
 // Pre-warm at module load (no await — consumers will await their own getter).
-void loadOnce();
+void loadCentralinaConfigOnce();
 
 // ─── Getters ─────────────────────────────────────────────────────────────────
-// getFlottaVisibleCategoryIds e\' definita piu\' avanti nel file (linea ~1670).
-// Quella implementazione legge direttamente da Supabase ogni chiamata.
+// La selezione delle categorie Flotta NON si legge da qui: la regola
+// (loading / configurata / vuota di proposito / errore) sta tutta in
+// utils/flottaConfig.ts, unica fonte per sito e menu.
 
 /**
  * Normalize whatever's stored in `snap.faq` (legacy raw array or new
@@ -1810,36 +1859,28 @@ export async function getContactCopy(): Promise<ContactCopy> {
 
 /** Force a re-fetch (useful after admin edits in dev). */
 export function invalidateSiteCopyCache(): void {
-  CACHE = null;
-  pending = null;
+  CONFIG_CACHE = null;
+  configPending = null;
+  lastConfigFailureAt = 0;
 }
 
 /**
- * Restituisce gli id delle categorie selezionate in admin > Sito >
- * Flotta (site_copy.flotta.visible_category_ids). Array vuoto = "tutte"
- * (default coerente con il testo del FlottaEditor admin).
+ * Id delle categorie da mostrare come whitelist nella RentalPage.
  *
- * Letto direttamente da centralina_pro_config — no cache locale qui,
- * un giro su Supabase ad ogni chiamata: bisogno limitato (1-2 call per
- * pagina rental) e cosi' un cambio in admin si riflette al prossimo
- * render senza dover invalidare cache.
+ * Delega a `utils/flottaConfig.ts`, unica fonte della regola. Contratto
+ * storico invariato per chi la chiama: array VUOTO = nessun filtro
+ * (mostra tutto), array pieno = whitelist. Gli alias storici delle
+ * categorie (supercars/exotic) sono gia' inclusi nel risultato, cosi' un
+ * veicolo salvato con la vecchia sigla non sparisce dalla lista.
+ *
+ * @deprecated Per decidere COSA MOSTRARE usa `resolveFlottaCategories()`:
+ *   distingue "non configurato", "vuoto di proposito" ed "errore". Questa
+ *   funzione resta per la RentalPage, dove la whitelist e' solo un filtro
+ *   di presentazione sopra una pagina gia' vincolata alla sua categoria.
  */
 export async function getFlottaVisibleCategoryIds(): Promise<string[]> {
-  try {
-    const { data } = await supabase
-      .from('centralina_pro_config')
-      .select('config')
-      .eq('id', 'main')
-      .maybeSingle();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cfg = (data?.config as any) || {};
-    const raw = cfg?.site_copy?.flotta?.visible_category_ids;
-    if (!Array.isArray(raw)) return [];
-    return raw.filter((x: unknown): x is string => typeof x === 'string' && !!x);
-  } catch (err) {
-    console.error('[siteCopy.getFlottaVisibleCategoryIds] error:', err);
-    return [];
-  }
+  const { getRentalPageCategoryWhitelist } = await import('./flottaConfig');
+  return getRentalPageCategoryWhitelist();
 }
 
 // ─── Default Header seed ──────────────────────────────────────────────────

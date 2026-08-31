@@ -62,6 +62,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import { DR7AIFloatingButton } from './components/ui/DR7AIChat';
 import MarketingConsentModal from './components/ui/MarketingConsentModal';
 import { supabase } from './supabaseClient';
+import { resolveFlottaCategories } from './utils/flottaConfig';
 import { HelmetProvider } from 'react-helmet-async';
 
 import CancellationPolicyPage from './pages/CancellationPolicyPage';
@@ -238,26 +239,20 @@ const AnimatedRoutes = () => {
   // Ogni categoria genera automaticamente una route /<id> che apre la
   // RentalPage filtrata per quella categoria → veicoli sempre visibili
   // sul sito senza modifiche al codice.
+  // Il catalogo arriva dalla stessa lettura usata da Sito e Flotta
+  // (utils/flottaConfig -> siteCopy.loadCentralinaConfigOnce): una sola
+  // richiesta per pagina invece di una per consumer, e nessun rischio che
+  // App e pagina Flotta leggano due versioni diverse della stessa riga.
   const [dynamicCategories, setDynamicCategories] = React.useState<{ id: string; label: string }[]>([]);
   React.useEffect(() => {
     let cancelled = false;
-    supabase
-      .from('centralina_pro_config')
-      .select('config')
-      .eq('id', 'main')
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cats = ((data?.config as any) || {}).categories;
-        if (Array.isArray(cats)) {
-          setDynamicCategories(
-            cats
-              .filter((c: { id?: unknown; label?: unknown }) => typeof c?.id === 'string' && c.id)
-              .map((c: { id: string; label?: string }) => ({ id: c.id, label: c.label || c.id }))
-          );
-        }
-      });
+    resolveFlottaCategories().then(res => {
+      if (cancelled) return;
+      // Le route si generano per TUTTE le categorie del catalogo, non solo
+      // per quelle visibili: nascondere una categoria dalla vetrina non deve
+      // rompere un link gia' condiviso verso /<id>.
+      setDynamicCategories(res.allCategories);
+    });
     return () => { cancelled = true; };
   }, []);
 

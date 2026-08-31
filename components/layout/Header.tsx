@@ -11,7 +11,6 @@ import {
 import { getUserCreditBalance } from '../../utils/creditWallet';
 import BookingSearchBox from '../ui/BookingSearchBox';
 import { getHeaderCopy, type HeaderCopy } from '../../utils/siteCopy';
-import { useFlottaCategories } from '../../hooks/useFlottaCategories';
 import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
 
 const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy }> = ({ isOpen, onClose, copy }) => {
@@ -23,9 +22,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const h = (it: keyof HeaderCopy, en: keyof HeaderCopy): string =>
     (copy as Record<string, string>)[(lang === 'it' ? it : en) as string];
-  // Categorie veicolo visibili in menu = quelle selezionate in admin
-  // > Sito > Flotta (con default = tutte se nulla selezionato).
-  const { categories: flottaCats } = useFlottaCategories();
   // "La Nostra Flotta" punta SEMPRE alla landing /flotta (index con
   // tutte le categorie come cards). Non saltare direttamente alla
   // prima categoria — l'utente deve vedere il menu di scelta.

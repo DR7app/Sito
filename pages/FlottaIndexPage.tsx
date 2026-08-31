@@ -14,18 +14,14 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
 import type { RentalItem } from '../types';
-
-// Alias storici categoria DB ↔ id usato in Centralina Pro/URL.
-// Stessa logica di useVehicles per coerenza.
-const CATEGORY_ALIASES: Record<string, string[]> = {
-  exotic: ['exotic', 'supercars'],
-  supercars: ['exotic', 'supercars'],
-};
+// Alias storici categoria DB <-> id Centralina Pro: definiti una volta
+// sola in flottaConfig, insieme alla regola di visibilita'.
+import { categoryAliases } from '../utils/flottaConfig';
 
 const FlottaIndexPage: React.FC = () => {
   const { lang } = useTranslation();
   const { openCarWizard } = useBooking();
-  const { categories: flottaCats, loading: catsLoading } = useFlottaCategories();
+  const { categories: flottaCats, loading: catsLoading, status: catsStatus } = useFlottaCategories();
   const { vehicles: allVehicles, loading: vehLoading } = useVehicles(undefined);
 
   // categoryContext serve a CarBookingWizard per scegliere il routing:
@@ -39,8 +35,7 @@ const FlottaIndexPage: React.FC = () => {
   const groups = useMemo(() => {
     const out: Array<{ id: string; label: string; vehicles: typeof allVehicles }> = [];
     for (const cat of flottaCats) {
-      const aliases = CATEGORY_ALIASES[cat.id] || [cat.id];
-      const aliasSet = new Set(aliases.map(a => a.toLowerCase()));
+      const aliasSet = new Set(categoryAliases(cat.id).map(a => a.toLowerCase()));
       const list = allVehicles.filter(v => {
         const c = (v.category || '').toLowerCase();
         return aliasSet.has(c);
@@ -83,6 +78,14 @@ const FlottaIndexPage: React.FC = () => {
 
         {isLoading ? (
           <p className="text-center text-gray-400">…</p>
+        ) : catsStatus === 'error' ? (
+          // Config non letta: non si mostra il catalogo intero "per sicurezza",
+          // si dice che la lista non e' disponibile. Vedi utils/flottaConfig.ts.
+          <p className="text-center text-gray-400">
+            {lang === 'it'
+              ? 'Flotta momentaneamente non disponibile. Riprova tra poco.'
+              : 'Fleet temporarily unavailable. Please try again shortly.'}
+          </p>
         ) : totalCount === 0 ? (
           <p className="text-center text-gray-400">
             {lang === 'it'

@@ -1,24 +1,22 @@
 /**
- * useFlottaCategories — restituisce le categorie veicolo VISIBILI
- * sulla landing pubblica, secondo la selezione fatta in admin >
- * Sito > Flotta.
+ * useFlottaCategories — categorie veicolo VISIBILI sulla landing pubblica,
+ * secondo la selezione fatta in admin > Sito > Flotta.
  *
- * Sorgente:
- *   centralina_pro_config.config.categories          — lista categorie
- *   centralina_pro_config.config.site_copy.flotta.visible_category_ids
- *                                                    — subset selezionato
+ * La regola (loading / configurata / vuota di proposito / errore) sta tutta
+ * in `utils/flottaConfig.ts`: questo hook e' solo il ponte verso React, cosi'
+ * sito e menu non possono divergere. Vedi quel file per la semantica di
+ * `mode` e per il fail-safe.
  *
- * Regola: se l'admin NON ha selezionato nulla in Flotta, mostriamo
- * TUTTE le categorie (comportamento di default coerente con il testo
- * della tab Flotta in admin). Se ha selezionato alcune categorie,
- * filtriamo a quelle.
+ * Ogni categoria torna con `id`, `label` e `path = "/<id>"`, che corrisponde
+ * alla route dinamica generata da App.tsx per ciascuna categoria di
+ * Centralina Pro.
  *
- * Ogni categoria viene restituita con `id`, `label` e `path = "/<id>"`,
- * il path corrisponde alla route dinamica che App.tsx genera per
- * ciascuna categoria di Centralina Pro.
+ * Chi consuma questo hook NON deve mostrare tutto mentre `loading` e' true:
+ * durante il caricamento `categories` e' vuoto apposta, per non far
+ * comparire categorie che un attimo dopo spariscono.
  */
 import { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { resolveFlottaCategories, type FlottaMode } from '../utils/flottaConfig';
 
 export interface FlottaCategoryLink {
   id: string;
@@ -26,59 +24,44 @@ export interface FlottaCategoryLink {
   path: string;
 }
 
-export function useFlottaCategories(): { categories: FlottaCategoryLink[]; loading: boolean } {
-  const [categories, setCategories] = useState<FlottaCategoryLink[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface UseFlottaCategories {
+  categories: FlottaCategoryLink[];
+  loading: boolean;
+  /** 'loading' finche' la config non e' arrivata, poi 'ready' o 'error'. */
+  status: 'loading' | 'ready' | 'error';
+  /** Come e' stata risolta la visibilita' (null finche' si carica). */
+  mode: FlottaMode | null;
+  /** Anomalie della configurazione (id inesistenti, duplicati, formato). */
+  issues: string[];
+}
+
+export function useFlottaCategories(): UseFlottaCategories {
+  const [state, setState] = useState<UseFlottaCategories>({
+    categories: [],
+    loading: true,
+    status: 'loading',
+    mode: null,
+    issues: [],
+  });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const { data, error } = await supabase
-          .from('centralina_pro_config')
-          .select('config')
-          .eq('id', 'main')
-          .maybeSingle();
-        if (cancelled) return;
-        if (error) {
-          console.error('[useFlottaCategories] supabase error:', error);
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cfg = (data?.config as any) || {};
-        const allCats: Array<{ id?: string; label?: string }> = Array.isArray(cfg.categories) ? cfg.categories : [];
-        const visibleIds: string[] = Array.isArray(cfg?.site_copy?.flotta?.visible_category_ids)
-          ? cfg.site_copy.flotta.visible_category_ids.filter((x: unknown) => typeof x === 'string')
-          : [];
-        console.log('[useFlottaCategories] cfg keys:', Object.keys(cfg));
-        console.log('[useFlottaCategories] allCats:', allCats);
-        console.log('[useFlottaCategories] visibleIds (site_copy.flotta):', visibleIds);
-
-        const valid = allCats.filter(c => typeof c?.id === 'string' && c.id);
-        // 2026-05-19 REVERT: visibleIds vuoto torna a significare "mostra tutte
-        // le categorie" (comportamento originale). La modifica precedente
-        // (vuoto => nessuna) lasciava la pagina Flotta completamente vuota
-        // sui siti dove site_copy.flotta non era stato configurato.
-        // Per nascondere categorie, l'admin DEVE configurare esplicitamente
-        // la lista in Sito > Flotta.
-        const filtered = visibleIds.length === 0
-          ? valid
-          : visibleIds
-              .map(id => valid.find(c => c.id === id))
-              .filter((c): c is { id: string; label: string } => !!c);
-
-        const out: FlottaCategoryLink[] = filtered.map(c => ({
-          id: c.id as string,
-          label: (c.label as string) || (c.id as string),
-          path: `/${c.id}`,
-        }));
-        console.log('[useFlottaCategories] OUTPUT:', out);
-        setCategories(out);
-      } finally {
-        if (!cancelled) setLoading(false);
+      const res = await resolveFlottaCategories();
+      if (cancelled) return;
+      if (import.meta.env.DEV && res.issues.length > 0) {
+        console.warn('[useFlottaCategories] configurazione con anomalie:', res.issues);
       }
+      setState({
+        categories: res.categories.map(c => ({ id: c.id, label: c.label, path: `/${c.id}` })),
+        loading: false,
+        status: res.status,
+        mode: res.mode,
+        issues: res.issues,
+      });
     })();
     return () => { cancelled = true; };
   }, []);
 
-  return { categories, loading };
+  return state;
 }

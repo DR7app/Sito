@@ -42,14 +42,14 @@ export const SEAT_LAYOUT: SeatSpot[] = [
 /**
  * Blocchi cliccabili della pianta.
  *
- * Davanti sono due sedili separati: guida e passeggero si trattano uno alla
- * volta. Dietro NO: e' un divano intero, si sceglie la panca e non i tre
+ * SOLO la seconda fila e' un divano intero: si sceglie la panca e non i tre
  * posti uno per uno, perche' e' cosi' che si lava e cosi' che il cliente la
- * vede. Stessa cosa per la terza fila.
+ * vede. Davanti (guida e passeggero) e in terza fila i sedili restano
+ * separati, uno per uno.
  *
  * `seats` resta l'elenco delle sigle salvate sulla prenotazione: il divano
- * vale 3 sedili (2 in terza fila), quindi prezzo, quantita' e dettaglio in
- * officina non cambiano.
+ * vale 3 sedili, quindi prezzo, quantita' e dettaglio in officina non
+ * cambiano.
  */
 export interface SeatBlock {
   /** Solo per il disegno: sulla prenotazione finiscono le sigle di `seats`. */
@@ -70,7 +70,8 @@ export const SEAT_BLOCKS: SeatBlock[] = [
   { id: 'AS',     shortIt: 'AS',         shortEn: 'FL',         labelIt: 'Guidatore',            labelEn: 'Driver',          seats: ['AS'],             row: 1, x: 33, width: 26 },
   { id: 'AD',     shortIt: 'AD',         shortEn: 'FR',         labelIt: 'Passeggero anteriore', labelEn: 'Front passenger', seats: ['AD'],             row: 1, x: 67, width: 26 },
   { id: 'DIVANO', shortIt: 'DIVANO',     shortEn: 'REAR BENCH', labelIt: 'Divano posteriore',    labelEn: 'Rear bench',      seats: ['PS', 'PC', 'PD'], row: 2, x: 50, width: 76 },
-  { id: 'TERZA',  shortIt: 'TERZA FILA', shortEn: 'THIRD ROW',  labelIt: 'Terza fila',           labelEn: 'Third row',       seats: ['TS', 'TD'],       row: 3, x: 50, width: 58 },
+  { id: 'TS',     shortIt: 'TS',         shortEn: 'TL',         labelIt: 'Terza fila sinistra',  labelEn: 'Third row left',  seats: ['TS'],             row: 3, x: 33, width: 26 },
+  { id: 'TD',     shortIt: 'TD',         shortEn: 'TR',         labelIt: 'Terza fila destra',    labelEn: 'Third row right', seats: ['TD'],             row: 3, x: 67, width: 26 },
 ];
 
 /** Altezza in percentuale di ogni fila: la vettura si "allunga" a 7 posti. */

@@ -95,17 +95,17 @@ test('dietro e\' un divano: i blocchi coprono tutti i sedili, senza doppioni', (
   const daiBlocchi = SEAT_BLOCKS.flatMap(b => b.seats);
   assert.equal(new Set(daiBlocchi).size, daiBlocchi.length);
   assert.deepEqual(daiBlocchi.slice().sort(), SEAT_LAYOUT.map(s => s.id).slice().sort());
-  // Davanti uno per uno, dietro tutto insieme.
+  // Solo la seconda fila e' un blocco: davanti e in terza fila uno per uno.
   assert.ok(SEAT_BLOCKS.filter(b => b.row === 1).every(b => b.seats.length === 1));
-  assert.deepEqual(SEAT_BLOCKS.find(b => b.row === 2).seats, ['PS', 'PC', 'PD']);
-  assert.deepEqual(SEAT_BLOCKS.find(b => b.row === 3).seats, ['TS', 'TD']);
+  assert.ok(SEAT_BLOCKS.filter(b => b.row === 3).every(b => b.seats.length === 1));
+  assert.deepEqual(SEAT_BLOCKS.filter(b => b.seats.length > 1).map(b => b.seats), [['PS', 'PC', 'PD']]);
 });
 
 test('il divano intero e\' UNA voce nei riepiloghi, non tre', () => {
   assert.equal(seatListLabel(['PS', 'PC', 'PD'], 'it'), 'Divano posteriore');
   assert.equal(seatListLabel(['PS', 'PC', 'PD'], 'en'), 'Rear bench');
   assert.equal(seatListLabel(['AS', 'PS', 'PC', 'PD'], 'it'), 'Guidatore, Divano posteriore');
-  assert.equal(seatListLabel(['TS', 'TD'], 'it'), 'Terza fila');
+  assert.equal(seatListLabel(['TS', 'TD'], 'it'), 'Terza fila sinistra, Terza fila destra');
   // Prenotazione vecchia con un solo posto dietro: resta leggibile.
   assert.equal(seatListLabel(['PS', 'PD'], 'it'), 'Posteriore sinistro, Posteriore destro');
 });

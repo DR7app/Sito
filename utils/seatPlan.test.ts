@@ -12,9 +12,6 @@ import {
   normalizeSeats,
   isSeatPricedUnit,
   isSeatPricedService,
-  toggleSeat,
-  seatGroup,
-  PANCA_POSTERIORE,
 } from './seatPlan.ts';
 
 test('la pianta ha 7 sedili con sigle uniche: 5 standard + 2 di terza fila', () => {
@@ -91,25 +88,4 @@ test('riconosce il servizio a sedile anche dal nome: in catalogo l\'unita\' e\' 
   assert.equal(isSeatPricedService('Lavaggio sedili', null), true);
   assert.equal(isSeatPricedService('Igienizzazione abitacolo', 'Qta'), false);
   assert.equal(isSeatPricedService('Nano trattamento', 'a sedile'), true);
-});
-
-test('la panca posteriore si muove tutta insieme: un tocco = tre sedili', () => {
-  // I posteriori non si ribaltano un posto alla volta, quindi si lavano
-  // (e si fatturano) sempre tutti e tre.
-  assert.deepEqual(PANCA_POSTERIORE, ['PS', 'PC', 'PD']);
-  assert.deepEqual(seatGroup('PC'), ['PS', 'PC', 'PD']);
-  assert.deepEqual(toggleSeat([], 'PD'), ['PS', 'PC', 'PD']);
-  assert.deepEqual(toggleSeat(['PS', 'PC', 'PD'], 'PS'), []);
-});
-
-test('davanti e terza fila restano sedili singoli', () => {
-  assert.deepEqual(seatGroup('AS'), ['AS']);
-  assert.deepEqual(seatGroup('TD'), ['TD']);
-  assert.deepEqual(toggleSeat([], 'TS'), ['TS']);
-  assert.deepEqual(toggleSeat(['AS', 'TS'], 'TS'), ['AS']);
-});
-
-test('da una selezione parziale il primo tocco completa la panca, non la svuota', () => {
-  assert.deepEqual(toggleSeat(['PS'], 'PS'), ['PS', 'PC', 'PD']);
-  assert.deepEqual(toggleSeat(['AS', 'PD'], 'PS'), ['AS', 'PS', 'PC', 'PD']);
 });

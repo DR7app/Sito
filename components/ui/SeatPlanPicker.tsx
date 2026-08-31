@@ -18,7 +18,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../../hooks/useTranslation';
-import { SEAT_LAYOUT, ROW_Y, seatListLabel, normalizeSeats, toggleSeat, PANCA_POSTERIORE } from '../../utils/seatPlan';
+import { SEAT_LAYOUT, ROW_Y, seatListLabel, normalizeSeats } from '../../utils/seatPlan';
 
 interface Props {
   serviceName: string;
@@ -45,10 +45,12 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
   );
   const rowY = ROW_Y[thirdRow ? '7' : '5'];
 
-  // Toccare un posteriore muove tutta la panca: la regola sta in seatPlan,
-  // cosi' sito e gestionale si comportano allo stesso modo.
   const toggle = (id: string) => {
-    setSelected(prev => new Set(toggleSeat([...prev], id)));
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   const selectAll = () => setSelected(new Set(spots.map(s => s.id)));
@@ -61,7 +63,6 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
     setThirdRow(false);
   };
 
-  const pancaAccesa = PANCA_POSTERIORE.every(id => selected.has(id));
   const count = selected.size;
   const total = count * unitPrice;
   const ordered = normalizeSeats([...selected]);
@@ -119,13 +120,6 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
                   <line x1="29.5" y1="21" x2="36.5" y2="21" stroke="#7a7a7a" strokeWidth="1.2" />
                 </>
               )}
-              {/* Panca posteriore: i tre posti non si ribaltano uno alla
-                  volta, quindi si scelgono e si fatturano insieme. Il
-                  riquadro dietro i sedili lo dice prima del clic. */}
-              <rect x="16" y={rowY[2] - 11} width="68" height="22" rx="7"
-                    fill={pancaAccesa ? 'rgba(255,255,255,0.10)' : 'transparent'}
-                    stroke={pancaAccesa ? '#ffffff' : '#4a4a4a'}
-                    strokeWidth="0.9" strokeDasharray="2.4 1.8" />
               {/* separatori fila */}
               <line x1="13" y1={(rowY[1] + rowY[2]) / 2} x2="87" y2={(rowY[1] + rowY[2]) / 2}
                     stroke="#333" strokeWidth="0.9" />
@@ -164,14 +158,7 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
             })}
           </div>
 
-          <p className="mt-3 text-center text-gray-500 text-[11px] leading-snug">
-            {t({
-              it: 'I posteriori si scelgono insieme: la panca non si ribalta un posto alla volta, quindi conta come tre sedili. Terza fila esclusa.',
-              en: 'Rear seats are selected together: the bench does not fold one seat at a time, so it counts as three seats. Third row excluded.',
-            })}
-          </p>
-
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <button type="button" onClick={selectAll}
               className="text-[11px] px-3 py-1.5 rounded-full border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
               {t({ it: 'Tutti', en: 'All' })}

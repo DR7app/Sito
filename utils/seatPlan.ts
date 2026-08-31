@@ -77,3 +77,17 @@ export function seatListLabel(ids: string[], lang: string, sep = ', '): string {
 export function isSeatPricedUnit(priceUnit?: string | null): boolean {
   return /sedil|seat/i.test(priceUnit || '');
 }
+
+/**
+ * Un servizio si vende a sedile se lo dice l'unita' di prezzo del catalogo
+ * ("a sedile" / "per seat") OPPURE se lo dice il nome (PRIME SEAT CLEAN,
+ * PRIME SEAT PROTECT, "lavaggio sedili").
+ *
+ * Il nome serve davvero: in catalogo quei due servizi hanno price_unit
+ * "Qta'", quindi con la sola unita' la pianta non si apriva mai. Cosi'
+ * funziona con il catalogo di oggi e continua a funzionare se domani
+ * l'unita' viene scritta per bene.
+ */
+export function isSeatPricedService(name?: string | null, priceUnit?: string | null): boolean {
+  return isSeatPricedUnit(priceUnit) || /\bseats?\b|sedil/i.test(name || '');
+}

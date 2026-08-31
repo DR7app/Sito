@@ -7,7 +7,7 @@
  * sulla pianta, come per i posti dell'elicottero in TourBookingModal.
  *
  * Il numero di sedili scelti diventa la quantita' della riga di carrello, e
- * le sigle viaggiano fino a `booking_details.cart_items[].seats`.
+ * le sigle viaggiano fino a `booking_details.cartItems[].seats`.
  *
  * La pianta (sigle, etichette, posizioni) sta in utils/seatPlan.ts: qui c'e'
  * solo il disegno e l'interazione.

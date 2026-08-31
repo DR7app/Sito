@@ -19,7 +19,7 @@ interface CartItem {
   quantity: number;
   option?: string;
   /** Sigle dei sedili scelti sulla pianta, per i servizi venduti a sedile.
-   *  Arrivano in `booking_details.cart_items[].seats` e servono a chi lavora
+   *  Arrivano in `booking_details.cartItems[].seats` e servono a chi lavora
    *  il veicolo: la quantita' da sola non dice QUALI sedili trattare. */
   seats?: string[];
 }
@@ -1136,7 +1136,11 @@ const CarWashBookingPage: React.FC = () => {
           provinciaResidenza: formData.provinciaResidenza,
         },
         notes: formData.notes,
-        ...(hasCartItems ? { cart_items: cartItems } : {}),
+        // `cartItems` e non `cart_items`: e' la chiave che il gestionale
+        // legge (scheda prenotazione, modifica, report). Scritta col nome
+        // sbagliato, il dettaglio dei servizi scelti sul sito non arrivava
+        // in admin: si vedeva solo la riga `service_name`.
+        ...(hasCartItems ? { cartItems } : {}),
         ...(customerVehicle ? {
           customerVehicle,
           // Field aliases che l'admin CarWash modal legge direttamente.

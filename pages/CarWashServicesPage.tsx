@@ -7,7 +7,7 @@ import { classifyVehicle as classifyWashVehicle } from '../utils/classifyWashVeh
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../utils/lookupTarga';
 import { useCarWashServices } from '../hooks/useCarWashServices';
 import SeatPlanPicker from '../components/ui/SeatPlanPicker';
-import { seatLabel, isSeatPricedUnit } from '../utils/seatPlan';
+import { seatLabel, isSeatPricedService } from '../utils/seatPlan';
 import { immagineCatalogo } from '../utils/immagineCatalogo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
@@ -41,12 +41,11 @@ interface CartItem {
 }
 
 /**
- * Servizi venduti a sedile: si riconoscono dall'unita' di prezzo del
- * catalogo (`price_unit` = "a sedile" / "per seat"), non da una lista di id
- * scritta qui. Cosi' un nuovo servizio a sedile aggiunto dall'admin apre la
- * pianta senza toccare il codice.
+ * Servizi venduti a sedile: si riconoscono dal catalogo (unita' di prezzo o
+ * nome), non da una lista di id scritta qui. Cosi' un nuovo servizio a
+ * sedile aggiunto dall'admin apre la pianta senza toccare il codice.
  */
-const isSeatService = (s: WashService): boolean => isSeatPricedUnit(s.priceUnit);
+const isSeatService = (s: WashService): boolean => isSeatPricedService(s.name, s.priceUnit);
 
 // COMBINED WASH SERVICES (Urban + Maxi paired) — UI scaffolding for the
 // side-by-side comparison cards. Service data (price, features) comes

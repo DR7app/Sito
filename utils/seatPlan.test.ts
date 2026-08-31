@@ -11,6 +11,7 @@ import {
   seatListLabel,
   normalizeSeats,
   isSeatPricedUnit,
+  isSeatPricedService,
 } from './seatPlan.ts';
 
 test('la pianta ha 7 sedili con sigle uniche: 5 standard + 2 di terza fila', () => {
@@ -77,4 +78,14 @@ test('servizio a sedile riconosciuto dall\'unita\' di prezzo del catalogo', () =
   assert.equal(isSeatPricedUnit(''), false);
   assert.equal(isSeatPricedUnit(undefined), false);
   assert.equal(isSeatPricedUnit(null), false);
+});
+
+test('riconosce il servizio a sedile anche dal nome: in catalogo l\'unita\' e\' "Qta\'"', () => {
+  // Regressione: con la sola unita' di prezzo la pianta non si apriva mai,
+  // perche' PRIME SEAT CLEAN/PROTECT hanno price_unit "Qta'".
+  assert.equal(isSeatPricedService('PRIME SEAT CLEAN', "Qta'"), true);
+  assert.equal(isSeatPricedService('PRIME SEAT PROTECT', 'Qta'), true);
+  assert.equal(isSeatPricedService('Lavaggio sedili', null), true);
+  assert.equal(isSeatPricedService('Igienizzazione abitacolo', 'Qta'), false);
+  assert.equal(isSeatPricedService('Nano trattamento', 'a sedile'), true);
 });

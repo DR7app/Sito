@@ -74,6 +74,9 @@ const PaymentSuccessPage: React.FC = () => {
     const contact = useContactInfo();
     const [updating, setUpdating] = useState(true);
     const [updateError, setUpdateError] = useState<string | null>(null);
+    // Nexi non conferma nessun incasso per questo ordine: niente schermata verde,
+    // niente scritture, niente messaggi. Vedi il blocco di verifica piu' sotto.
+    const [pagamentoNonConfermato, setPagamentoNonConfermato] = useState(false);
     const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | 'cauzione' | null>(null);
     const [walletInfo, setWalletInfo] = useState<{ packageName: string; receivedAmount: number } | null>(null);
     const [membershipInfo, setMembershipInfo] = useState<{ tierName: string; billingCycle: string } | null>(null);
@@ -161,6 +164,45 @@ const PaymentSuccessPage: React.FC = () => {
 
             try {
                 console.log('Processing payment success for orderId:', orderId);
+
+                // ── VERIFICA PAGAMENTO PRIMA DI QUALSIASI COSA ────────────────
+                // Questa pagina e' solo il BROWSER: ci si arriva anche senza aver
+                // pagato (tasto indietro, refresh, 3DS annullato, redirect di Nexi
+                // su esito KO, link riaperto in sessione). Finche' non lo si e'
+                // chiesto a Nexi, "essere qui" NON significa "ha pagato".
+                //
+                // Senza questo controllo la pagina marcava la prenotazione
+                // `succeeded`, generava la fattura, accreditava il wallet e faceva
+                // partire il WhatsApp "pagato" — anche per incassi mai avvenuti.
+                // Il messaggio parte SOLO dopo un pagamento davvero riscontrato
+                // su Nexi.
+                //
+                // Fail-closed: se la verifica non conferma (esito KO, ordine
+                // sconosciuto, API irraggiungibile) qui non si scrive e non si
+                // manda niente. Il pagamento vero viene comunque finalizzato dal
+                // webhook `nexi-callback`, che parla direttamente con Nexi.
+                let verificaEsito: string | null = null;
+                try {
+                    const verificaRes = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/nexi-verify-order`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId }),
+                    });
+                    const verifica = await verificaRes.json();
+                    verificaEsito = verifica?.result ?? verifica?.reason ?? null;
+                    if (!verifica?.paid) {
+                        console.warn('[PaymentSuccess] Pagamento NON confermato da Nexi:', verifica);
+                        setPagamentoNonConfermato(true);
+                        setUpdating(false);
+                        return;
+                    }
+                } catch (verificaErr) {
+                    console.error('[PaymentSuccess] Verifica Nexi fallita:', verificaErr);
+                    setPagamentoNonConfermato(true);
+                    setUpdating(false);
+                    return;
+                }
+                console.log('[PaymentSuccess] Pagamento confermato da Nexi:', verificaEsito);
 
                 // 1. Try bookings first (nexi_order_id column, then booking_details JSONB fallback)
                 let bookings = null;
@@ -642,6 +684,39 @@ const PaymentSuccessPage: React.FC = () => {
                         <p className="text-gray-600">
                             {s('loading_subtitle_it', 'loading_subtitle_en')}
                         </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Pagamento non riscontrato su Nexi: il cliente NON deve vedere la spunta
+    // verde di "pagamento completato" per un incasso che non esiste.
+    if (pagamentoNonConfermato) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+                    <div className="text-center">
+                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                        </div>
+                        <p className="text-gray-700 mb-8">
+                            {s('err_payment_not_confirmed_it', 'err_payment_not_confirmed_en')}
+                        </p>
+                        {orderId && (
+                            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left text-sm flex justify-between">
+                                <span className="text-gray-600">{s('transaction_order_id_label_it', 'transaction_order_id_label_en')}</span>
+                                <span className="font-mono text-gray-900">{orderId}</span>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                        >
+                            {s('cta_home_it', 'cta_home_en')}
+                        </button>
                     </div>
                 </div>
             </div>

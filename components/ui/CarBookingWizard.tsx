@@ -871,6 +871,61 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [isCalculatingDelivery, setIsCalculatingDelivery] = useState(false)
   const [deliveryError, setDeliveryError] = useState<string | null>(null)
 
+  /**
+   * Ricerca del posto sopra i campi indirizzo di consegna e riconsegna
+   * (03/09/2026). Il testo scritto qui non e' un dato della prenotazione:
+   * serve solo a trovare il posto. Quello che conta resta nei campi via /
+   * civico / CAP / citta' / provincia / km, che restano modificabili.
+   */
+  const [ricercaConsegna, setRicercaConsegna] = useState('')
+  const [ricercaRiconsegna, setRicercaRiconsegna] = useState('')
+
+  /**
+   * Riempie i campi dell'indirizzo scelto e, con le coordinate, chiede i km
+   * su strada alla funzione che li calcola gia' per il resto del sito.
+   *
+   * Se i km non arrivano NON si azzera quello che c'e': meglio il valore
+   * scritto dal cliente che uno zero silenzioso, visto che da li' esce il
+   * costo della consegna.
+   */
+  const applicaLuogoConsegna = async (
+    quale: 'Pickup' | 'Return',
+    d: {
+      value: string
+      parti?: { via: string; civico: string; cap: string; comune: string; provincia: string; paese?: string }
+      lat?: number
+      lon?: number
+    },
+  ) => {
+    const p = d.parti
+    setFormData(prev => ({
+      ...prev,
+      [`delivery${quale}Via`]: p?.via || prev[`delivery${quale}Via` as keyof typeof prev] || '',
+      [`delivery${quale}Numero`]: p?.civico || prev[`delivery${quale}Numero` as keyof typeof prev] || '',
+      [`delivery${quale}Cap`]: p?.cap || prev[`delivery${quale}Cap` as keyof typeof prev] || '',
+      [`delivery${quale}Citta`]: p?.comune || prev[`delivery${quale}Citta` as keyof typeof prev] || '',
+      [`delivery${quale}Provincia`]: p?.provincia || prev[`delivery${quale}Provincia` as keyof typeof prev] || '',
+    }))
+
+    if (!Number.isFinite(d.lat) || !Number.isFinite(d.lon)) return
+    try {
+      const categoria = String((item as { category?: string }).category || '').toLowerCase().trim() || undefined
+      const res = await fetchWithTimeout('/.netlify/functions/calculate-delivery-distance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: d.lat, lon: d.lon, category: categoria }),
+      }, 10000)
+      if (!res.ok) return
+      const dati = await res.json() as { distanceKm?: number }
+      const km = Number(dati.distanceKm)
+      if (Number.isFinite(km) && km > 0) {
+        setFormData(prev => ({ ...prev, [`delivery${quale}Km`]: km }))
+      }
+    } catch {
+      // Km non calcolati: restano quelli scritti a mano.
+    }
+  }
+
   // Dynamic pricing from revenue_config (admin-controlled)
   const [dynamicPricing, setDynamicPricing] = useState<{
     enabled: boolean
@@ -4705,10 +4760,28 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
               </div>
 
+              {/* Cerca il posto invece di scriverlo (03/09/2026).
+
+                  Qui il cliente doveva battere via, civico, CAP, citta',
+                  provincia E i chilometri dalla sede: sei campi, e i km li
+                  tirava a indovinare. Ora scrive il nome del posto (o la
+                  via), sceglie dalla tendina e i campi si riempiono da soli,
+                  km compresi. Restano modificabili a mano: se la ricerca non
+                  trova il posto, il modulo funziona esattamente come prima. */}
               {/* Delivery address — PICKUP domicilio */}
               {formData.pickupLocation === 'home_delivery' && (
                 <div className="mt-4 p-4 rounded-lg border border-gray-700 bg-gray-800/40">
                   <label className="text-sm text-white font-semibold mb-3 block">{t({ it: "Indirizzo consegna veicolo *", en: "Vehicle delivery address *" })}</label>
+                  <div className="mb-3">
+                    <AddressAutocomplete
+                      value={ricercaConsegna}
+                      onChange={setRicercaConsegna}
+                      onSelect={(d) => void applicaLuogoConsegna('Pickup', d)}
+                      placeholder={t({ it: "Cerca il posto: hotel, aeroporto, via…", en: "Search the place: hotel, airport, street…" })}
+                      className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{t({ it: "Scegli dalla tendina e i campi qui sotto si riempiono da soli, chilometri compresi.", en: "Pick from the list and the fields below fill in on their own, distance included." })}</p>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
                       <input type="text" placeholder={t({ it: "Via *", en: "Street *" })} value={formData.deliveryPickupVia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryPickupVia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />
@@ -4736,6 +4809,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               {formData.returnLocation === 'home_delivery' && (
                 <div className="mt-4 p-4 rounded-lg border border-gray-700 bg-gray-800/40">
                   <label className="text-sm text-white font-semibold mb-3 block">{t({ it: "Indirizzo ritiro/riconsegna veicolo *", en: "Vehicle pick-up/drop-off address *" })}</label>
+                  <div className="mb-3">
+                    <AddressAutocomplete
+                      value={ricercaRiconsegna}
+                      onChange={setRicercaRiconsegna}
+                      onSelect={(d) => void applicaLuogoConsegna('Return', d)}
+                      placeholder={t({ it: "Cerca il posto: hotel, aeroporto, via…", en: "Search the place: hotel, airport, street…" })}
+                      className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{t({ it: "Scegli dalla tendina e i campi qui sotto si riempiono da soli, chilometri compresi.", en: "Pick from the list and the fields below fill in on their own, distance included." })}</p>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
                       <input type="text" placeholder={t({ it: "Via *", en: "Street *" })} value={formData.deliveryReturnVia || ''} onChange={(e) => setFormData(prev => ({ ...prev, deliveryReturnVia: e.target.value }))} className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-600 text-white text-sm placeholder-gray-500 focus:border-white focus:outline-none" />

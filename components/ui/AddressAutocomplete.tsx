@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { cercaLuoghiSito, dettaglioLuogoSito, type LuogoSito } from '../../utils/ricercaLuoghi';
 
 interface AddressAutocompleteProps {
   value: string;
@@ -6,7 +7,15 @@ interface AddressAutocompleteProps {
   /** Fired only when the user picks a suggestion from the list. Gives the
    *  resolved country code (ISO alpha-2, lowercase) so the caller can tell
    *  Italian from foreign addresses (drives the resident/non-resident cauzione). */
-  onSelect?: (details: { value: string; countryCode?: string; postcode?: string }) => void;
+  onSelect?: (details: {
+    value: string;
+    countryCode?: string;
+    postcode?: string;
+    /** Pezzi separati dell'indirizzo: ci sono solo quando il posto viene da Google. */
+    parti?: { via: string; civico: string; cap: string; comune: string; provincia: string; paese?: string };
+    lat?: number;
+    lon?: number;
+  }) => void;
   placeholder?: string;
   className?: string;
   id?: string;
@@ -47,6 +56,20 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const skipFetchRef = useRef(false);
+  /**
+   * 03/09/2026 — si cerca il POSTO, non solo la via.
+   *
+   * Nominatim trova le strade ma quasi nessuna attivita': un cliente che
+   * scriveva il nome del proprio hotel non trovava niente. Ora si chiede
+   * prima a Google (che le attivita' le conosce); quando non risponde
+   * resta identico il percorso Nominatim di prima.
+   */
+  const [luoghi, setLuoghi] = useState<LuogoSito[]>([]);
+  // Le battute dentro una sessione non si pagano: si paga solo il dettaglio
+  // del posto scelto. Nuova sessione dopo ogni scelta.
+  const sessioneRef = useRef<string>(
+    typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random())
+  );
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
@@ -54,6 +77,17 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       setIsOpen(false);
       return;
     }
+
+    // Prima i posti (Google). Se risponde, la tendina mostra quelli.
+    const daGoogle = await cercaLuoghiSito(query, sessioneRef.current);
+    if (daGoogle && daGoogle.length > 0) {
+      setLuoghi(daGoogle);
+      setSuggestions([]);
+      setIsOpen(true);
+      setHighlightIndex(-1);
+      return;
+    }
+    setLuoghi([]);
 
     try {
       // No country lock: foreign customers must be able to find their own
@@ -127,18 +161,57 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     setIsOpen(false);
   };
 
+  /**
+   * Scelta di un posto Google. Il dettaglio (l'unica chiamata a pagamento)
+   * parte qui, sul posto davvero scelto, e porta coordinate e pezzi
+   * dell'indirizzo.
+   *
+   * `countryCode` e `postcode` restano quelli che il chiamante si aspetta:
+   * decidono residente / non residente, e quindi la cauzione. Se il
+   * dettaglio non arriva non si inventa un paese — si lascia indefinito,
+   * come quando il cliente scrive l'indirizzo a mano.
+   */
+  const handleSelectLuogo = async (l: LuogoSito) => {
+    skipFetchRef.current = true;
+    setIsOpen(false);
+    setLuoghi([]);
+    const completo = (await dettaglioLuogoSito(l, sessioneRef.current)) || l;
+    sessioneRef.current =
+      typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random());
+
+    const p = completo.parti;
+    const via = p?.via ? (p.civico ? `${p.via} ${p.civico}` : p.via) : '';
+    const formatted = via
+      ? [via, [p?.cap, p?.comune].filter(Boolean).join(' '), p?.provincia].filter(Boolean).join(', ')
+      : (completo.indirizzoCompleto
+        || (completo.indirizzo ? `${completo.nome}, ${completo.indirizzo}` : completo.nome));
+
+    onChange(formatted);
+    onSelect?.({
+      value: formatted,
+      countryCode: p?.paese || undefined,
+      postcode: p?.cap || undefined,
+      parti: p,
+      lat: completo.lat ?? undefined,
+      lon: completo.lon ?? undefined,
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || suggestions.length === 0) return;
+    // La tendina mostra o i posti o i risultati Nominatim.
+    const quanti = luoghi.length > 0 ? luoghi.length : suggestions.length;
+    if (!isOpen || quanti === 0) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlightIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+      setHighlightIndex(prev => (prev < quanti - 1 ? prev + 1 : 0));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setHighlightIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+      setHighlightIndex(prev => (prev > 0 ? prev - 1 : quanti - 1));
     } else if (e.key === 'Enter' && highlightIndex >= 0) {
       e.preventDefault();
-      handleSelect(suggestions[highlightIndex]);
+      if (luoghi.length > 0) void handleSelectLuogo(luoghi[highlightIndex]);
+      else handleSelect(suggestions[highlightIndex]);
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
@@ -169,13 +242,38 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => { if (suggestions.length > 0) setIsOpen(true); }}
+        onFocus={() => { if (suggestions.length > 0 || luoghi.length > 0) setIsOpen(true); }}
         placeholder={placeholder}
         className={className}
         required={required}
         autoComplete="off"
       />
-      {isOpen && suggestions.length > 0 && (
+      {/* La tendina dei posti: nome dell'attivita' sopra, indirizzo sotto. */}
+      {isOpen && luoghi.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-72 overflow-y-auto">
+          {luoghi.map((l, i) => (
+            <li
+              key={l.id}
+              onClick={() => void handleSelectLuogo(l)}
+              onMouseEnter={() => setHighlightIndex(i)}
+              className={`px-3 py-2.5 text-sm cursor-pointer transition-colors ${
+                i === highlightIndex ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700/50'
+              }`}
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium leading-tight">{l.nome}</span>
+                {l.categoria && (
+                  <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+                    {l.categoria}
+                  </span>
+                )}
+              </div>
+              {l.indirizzo && <div className="text-xs text-gray-400 mt-0.5">{l.indirizzo}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {isOpen && luoghi.length === 0 && suggestions.length > 0 && (
         <ul className="absolute z-50 left-0 right-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
           {suggestions.map((result, i) => (
             <li

@@ -190,6 +190,14 @@ export interface MembershipCopy {
   elite_cta_title_it: string; elite_cta_title_en: string;
   elite_cta_text_it: string; elite_cta_text_en: string;
   elite_cta_logged_out_it: string; elite_cta_logged_out_en: string;
+
+  // Scala dei livelli cashback. I livelli veri stanno in Centralina Pro > DR7
+  // Club: qui c'e' solo l'intestazione della sezione. Opzionali perche'
+  // getMembershipCopy ripiega a blocco e la riga gia' salvata non le contiene:
+  // il valore di fabbrica sta nel punto in cui vengono lette.
+  tiers_eyebrow_it?: string; tiers_eyebrow_en?: string;
+  tiers_title_it?: string; tiers_title_en?: string;
+  tiers_note_it?: string; tiers_note_en?: string;
   elite_cta_logged_in_it: string; elite_cta_logged_in_en: string;
   // Reward-system grid
   reward_title_it: string; reward_title_en: string;

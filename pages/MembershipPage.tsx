@@ -13,6 +13,7 @@ import {
     type CancellazioneBlock,
 } from '../utils/siteCopy';
 import { getMembershipTiers } from '../utils/getMembershipTiers';
+import ClubTiersBoard from '../components/ui/ClubTiersBoard';
 import type { MembershipTier } from '../types';
 
 const MembershipPage: React.FC = () => {
@@ -217,6 +218,17 @@ const MembershipPage: React.FC = () => {
                     </motion.div>
                 </div>
             </div>
+
+            {/* Scala dei livelli cashback — la lista arriva da Centralina Pro >
+                DR7 Club, la stessa che il gestionale usa per calcolare il premio.
+                Se l'operatore aggiunge o toglie un livello, questa sezione cambia
+                da sola. */}
+            <ClubTiersBoard
+                lang={lang}
+                eyebrow={tx(copy.tiers_eyebrow_it || 'Programma Cashback', copy.tiers_eyebrow_en || 'Cashback Programme')}
+                title={tx(copy.tiers_title_it || 'Tutti i livelli', copy.tiers_title_en || 'Every tier')}
+                note={tx(copy.tiers_note_it || 'Un solo percorso.', copy.tiers_note_en || 'One single path.')}
+            />
 
             {/* Reward System Section */}
             <div className="bg-black pb-24 border-t border-gray-900">

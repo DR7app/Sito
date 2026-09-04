@@ -5,6 +5,9 @@ import { useTranslation } from '../../hooks/useTranslation';
 import {
   bilingual,
   getFooterCopy,
+  getAspettoCopy,
+  DEFAULT_ASPETTO,
+  type AspettoCopy,
   type FooterCopy,
   type FooterLink as FooterLinkData,
   type FooterSocialIcon,
@@ -58,10 +61,13 @@ const LinkRow: React.FC<{ links: FooterLinkData[]; lang: 'it' | 'en'; bold?: boo
 const Footer: React.FC = () => {
   const { lang, t } = useTranslation();
   const [copy, setCopy] = useState<FooterCopy | null>(null);
+  // Stesso logo della barra in alto (admin > Sito > Aspetto & Funzionalita).
+  const [aspetto, setAspetto] = useState<Required<AspettoCopy>>(DEFAULT_ASPETTO);
 
   useEffect(() => {
     let cancelled = false;
     getFooterCopy().then((c) => { if (!cancelled) setCopy(c); });
+    getAspettoCopy().then((a) => { if (!cancelled) setAspetto(a); });
     return () => { cancelled = true; };
   }, []);
 
@@ -151,7 +157,7 @@ const Footer: React.FC = () => {
         <div className="mt-12 pt-8 text-center border-t border-gray-900">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <Link to="/" className="inline-block">
-              <img src="/DR7logo1.png" alt="DR7 Cagliari Logo" className="h-12 w-auto mx-auto" />
+              <img src={aspetto.logo_url} alt="DR7 Cagliari Logo" className="w-auto mx-auto" style={{ height: aspetto.footer_logo_height }} />
             </Link>
             <div className="text-sm order-last md:order-none text-center">
               <p className="font-semibold text-white mb-1">{bilingual(copy, 'bottom_brand_line', lang)}</p>

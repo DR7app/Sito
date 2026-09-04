@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -60,6 +60,7 @@ import HeliTourPopup from './components/ui/HeliTourPopup';
 import { useAuth } from './hooks/useAuth';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { DR7AIFloatingButton } from './components/ui/DR7AIChat';
+import { getAspettoCopy, DEFAULT_ASPETTO, type AspettoCopy } from './utils/siteCopy';
 import MarketingConsentModal from './components/ui/MarketingConsentModal';
 import { supabase } from './supabaseClient';
 import { resolveFlottaCategories } from './utils/flottaConfig';
@@ -416,6 +417,15 @@ const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const MainContent = () => {
   const { isCarWizardOpen, closeCarWizard, selectedCar, wizardCategory } = useBooking();
   const navigate = useNavigate();
+  // Widget presenti su ogni pagina: accesi/spenti da admin > Sito >
+  // Aspetto & Funzionalita. Si parte dai valori di fabbrica (tutti accesi,
+  // com'era prima della sezione) e si aggiorna quando arriva la config.
+  const [aspetto, setAspetto] = useState<Required<AspettoCopy>>(DEFAULT_ASPETTO);
+  useEffect(() => {
+    let cancelled = false;
+    getAspettoCopy().then((a) => { if (!cancelled) setAspetto(a); });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleBookingComplete = (booking: any) => {
     closeCarWizard();
@@ -437,9 +447,9 @@ const MainContent = () => {
         <VerificationModal />
         <CookieBanner />
         <ConsentPopupManager />
-        <AutoBookingPopup />
-        <HeliTourPopup />
-        <DR7AIFloatingButton />
+        {aspetto.auto_booking_popup_enabled && <AutoBookingPopup />}
+        {aspetto.heli_tour_popup_enabled && <HeliTourPopup />}
+        {aspetto.chatbot_enabled && <DR7AIFloatingButton avatarUrl={aspetto.chatbot_avatar_url} />}
         <AnimatePresence>
           {isCarWizardOpen && selectedCar && (
             <motion.div

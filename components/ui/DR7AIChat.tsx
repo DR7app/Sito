@@ -305,7 +305,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
 };
 
 // Floating Chat Button Component
-export const DR7AIFloatingButton: React.FC = () => {
+export const DR7AIFloatingButton: React.FC<{ avatarUrl?: string }> = ({ avatarUrl }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -360,7 +360,7 @@ export const DR7AIFloatingButton: React.FC = () => {
         style={{ pointerEvents: isVisible ? 'auto' : 'none' }}
       >
         <img
-          src="/Valerio.jpg"
+          src={avatarUrl || '/Valerio.jpg'}
           alt={t({ it: "Chatta con Valerio", en: "Chat with Valerio" })}
           className="w-full h-full object-cover object-top"
         />

@@ -10,10 +10,23 @@ import {
 } from '../icons/Icons';
 import { getUserCreditBalance } from '../../utils/creditWallet';
 import BookingSearchBox from '../ui/BookingSearchBox';
-import { getHeaderCopy, type HeaderCopy } from '../../utils/siteCopy';
+import { getHeaderCopy, getAspettoCopy, DEFAULT_ASPETTO, type HeaderCopy, type AspettoCopy } from '../../utils/siteCopy';
 import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
 
-const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy }> = ({ isOpen, onClose, copy }) => {
+/**
+ * Il logo della barra in alto. Due <img> invece di un'altezza sola perche'
+ * l'operatore imposta due misure (telefono e schermo grande) e Tailwind non
+ * puo' generare una classe da un numero letto a runtime: la scelta la fa il
+ * breakpoint, l'altezza lo style.
+ */
+const SiteLogo: React.FC<{ aspetto: Required<AspettoCopy>; alt: string }> = ({ aspetto, alt }) => (
+  <NavLink to="/" className="flex items-center shrink-0">
+    <img src={aspetto.logo_url} alt={alt} className="w-auto md:hidden" style={{ height: aspetto.logo_height_mobile }} />
+    <img src={aspetto.logo_url} alt={alt} className="w-auto hidden md:block" style={{ height: aspetto.logo_height_desktop }} />
+  </NavLink>
+);
+
+const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy; aspetto: Required<AspettoCopy> }> = ({ isOpen, onClose, copy, aspetto }) => {
   const { t, lang, setLanguage } = useTranslation();
   const { user, logout } = useAuth();
   const nav = useNavigate();
@@ -179,7 +192,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             {/* Header: logo + tagline (sinistra), chiudi (destra) */}
             <div className="flex items-start justify-between px-5 pt-6 pb-5 border-b border-white/[0.06]">
               <NavLink to="/" onClick={onClose} className="flex flex-col items-start">
-                <img src="/DR7logo1.png" alt={copy.logo_alt} className="h-12 w-auto max-w-none self-start" />
+                <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto max-w-none self-start" style={{ height: aspetto.logo_height_mobile }} />
                 <span className="mt-1 pl-1 text-[9px] tracking-[0.45em] text-gray-500 uppercase">Beyond Luxury</span>
               </NavLink>
               <div className="flex items-center gap-2">
@@ -326,10 +339,14 @@ const Header: React.FC = () => {
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [copy, setCopy] = useState<HeaderCopy | null>(null);
+  // Logo e widget: si parte dai valori di fabbrica cosi' la barra non appare
+  // mai senza logo, poi arriva la configurazione dell'operatore.
+  const [aspetto, setAspetto] = useState<Required<AspettoCopy>>(DEFAULT_ASPETTO);
 
   useEffect(() => {
     let cancelled = false;
     getHeaderCopy().then((c) => { if (!cancelled) setCopy(c); });
+    getAspettoCopy().then((a) => { if (!cancelled) setAspetto(a); });
     return () => { cancelled = true; };
   }, []);
 
@@ -389,8 +406,11 @@ const Header: React.FC = () => {
           }`}
       >
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          {/* EXPLORE menu button on the left */}
-          <div className="flex items-center">
+          {/* Menu ESPLORA a sinistra — con il logo accanto se allineato a sinistra */}
+          <div className="flex items-center gap-4">
+            {aspetto.logo_alignment === 'left' && (
+              <SiteLogo aspetto={aspetto} alt={copy?.logo_alt || 'DR7 Logo'} />
+            )}
             <button
               onClick={() => setIsMenuOpen(true)}
               aria-label={h('open_menu_aria_it', 'open_menu_aria_en') || t({ it: 'Apri menu', en: 'Open menu' })}
@@ -401,14 +421,15 @@ const Header: React.FC = () => {
             </button>
           </div>
 
-          {/* Logo centered */}
-          <div className="absolute left-1/2 transform -translate-x-1/2">
-            <NavLink to="/" className="flex items-center">
-              <img src="/DR7logo1.png" alt={h('logo_alt_it', 'logo_alt_en') || 'DR7 Logo'} className="h-14 md:h-16 w-auto" />
-            </NavLink>
-          </div>
+          {/* Logo centrato: fuori dal flusso, cosi' resta al centro della barra
+              qualunque sia la larghezza dei due gruppi ai lati. */}
+          {aspetto.logo_alignment === 'center' && (
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <SiteLogo aspetto={aspetto} alt={copy?.logo_alt || 'DR7 Logo'} />
+            </div>
+          )}
 
-          {/* User controls on the right */}
+          {/* Controlli utente a destra — con il logo in coda se allineato a destra */}
           <div className="flex items-center space-x-4">
             {/* Toggle lingua IT/EN — cambia TUTTO il sito */}
             <div className="hidden sm:flex items-center rounded-full border border-white/15 bg-white/[0.05] p-0.5 text-[11px] font-bold">
@@ -459,11 +480,14 @@ const Header: React.FC = () => {
                 </Link>
               )}
             </AnimatePresence>
+            {aspetto.logo_alignment === 'right' && (
+              <SiteLogo aspetto={aspetto} alt={copy?.logo_alt || 'DR7 Logo'} />
+            )}
           </div>
         </div>
       </motion.header>
 
-      {copy && <NavigationMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} copy={copy} />}
+      {copy && <NavigationMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} copy={copy} aspetto={aspetto} />}
     </>
   );
 };

@@ -113,6 +113,7 @@ interface SiteCopySnapshot {
   locations?: LocationsCopy;
   aviationMarine?: AviationMarineCopy;
   dr7ClubPlan?: Dr7ClubPlanCopy;
+  aspetto?: AspettoCopy;
 }
 
 // ─── Cancellazione ──────────────────────────────────────────────────────────
@@ -954,6 +955,41 @@ export interface HeaderCopy {
   popup_subtitle_it: string; popup_subtitle_en: string;         // "Seleziona date e orari"
 }
 
+// ─── Aspetto & Funzionalita' del sito ──────────────────────────────────────
+//
+// A differenza delle altre sezioni qui non ci sono testi: ci sono le scelte
+// di layout e gli interruttori dei widget che compaiono su OGNI pagina
+// (logo, chat AI, popup automatici). Vivevano nel codice, quindi spostare il
+// logo o spegnere la chat voleva dire un deploy.
+//
+// Tutti i campi sono opzionali di proposito: il getter fonde la riga salvata
+// sopra DEFAULT_ASPETTO, cosi' una riga scritta prima che il campo esistesse
+// non spegne un widget ne' azzera un'altezza. Per la stessa ragione i
+// booleani NON possono essere usati come sentinella "riga configurata":
+// `false` e' una scelta legittima dell'operatore.
+
+/** Dove sta il logo nella barra in alto. */
+export type LogoAlignment = 'left' | 'center' | 'right';
+
+export interface AspettoCopy {
+  // Logo del sito (barra in alto + footer)
+  logo_url?: string;
+  logo_alignment?: LogoAlignment;
+  /** Altezza del logo in px sulla barra in alto (schermo grande / telefono). */
+  logo_height_desktop?: number;
+  logo_height_mobile?: number;
+  footer_logo_height?: number;
+  // Widget presenti su ogni pagina
+  /** Bottone e finestra della chat DR7 AI in basso a destra. */
+  chatbot_enabled?: boolean;
+  /** Immagine del bottone della chat. */
+  chatbot_avatar_url?: string;
+  /** Popup di prenotazione che si apre da solo dopo qualche secondo. */
+  auto_booking_popup_enabled?: boolean;
+  /** Popup del tour in elicottero. */
+  heli_tour_popup_enabled?: boolean;
+}
+
 // ─── Confirmation Success page (booking + email fallback) ─────────────────
 // `{total}` placeholder in rental_agency_footnote is replaced with the
 // formatted total price at render time.
@@ -1607,6 +1643,27 @@ export async function getHeaderCopy(): Promise<HeaderCopy> {
   return DEFAULT_HEADER;
 }
 
+/**
+ * Layout del logo + interruttori dei widget di ogni pagina.
+ *
+ * Fusione sopra i default invece del solito `if (campo) return snap.x`: qui
+ * i valori sono booleani e numeri, e una riga salvata prima che un campo
+ * esistesse deve ereditare il default, non spegnere il widget.
+ */
+export async function getAspettoCopy(): Promise<Required<AspettoCopy>> {
+  const snap = await loadOnce();
+  const saved = (snap.aspetto && typeof snap.aspetto === 'object') ? snap.aspetto : {};
+  const merged = { ...DEFAULT_ASPETTO } as Required<AspettoCopy>;
+  for (const [k, v] of Object.entries(saved)) {
+    if (v === undefined || v === null || v === '') continue;
+    // Un'altezza a 0 o negativa farebbe sparire il logo: si tiene il default.
+    if (typeof v === 'number' && (!isFinite(v) || v <= 0)) continue;
+    (merged as Record<string, unknown>)[k] = v;
+  }
+  if (merged.logo_alignment !== 'left' && merged.logo_alignment !== 'right') merged.logo_alignment = 'center';
+  return merged;
+}
+
 /** SignUp page chrome + form labels + validation messages. */
 export async function getSignUpCopy(): Promise<SignUpCopy> {
   const snap = await loadOnce();
@@ -1901,6 +1958,24 @@ const DEFAULT_HEADER: HeaderCopy = {
   contact_cta_it: 'Contattaci', contact_cta_en: 'Contact us',
   popup_title_it: 'Prenota Ora', popup_title_en: 'Book Now',
   popup_subtitle_it: 'Seleziona date e orari', popup_subtitle_en: 'Select dates and times',
+};
+
+/**
+ * Valori di fabbrica: il logo centrato e tutti i widget accesi, cioe' com'era
+ * dr7.app prima che la sezione esistesse. Esportati perche' header e footer li
+ * usano come stato iniziale sincrono: la barra si disegna subito, senza un
+ * fotogramma senza logo in attesa della config.
+ */
+export const DEFAULT_ASPETTO: Required<AspettoCopy> = {
+  logo_url: '/DR7logo1.png',
+  logo_alignment: 'center',
+  logo_height_desktop: 64,
+  logo_height_mobile: 56,
+  footer_logo_height: 48,
+  chatbot_enabled: true,
+  chatbot_avatar_url: '/Valerio.jpg',
+  auto_booking_popup_enabled: true,
+  heli_tour_popup_enabled: true,
 };
 
 // ─── Default Locations seed (mirrors current constants.ts arrays) ──────

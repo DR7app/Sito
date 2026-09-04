@@ -217,6 +217,10 @@ export function applyMembershipPlaceholders(s: string, vals: MembershipPlacehold
 export interface HomeSlide {
   id: string;
   video_src: string;       // path under /public, e.g. "/main.mp4"
+  /** Fotogramma mostrato prima che il video parta e se il video non arriva. */
+  poster_src?: string;
+  /** Sorgente verticale dedicata al telefono, se la scena 16:9 non regge il taglio. */
+  mobile_src?: string;
 }
 
 /**
@@ -231,12 +235,73 @@ export interface HomeCategoryOverride {
   image_src: string;       // path under /public, e.g. "/car.jpeg"
 }
 
+/** Un'esperienza in homepage: servizio reale, immagine, testo, destinazione. */
+export interface HomeExperience {
+  id: string;
+  to: string;                 // rotta interna esistente, es. "/noleggio-mare"
+  image_src: string;          // path under /public
+  video_src?: string;         // opzionale: se c'e', sostituisce l'immagine
+  title_it: string; title_en: string;
+  copy_it: string; copy_en: string;
+  cta_it: string; cta_en: string;
+}
+
+/**
+ * Numero monumentale in homepage.
+ *
+ * Vuoto di proposito nei default: un numero va mostrato solo se verificato.
+ * Finche' l'array e' vuoto la sezione non viene renderizzata.
+ */
+export interface HomeMetric {
+  id: string;
+  value: string;              // es. "2.000+"
+  label_it: string; label_en: string;
+}
+
 export interface HomeCopy {
   seo_h1_it: string;
   seo_h1_en: string;
   hero_autoplay_seconds: number;     // default 8
   hero_slides: HomeSlide[];
   categories: HomeCategoryOverride[];
+
+  // ── Atto 01 — Arrivo ─────────────────────────────────────────────────────
+  hero_kicker_it: string; hero_kicker_en: string;
+  hero_headline_it: string; hero_headline_en: string;
+  hero_microcopy_it: string; hero_microcopy_en: string;
+  hero_cta_label_it: string; hero_cta_label_en: string; hero_cta_to: string;
+  hero_cta2_label_it: string; hero_cta2_label_en: string; hero_cta2_to: string;
+
+  // ── Atto 02 — Silenzio ───────────────────────────────────────────────────
+  statement_lines_it: string[]; statement_lines_en: string[];
+  statement_note_it: string; statement_note_en: string;
+
+  // ── Atto 03 — La Collezione ──────────────────────────────────────────────
+  collection_eyebrow_it: string; collection_eyebrow_en: string;
+  collection_title_it: string; collection_title_en: string;
+  collection_intro_it: string; collection_intro_en: string;
+  /** Id veicolo da mettere in evidenza. Vuoto = i primi disponibili. */
+  collection_featured_ids: string[];
+  collection_featured_count: number;
+  collection_cta_label_it: string; collection_cta_label_en: string;
+  collection_cta_to: string;
+
+  // ── Atto 04 — Esperienze ─────────────────────────────────────────────────
+  experiences_eyebrow_it: string; experiences_eyebrow_en: string;
+  experiences_title_it: string; experiences_title_en: string;
+  experiences: HomeExperience[];
+
+  // ── Atto 05 — Marca ──────────────────────────────────────────────────────
+  brand_lines_it: string[]; brand_lines_en: string[];
+  brand_paragraphs: BilingualParagraph[];
+  metrics: HomeMetric[];
+
+  // ── Atto 06 — Accesso ────────────────────────────────────────────────────
+  access_title_it: string; access_title_en: string;
+  access_copy_it: string; access_copy_en: string;
+  access_cta_label_it: string; access_cta_label_en: string; access_cta_to: string;
+  access_media_src: string;
+  access_video_src: string;
 }
 
 // ─── Chi Siamo (About) ──────────────────────────────────────────────────────
@@ -1590,10 +1655,82 @@ export async function getMembershipCopy(): Promise<MembershipCopy> {
  */
 export async function getHomeCopy(): Promise<HomeCopy> {
   const snap = await loadOnce();
-  if (snap.home && Array.isArray(snap.home.hero_slides) && snap.home.hero_slides.length > 0) {
-    return snap.home;
-  }
-  return DEFAULT_HOME;
+  const saved = (snap.home || {}) as Partial<HomeCopy>;
+
+  // Ripiego CAMPO PER CAMPO, non a blocco.
+  //
+  // La riga salvata in produzione contiene solo le chiavi che esistevano
+  // quando l'operatore ha premuto Salva l'ultima volta. Restituendo `saved`
+  // intero, ogni campo aggiunto dopo tornerebbe `undefined` a TUTTI finche'
+  // qualcuno non riapre e risalva il pannello — cioe' la homepage nuova
+  // uscirebbe senza titolo, senza CTA e senza esperienze. Con il merge per
+  // campo, il salvato vince dove c'e' e il default copre il resto.
+  const str = (v: unknown, fb: string) => (typeof v === 'string' && v.trim() ? v : fb);
+  const num = (v: unknown, fb: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fb);
+  const arr = <T,>(v: unknown, fb: T[]): T[] => (Array.isArray(v) && v.length > 0 ? (v as T[]) : fb);
+  // Un array vuoto puo' essere una scelta (nessuna metrica pubblicata): qui il
+  // vuoto salvato viene rispettato, non sostituito dal default.
+  const arrAllowEmpty = <T,>(v: unknown, fb: T[]): T[] => (Array.isArray(v) ? (v as T[]) : fb);
+  const D = DEFAULT_HOME;
+
+  return {
+    seo_h1_it: str(saved.seo_h1_it, D.seo_h1_it),
+    seo_h1_en: str(saved.seo_h1_en, D.seo_h1_en),
+    hero_autoplay_seconds: num(saved.hero_autoplay_seconds, D.hero_autoplay_seconds),
+    hero_slides: arr(saved.hero_slides, D.hero_slides),
+    categories: arr(saved.categories, D.categories),
+
+    hero_kicker_it: str(saved.hero_kicker_it, D.hero_kicker_it),
+    hero_kicker_en: str(saved.hero_kicker_en, D.hero_kicker_en),
+    hero_headline_it: str(saved.hero_headline_it, D.hero_headline_it),
+    hero_headline_en: str(saved.hero_headline_en, D.hero_headline_en),
+    hero_microcopy_it: str(saved.hero_microcopy_it, D.hero_microcopy_it),
+    hero_microcopy_en: str(saved.hero_microcopy_en, D.hero_microcopy_en),
+    hero_cta_label_it: str(saved.hero_cta_label_it, D.hero_cta_label_it),
+    hero_cta_label_en: str(saved.hero_cta_label_en, D.hero_cta_label_en),
+    hero_cta_to: str(saved.hero_cta_to, D.hero_cta_to),
+    hero_cta2_label_it: str(saved.hero_cta2_label_it, D.hero_cta2_label_it),
+    hero_cta2_label_en: str(saved.hero_cta2_label_en, D.hero_cta2_label_en),
+    hero_cta2_to: str(saved.hero_cta2_to, D.hero_cta2_to),
+
+    statement_lines_it: arr(saved.statement_lines_it, D.statement_lines_it),
+    statement_lines_en: arr(saved.statement_lines_en, D.statement_lines_en),
+    statement_note_it: str(saved.statement_note_it, D.statement_note_it),
+    statement_note_en: str(saved.statement_note_en, D.statement_note_en),
+
+    collection_eyebrow_it: str(saved.collection_eyebrow_it, D.collection_eyebrow_it),
+    collection_eyebrow_en: str(saved.collection_eyebrow_en, D.collection_eyebrow_en),
+    collection_title_it: str(saved.collection_title_it, D.collection_title_it),
+    collection_title_en: str(saved.collection_title_en, D.collection_title_en),
+    collection_intro_it: str(saved.collection_intro_it, D.collection_intro_it),
+    collection_intro_en: str(saved.collection_intro_en, D.collection_intro_en),
+    collection_featured_ids: arrAllowEmpty(saved.collection_featured_ids, D.collection_featured_ids),
+    collection_featured_count: num(saved.collection_featured_count, D.collection_featured_count),
+    collection_cta_label_it: str(saved.collection_cta_label_it, D.collection_cta_label_it),
+    collection_cta_label_en: str(saved.collection_cta_label_en, D.collection_cta_label_en),
+    collection_cta_to: str(saved.collection_cta_to, D.collection_cta_to),
+
+    experiences_eyebrow_it: str(saved.experiences_eyebrow_it, D.experiences_eyebrow_it),
+    experiences_eyebrow_en: str(saved.experiences_eyebrow_en, D.experiences_eyebrow_en),
+    experiences_title_it: str(saved.experiences_title_it, D.experiences_title_it),
+    experiences_title_en: str(saved.experiences_title_en, D.experiences_title_en),
+    experiences: arrAllowEmpty(saved.experiences, D.experiences),
+
+    brand_lines_it: arr(saved.brand_lines_it, D.brand_lines_it),
+    brand_lines_en: arr(saved.brand_lines_en, D.brand_lines_en),
+    brand_paragraphs: arr(saved.brand_paragraphs, D.brand_paragraphs),
+    metrics: arrAllowEmpty(saved.metrics, D.metrics),
+
+    access_title_it: str(saved.access_title_it, D.access_title_it),
+    access_title_en: str(saved.access_title_en, D.access_title_en),
+    access_copy_it: str(saved.access_copy_it, D.access_copy_it),
+    access_copy_en: str(saved.access_copy_en, D.access_copy_en),
+    access_cta_label_it: str(saved.access_cta_label_it, D.access_cta_label_it),
+    access_cta_label_en: str(saved.access_cta_label_en, D.access_cta_label_en),
+    access_cta_to: str(saved.access_cta_to, D.access_cta_to),
+    access_media_src: str(saved.access_media_src, D.access_media_src),
+    access_video_src: str(saved.access_video_src, D.access_video_src),
+  };
 }
 
 /**
@@ -3315,12 +3452,12 @@ const DEFAULT_HOME: HomeCopy = {
   seo_h1_en: 'DR7 — Luxury Car Rental, Supercars & Premium Services in Sardinia',
   hero_autoplay_seconds: 8,
   hero_slides: [
-    { id: 'slide-1', video_src: '/main.mp4' },
-    { id: 'slide-2', video_src: '/video2.mp4' },
-    { id: 'slide-3', video_src: '/video3.mp4' },
-    { id: 'slide-4', video_src: '/video4.mp4' },
-    { id: 'slide-5', video_src: '/video5.mp4' },
-    { id: 'slide-6', video_src: '/video6.mp4' },
+    { id: 'slide-1', video_src: '/main.mp4',   poster_src: '/poster/main.jpg' },
+    { id: 'slide-2', video_src: '/video2.mp4', poster_src: '/poster/video2.jpg' },
+    { id: 'slide-3', video_src: '/video3.mp4', poster_src: '/poster/video3.jpg' },
+    { id: 'slide-4', video_src: '/video4.mp4', poster_src: '/poster/video4.jpg' },
+    { id: 'slide-5', video_src: '/video5.mp4', poster_src: '/poster/video5.jpg' },
+    { id: 'slide-6', video_src: '/video6.mp4', poster_src: '/poster/video6.jpg' },
   ],
   categories: [
     { id: 'cars',                 display_title_it: 'DR7 Supercar & Luxury Division',         display_title_en: 'DR7 Supercar & Luxury Division',         image_src: '/car.jpeg' },
@@ -3333,6 +3470,91 @@ const DEFAULT_HOME: HomeCopy = {
     { id: 'membership',           display_title_it: 'DR7 Exclusive Members Club',             display_title_en: 'DR7 Exclusive Members Club',             image_src: '/exclusivemc.jpeg' },
     { id: 'credit-wallet',        display_title_it: 'DR7 Credit Wallet',                      display_title_en: 'DR7 Credit Wallet',                      image_src: '/cwallet.jpeg' },
   ],
+
+  // ── Atto 01 — Arrivo ───────────────────────────────────────────────────
+  hero_kicker_it: 'Cagliari · Sardegna',
+  hero_kicker_en: 'Cagliari · Sardinia',
+  hero_headline_it: 'Sardegna,\na un\u2019altra velocit\u00e0.',
+  hero_headline_en: 'Sardinia,\nat another speed.',
+  hero_microcopy_it: 'Terra, mare, aria. Una sola collezione, un solo accesso.',
+  hero_microcopy_en: 'Land, sea, air. One collection, one access.',
+  hero_cta_label_it: 'La Collezione',
+  hero_cta_label_en: 'The Collection',
+  hero_cta_to: '/flotta',
+  hero_cta2_label_it: 'Esperienze',
+  hero_cta2_label_en: 'Experiences',
+  hero_cta2_to: '#esperienze',
+
+  // ── Atto 02 — Silenzio ─────────────────────────────────────────────────
+  statement_lines_it: ['Scegliere un mezzo', '\u00e8 scegliere', 'come arrivare.'],
+  statement_lines_en: ['Choosing how you move', 'is choosing', 'how you arrive.'],
+  statement_note_it: 'Terra · Mare · Aria',
+  statement_note_en: 'Land · Sea · Air',
+
+  // ── Atto 03 — La Collezione ────────────────────────────────────────────
+  collection_eyebrow_it: '01 \u2014 La Collezione',
+  collection_eyebrow_en: '01 \u2014 The Collection',
+  collection_title_it: 'La Collezione',
+  collection_title_en: 'The Collection',
+  collection_intro_it: 'Una selezione ristretta. Il catalogo completo \u00e8 a un passo.',
+  collection_intro_en: 'A short selection. The full catalogue is one step away.',
+  collection_featured_ids: [],
+  collection_featured_count: 3,
+  collection_cta_label_it: 'Esplora la collezione',
+  collection_cta_label_en: 'Explore the collection',
+  collection_cta_to: '/flotta',
+
+  // ── Atto 04 — Esperienze ───────────────────────────────────────────────
+  // Solo servizi realmente attivi sul sito, con le stesse destinazioni del menu.
+  experiences_eyebrow_it: '02 \u2014 Esperienze',
+  experiences_eyebrow_en: '02 \u2014 Experiences',
+  experiences_title_it: 'Ci\u00f2 che rendono possibile',
+  experiences_title_en: 'What they make possible',
+  experiences: [
+    { id: 'mare', to: '/noleggio-mare', image_src: '/menu-mare.jpeg',
+      title_it: 'Mare', title_en: 'Sea',
+      copy_it: 'Yacht, barche ed esperienze esclusive lungo la costa.',
+      copy_en: 'Yachts, boats and exclusive experiences along the coast.',
+      cta_it: 'Scopri', cta_en: 'Discover' },
+    { id: 'aria', to: '/noleggio-aria', image_src: '/menu-aria.jpeg',
+      title_it: 'Aria', title_en: 'Air',
+      copy_it: 'Voli privati ed elicotteri per viaggiare senza confini.',
+      copy_en: 'Private flights and helicopters to travel without limits.',
+      cta_it: 'Scopri', cta_en: 'Discover' },
+    { id: 'soggiorni', to: '/soggiorni', image_src: '/menu-property.jpeg',
+      title_it: 'Soggiorni', title_en: 'Stays',
+      copy_it: 'Ville, appartamenti e residenze selezionate.',
+      copy_en: 'Villas, apartments and selected residences.',
+      cta_it: 'Scopri', cta_en: 'Discover' },
+    { id: 'prime-wash', to: '/prime-wash', image_src: '/menu-servizi.jpeg',
+      title_it: 'Prime Wash', title_en: 'Prime Wash',
+      copy_it: 'Lavaggio premium, detailing e officina meccanica.',
+      copy_en: 'Premium wash, detailing and mechanical workshop.',
+      cta_it: 'Scopri', cta_en: 'Discover' },
+  ],
+
+  // ── Atto 05 — Marca ────────────────────────────────────────────────────
+  brand_lines_it: ['Una flotta', 'non \u00e8 un parcheggio.', '\u00c8 una collezione.'],
+  brand_lines_en: ['A fleet', 'is not a car park.', 'It is a collection.'],
+  brand_paragraphs: [
+    { text_it: 'Selezione, servizio, tecnologia. Ogni veicolo viene preparato, consegnato e riconsegnato secondo lo stesso standard, a Cagliari e in tutta la Sardegna.',
+      text_en: 'Selection, service, technology. Every vehicle is prepared, delivered and returned to the same standard, in Cagliari and across Sardinia.' },
+    { text_it: 'Una sola piattaforma per prenotare, firmare, pagare e gestire il noleggio, con il credito DR7 Wallet e i vantaggi DR7 Club.',
+      text_en: 'One platform to book, sign, pay and manage your rental, with DR7 Wallet credit and DR7 Club benefits.' },
+  ],
+  // Vuoto di proposito: un numero si pubblica solo se verificato nei dati.
+  metrics: [],
+
+  // ── Atto 06 — Accesso ──────────────────────────────────────────────────
+  access_title_it: 'Il prossimo arrivo \u00e8 il tuo.',
+  access_title_en: 'The next arrival is yours.',
+  access_copy_it: 'Scegli il mezzo, la data, il luogo.',
+  access_copy_en: 'Choose the vehicle, the date, the place.',
+  access_cta_label_it: 'Prenota',
+  access_cta_label_en: 'Book now',
+  access_cta_to: '/flotta',
+  access_media_src: '/poster/video5.jpg',
+  access_video_src: '/video5.mp4',
 };
 
 // ─── Default Membership seed ────────────────────────────────────────────────

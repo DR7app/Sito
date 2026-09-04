@@ -23,7 +23,7 @@ const CARD_OPTIONS: StripeCardElementOptions = {
             iconColor: '#a0aec0',
             color: '#ffffff',
             fontWeight: '500',
-            fontFamily: '"Exo 2", sans-serif',
+            fontFamily: '"Jost", system-ui, sans-serif',
             fontSize: '16px',
             fontSmoothing: 'antialiased',
             ':-webkit-autofill': {

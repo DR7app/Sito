@@ -183,7 +183,7 @@ const BookingPage: React.FC = () => {
     let card: any = null;
     if (stripe && step === 2 && !isCar && !isQuoteRequest && formData.paymentMethod === 'stripe' && cardElementRef.current && clientSecret) {
       const elements = stripe.elements();
-      card = elements.create('card', { style: { base: { color: '#ffffff', fontFamily: '"Exo 2", sans-serif', fontSmoothing: 'antialiased', fontSize: '16px', '::placeholder': { color: '#a0aec0' } }, invalid: { color: '#ef4444', iconColor: '#ef4444' } }, hidePostalCode: true });
+      card = elements.create('card', { style: { base: { color: '#ffffff', fontFamily: '"Jost", system-ui, sans-serif', fontSmoothing: 'antialiased', fontSize: '16px', '::placeholder': { color: '#a0aec0' } }, invalid: { color: '#ef4444', iconColor: '#ef4444' } }, hidePostalCode: true });
       setCardElement(card); card.mount(cardElementRef.current);
       card.on('change', (event: any) => { setStripeError(event.error ? event.error.message : null); });
     }

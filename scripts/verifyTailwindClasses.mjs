@@ -74,8 +74,21 @@ const esc = (c) => c.replace(/[.:/[\]()#!%,+*<>&@'"$^=|?~`{} ]/g, (ch) => '\\' +
  * deve finire dove finisce davvero, cioe' davanti a un carattere che in un
  * nome di classe non puo' esserci.
  */
-const FINE_CLASSE = '[{,:>+~\\[\\s]'
-const contieneClasse = (css, token) => new RegExp('\\.' + esc(token) + FINE_CLASSE).test(css)
+// Niente espressioni regolari: `esc()` produce backslash pensati per un
+// SELETTORE CSS, e infilarli in una RegExp li fa rileggere come sintassi —
+// bastava un token con un carattere speciale per far esplodere il controllo.
+// Qui si cerca la stringa e si guarda il carattere subito dopo.
+const FINE_CLASSE = new Set(['{', ',', ':', '>', '+', '~', '[', ' ', '\n', '\r', '\t'])
+const contieneClasse = (css, token) => {
+  const ago = '.' + esc(token)
+  let i = css.indexOf(ago)
+  while (i !== -1) {
+    const dopo = css[i + ago.length]
+    if (dopo === undefined || FINE_CLASSE.has(dopo)) return true
+    i = css.indexOf(ago, i + 1)
+  }
+  return false
+}
 
 const emitted = new Set()
 for (const t of tokens) {

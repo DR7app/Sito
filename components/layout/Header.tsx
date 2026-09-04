@@ -187,24 +187,24 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate="visible"
             exit="hidden"
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 left-0 bottom-0 w-full max-w-md bg-[#070707] border-r border-white/10 shadow-2xl flex flex-col overflow-y-auto"
+            className="fixed top-0 left-0 bottom-0 w-full max-w-md bg-[#0A0B0C] border-r border-white/10 flex flex-col overflow-y-auto"
           >
             {/* Header: logo + tagline (sinistra), chiudi (destra) */}
-            <div className="flex items-start justify-between px-5 pt-6 pb-5 border-b border-white/[0.06]">
+            <div className="flex items-start justify-between px-6 pt-8 pb-6 border-b border-white/10">
               <NavLink to="/" onClick={onClose} className="flex flex-col items-start">
                 <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto max-w-none self-start" style={{ height: aspetto.logo_height_mobile }} />
-                <span className="mt-1 pl-1 text-[9px] tracking-[0.45em] text-gray-500 uppercase">Beyond Luxury</span>
+                <span className="mt-2 pl-1 font-mono text-[9px] tracking-[0.42em] text-gray-500 uppercase">Beyond Luxury</span>
               </NavLink>
               <div className="flex items-center gap-2">
                 {/* Toggle lingua: IT/EN. Cambia TUTTO il sito (via useTranslation). */}
-                <div className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-0.5 text-[11px] font-bold">
-                  <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 rounded-full transition-colors ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
-                  <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 rounded-full transition-colors ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
+                <div className="flex items-center border border-white/15 p-0.5 font-mono text-[10px] tracking-[0.16em]">
+                  <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
+                  <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
                 </div>
                 <button
                   onClick={onClose}
                   aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
-                  className="-mr-2 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-colors"
+                  className="-mr-2 p-2 text-gray-400 hover:text-white transition-colors duration-300"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -215,7 +215,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
 
             {/* PRENOTA ORA — conversione principale, mantenuta.
                 Se non loggato reindirizza a /signin e riapre il popup. */}
-            <div className="px-5 pt-5">
+            <div className="px-6 pt-7">
               <button
                 onClick={() => {
                   if (!user) {
@@ -226,7 +226,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   setShowBookingPopup(true);
                   try { window.dispatchEvent(new CustomEvent('dr7:prenota-ora:manual-opened')); } catch { /* ignore */ }
                 }}
-                className="w-full py-3 rounded-full text-sm font-semibold tracking-[0.15em] uppercase active:scale-[0.98] transition-all duration-300 hover:bg-white/5"
+                className="w-full py-4 text-[11px] font-medium tracking-[0.28em] uppercase transition-colors duration-500 ease-editorial hover:bg-[#C8A24A] hover:text-black"
                 style={{ color: GOLD, border: `1px solid ${GOLD}66` }}
               >
                 {h('drawer_book_cta_it', 'drawer_book_cta_en')}
@@ -234,20 +234,22 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             </div>
 
             {/* Menu principale: immagine + icona oro + titolo + sottotitolo + chevron */}
-            <nav className="flex-grow px-3 py-4">
-              <div className="divide-y divide-white/[0.05]">
+            <nav className="flex-grow px-4 py-6">
+              <div className="divide-y divide-white/[0.07]">
                 {MENU_ITEMS.map(({ to, img, Icon, title, subtitle }) => (
                   <NavLink
                     key={title}
                     to={to}
                     onClick={onClose}
-                    className="group flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-white/[0.03] transition-colors"
+                    className="group flex items-center gap-4 px-2 py-4 transition-colors duration-500 ease-editorial hover:bg-white/[0.03]"
                   >
-                    <img src={img} alt="" loading="lazy" className="w-[64px] h-[48px] flex-shrink-0 rounded-lg object-cover ring-1 ring-white/10" />
-                    <Icon className="w-5 h-5 flex-shrink-0 text-[#C8A24A]" />
+                    <span className="media block w-[72px] h-[54px] flex-shrink-0 border border-white/10">
+                      <img src={img} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    </span>
+                    <Icon className="w-4 h-4 flex-shrink-0 text-[#C8A24A]" />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-[13px] font-semibold uppercase tracking-[0.1em] text-white leading-tight">{title}</span>
-                      <span className="mt-0.5 block text-[11px] text-gray-400 leading-snug line-clamp-2">{subtitle}</span>
+                      <span className="block font-serif text-[17px] font-normal tracking-[-0.005em] text-white leading-tight">{title}</span>
+                      <span className="mt-1 block text-[11px] text-gray-500 leading-snug line-clamp-2">{subtitle}</span>
                     </span>
                     <svg className="w-4 h-4 flex-shrink-0 text-gray-600 group-hover:text-gray-300 transition-colors" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -258,21 +260,21 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             </nav>
 
             {/* Footer: accesso esclusivo + account/wallet (loggato) o sign in */}
-            <div className="mt-auto px-5 py-5 border-t border-white/[0.06]">
+            <div className="mt-auto px-6 py-7 border-t border-white/10">
               {user ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[10px] tracking-[0.25em] uppercase" style={{ color: GOLD }}>{isIt ? 'Accesso Esclusivo' : 'Exclusive Access'}</p>
-                    <p className="text-sm font-semibold text-white truncate">{userFullName}</p>
+                    <p className="font-mono text-[9px] tracking-[0.28em] uppercase" style={{ color: GOLD }}>{isIt ? 'Accesso Esclusivo' : 'Exclusive Access'}</p>
+                    <p className="mt-1.5 font-serif text-base text-white truncate">{userFullName}</p>
                   </div>
                   <div className="flex flex-shrink-0 items-center gap-2">
-                    <Link to="/credit-wallet" onClick={onClose} className="rounded-full bg-white/[0.06] border border-white/10 px-3 py-1.5 text-xs font-bold text-white">
+                    <Link to="/credit-wallet" onClick={onClose} className="t-meta border border-white/15 px-3 py-2 text-xs text-white transition-colors duration-500 ease-editorial hover:border-white/35">
                       {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
                     </Link>
-                    <Link to={accountLink} onClick={onClose} title={accountLabel} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] border border-white/10 text-gray-200 hover:text-white">
+                    <Link to={accountLink} onClick={onClose} title={accountLabel} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:text-white hover:border-white/35">
                       <UserCircleIcon className="w-5 h-5" />
                     </Link>
-                    <button onClick={handleLogout} title={t('Sign_Out')} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] border border-white/10 text-gray-300 hover:text-white">
+                    <button onClick={handleLogout} title={t('Sign_Out')} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:text-white hover:border-white/35">
                       <SignOutIcon className="w-5 h-5" />
                     </button>
                   </div>
@@ -280,10 +282,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               ) : (
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[10px] tracking-[0.25em] uppercase" style={{ color: GOLD }}>{isIt ? 'Esperienze e Accesso Esclusivo' : 'Experiences & Exclusive Access'}</p>
-                    <p className="text-sm font-semibold text-white">DR7 Club</p>
+                    <p className="font-mono text-[9px] tracking-[0.28em] uppercase" style={{ color: GOLD }}>{isIt ? 'Esperienze e Accesso Esclusivo' : 'Experiences & Exclusive Access'}</p>
+                    <p className="mt-1.5 font-serif text-base text-white">DR7 Club</p>
                   </div>
-                  <Link to="/signin" onClick={onClose} className="flex-shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-gray-200 transition-colors">
+                  <Link to="/signin" onClick={onClose} className="flex-shrink-0 border border-white bg-white px-6 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white">
                     {t('Sign_In')}
                   </Link>
                 </div>
@@ -307,19 +309,19 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.96, opacity: 0, y: 10 }}
                   transition={{ type: 'spring', duration: 0.4, bounce: 0.15 }}
-                  className="bg-[#1c1c1e] border border-white/[0.08] rounded-[24px] p-7 sm:p-8 max-w-[420px] w-full relative"
-                  style={{ boxShadow: '0 0 0 0.5px rgba(255,255,255,0.06), 0 25px 60px -12px rgba(0,0,0,0.7)' }}
+                  className="bg-[#0A0B0C] border border-white/10 p-8 sm:p-10 max-w-[440px] w-full relative"
+                  style={{ boxShadow: '0 40px 90px -40px rgba(0,0,0,0.9)' }}
                 >
                   <button
                     onClick={() => setShowBookingPopup(false)}
-                    className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.06] text-white/40 hover:text-white hover:bg-white/10 transition-all z-10"
+                    className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-colors duration-300 z-10"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                  <h3 className="text-[20px] font-semibold text-white text-center mb-1 tracking-tight">{h('popup_title_it', 'popup_title_en')}</h3>
-                  <p className="text-[13px] text-white/30 text-center mb-6">{h('popup_subtitle_it', 'popup_subtitle_en')}</p>
+                  <h3 className="font-serif text-[26px] font-normal text-white text-center mb-2 tracking-[-0.01em]">{h('popup_title_it', 'popup_title_en')}</h3>
+                  <p className="text-[12px] text-white/35 text-center mb-8">{h('popup_subtitle_it', 'popup_subtitle_en')}</p>
                   <BookingSearchBox variant="popup" onClose={() => { setShowBookingPopup(false); onClose(); }} />
                 </motion.div>
               </motion.div>
@@ -400,12 +402,12 @@ const Header: React.FC = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled
-            ? 'bg-black/50 backdrop-blur-lg border-b border-gray-800'
-            : 'bg-transparent'
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-editorial ${scrolled
+            ? 'bg-black/70 backdrop-blur-xl border-b border-white/10'
+            : 'bg-transparent border-b border-transparent'
           }`}
       >
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-5 md:py-6 flex items-center justify-between">
           {/* Menu ESPLORA a sinistra — con il logo accanto se allineato a sinistra */}
           <div className="flex items-center gap-4">
             {aspetto.logo_alignment === 'left' && (
@@ -415,7 +417,7 @@ const Header: React.FC = () => {
               onClick={() => setIsMenuOpen(true)}
               aria-label={h('open_menu_aria_it', 'open_menu_aria_en') || t({ it: 'Apri menu', en: 'Open menu' })}
               aria-expanded={isMenuOpen}
-              className="text-white hover:text-gray-300 font-normal text-sm tracking-wider transition-colors"
+              className="link-reveal text-white/90 hover:text-white font-medium text-[11px] uppercase tracking-[0.28em] transition-colors duration-500 ease-editorial"
             >
               {h('explore_label_it', 'explore_label_en') || t({ it: 'ESPLORA', en: 'EXPLORE' })}
             </button>
@@ -432,9 +434,9 @@ const Header: React.FC = () => {
           {/* Controlli utente a destra — con il logo in coda se allineato a destra */}
           <div className="flex items-center space-x-4">
             {/* Toggle lingua IT/EN — cambia TUTTO il sito */}
-            <div className="hidden sm:flex items-center rounded-full border border-white/15 bg-white/[0.05] p-0.5 text-[11px] font-bold">
-              <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2 py-0.5 rounded-full transition-colors ${lang === 'it' ? 'bg-white text-black' : 'text-gray-300 hover:text-white'}`}>IT</button>
-              <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2 py-0.5 rounded-full transition-colors ${lang === 'en' ? 'bg-white text-black' : 'text-gray-300 hover:text-white'}`}>EN</button>
+            <div className="hidden sm:flex items-center border border-white/15 p-0.5 font-mono text-[10px] tracking-[0.16em]">
+              <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
+              <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
             </div>
             <AnimatePresence mode="wait">
               {user ? (
@@ -447,16 +449,16 @@ const Header: React.FC = () => {
                 >
                   <Link
                     to="/credit-wallet"
-                    className="flex items-center gap-2 bg-black text-white px-3 md:px-4 py-2 rounded-full font-bold text-xs hover:bg-gray-900 transition-colors border border-gray-700"
+                    className="flex items-center gap-2.5 border border-white/15 px-3 md:px-4 py-2 text-white transition-colors duration-500 ease-editorial hover:border-white/35"
                   >
-                    <span className="hidden md:inline">{h('credit_wallet_pill_it', 'credit_wallet_pill_en') || 'Credit Wallet'}</span>
-                    <span className="bg-black text-white px-2 py-0.5 rounded-full text-xs">
+                    <span className="hidden md:inline text-[10px] uppercase tracking-[0.2em] text-gray-400">{h('credit_wallet_pill_it', 'credit_wallet_pill_en') || 'Credit Wallet'}</span>
+                    <span className="t-meta text-xs text-white">
                       {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
                     </span>
                   </Link>
                   <Link
                     to={user.role === 'business' ? '/partner/dashboard' : '/account'}
-                    className="hidden md:flex items-center justify-center w-9 h-9 bg-gray-800/70 border border-gray-700 rounded-full text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                    className="hidden md:flex items-center justify-center w-9 h-9 border border-white/15 text-gray-400 hover:text-white hover:border-white/35 transition-colors duration-500 ease-editorial"
                     title={
                       user.role === 'business' ? t('Partner_Dashboard') : t('My_Account')
                     }
@@ -465,7 +467,7 @@ const Header: React.FC = () => {
                   </Link>
                   <button
                     onClick={logout}
-                    className="hidden md:flex items-center justify-center w-9 h-9 bg-gray-800/70 border border-gray-700 rounded-full text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                    className="hidden md:flex items-center justify-center w-9 h-9 border border-white/15 text-gray-400 hover:text-white hover:border-white/35 transition-colors duration-500 ease-editorial"
                     title={t('Sign_Out')}
                   >
                     <SignOutIcon className="w-5 h-5" />
@@ -474,7 +476,7 @@ const Header: React.FC = () => {
               ) : (
                 <Link
                   to="/signin"
-                  className="hidden md:block bg-white text-black px-5 py-2 rounded-full font-bold text-sm hover:bg-gray-200 transition-colors"
+                  className="hidden md:inline-flex items-center justify-center border border-white bg-white px-6 py-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
                 >
                   {t('Sign_In')}
                 </Link>

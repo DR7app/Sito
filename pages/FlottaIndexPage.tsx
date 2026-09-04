@@ -62,14 +62,15 @@ const FlottaIndexPage: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="pt-32 pb-24 bg-black min-h-screen"
+      className="pt-40 pb-28 md:pt-48 md:pb-36 bg-black min-h-screen"
     >
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight">
+        <div className="text-center mb-16 md:mb-24">
+          <h1 className="t-display text-white">
             {lang === 'it' ? 'La Nostra Flotta' : 'Our Fleet'}
           </h1>
-          <p className="text-gray-400 mt-4 text-lg max-w-2xl mx-auto">
+          <span className="mx-auto mt-8 block h-px w-16 bg-white/25" />
+          <p className="text-gray-500 mt-8 text-base max-w-xl mx-auto">
             {lang === 'it'
               ? 'Scegli il tuo veicolo dalla nostra flotta esclusiva.'
               : 'Pick your vehicle from our exclusive fleet.'}
@@ -93,10 +94,12 @@ const FlottaIndexPage: React.FC = () => {
               : 'No vehicles available right now.'}
           </p>
         ) : (
-          <div className="space-y-16">
+          <div className="space-y-24 md:space-y-32">
             {groups.map((group) => (
-              <section key={group.id}>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 border-b border-white/10 pb-3">
+              // L'id serve alle CTA della homepage, che puntano al gruppo
+              // della categoria del veicolo in evidenza (/flotta#exotic).
+              <section key={group.id} id={group.id} className="scroll-mt-32">
+                <h2 className="font-serif text-3xl md:text-5xl font-normal tracking-[-0.015em] text-white mb-10 border-b border-white/10 pb-6">
                   {group.label}
                 </h2>
 
@@ -107,7 +110,7 @@ const FlottaIndexPage: React.FC = () => {
                       : 'No vehicles in this category yet.'}
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {group.vehicles.map((v) => (
                       <RentalCard
                         key={v.id}

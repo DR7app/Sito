@@ -173,21 +173,18 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
    * intero che si posa sopra la pagina, che resta visibile sotto un velo. La
    * pagina non sparisce, si allontana.
    *
-   * La colonna delle voci e' allineata a DESTRA su un asse verticale unico,
-   * con passo largo e corpo piccolo: e' la disciplina a fare l'effetto, non la
-   * dimensione. A destra dell'asse compare l'immagine della voce sotto il
-   * puntatore — e' li' che DR7 dice qualcosa di suo, perche' ogni destinazione
-   * ha gia' la sua fotografia nel gestionale.
+   * La colonna delle voci sta a DESTRA, allineata al bordo, con corpo piccolo
+   * e molto spazio fra una riga e l'altra. Nessuna immagine: restano titolo e
+   * sottotitolo, cioe' esattamente quello che il menu diceva prima.
    *
-   * Sul telefono l'asse si sposta a sinistra (una lista allineata a destra su
-   * uno schermo stretto si legge male) e il sottotitolo torna sotto ogni voce,
-   * perche' non c'e' il passaggio del mouse a rivelarlo.
+   * Il movimento sta nell'ingresso: ogni voce sale da sotto una linea, una
+   * dopo l'altra. E' quello a dare il senso di apertura, non un effetto sopra
+   * al testo.
    *
    * Restano tutte le destinazioni, il pulsante di prenotazione, la lingua e
    * l'area cliente: cambia come si presentano, non cosa fanno.
    */
-  const [hovered, setHovered] = useState(0);
-  const active = MENU_ITEMS[hovered] || MENU_ITEMS[0];
+  const [hovered, setHovered] = useState(-1);
 
   // Il menu si monta sul <body>, non dove vive l'header.
   //
@@ -218,7 +215,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               className="absolute inset-0 hidden lg:block"
               style={{
                 background:
-                  'linear-gradient(100deg, rgba(8,9,10,0.97) 0%, rgba(8,9,10,0.94) 38%, rgba(8,9,10,0.82) 62%, rgba(8,9,10,0.7) 100%)',
+                  'linear-gradient(100deg, rgba(8,9,10,0.72) 0%, rgba(8,9,10,0.84) 34%, rgba(8,9,10,0.94) 62%, rgba(8,9,10,0.97) 100%)',
               }}
             />
           </motion.div>
@@ -261,75 +258,43 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               <div className="container mx-auto px-6"><span className="block h-px w-full bg-white/10" /></div>
             </div>
 
-            {/* Corpo */}
+            {/* Corpo: la colonna delle voci sta a DESTRA, allineata al bordo.
+                Niente immagini: restano il titolo e il sottotitolo, cioe' quello
+                che il menu diceva prima. Le voci entrano una dopo l'altra da
+                sotto una linea, e' li' che sta il movimento. */}
             <div className="flex flex-grow items-center">
-              <div className="container mx-auto w-full px-6 py-12 lg:py-0">
-                <div className="lg:grid lg:grid-cols-[46%_1fr] lg:items-center lg:gap-16">
-                  {/* Voci */}
-                  <nav className="lg:text-right">
-                    <ul>
-                      {MENU_ITEMS.map(({ to, title, subtitle }, i) => (
-                        <motion.li
-                          key={title}
-                          initial={{ opacity: 0, y: 14 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.06 + i * 0.035, ease: [0.22, 1, 0.36, 1] }}
+              <div className="container mx-auto w-full px-6 py-6">
+                <nav className="ml-auto w-full max-w-xl text-right">
+                  <ul>
+                    {MENU_ITEMS.map(({ to, title, subtitle }, i) => (
+                      <li key={title} className="overflow-hidden">
+                        <motion.div
+                          initial={{ y: '110%', opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ duration: 0.72, delay: 0.08 + i * 0.045, ease: [0.16, 1, 0.3, 1] }}
                         >
                           <NavLink
                             to={to}
                             onClick={onClose}
                             onMouseEnter={() => setHovered(i)}
                             onFocus={() => setHovered(i)}
-                            className="group block py-3 lg:py-[0.85rem]"
+                            className="group block border-b border-white/[0.07] py-2.5 md:py-3"
                           >
                             <span
-                              className={`t-nav block text-[13px] leading-none transition-colors duration-standard lg:text-[15px] ${
-                                hovered === i ? 'text-white' : 'text-white/55'
+                              className={`t-nav block text-[13px] leading-none transition-colors duration-standard md:text-[15px] ${
+                                hovered === i ? 'text-white' : 'text-white/60'
                               } group-hover:text-white`}
-                              style={{ letterSpacing: '0.18em' }}
+                              style={{ letterSpacing: '0.2em' }}
                             >
                               {title}
                             </span>
-                            {/* Il sottotitolo sta qui solo dove non c'e' il puntatore
-                                a rivelarlo: sul telefono l'informazione non si perde. */}
-                            <span className="mt-2 block text-[11px] leading-snug text-white/35 lg:hidden">{subtitle}</span>
+                            <span className="mt-2 block text-[11px] leading-snug text-white/35 md:text-[12px]">{subtitle}</span>
                           </NavLink>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </nav>
-
-                  {/* Visual della voce sotto il puntatore. Solo da tablet in su:
-                      su schermo stretto ruberebbe spazio alla lista. */}
-                  <div className="hidden lg:block">
-                    <div className="media aspect-[4/3] w-full max-w-lg border border-white/10">
-                      <AnimatePresence mode="wait">
-                        <motion.img
-                          key={active?.img}
-                          src={active?.img}
-                          alt=""
-                          initial={{ opacity: 0, scale: 1.04 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      </AnimatePresence>
-                    </div>
-                    <AnimatePresence mode="wait">
-                      <motion.p
-                        key={active?.title}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="mt-5 max-w-lg text-[12px] leading-relaxed text-white/45"
-                      >
-                        {active?.subtitle}
-                      </motion.p>
-                    </AnimatePresence>
-                  </div>
-                </div>
+                        </motion.div>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
               </div>
             </div>
 

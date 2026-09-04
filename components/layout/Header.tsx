@@ -118,6 +118,13 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     const val = (isIt ? rec[itKey as string] : rec[enKey as string]) || '';
     return val.trim() ? val : (isIt ? fbIt : fbEn);
   };
+  // Immagine della voce: nel menu a schermo intero e' il visual che si vede,
+  // quindi la decide il gestionale. La costante qui sotto e' solo il valore di
+  // fabbrica, quello che si vede finche' nessuno l'ha cambiata.
+  const mi = (key: keyof HeaderCopy, fallback: string): string => {
+    const val = (copy as unknown as Record<string, string | undefined>)[key as string] || '';
+    return val.trim() ? val : fallback;
+  };
   const MENU_ITEMS: Array<{
     to: string;
     img: string;
@@ -125,36 +132,36 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     title: string;
     subtitle: string;
   }> = [
-    { to: flottaLanding, img: '/menu-mobilita.jpeg', Icon: CarIcon,
+    { to: flottaLanding, img: mi('menu_mobilita_img', '/menu-mobilita.jpeg'), Icon: CarIcon,
       title: mc('menu_mobilita_title_it', 'menu_mobilita_title_en', 'Mobilità', 'Mobility'),
       subtitle: mc('menu_mobilita_sub_it', 'menu_mobilita_sub_en', 'Auto esclusive per ogni esperienza su strada', 'Exclusive cars for every experience on the road') },
     // Mare / Aria / Property: SEMPRE visibili (anche a catalogo vuoto), per
     // scelta esplicita. Le pagine gestiscono lo stato vuoto.
-    { to: '/noleggio-mare', img: '/menu-mare.jpeg', Icon: AnchorIcon,
+    { to: '/noleggio-mare', img: mi('menu_mare_img', '/menu-mare.jpeg'), Icon: AnchorIcon,
       title: mc('menu_mare_title_it', 'menu_mare_title_en', 'Mare', 'Sea'),
       subtitle: mc('menu_mare_sub_it', 'menu_mare_sub_en', 'Yacht, barche e esperienze esclusive in mare', 'Yachts, boats and exclusive experiences at sea') },
-    { to: '/noleggio-aria', img: '/menu-aria.jpeg', Icon: PaperAirplaneIcon,
+    { to: '/noleggio-aria', img: mi('menu_aria_img', '/menu-aria.jpeg'), Icon: PaperAirplaneIcon,
       title: mc('menu_aria_title_it', 'menu_aria_title_en', 'Aria', 'Air'),
       subtitle: mc('menu_aria_sub_it', 'menu_aria_sub_en', 'Voli privati ed elicotteri per viaggiare senza confini', 'Private jets and helicopters to travel without limits') },
-    { to: '/soggiorni', img: '/menu-property.jpeg', Icon: HomeIcon,
+    { to: '/soggiorni', img: mi('menu_property_img', '/menu-property.jpeg'), Icon: HomeIcon,
       title: mc('menu_property_title_it', 'menu_property_title_en', 'Proprietà', 'Property'),
       subtitle: mc('menu_property_sub_it', 'menu_property_sub_en', 'Ville, appartamenti e residenze selezionate in tutto il mondo', 'Villas, apartments and residences selected worldwide') },
-    { to: '/prime-wash', img: '/menu-servizi.jpeg', Icon: SparklesIcon,
+    { to: '/prime-wash', img: mi('menu_servizi_img', '/servizi-lavaggio.jpeg'), Icon: SparklesIcon,
       title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanics'),
       subtitle: mc('menu_servizi_sub_it', 'menu_servizi_sub_en', 'Lavaggio auto premium e officina meccanica', 'Premium car wash and mechanical workshop') },
-    { to: '/credit-wallet', img: '/menu-club.jpeg', Icon: WalletIcon,
+    { to: '/credit-wallet', img: mi('menu_wallet_img', '/menu-club.jpeg'), Icon: WalletIcon,
       title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'),
       subtitle: mc('menu_wallet_sub_it', 'menu_wallet_sub_en', 'Il tuo credito DR7 Wallet per prenotare e ricaricare', 'Your DR7 Wallet credit to book and top up') },
-    { to: '/membership', img: '/menu-club.jpeg', Icon: CrownIcon,
+    { to: '/membership', img: mi('menu_club_img', '/menu-club.jpeg'), Icon: CrownIcon,
       title: mc('menu_club_title_it', 'menu_club_title_en', 'DR7 Club', 'DR7 Club'),
       subtitle: mc('menu_club_sub_it', 'menu_club_sub_en', 'Accesso esclusivo, eventi riservati e vantaggi unici', 'Exclusive access, private events and unique benefits') },
-    { to: '/franchising', img: '/menu-business.jpeg', Icon: TrendingUpIcon,
+    { to: '/franchising', img: mi('menu_business_img', '/menu-business.jpeg'), Icon: TrendingUpIcon,
       title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
       subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },
-    { to: '/token', img: '/menu-digital.jpeg', Icon: CubeTransparentIcon,
+    { to: '/token', img: mi('menu_digital_img', '/menu-digital.jpeg'), Icon: CubeTransparentIcon,
       title: mc('menu_digital_title_it', 'menu_digital_title_en', 'Innovazione Digitale', 'Digital Innovation'),
       subtitle: mc('menu_digital_sub_it', 'menu_digital_sub_en', 'Creazione di asset digitali e token', 'Digital Asset & Token Creation') },
-    { to: '/contact', img: '/menu-contatti.jpeg', Icon: SendIcon,
+    { to: '/contact', img: mi('menu_contatti_img', '/menu-contatti.jpeg'), Icon: SendIcon,
       title: mc('menu_contatti_title_it', 'menu_contatti_title_en', 'Contattaci', 'Contact Us'),
       subtitle: mc('menu_contatti_sub_it', 'menu_contatti_sub_en', 'Siamo a tua disposizione', 'We are at your service') },
   ];

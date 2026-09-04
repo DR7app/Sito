@@ -285,6 +285,8 @@ export interface HomeCopy {
   collection_featured_count: number;
   collection_cta_label_it: string; collection_cta_label_en: string;
   collection_cta_to: string;
+  /** Etichetta della CTA sotto ogni veicolo in evidenza. */
+  collection_item_cta_it: string; collection_item_cta_en: string;
 
   // ── Atto 04 — Esperienze ─────────────────────────────────────────────────
   experiences_eyebrow_it: string; experiences_eyebrow_en: string;
@@ -1007,6 +1009,11 @@ export interface HeaderCopy {
   menu_property_sub_it?: string; menu_property_sub_en?: string;
   menu_servizi_title_it?: string; menu_servizi_title_en?: string;
   menu_servizi_sub_it?: string; menu_servizi_sub_en?: string;
+  // Credit Wallet: la voce esiste nel menu del sito da tempo ma le sue chiavi
+  // non erano mai state dichiarate, quindi il pannello non la mostrava e il
+  // titolo restava quello di fabbrica. Ora e' modificabile come le altre.
+  menu_wallet_title_it?: string; menu_wallet_title_en?: string;
+  menu_wallet_sub_it?: string; menu_wallet_sub_en?: string;
   menu_club_title_it?: string; menu_club_title_en?: string;
   menu_club_sub_it?: string; menu_club_sub_en?: string;
   menu_business_title_it?: string; menu_business_title_en?: string;
@@ -1015,6 +1022,20 @@ export interface HeaderCopy {
   menu_digital_sub_it?: string; menu_digital_sub_en?: string;
   menu_contatti_title_it?: string; menu_contatti_title_en?: string;
   menu_contatti_sub_it?: string; menu_contatti_sub_en?: string;
+  // Immagine di ogni voce. Nel menu a schermo intero e' il visual che compare
+  // accanto alla voce sotto il puntatore: e' contenuto, non decorazione, e
+  // deve poterla cambiare l'operatore. Se la chiave manca vale l'immagine di
+  // fabbrica dichiarata in Header.tsx.
+  menu_mobilita_img?: string;
+  menu_mare_img?: string;
+  menu_aria_img?: string;
+  menu_property_img?: string;
+  menu_servizi_img?: string;
+  menu_wallet_img?: string;
+  menu_club_img?: string;
+  menu_business_img?: string;
+  menu_digital_img?: string;
+  menu_contatti_img?: string;
   // Booking popup chrome (form itself = BookingSearchBox)
   popup_title_it: string; popup_title_en: string;               // "Prenota Ora"
   popup_subtitle_it: string; popup_subtitle_en: string;         // "Seleziona date e orari"
@@ -1740,6 +1761,8 @@ export async function getHomeCopy(): Promise<HomeCopy> {
     collection_cta_label_it: str(saved.collection_cta_label_it, D.collection_cta_label_it),
     collection_cta_label_en: str(saved.collection_cta_label_en, D.collection_cta_label_en),
     collection_cta_to: str(saved.collection_cta_to, D.collection_cta_to),
+    collection_item_cta_it: str(saved.collection_item_cta_it, D.collection_item_cta_it),
+    collection_item_cta_en: str(saved.collection_item_cta_en, D.collection_item_cta_en),
 
     experiences_eyebrow_it: str(saved.experiences_eyebrow_it, D.experiences_eyebrow_it),
     experiences_eyebrow_en: str(saved.experiences_eyebrow_en, D.experiences_eyebrow_en),
@@ -3542,6 +3565,8 @@ const DEFAULT_HOME: HomeCopy = {
   collection_cta_label_it: 'Esplora la collezione',
   collection_cta_label_en: 'Explore the collection',
   collection_cta_to: '/flotta',
+  collection_item_cta_it: 'Scopri',
+  collection_item_cta_en: 'Discover',
 
   // ── Atto 04 — Esperienze ───────────────────────────────────────────────
   // Solo servizi realmente attivi sul sito, con le stesse destinazioni del menu.

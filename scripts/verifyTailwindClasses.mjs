@@ -41,6 +41,12 @@ const tokens = new Set()
 for (const f of files) {
   for (const m of fs.readFileSync(f, 'utf8').match(TOKEN_RE) || []) {
     if (m.length < 2 || m.length > 120) continue
+    // Un nome di classe Tailwind contiene sempre almeno una lettera (`p-4`,
+    // `opacity-45`, `w-[45px]`). I token di sole cifre e punteggiatura — `45`,
+    // `0.6`, `7)` — arrivano da numeri nel codice e non sono classi: tenerli
+    // produceva solo falsi allarmi, perche' quelle sequenze compaiono dentro i
+    // VALORI del CSS.
+    if (!/[a-zA-Z]/.test(m)) continue
     tokens.add(m)
   }
 }
@@ -56,9 +62,24 @@ const probeCss = (await postcss([
 fs.rmSync(probeFile, { force: true })
 
 const esc = (c) => c.replace(/[.:/[\]()#!%,+*<>&@'"$^=|?~`{} ]/g, (ch) => '\\' + ch)
+
+/**
+ * Cerca il SELETTORE della classe, non la stringa.
+ *
+ * Prima bastava che `.<token>` comparisse da qualche parte nel foglio, e un
+ * token numerico come `45` risultava "trovato" dentro un VALORE — per esempio
+ * `opacity:0.45` contiene `.45`. Cosi' il controllo si inventava utility che
+ * Tailwind non genera affatto e falliva la build per niente. Un guardiano che
+ * grida al lupo senza motivo smette di essere letto: qui il nome della classe
+ * deve finire dove finisce davvero, cioe' davanti a un carattere che in un
+ * nome di classe non puo' esserci.
+ */
+const FINE_CLASSE = '[{,:>+~\\[\\s]'
+const contieneClasse = (css, token) => new RegExp('\\.' + esc(token) + FINE_CLASSE).test(css)
+
 const emitted = new Set()
 for (const t of tokens) {
-  if (probeCss.includes('.' + esc(t))) emitted.add(t)
+  if (contieneClasse(probeCss, t)) emitted.add(t)
 }
 
 // ── 3. CSS realmente prodotto dalla build ─────────────────────────────────
@@ -70,7 +91,7 @@ if (distCss.length === 0) {
 const built = distCss.map((f) => fs.readFileSync(f, 'utf8')).join('\n')
 
 // ── 4. confronto ──────────────────────────────────────────────────────────
-const missing = [...emitted].filter((t) => !built.includes('.' + esc(t))).sort()
+const missing = [...emitted].filter((t) => !contieneClasse(built, t)).sort()
 
 console.log(`file scansionati:      ${files.length}`)
 console.log(`token candidati:       ${tokens.size}`)

@@ -254,7 +254,7 @@ const HomePage: React.FC = () => {
               lang={lang}
               align={i % 3 === 0 ? 'left' : i % 3 === 1 ? 'right' : 'center'}
               ctaTo={f.catId ? `${copy.collection_cta_to}#${f.catId}` : copy.collection_cta_to}
-              ctaLabel={t('Scopri', 'Discover')}
+              ctaLabel={t(copy.collection_item_cta_it, copy.collection_item_cta_en)}
             />
           ))}
 

@@ -1685,17 +1685,15 @@ export async function getMembershipCopy(): Promise<MembershipCopy> {
 /**
  * Riconosce la lista di filmati DI FABBRICA che nessuno ha mai cambiato.
  *
- * `/main.mp4` e `/video2..6.mp4` sono i sei clip verticali 576x1024 che il
- * sito aveva come valore iniziale: erano il default del codice, sono stati
- * salvati tali e quali nella configurazione e non li ha mai scelti nessuno.
- * Quando la lista salvata e' ancora ESATTAMENTE quella, si usa il default
- * nuovo (i film DR7 in 1920x1080). Basta che l'operatore tocchi un solo
- * elemento perche' questa funzione smetta di riconoscerla e vinca, come
- * sempre, la sua scelta.
+ * `/main.mp4` e `/video2..6.mp4` erano il valore iniziale del codice, finito
+ * tale e quale nella configurazione senza che nessuno lo scegliesse. Quando la
+ * lista salvata e' ancora ESATTAMENTE quella, vale il default di oggi: una
+ * scena sola, `/main.mp4`.
  *
- * Non e' un modo per scavalcare il gestionale: e' distinguere "configurato"
- * da "mai configurato". Dopo il primo salvataggio dal pannello la funzione
- * non serve piu'.
+ * Basta che l'operatore tocchi un solo elemento dal pannello perche' questa
+ * funzione smetta di riconoscerla e vinca, come sempre, la sua scelta. Non e'
+ * un modo per scavalcare il gestionale: e' distinguere "configurato" da "mai
+ * configurato". Dopo il primo salvataggio non serve piu'.
  */
 const LEGACY_HERO = ['/main.mp4', '/video2.mp4', '/video3.mp4', '/video4.mp4', '/video5.mp4', '/video6.mp4'];
 function legacyHeroSlides(slides: unknown): boolean {
@@ -3513,21 +3511,20 @@ const DEFAULT_HOME: HomeCopy = {
   seo_h1_it: 'DR7 — Noleggio Auto di Lusso, Supercar e Servizi Premium in Sardegna',
   seo_h1_en: 'DR7 — Luxury Car Rental, Supercars & Premium Services in Sardinia',
   hero_autoplay_seconds: 8,
-  // I quattro film DR7: 1920x1080, marchiati, lenti. Uno per divisione —
-  // terra, mare, aria, soggiorni — che e' esattamente cio' che dice il
-  // microcopy dello hero. Ricodificati da 10-12 MB a 1,4-3,1 MB e affiancati
-  // da una variante 720 per il telefono e da un poster.
+  // UNA sola scena d'apertura: `/main.mp4`, quella con cui il sito si e'
+  // sempre aperto ed era la prima delle sei in configurazione.
   //
-  // NON usare qui i vecchi main.mp4 / video2..6: sono 576x1024, cioe' clip
-  // verticali da telefono larghe 576 pixel. In uno schermo intero orizzontale
-  // vengono ingrandite tre volte e tagliate a fascia: e' il motivo per cui lo
-  // hero sembrava sfocato e inquadrato a caso. Restano nella cartella public,
-  // utilizzabili dove il formato verticale ha senso.
+  // Non e' una svista che sia una sola: la direzione ha chiesto una scena
+  // sola, non un carosello. Aggiungerne altre dal pannello le fa ruotare di
+  // nuovo, con il tempo impostato in "Autoplay".
+  //
+  // Nota tecnica, per chi passera' di qui: il file e' 576x1024, cioe' verticale
+  // e largo 576 pixel. Sul telefono e' nel suo formato ed e' perfetto; su uno
+  // schermo orizzontale grande viene ingrandito e tagliato a fascia, ed e' il
+  // meglio che quel file possa dare. Per averlo nitido servirebbe una versione
+  // orizzontale ad alta risoluzione della stessa scena, da caricare qui.
   hero_slides: [
-    { id: 'film-terra',     video_src: '/film/cars1.mp4',       mobile_src: '/film/cars1-720.mp4',       poster_src: '/poster/film-cars1.jpg' },
-    { id: 'film-mare',      video_src: '/film/yacht.mp4',       mobile_src: '/film/yacht-720.mp4',       poster_src: '/poster/film-yacht.jpg' },
-    { id: 'film-aria',      video_src: '/film/helicopter1.mp4', mobile_src: '/film/helicopter1-720.mp4', poster_src: '/poster/film-helicopter1.jpg' },
-    { id: 'film-soggiorni', video_src: '/film/villa1.mp4',      mobile_src: '/film/villa1-720.mp4',      poster_src: '/poster/film-villa1.jpg' },
+    { id: 'slide-1', video_src: '/main.mp4', poster_src: '/poster/main.jpg' },
   ],
   categories: [
     { id: 'cars',                 display_title_it: 'DR7 Supercar & Luxury Division',         display_title_en: 'DR7 Supercar & Luxury Division',         image_src: '/car.jpeg' },

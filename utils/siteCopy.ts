@@ -1653,6 +1653,27 @@ export async function getMembershipCopy(): Promise<MembershipCopy> {
  * Home page copy + hero slides + category overrides. Falls back to
  * hardcoded defaults so the page never goes blank if config is missing.
  */
+/**
+ * Riconosce la lista di filmati DI FABBRICA che nessuno ha mai cambiato.
+ *
+ * `/main.mp4` e `/video2..6.mp4` sono i sei clip verticali 576x1024 che il
+ * sito aveva come valore iniziale: erano il default del codice, sono stati
+ * salvati tali e quali nella configurazione e non li ha mai scelti nessuno.
+ * Quando la lista salvata e' ancora ESATTAMENTE quella, si usa il default
+ * nuovo (i film DR7 in 1920x1080). Basta che l'operatore tocchi un solo
+ * elemento perche' questa funzione smetta di riconoscerla e vinca, come
+ * sempre, la sua scelta.
+ *
+ * Non e' un modo per scavalcare il gestionale: e' distinguere "configurato"
+ * da "mai configurato". Dopo il primo salvataggio dal pannello la funzione
+ * non serve piu'.
+ */
+const LEGACY_HERO = ['/main.mp4', '/video2.mp4', '/video3.mp4', '/video4.mp4', '/video5.mp4', '/video6.mp4'];
+function legacyHeroSlides(slides: unknown): boolean {
+  if (!Array.isArray(slides) || slides.length !== LEGACY_HERO.length) return false;
+  return slides.every((s, i) => (s as HomeSlide)?.video_src === LEGACY_HERO[i]);
+}
+
 export async function getHomeCopy(): Promise<HomeCopy> {
   const snap = await loadOnce();
   const saved = (snap.home || {}) as Partial<HomeCopy>;
@@ -1677,7 +1698,17 @@ export async function getHomeCopy(): Promise<HomeCopy> {
     seo_h1_it: str(saved.seo_h1_it, D.seo_h1_it),
     seo_h1_en: str(saved.seo_h1_en, D.seo_h1_en),
     hero_autoplay_seconds: num(saved.hero_autoplay_seconds, D.hero_autoplay_seconds),
-    hero_slides: arr(saved.hero_slides, D.hero_slides),
+    hero_slides: arr(legacyHeroSlides(saved.hero_slides) ? undefined : saved.hero_slides, D.hero_slides).map((sl) => {
+      // Le slide gia' salvate nel gestionale hanno solo `video_src`: sono
+      // state scritte prima che esistessero poster e sorgente per telefono.
+      // Qui non si sostituisce la scelta dell'operatore, si completa: se il
+      // poster manca lo si deduce dal nome del file (/film/cars1.mp4 ->
+      // /poster/film-cars1.jpg), cosi' anche una configurazione vecchia
+      // smette di mostrare un rettangolo nero mentre il video scarica.
+      if (sl.poster_src || !sl.video_src?.startsWith('/') || !sl.video_src.endsWith('.mp4')) return sl;
+      const nome = sl.video_src.slice(1, -4).replace(/\//g, '-');
+      return { ...sl, poster_src: `/poster/${nome}.jpg` };
+    }),
     categories: arr(saved.categories, D.categories),
 
     hero_kicker_it: str(saved.hero_kicker_it, D.hero_kicker_it),
@@ -3451,13 +3482,21 @@ const DEFAULT_HOME: HomeCopy = {
   seo_h1_it: 'DR7 — Noleggio Auto di Lusso, Supercar e Servizi Premium in Sardegna',
   seo_h1_en: 'DR7 — Luxury Car Rental, Supercars & Premium Services in Sardinia',
   hero_autoplay_seconds: 8,
+  // I quattro film DR7: 1920x1080, marchiati, lenti. Uno per divisione —
+  // terra, mare, aria, soggiorni — che e' esattamente cio' che dice il
+  // microcopy dello hero. Ricodificati da 10-12 MB a 1,4-3,1 MB e affiancati
+  // da una variante 720 per il telefono e da un poster.
+  //
+  // NON usare qui i vecchi main.mp4 / video2..6: sono 576x1024, cioe' clip
+  // verticali da telefono larghe 576 pixel. In uno schermo intero orizzontale
+  // vengono ingrandite tre volte e tagliate a fascia: e' il motivo per cui lo
+  // hero sembrava sfocato e inquadrato a caso. Restano nella cartella public,
+  // utilizzabili dove il formato verticale ha senso.
   hero_slides: [
-    { id: 'slide-1', video_src: '/main.mp4',   poster_src: '/poster/main.jpg' },
-    { id: 'slide-2', video_src: '/video2.mp4', poster_src: '/poster/video2.jpg' },
-    { id: 'slide-3', video_src: '/video3.mp4', poster_src: '/poster/video3.jpg' },
-    { id: 'slide-4', video_src: '/video4.mp4', poster_src: '/poster/video4.jpg' },
-    { id: 'slide-5', video_src: '/video5.mp4', poster_src: '/poster/video5.jpg' },
-    { id: 'slide-6', video_src: '/video6.mp4', poster_src: '/poster/video6.jpg' },
+    { id: 'film-terra',     video_src: '/film/cars1.mp4',       mobile_src: '/film/cars1-720.mp4',       poster_src: '/poster/film-cars1.jpg' },
+    { id: 'film-mare',      video_src: '/film/yacht.mp4',       mobile_src: '/film/yacht-720.mp4',       poster_src: '/poster/film-yacht.jpg' },
+    { id: 'film-aria',      video_src: '/film/helicopter1.mp4', mobile_src: '/film/helicopter1-720.mp4', poster_src: '/poster/film-helicopter1.jpg' },
+    { id: 'film-soggiorni', video_src: '/film/villa1.mp4',      mobile_src: '/film/villa1-720.mp4',      poster_src: '/poster/film-villa1.jpg' },
   ],
   categories: [
     { id: 'cars',                 display_title_it: 'DR7 Supercar & Luxury Division',         display_title_en: 'DR7 Supercar & Luxury Division',         image_src: '/car.jpeg' },
@@ -3526,8 +3565,11 @@ const DEFAULT_HOME: HomeCopy = {
       copy_it: 'Ville, appartamenti e residenze selezionate.',
       copy_en: 'Villas, apartments and selected residences.',
       cta_it: 'Scopri', cta_en: 'Discover' },
-    { id: 'prime-wash', to: '/prime-wash', image_src: '/menu-servizi.jpeg',
-      title_it: 'Prime Wash', title_en: 'Prime Wash',
+    // Il nome del servizio e' quello che usa il menu: "Lavaggio & Meccanica".
+    // L'immagine e' quella del lavaggio, non la mano guantata sulla portiera
+    // (menu-servizi.jpeg), che racconta tutt'altro servizio.
+    { id: 'lavaggio-meccanica', to: '/prime-wash', image_src: '/servizi-lavaggio.jpeg',
+      title_it: 'Lavaggio & Meccanica', title_en: 'Car Wash & Mechanics',
       copy_it: 'Lavaggio premium, detailing e officina meccanica.',
       copy_en: 'Premium wash, detailing and mechanical workshop.',
       cta_it: 'Scopri', cta_en: 'Discover' },

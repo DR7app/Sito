@@ -525,6 +525,39 @@ html { scroll-behavior: smooth; }
         rgba(8, 9, 10, 0.5) 100%);
     }
   }
+  /* Velo dello schermo d'apertura: al velo verticale si aggiunge una
+     componente orizzontale, buia a sinistra dove sta il titolo e aperta a
+     destra dove si vede il film. Serve perche' un fotogramma controluce —
+     un tramonto, una strada bianca — non si puo' prevedere: il testo deve
+     restare leggibile su qualunque scena. */
+  .media-veil-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(95deg,
+        rgba(8, 9, 10, 0.92) 0%,
+        rgba(8, 9, 10, 0.72) 34%,
+        rgba(8, 9, 10, 0.3) 62%,
+        rgba(8, 9, 10, 0.12) 100%),
+      linear-gradient(to top,
+        rgba(8, 9, 10, 0.8) 0%,
+        rgba(8, 9, 10, 0.22) 45%,
+        rgba(8, 9, 10, 0.12) 72%,
+        rgba(8, 9, 10, 0.55) 100%);
+  }
+  @media (max-width: 767px) {
+    .media-veil-hero::after {
+      background: linear-gradient(to top,
+        rgba(8, 9, 10, 0.95) 0%,
+        rgba(8, 9, 10, 0.86) 40%,
+        rgba(8, 9, 10, 0.62) 66%,
+        rgba(8, 9, 10, 0.35) 88%,
+        rgba(8, 9, 10, 0.55) 100%);
+    }
+  }
+
   .media-veil-soft::after {
     content: '';
     position: absolute;

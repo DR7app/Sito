@@ -87,7 +87,7 @@ const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) =
           />
         </div>
       ))}
-      <div className="pointer-events-none absolute inset-0 z-[2] media-veil" />
+      <div className="pointer-events-none absolute inset-0 z-[2] media-veil-hero" />
 
       {/* Testo: un occhiello, un titolo, una riga, una CTA primaria. */}
       <div className="relative z-[10] w-full pb-24 md:pb-32">

@@ -173,9 +173,15 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
    * intero che si posa sopra la pagina, che resta visibile sotto un velo. La
    * pagina non sparisce, si allontana.
    *
-   * La colonna delle voci sta a DESTRA, allineata al bordo, con corpo piccolo
-   * e molto spazio fra una riga e l'altra. Nessuna immagine: restano titolo e
-   * sottotitolo, cioe' esattamente quello che il menu diceva prima.
+   * La colonna delle voci sta a SINISTRA e il testo e' a filo DESTRO contro il
+   * proprio asse: le righe finiscono tutte sulla stessa verticale e cominciano
+   * dove capita. Corpo piccolo, molto spazio fra una riga e l'altra. Nessuna
+   * immagine: restano titolo e sottotitolo, cioe' esattamente quello che il
+   * menu diceva prima.
+   *
+   * Sul telefono il testo torna a filo sinistro: su uno schermo stretto una
+   * lista a filo destro costringe l'occhio a ricominciare da un punto diverso
+   * a ogni riga. Ogni voce e' alta almeno 48px, la misura di un polpastrello.
    *
    * Il movimento sta nell'ingresso: ogni voce sale da sotto una linea, una
    * dopo l'altra. E' quello a dare il senso di apertura, non un effetto sopra
@@ -215,7 +221,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               className="absolute inset-0 hidden lg:block"
               style={{
                 background:
-                  'linear-gradient(100deg, rgba(8,9,10,0.72) 0%, rgba(8,9,10,0.84) 34%, rgba(8,9,10,0.94) 62%, rgba(8,9,10,0.97) 100%)',
+                  'linear-gradient(100deg, rgba(8,9,10,0.97) 0%, rgba(8,9,10,0.94) 40%, rgba(8,9,10,0.84) 66%, rgba(8,9,10,0.72) 100%)',
               }}
             />
           </motion.div>
@@ -225,7 +231,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex h-full flex-col overflow-y-auto"
+            className="relative flex h-full flex-col overflow-hidden"
           >
             {/* Barra alta: chiudi a sinistra, marchio al centro, lingua a destra.
                 Le stesse posizioni della barra del sito: aprendo il menu non si
@@ -262,9 +268,14 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                 Niente immagini: restano il titolo e il sottotitolo, cioe' quello
                 che il menu diceva prima. Le voci entrano una dopo l'altra da
                 sotto una linea, e' li' che sta il movimento. */}
-            <div className="flex flex-grow items-center">
-              <div className="container mx-auto w-full px-6 py-6">
-                <nav className="ml-auto w-full max-w-xl text-right">
+            {/* `m-auto` sul figlio, non `items-center` sul contenitore: con
+                l'allineamento al centro, quando la lista e' piu' alta dello
+                schermo il contenuto viene tagliato SOPRA e quella parte non si
+                raggiunge piu' scorrendo. Il margine automatico centra quando
+                c'e' spazio e lascia scorrere quando non ce n'e'. */}
+            <div className="flex flex-grow overflow-y-auto">
+              <div className="container m-auto w-full px-6 py-5 lg:py-6">
+                <nav className="mr-auto w-full text-left lg:max-w-[46%] lg:text-right">
                   <ul>
                     {MENU_ITEMS.map(({ to, title, subtitle }, i) => (
                       <li key={title} className="overflow-hidden">
@@ -278,7 +289,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                             onClick={onClose}
                             onMouseEnter={() => setHovered(i)}
                             onFocus={() => setHovered(i)}
-                            className="group block border-b border-white/[0.07] py-2.5 md:py-3"
+                            className="group flex min-h-[48px] flex-col justify-center border-b border-white/[0.07] py-2.5 md:py-3"
                           >
                             <span
                               className={`t-nav block text-[13px] leading-none transition-colors duration-standard md:text-[15px] ${
@@ -288,7 +299,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                             >
                               {title}
                             </span>
-                            <span className="mt-2 block text-[11px] leading-snug text-white/35 md:text-[12px]">{subtitle}</span>
+                            <span className="mt-1.5 block text-[11px] leading-snug text-white/35 md:text-[12px]">{subtitle}</span>
                           </NavLink>
                         </motion.div>
                       </li>

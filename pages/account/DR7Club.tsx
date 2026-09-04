@@ -7,8 +7,11 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { dateLocale } from '../../utils/i18nDate'
 import {
   getClubStatus,
+  getClubTiers,
+  getClubPlans,
   CLUB_PLANS,
-  TIER_THRESHOLDS,
+  type ClubPlan,
+  type ClubTierDef,
   WALLET_MAX_ORDER_PERCENT,
   SIGNUP_BONUS,
   ANNUAL_RENEWAL_BONUS,
@@ -27,6 +30,10 @@ const DR7Club = () => {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([])
   const [subscribing, setSubscribing] = useState(false)
   const [interestAccruals, setInterestAccruals] = useState<{ accrual_date: string; principal_eur: number; accrual_eur: number; paid_out_at: string | null }[]>([])
+  // Livelli e prezzi arrivano da Centralina Pro: qui dentro non c'e' piu'
+  // nessuna soglia scritta a mano.
+  const [tiers, setTiers] = useState<ClubTierDef[]>([])
+  const [plans, setPlans] = useState<{ monthly: ClubPlan; annual: ClubPlan }>(CLUB_PLANS)
 
   useEffect(() => {
     if (!user?.id) return
@@ -37,11 +44,15 @@ const DR7Club = () => {
     if (!user?.id) return
     setLoading(true)
     try {
-      const [clubStatus, balance, txns] = await Promise.all([
+      const [clubStatus, balance, txns, clubTiers, clubPlans] = await Promise.all([
         getClubStatus(user.id, user.email),
         getUserCreditBalance(user.id),
         getCreditTransactions(user.id, 10),
+        getClubTiers(),
+        getClubPlans(),
       ])
+      setTiers(clubTiers)
+      setPlans(clubPlans)
       setSubscription(clubStatus.subscription)
       setTierInfo(clubStatus.tierInfo)
       setIsActive(clubStatus.isActive)
@@ -75,7 +86,7 @@ const DR7Club = () => {
     setSubscribing(true)
     setSubscribeError(null)
     try {
-      const planInfo = CLUB_PLANS[plan]
+      const planInfo = plans[plan]
       const price = planInfo.price
 
       // Calculate expiry
@@ -148,13 +159,16 @@ const DR7Club = () => {
     )
   }
 
-  const tierColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-    access: { bg: 'bg-gray-800/50', border: 'border-gray-600', text: 'text-gray-300', badge: 'bg-gray-600 text-white' },
-    black: { bg: 'bg-gray-900/80', border: 'border-white/30', text: 'text-white', badge: 'bg-black text-white border border-white/30' },
-    signature: { bg: 'bg-[#C9A96E]/10', border: 'border-[#C9A96E]/40', text: 'text-[#D4B896]', badge: 'bg-[#C9A96E]/15 text-[#D4B896] border border-[#C9A96E]/40' },
-  }
+  // I livelli sono quelli configurati in Centralina Pro e possono essere
+  // decine: il colore non puo' piu' venire da una mappa per id (con trenta
+  // livelli `tierColors[tier]` era undefined e la pagina andava in errore).
+  // Regola: livello piu' alto in oro, gli altri neutri.
+  const topTier = tiers.length > 0 ? tiers[tiers.length - 1].tier : null
+  const GOLD = { bg: 'bg-[#C9A96E]/10', border: 'border-[#C9A96E]/40', text: 'text-[#D4B896]', badge: 'bg-[#C9A96E]/15 text-[#D4B896] border border-[#C9A96E]/40' }
+  const NEUTRAL = { bg: 'bg-gray-800/50', border: 'border-gray-600', text: 'text-gray-300', badge: 'bg-gray-600 text-white' }
+  const colorsFor = (tier: string) => (tier === topTier ? GOLD : NEUTRAL)
 
-  const currentColors = tierColors[tierInfo?.tier || 'access']
+  const currentColors = colorsFor(tierInfo?.tier || '')
 
   return (
     <div className="space-y-6">
@@ -169,7 +183,7 @@ const DR7Club = () => {
           )}
         </div>
         <p className="text-gray-400 text-sm">
-          {t({ it: "Guadagna fino al 4% in credito wallet su ogni noleggio. Più spendi, più guadagni.", en: "Earn up to 4% in wallet credit on every rental. The more you spend, the more you earn." })}
+          {t({ it: "Guadagna fino al", en: "Earn up to" })} {tiers.length > 0 ? tiers[tiers.length - 1].rewardPercent : 0}% {t({ it: "in credito wallet su ogni noleggio. Più spendi, più guadagni.", en: "in wallet credit on every rental. The more you spend, the more you earn." })}
         </p>
       </div>
 
@@ -191,12 +205,12 @@ const DR7Club = () => {
             <div className="border border-gray-700 rounded-lg p-5 hover:border-white/30 transition-colors">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h4 className="text-white font-bold text-lg">{CLUB_PLANS.monthly.label}</h4>
+                  <h4 className="text-white font-bold text-lg">{plans.monthly.label}</h4>
                   <p className="text-gray-400 text-sm">{t({ it: "Flessibile, senza vincoli", en: "Flexible, no commitment" })}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-bold text-white">€{CLUB_PLANS.monthly.price.toFixed(2)}</span>
-                  <span className="text-gray-400 text-sm">{CLUB_PLANS.monthly.period}</span>
+                  <span className="text-2xl font-bold text-white">€{plans.monthly.price.toFixed(2)}</span>
+                  <span className="text-gray-400 text-sm">{plans.monthly.period}</span>
                 </div>
               </div>
               <button
@@ -213,12 +227,12 @@ const DR7Club = () => {
               <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#C9A96E] text-black text-xs font-bold rounded">{t({ it: "RISPARMIA 33%", en: "SAVE 33%" })}</div>
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h4 className="text-white font-bold text-lg">{CLUB_PLANS.annual.label}</h4>
+                  <h4 className="text-white font-bold text-lg">{plans.annual.label}</h4>
                   <p className="text-gray-400 text-sm">+ €{ANNUAL_RENEWAL_BONUS} {t({ it: "bonus rinnovo", en: "renewal bonus" })}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-bold text-[#D4B896]">€{CLUB_PLANS.annual.price}</span>
-                  <span className="text-gray-400 text-sm">{CLUB_PLANS.annual.period}</span>
+                  <span className="text-2xl font-bold text-[#D4B896]">€{plans.annual.price}</span>
+                  <span className="text-gray-400 text-sm">{plans.annual.period}</span>
                 </div>
               </div>
               <button
@@ -277,7 +291,7 @@ const DR7Club = () => {
             <div className="mt-4">
               <div className="flex justify-between text-xs text-gray-400 mb-1">
                 <span>{t({ it: "Livello", en: "Tier" })} {tierInfo.label}</span>
-                <span>{t({ it: "Livello", en: "Tier" })} {TIER_THRESHOLDS.find(x => x.tier === tierInfo.nextTier)?.label} (€{tierInfo.nextTierThreshold.toLocaleString()})</span>
+                <span>{t({ it: "Livello", en: "Tier" })} {tiers.find(x => x.tier === tierInfo.nextTier)?.label} (€{tierInfo.nextTierThreshold.toLocaleString()})</span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-2.5">
                 <div
@@ -297,18 +311,20 @@ const DR7Club = () => {
         </div>
       )}
 
-      {/* Tiers Table */}
+      {/* Tiers Table — la lista viene da Centralina Pro. Se l'operatore ha
+          spento tutti i livelli non c'e' nulla da mostrare. */}
+      {tiers.length > 0 && (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
         <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Livelli DR7 Club", en: "DR7 Club tiers" })}</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {TIER_THRESHOLDS.map(tier => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {tiers.map(tier => (
             <div
               key={tier.tier}
               className={`p-4 rounded-lg border text-center ${tierInfo?.tier === tier.tier
-                ? `${tierColors[tier.tier].border} ${tierColors[tier.tier].bg}`
+                ? `${colorsFor(tier.tier).border} ${colorsFor(tier.tier).bg}`
                 : 'border-gray-700 bg-gray-800/30'}`}
             >
-              <p className={`font-bold text-lg ${tierInfo?.tier === tier.tier ? tierColors[tier.tier].text : 'text-gray-400'}`}>
+              <p className={`font-bold text-lg ${tierInfo?.tier === tier.tier ? colorsFor(tier.tier).text : 'text-gray-400'}`}>
                 {tier.label}
               </p>
               <p className="text-gray-500 text-xs mt-1">
@@ -322,6 +338,7 @@ const DR7Club = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Interesse Wallet — 0.1%/giorno DR7 Club */}
       {isActive && (() => {
@@ -435,7 +452,7 @@ const DR7Club = () => {
         <ul className="space-y-2 text-sm text-gray-400">
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: 'Pagamento anticipato (100%): premio base fino al', en: 'Full upfront payment (100%): base reward up to' })} {TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1].rewardPercent}%</span>
+            <span>{t({ it: 'Pagamento anticipato (100%): premio base fino al', en: 'Full upfront payment (100%): base reward up to' })} {tiers.length > 0 ? tiers[tiers.length - 1].rewardPercent : 0}%</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-400 mt-0.5">+</span>

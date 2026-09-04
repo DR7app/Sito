@@ -15,10 +15,14 @@
  */
 
 import { supabase } from '../supabaseClient'
+import { loadCentralinaConfigOnce, getDr7ClubPlanCopy } from './siteCopy'
 
 // ─── Types ───────────────────────────────────────────────────────────
 
-export type ClubTier = 'access' | 'black' | 'signature'
+// I livelli non sono piu' tre fissi: si aggiungono da Centralina Pro > DR7
+// Club, quindi l'id e' una stringa qualsiasi. 'none' = spesa sotto la soglia
+// piu' bassa configurata (l'operatore puo' aver tolto il livello di ingresso).
+export type ClubTier = string
 
 export interface ClubSubscription {
   id: string
@@ -43,16 +47,125 @@ export interface ClubTierInfo {
 
 // ─── Constants ───────────────────────────────────────────────────────
 
-export const CLUB_PLANS = {
+export interface ClubPlan {
+  price: number
+  label: string
+  period: string
+}
+
+/**
+ * Prezzi di fabbrica dell'abbonamento. Valgono solo come fallback: quelli veri
+ * si leggono con `getClubPlans()` da Centralina Pro > Sito > DR7 Club — Piano,
+ * gli stessi che la pagina /membership mostra al pubblico. Prima questa pagina
+ * li aveva scritti dentro e vendeva l'abbonamento a un prezzo diverso da
+ * quello esposto sul sito.
+ */
+export const CLUB_PLANS: { monthly: ClubPlan; annual: ClubPlan } = {
   monthly: { price: 4.90, label: 'Mensile', period: '/ mese' },
   annual: { price: 39, label: 'Annuale', period: '/ anno' },
-} as const
+}
 
-export const TIER_THRESHOLDS: { tier: ClubTier; min: number; max: number; rewardPercent: number; label: string }[] = [
+/** Prezzi abbonamento come configurati in Centralina Pro. */
+export async function getClubPlans(): Promise<{ monthly: ClubPlan; annual: ClubPlan }> {
+  try {
+    const plan = await getDr7ClubPlanCopy()
+    return {
+      monthly: { ...CLUB_PLANS.monthly, price: Number(plan.monthly_eur) || CLUB_PLANS.monthly.price },
+      annual: { ...CLUB_PLANS.annual, price: Number(plan.annually_eur) || CLUB_PLANS.annual.price },
+    }
+  } catch (err) {
+    console.error('[dr7club] lettura prezzi piano fallita, uso i default:', err)
+    return CLUB_PLANS
+  }
+}
+
+export interface ClubTierDef {
+  tier: ClubTier
+  min: number
+  max: number
+  rewardPercent: number
+  label: string
+}
+
+/**
+ * Livelli di fabbrica. Valgono SOLO finche' Centralina Pro non ha mai salvato
+ * la sezione DR7 Club: la lista vera si legge con `getClubTiers()`.
+ */
+export const TIER_THRESHOLDS: ClubTierDef[] = [
   { tier: 'access', min: 0, max: 2999, rewardPercent: 2, label: 'Access' },
   { tier: 'black', min: 3000, max: 9999, rewardPercent: 3, label: 'Black' },
   { tier: 'signature', min: 10000, max: Infinity, rewardPercent: 4, label: 'Signature' },
 ]
+
+interface RawCentralinaTier {
+  id?: unknown
+  label?: unknown
+  min_annual_spend?: unknown
+  rate_pct?: unknown
+  is_active?: unknown
+}
+
+let tiersCache: ClubTierDef[] | null = null
+let tiersPending: Promise<ClubTierDef[]> | null = null
+
+/**
+ * Livelli DR7 Club come configurati dall'operatore in Centralina Pro
+ * (`centralina_pro_config.config.dr7_club.tiers`).
+ *
+ * 04/09/2026 — Erano stati aggiunti trenta livelli in Centralina e il cliente
+ * continuava a vedere Access / Black / Signature: questo file li aveva scritti
+ * dentro, mentre il motore del cashback
+ * (`DR7-AI/netlify/functions/utils/dr7ClubCashback.ts::loadActiveTiers`) li
+ * leggeva gia' dal database. Il cliente vedeva il 4% e ne incassava un altro.
+ * La normalizzazione qui sotto e' il gemello di quella funzione — e di
+ * `DR7-AI/src/utils/dr7ClubTiers.ts` lato gestionale: se cambia una regola,
+ * cambiano tutte e tre.
+ */
+export async function getClubTiers(): Promise<ClubTierDef[]> {
+  if (tiersCache) return tiersCache
+  if (tiersPending) return tiersPending
+  tiersPending = (async () => {
+    try {
+      const { config } = await loadCentralinaConfigOnce()
+      const dr7Club = config.dr7_club as Record<string, unknown> | undefined
+      const tiersRaw = dr7Club?.tiers as RawCentralinaTier[] | undefined
+      // Chiave assente = istanza mai configurata: si ripiega sui default.
+      if (!Array.isArray(tiersRaw)) return TIER_THRESHOLDS
+      const active: ClubTierDef[] = tiersRaw
+        .filter((t) => t && t.is_active !== false)
+        .map((t) => {
+          const label = String(t.label ?? t.id ?? 'Tier')
+          const tier = String(t.id ?? label).toLowerCase().replace(/\s+/g, '_') || 'tier'
+          return {
+            tier,
+            label,
+            min: Number(t.min_annual_spend ?? 0),
+            rewardPercent: Number(t.rate_pct ?? 0),
+            max: 0,
+          }
+        })
+        .filter((t) => Number.isFinite(t.min) && Number.isFinite(t.rewardPercent))
+        .sort((a, b) => a.min - b.min)
+      // Lista vuota = l'operatore ha spento tutti i livelli. E' una scelta,
+      // non un errore: non si ripiega sui default.
+      if (active.length === 0) {
+        tiersCache = []
+        return tiersCache
+      }
+      for (let i = 0; i < active.length; i++) {
+        active[i].max = i < active.length - 1 ? active[i + 1].min - 1 : Infinity
+      }
+      tiersCache = active
+      return tiersCache
+    } catch (err) {
+      console.error('[dr7club] lettura livelli fallita, uso i default:', err)
+      return TIER_THRESHOLDS
+    } finally {
+      tiersPending = null
+    }
+  })()
+  return tiersPending
+}
 
 export const WALLET_MAX_ORDER_PERCENT = 30
 export const SIGNUP_BONUS = 10 // €10 signup bonus
@@ -60,18 +173,33 @@ export const ANNUAL_RENEWAL_BONUS = 20 // €20 annual renewal bonus
 
 // ─── Tier Calculation ────────────────────────────────────────────────
 
-export function calculateTier(annualSpend: number): ClubTierInfo {
-  const tierDef = TIER_THRESHOLDS.find(t => annualSpend >= t.min && annualSpend <= t.max)
-    || TIER_THRESHOLDS[0]
+export function calculateTier(annualSpend: number, tiers: ClubTierDef[] = TIER_THRESHOLDS): ClubTierInfo {
+  if (tiers.length === 0) {
+    return { tier: 'none', label: 'Nessun livello', rewardPercent: 0, annualSpend, nextTier: null, nextTierThreshold: 0, progress: 100 }
+  }
 
-  const tierIdx = TIER_THRESHOLDS.indexOf(tierDef)
-  const nextTierDef = tierIdx < TIER_THRESHOLDS.length - 1 ? TIER_THRESHOLDS[tierIdx + 1] : null
+  const tierIdx = tiers.findIndex(t => annualSpend >= t.min && annualSpend <= t.max)
+
+  // Spesa sotto la soglia piu' bassa configurata: nessun livello raggiunto,
+  // ma il primo traguardo esiste e la barra deve puntare a quello. Prima qui
+  // si ripiegava sul primo livello, regalando la sua percentuale a chi non
+  // l'aveva raggiunta.
+  if (tierIdx === -1) {
+    const first = tiers[0]
+    const progress = first.min > 0
+      ? Math.min(100, Math.max(0, Math.round((annualSpend / first.min) * 100)))
+      : 0
+    return { tier: 'none', label: 'Nessun livello', rewardPercent: 0, annualSpend, nextTier: first.tier, nextTierThreshold: first.min, progress }
+  }
+
+  const tierDef = tiers[tierIdx]
+  const nextTierDef = tierIdx < tiers.length - 1 ? tiers[tierIdx + 1] : null
 
   let progress = 100
   if (nextTierDef) {
     const rangeSize = nextTierDef.min - tierDef.min
     const spent = annualSpend - tierDef.min
-    progress = Math.min(100, Math.round((spent / rangeSize) * 100))
+    progress = rangeSize > 0 ? Math.min(100, Math.max(0, Math.round((spent / rangeSize) * 100))) : 100
   }
 
   return {
@@ -311,12 +439,13 @@ export async function getClubStatus(userId: string, email?: string | null): Prom
   tierInfo: ClubTierInfo
   isActive: boolean
 }> {
-  const [subscription, annualSpend] = await Promise.all([
+  const [subscription, annualSpend, tiers] = await Promise.all([
     getClubSubscription(userId),
     getAnnualSpend(userId, email),
+    getClubTiers(),
   ])
 
-  const tierInfo = calculateTier(annualSpend)
+  const tierInfo = calculateTier(annualSpend, tiers)
 
   return {
     subscription,

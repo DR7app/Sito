@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -158,138 +159,211 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
       subtitle: mc('menu_contatti_sub_it', 'menu_contatti_sub_en', 'Siamo a tua disposizione', 'We are at your service') },
   ];
 
-  const menuVariants = {
-    hidden: { x: '-100%' },
-    visible: { x: 0 },
-  };
+  /**
+   * Il menu.
+   *
+   * Non e' un cassetto laterale con una lista fitta di righe: e' uno schermo
+   * intero che si posa sopra la pagina, che resta visibile sotto un velo. La
+   * pagina non sparisce, si allontana.
+   *
+   * La colonna delle voci e' allineata a DESTRA su un asse verticale unico,
+   * con passo largo e corpo piccolo: e' la disciplina a fare l'effetto, non la
+   * dimensione. A destra dell'asse compare l'immagine della voce sotto il
+   * puntatore — e' li' che DR7 dice qualcosa di suo, perche' ogni destinazione
+   * ha gia' la sua fotografia nel gestionale.
+   *
+   * Sul telefono l'asse si sposta a sinistra (una lista allineata a destra su
+   * uno schermo stretto si legge male) e il sottotitolo torna sotto ogni voce,
+   * perche' non c'e' il passaggio del mouse a rivelarlo.
+   *
+   * Restano tutte le destinazioni, il pulsante di prenotazione, la lingua e
+   * l'area cliente: cambia come si presentano, non cosa fanno.
+   */
+  const [hovered, setHovered] = useState(0);
+  const active = MENU_ITEMS[hovered] || MENU_ITEMS[0];
 
-  const backdropVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-  };
-
-  return (
+  // Il menu si monta sul <body>, non dove vive l'header.
+  //
+  // L'header sta dentro un `div.relative.z-10` del layout: un elemento
+  // posizionato con uno z-index proprio apre un contesto di impilamento, e
+  // tutto cio' che sta dentro non puo' salire sopra a chi sta fuori, per
+  // quanto alto sia il suo z-index. Il menu a schermo intero finiva cosi'
+  // sotto al pulsante della chat, che vive alla radice. Con il portale il
+  // menu esce da quella scatola: e' anche il posto giusto per una
+  // sovrapposizione modale.
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50" aria-modal="true" role="dialog">
+        <div className="fixed inset-0 z-[90]" aria-modal="true" role="dialog">
+          {/* Velo: la pagina resta sotto, piu' fitto a sinistra dove sta il testo. */}
           <motion.div
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 bg-[#08090A]/[0.985] backdrop-blur-[3px] lg:bg-transparent lg:backdrop-blur-[2px]"
             onClick={onClose}
-          />
-          <motion.div
-            variants={menuVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 left-0 bottom-0 w-full max-w-md bg-[#0A0B0C] border-r border-white/10 flex flex-col overflow-y-auto"
           >
-            {/* Header: logo + tagline (sinistra), chiudi (destra) */}
-            <div className="flex items-start justify-between px-6 pt-8 pb-6 border-b border-white/10">
-              <NavLink to="/" onClick={onClose} className="flex flex-col items-start">
-                <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto max-w-none self-start" style={{ height: aspetto.logo_height_mobile }} />
-                <span className="mt-2 pl-1 font-mono text-[9px] tracking-[0.42em] text-gray-500 uppercase">Beyond Luxury</span>
-              </NavLink>
-              <div className="flex items-center gap-2">
-                {/* Toggle lingua: IT/EN. Cambia TUTTO il sito (via useTranslation). */}
+            {/* Da desktop in su il velo e' un gradiente: la pagina resta
+                intravedibile a destra, dove non c'e' testo. Sul telefono
+                sarebbe solo rumore dietro alle voci, quindi resta pieno. */}
+            <span
+              className="absolute inset-0 hidden lg:block"
+              style={{
+                background:
+                  'linear-gradient(100deg, rgba(8,9,10,0.97) 0%, rgba(8,9,10,0.94) 38%, rgba(8,9,10,0.82) 62%, rgba(8,9,10,0.7) 100%)',
+              }}
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="relative flex h-full flex-col overflow-y-auto"
+          >
+            {/* Barra alta: chiudi a sinistra, marchio al centro, lingua a destra.
+                Le stesse posizioni della barra del sito: aprendo il menu non si
+                sposta niente, cambia solo cosa c'e' scritto a sinistra. */}
+            <div className="shrink-0">
+              <div className="container mx-auto flex items-center justify-between px-6 py-5 md:py-6">
+                <button
+                  onClick={onClose}
+                  aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
+                  className="group flex items-center gap-3 text-white/90 transition-colors duration-standard hover:text-white"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="relative inline-flex h-9 items-center justify-center px-4">
+                    <span className="absolute inset-0 rounded-full border border-white/20 transition-colors duration-standard group-hover:border-white/50" />
+                    <span className="t-nav relative">{isIt ? 'Chiudi' : 'Close'}</span>
+                  </span>
+                </button>
+
+                <NavLink to="/" onClick={onClose} className="absolute left-1/2 -translate-x-1/2">
+                  <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto" style={{ height: aspetto.logo_height_mobile }} />
+                </NavLink>
+
                 <div className="flex items-center border border-white/15 p-0.5 font-mono text-[10px] tracking-[0.16em]">
                   <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
                   <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
                 </div>
-                <button
-                  onClick={onClose}
-                  aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
-                  className="-mr-2 p-2 text-gray-400 hover:text-white transition-colors duration-300"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
+              <div className="container mx-auto px-6"><span className="block h-px w-full bg-white/10" /></div>
             </div>
 
-            {/* PRENOTA ORA — conversione principale, mantenuta.
-                Se non loggato reindirizza a /signin e riapre il popup. */}
-            <div className="px-6 pt-7">
-              <button
-                onClick={() => {
-                  if (!user) {
-                    onClose();
-                    nav('/signin?returnTo=' + encodeURIComponent(window.location.pathname + '?openBooking=1'));
-                    return;
-                  }
-                  setShowBookingPopup(true);
-                  try { window.dispatchEvent(new CustomEvent('dr7:prenota-ora:manual-opened')); } catch { /* ignore */ }
-                }}
-                className="w-full py-4 text-[11px] font-medium tracking-[0.28em] uppercase transition-colors duration-500 ease-editorial hover:bg-[#C8A24A] hover:text-black"
-                style={{ color: GOLD, border: `1px solid ${GOLD}66` }}
-              >
-                {h('drawer_book_cta_it', 'drawer_book_cta_en')}
-              </button>
-            </div>
+            {/* Corpo */}
+            <div className="flex flex-grow items-center">
+              <div className="container mx-auto w-full px-6 py-12 lg:py-0">
+                <div className="lg:grid lg:grid-cols-[46%_1fr] lg:items-center lg:gap-16">
+                  {/* Voci */}
+                  <nav className="lg:text-right">
+                    <ul>
+                      {MENU_ITEMS.map(({ to, title, subtitle }, i) => (
+                        <motion.li
+                          key={title}
+                          initial={{ opacity: 0, y: 14 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: 0.06 + i * 0.035, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <NavLink
+                            to={to}
+                            onClick={onClose}
+                            onMouseEnter={() => setHovered(i)}
+                            onFocus={() => setHovered(i)}
+                            className="group block py-3 lg:py-[0.85rem]"
+                          >
+                            <span
+                              className={`t-nav block text-[13px] leading-none transition-colors duration-standard lg:text-[15px] ${
+                                hovered === i ? 'text-white' : 'text-white/55'
+                              } group-hover:text-white`}
+                              style={{ letterSpacing: '0.18em' }}
+                            >
+                              {title}
+                            </span>
+                            {/* Il sottotitolo sta qui solo dove non c'e' il puntatore
+                                a rivelarlo: sul telefono l'informazione non si perde. */}
+                            <span className="mt-2 block text-[11px] leading-snug text-white/35 lg:hidden">{subtitle}</span>
+                          </NavLink>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  </nav>
 
-            {/* Menu principale: immagine + icona oro + titolo + sottotitolo + chevron */}
-            <nav className="flex-grow px-4 py-6">
-              <div className="divide-y divide-white/[0.07]">
-                {MENU_ITEMS.map(({ to, img, Icon, title, subtitle }) => (
-                  <NavLink
-                    key={title}
-                    to={to}
-                    onClick={onClose}
-                    className="group flex items-center gap-4 px-2 py-4 transition-colors duration-500 ease-editorial hover:bg-white/[0.03]"
-                  >
-                    <span className="media block w-[72px] h-[54px] flex-shrink-0 border border-white/10">
-                      <img src={img} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    </span>
-                    <Icon className="w-4 h-4 flex-shrink-0 text-[#C8A24A]" />
-                    <span className="flex-1 min-w-0">
-                      <span className="block font-serif text-[17px] font-normal tracking-[-0.005em] text-white leading-tight">{title}</span>
-                      <span className="mt-1 block text-[11px] text-gray-500 leading-snug line-clamp-2">{subtitle}</span>
-                    </span>
-                    <svg className="w-4 h-4 flex-shrink-0 text-gray-600 group-hover:text-gray-300 transition-colors" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </NavLink>
-                ))}
-              </div>
-            </nav>
-
-            {/* Footer: accesso esclusivo + account/wallet (loggato) o sign in */}
-            <div className="mt-auto px-6 py-7 border-t border-white/10">
-              {user ? (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-mono text-[9px] tracking-[0.28em] uppercase" style={{ color: GOLD }}>{isIt ? 'Accesso Esclusivo' : 'Exclusive Access'}</p>
-                    <p className="mt-1.5 font-serif text-base text-white truncate">{userFullName}</p>
+                  {/* Visual della voce sotto il puntatore. Solo da tablet in su:
+                      su schermo stretto ruberebbe spazio alla lista. */}
+                  <div className="hidden lg:block">
+                    <div className="media aspect-[4/3] w-full max-w-lg border border-white/10">
+                      <AnimatePresence mode="wait">
+                        <motion.img
+                          key={active?.img}
+                          src={active?.img}
+                          alt=""
+                          initial={{ opacity: 0, scale: 1.04 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      </AnimatePresence>
+                    </div>
+                    <AnimatePresence mode="wait">
+                      <motion.p
+                        key={active?.title}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="mt-5 max-w-lg text-[12px] leading-relaxed text-white/45"
+                      >
+                        {active?.subtitle}
+                      </motion.p>
+                    </AnimatePresence>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
-                    <Link to="/credit-wallet" onClick={onClose} className="t-meta border border-white/15 px-3 py-2 text-xs text-white transition-colors duration-500 ease-editorial hover:border-white/35">
+                </div>
+              </div>
+            </div>
+
+            {/* Piede: prenotazione, credito, account. Le stesse azioni di prima. */}
+            <div className="shrink-0 border-t border-white/10">
+              <div className="container mx-auto flex flex-col gap-6 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      onClose();
+                      nav('/signin?returnTo=' + encodeURIComponent(window.location.pathname + '?openBooking=1'));
+                      return;
+                    }
+                    setShowBookingPopup(true);
+                    try { window.dispatchEvent(new CustomEvent('dr7:prenota-ora:manual-opened')); } catch { /* ignore */ }
+                  }}
+                  className="t-nav self-start border px-8 py-4 transition-colors duration-500 ease-editorial hover:bg-[#C9BEA8] hover:text-black sm:self-auto"
+                  style={{ color: 'var(--c-metal)', borderColor: 'rgba(201,190,168,0.45)' }}
+                >
+                  {h('drawer_book_cta_it', 'drawer_book_cta_en')}
+                </button>
+
+                {user ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="t-eyebrow mr-2 hidden md:inline">{userFullName}</span>
+                    <Link to="/credit-wallet" onClick={onClose} className="t-meta border border-white/15 px-3 py-2 text-xs text-white transition-colors duration-500 ease-editorial hover:border-white/40">
                       {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
                     </Link>
-                    <Link to={accountLink} onClick={onClose} title={accountLabel} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:text-white hover:border-white/35">
+                    <Link to={accountLink} onClick={onClose} title={accountLabel} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:border-white/40 hover:text-white">
                       <UserCircleIcon className="w-5 h-5" />
                     </Link>
-                    <button onClick={handleLogout} title={t('Sign_Out')} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:text-white hover:border-white/35">
+                    <button onClick={handleLogout} title={t('Sign_Out')} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:border-white/40 hover:text-white">
                       <SignOutIcon className="w-5 h-5" />
                     </button>
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-mono text-[9px] tracking-[0.28em] uppercase" style={{ color: GOLD }}>{isIt ? 'Esperienze e Accesso Esclusivo' : 'Experiences & Exclusive Access'}</p>
-                    <p className="mt-1.5 font-serif text-base text-white">DR7 Club</p>
-                  </div>
-                  <Link to="/signin" onClick={onClose} className="flex-shrink-0 border border-white bg-white px-6 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white">
+                ) : (
+                  <Link to="/signin" onClick={onClose} className="t-nav self-start border border-white bg-white px-8 py-4 text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white sm:self-auto">
                     {t('Sign_In')}
                   </Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -329,7 +403,8 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
           </AnimatePresence>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
@@ -405,7 +480,8 @@ const Header: React.FC = () => {
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-editorial ${scrolled
             ? 'bg-black/70 backdrop-blur-xl border-b border-white/10'
             : 'bg-transparent border-b border-transparent'
-          }`}
+          } ${isMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+        aria-hidden={isMenuOpen}
       >
         <div className="container mx-auto px-6 py-5 md:py-6 flex items-center justify-between">
           {/* Menu ESPLORA a sinistra — con il logo accanto se allineato a sinistra */}

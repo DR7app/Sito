@@ -46,15 +46,603 @@
   .min-h-screen { min-height: 100dvh; }
 }
 
+/* ==========================================================================
+   DR7 — DESIGN SYSTEM
+   --------------------------------------------------------------------------
+   Sorgente unica dei valori visivi del sito: colore, tipografia, spazio,
+   bordo, raggio, movimento, easing, contenitore, griglia, livelli.
+
+   Regola: nessun valore "a occhio" sparso nei componenti. Se un numero
+   serve due volte, sta qui.
+
+   Il sito e' prevalentemente scuro ma NON monotono: l'alternanza
+   ossidiana -> avorio -> media a piena pagina e' quello che da' ritmo allo
+   scroll. Per questo esistono le superfici `.surface-dark` e
+   `.surface-light`: cambiano tutte le variabili di testo insieme, cosi' una
+   sezione chiara non va ritoccata colore per colore.
+   ========================================================================== */
+
+:root {
+  /* ---- Colore -------------------------------------------------------- */
+  --c-obsidian: #08090a;   /* fondo primario, quasi nero */
+  --c-graphite: #131416;   /* superfici secondarie */
+  --c-graphite-2: #1c1e21; /* superfici sollevate */
+  --c-ivory: #f6f3ed;      /* bianco caldo */
+  --c-ivory-dim: #e4dfd5;
+  --c-mineral: #a19c92;    /* testo secondario su scuro */
+  --c-mineral-dark: #67635c;/* testo secondario su chiaro */
+  --c-metal: #c9bea8;      /* accento metallico, uso rarissimo */
+  --c-gold: #c8a24a;       /* oro del marchio: solo dove e' il marchio */
+
+  /* Ruoli — riassegnati da .surface-light */
+  --fg: var(--c-ivory);
+  --fg-dim: var(--c-mineral);
+  --bg: var(--c-obsidian);
+  --line: rgba(246, 243, 237, 0.12);
+  --line-strong: rgba(246, 243, 237, 0.26);
+
+  /* ---- Tipografia ---------------------------------------------------- */
+  --f-display: 'Bodoni Moda', 'Playfair Display', Georgia, serif;
+  --f-ui: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-meta: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --ls-display: -0.018em;
+  --ls-tight: -0.01em;
+  --ls-normal: 0;
+  --ls-nav: 0.16em;
+  --ls-label: 0.2em;
+  --ls-eyebrow: 0.3em;
+
+  /* ---- Spazio (ritmo verticale) -------------------------------------- */
+  --sp-xs: 0.5rem;
+  --sp-sm: 1rem;
+  --sp-md: 2rem;
+  --sp-lg: 4rem;
+  --sp-xl: 7rem;
+  --sp-2xl: 11rem;
+  --sp-3xl: 16rem;
+
+  /* ---- Contenitore e griglia ----------------------------------------- */
+  --container: 90rem;      /* 1440 */
+  --container-narrow: 62rem;
+  --measure: 62ch;         /* lunghezza di riga leggibile */
+  --gutter: 1.5rem;
+
+  /* ---- Bordo e raggio ------------------------------------------------ */
+  --bw: 1px;
+  --r-none: 0px;
+  --r-xs: 2px;
+  --r-sm: 3px;
+  --r-md: 4px;
+  --r-pill: 9999px;
+
+  /* ---- Movimento ----------------------------------------------------- */
+  --mo-fast: 180ms;
+  --mo-standard: 380ms;
+  --mo-editorial: 750ms;
+  --mo-cinematic: 1200ms;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);      /* uscita morbida */
+  --ease-inout: cubic-bezier(0.76, 0, 0.24, 1);    /* sipario */
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);  /* rivelazioni */
+
+  /* ---- Livelli ------------------------------------------------------- */
+  --z-base: 0;
+  --z-media: 1;
+  --z-content: 10;
+  --z-header: 40;
+  --z-overlay: 50;
+  --z-menu: 60;
+  --z-modal: 300;
+}
+
+@media (min-width: 768px) {
+  :root { --gutter: 2.5rem; }
+}
+@media (min-width: 1536px) {
+  :root { --gutter: 4rem; }
+}
+
+/* Superfici: invertono i ruoli di colore in blocco. */
+.surface-dark {
+  --fg: var(--c-ivory);
+  --fg-dim: var(--c-mineral);
+  --bg: var(--c-obsidian);
+  --line: rgba(246, 243, 237, 0.12);
+  --line-strong: rgba(246, 243, 237, 0.26);
+  background: var(--bg);
+  color: var(--fg);
+}
+.surface-graphite {
+  --fg: var(--c-ivory);
+  --fg-dim: var(--c-mineral);
+  --bg: var(--c-graphite);
+  --line: rgba(246, 243, 237, 0.12);
+  --line-strong: rgba(246, 243, 237, 0.26);
+  background: var(--bg);
+  color: var(--fg);
+}
+.surface-light {
+  --fg: #14150f;
+  --fg-dim: var(--c-mineral-dark);
+  --bg: var(--c-ivory);
+  --line: rgba(20, 21, 15, 0.14);
+  --line-strong: rgba(20, 21, 15, 0.3);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 body {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--f-ui);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1;
+  background: var(--c-obsidian);
 }
-.font-playfair {
-  font-family: 'Playfair Display', serif;
+
+/* Alias storici: restano perche' potrebbero comparire in classi composte a
+   runtime o salvate dall'admin. Puntano alle famiglie nuove. */
+.font-playfair { font-family: var(--f-display); }
+.rajdhani-font { font-family: var(--f-ui); }
+
+/* Gerarchia di default per i titoli gia' presenti nel markup: H1/H2 prendono
+   la voce editoriale, H3 e minori restano voce d'interfaccia. Sono selettori
+   di ELEMENTO: qualunque classe Tailwind nel markup vince. */
+h1, h2 {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: var(--ls-display);
+  line-height: 1.04;
+  text-wrap: balance;
 }
-.rajdhani-font {
-  font-family: 'Rajdhani', sans-serif;
+h3, h4, h5, h6 {
+  font-family: var(--f-ui);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.28;
 }
+p { line-height: 1.62; }
+
+/* Il maiuscolo senza spaziatura fa sembrare economico qualsiasi sito.
+   Qui la spaziatura arriva da sola, ma solo dove il markup non ha gia'
+   scelto un `tracking-*` suo. */
+.uppercase:not([class*='tracking-']) { letter-spacing: 0.14em; }
+
+@media (min-width: 1024px) {
+  .container { padding-left: var(--gutter); padding-right: var(--gutter); }
+}
+
+::selection { background: rgba(201, 190, 168, 0.28); color: var(--c-ivory); }
+:focus-visible { outline: 1px solid var(--c-metal); outline-offset: 3px; }
+html { scroll-behavior: smooth; }
+
+/* Chi ha chiesto meno movimento al sistema non deve subire rivelazioni,
+   marquee o parallasse. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Scala tipografica
+   Una classe per ruolo. I titoli usano clamp(): la misura segue la finestra,
+   non il breakpoint, cosi' non ci sono salti fra 1279px e 1280px.
+   ========================================================================== */
+@layer components {
+  .t-display-xxl {
+    font-family: var(--f-display);
+    font-size: clamp(3.5rem, 13vw, 12rem);
+    font-weight: 400;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .t-display-xl {
+    font-family: var(--f-display);
+    font-size: clamp(2.75rem, 8.5vw, 7.5rem);
+    font-weight: 400;
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  .t-display {
+    font-family: var(--f-display);
+    font-size: clamp(2.25rem, 5.5vw, 4.75rem);
+    font-weight: 400;
+    line-height: 1.04;
+    letter-spacing: var(--ls-display);
+    text-wrap: balance;
+  }
+  .t-h1 {
+    font-family: var(--f-display);
+    font-size: clamp(2rem, 4.4vw, 3.75rem);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: var(--ls-display);
+    text-wrap: balance;
+  }
+  .t-h2 {
+    font-family: var(--f-display);
+    font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: var(--ls-tight);
+    text-wrap: balance;
+  }
+  .t-h3 {
+    font-family: var(--f-ui);
+    font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+  }
+  .t-h4 {
+    font-family: var(--f-ui);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+  }
+  .t-body-xl {
+    font-family: var(--f-ui);
+    font-size: clamp(1.125rem, 1.7vw, 1.5rem);
+    font-weight: 300;
+    line-height: 1.5;
+    letter-spacing: 0.002em;
+  }
+  .t-body-lg {
+    font-family: var(--f-ui);
+    font-size: clamp(1rem, 1.2vw, 1.125rem);
+    font-weight: 300;
+    line-height: 1.62;
+  }
+  .t-body {
+    font-family: var(--f-ui);
+    font-size: 0.9375rem;
+    font-weight: 300;
+    line-height: 1.66;
+  }
+  .t-small {
+    font-family: var(--f-ui);
+    font-size: 0.8125rem;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  .t-caption {
+    font-family: var(--f-ui);
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.5;
+    color: var(--fg-dim);
+  }
+  .t-nav {
+    font-family: var(--f-ui);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--ls-nav);
+    text-transform: uppercase;
+  }
+  .t-button {
+    font-family: var(--f-ui);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--ls-label);
+    text-transform: uppercase;
+  }
+  .t-eyebrow {
+    font-family: var(--f-meta);
+    font-size: 0.625rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: var(--ls-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .t-meta {
+    font-family: var(--f-meta);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .measure { max-width: var(--measure); }
+
+  /* ---- Contenitore e ritmo ------------------------------------------- */
+  .shell {
+    width: 100%;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .shell-narrow {
+    width: 100%;
+    max-width: var(--container-narrow);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .rhythm-sm { padding-block: var(--sp-lg); }
+  .rhythm    { padding-block: var(--sp-xl); }
+  .rhythm-lg { padding-block: var(--sp-2xl); }
+  .rhythm-xl { padding-block: var(--sp-3xl); }
+
+  /* ---- Filetti -------------------------------------------------------- */
+  .rule { height: 1px; width: 100%; background: var(--line); border: 0; }
+  .rule-short { height: 1px; width: 3.5rem; background: var(--line-strong); border: 0; }
+
+  /* ---- Bottoni --------------------------------------------------------
+     Quattro stili in tutto: pieno, contorno, testo, icona. Nessuna variante
+     colorata: il colore lo mette la superficie, non il bottone. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.0625rem 2.25rem;
+    border: var(--bw) solid transparent;
+    font-family: var(--f-ui);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--ls-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--mo-standard) var(--ease-out),
+                color var(--mo-standard) var(--ease-out),
+                border-color var(--mo-standard) var(--ease-out);
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: transparent;
+    color: var(--fg);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--line-strong);
+    color: var(--fg);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+  }
+
+  .btn-text {
+    padding: 0.25rem 0;
+    border: 0;
+    background: none;
+    color: var(--fg);
+    position: relative;
+  }
+  .btn-text::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(1);
+    transform-origin: right;
+    transition: transform var(--mo-standard) var(--ease-out);
+  }
+  .btn-text:hover::after { transform: scaleX(0); }
+
+  .btn-icon {
+    padding: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-color: var(--line-strong);
+    background: transparent;
+    color: var(--fg);
+  }
+  .btn-icon:hover:not(:disabled) { border-color: var(--fg); }
+
+  .btn-sm { padding: 0.8125rem 1.625rem; font-size: 0.625rem; }
+  .btn-lg { padding: 1.25rem 3rem; font-size: 0.75rem; }
+
+  /* ---- Link con sottolineatura che si apre ---------------------------- */
+  .link-reveal { position: relative; display: inline-block; }
+  .link-reveal::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    height: 1px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--mo-standard) var(--ease-out);
+  }
+  .link-reveal:hover::after { transform: scaleX(1); }
+
+  /* ---- Media ----------------------------------------------------------
+     La cornice sta ferma, e' l'immagine a muoversi dentro. */
+  .media {
+    position: relative;
+    overflow: hidden;
+    background: var(--c-graphite);
+  }
+  .media > img,
+  .media > video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--mo-cinematic) var(--ease-out),
+                filter var(--mo-cinematic) var(--ease-out);
+    will-change: transform;
+  }
+  .group:hover .media > img,
+  .group:hover .media > video { transform: scale(1.03); }
+
+  /* Velo di leggibilita' sotto il testo su media a piena pagina.
+     Sul telefono e' piu' fitto: il testo occupa quasi tutta la larghezza e
+     non ha, come sul desktop, meta' schermo di immagine buia su cui appoggiarsi.
+     Un titolo che si legge male su un fotogramma chiaro vale meno di zero. */
+  .media-veil::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top,
+      rgba(8, 9, 10, 0.94) 0%,
+      rgba(8, 9, 10, 0.78) 22%,
+      rgba(8, 9, 10, 0.42) 52%,
+      rgba(8, 9, 10, 0.1) 78%,
+      rgba(8, 9, 10, 0.38) 100%);
+  }
+  @media (max-width: 767px) {
+    .media-veil::after {
+      background: linear-gradient(to top,
+        rgba(8, 9, 10, 0.96) 0%,
+        rgba(8, 9, 10, 0.88) 38%,
+        rgba(8, 9, 10, 0.66) 62%,
+        rgba(8, 9, 10, 0.34) 85%,
+        rgba(8, 9, 10, 0.5) 100%);
+    }
+  }
+  .media-veil-soft::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top,
+      rgba(8, 9, 10, 0.78) 0%,
+      rgba(8, 9, 10, 0.2) 55%,
+      rgba(8, 9, 10, 0) 100%);
+  }
+
+  /* ---- Superficie scheda ---------------------------------------------- */
+  .panel {
+    background: var(--c-graphite);
+    border: var(--bw) solid var(--line);
+  }
+}
+
+/* ==========================================================================
+   Firma DR7 — "the seam"
+   --------------------------------------------------------------------------
+   Una linea di luce sottile che percorre un bordo, come il riflesso che
+   corre lungo la fiancata di un'auto quando le passi accanto. Ricorre su
+   titoli di sezione, schede al passaggio del mouse e passaggi di pagina:
+   e' il segno che rende riconoscibile il sito anche senza logo.
+   ========================================================================== */
+.seam {
+  position: relative;
+  overflow: hidden;
+}
+.seam::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -35%;
+  width: 35%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(201, 190, 168, 0.06) 40%,
+    rgba(246, 243, 237, 0.5) 50%,
+    rgba(201, 190, 168, 0.06) 60%,
+    transparent 100%
+  );
+  opacity: 0;
+}
+.seam-line {
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.seam-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--c-metal) 45%,
+    var(--c-ivory) 50%,
+    var(--c-metal) 55%,
+    transparent 100%);
+  transform: translateX(-100%);
+}
+.seam-line.is-live::after {
+  animation: seamSweep 1.6s var(--ease-out) forwards;
+}
+.group:hover .seam::before,
+.seam.is-live::before {
+  animation: seamSweep 1.15s var(--ease-out);
+}
+@keyframes seamSweep {
+  0%   { transform: translateX(-140%); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateX(400%); opacity: 0; }
+}
+
+/* Rivelazione allo scroll: lo stato di partenza vive nel CSS, il passaggio a
+   `is-in` lo decide l'osservatore in JS (hooks/useReveal). Se JS non parte,
+   `.reveal` senza `is-in` resta comunque leggibile grazie al fallback
+   .no-js piu' sotto. */
+/* Lo stato nascosto si applica SOLO se il JavaScript e' partito: la classe
+   `reveal-ready` la mette index.tsx al primo istante. Senza quella classe non
+   c'e' nessuna regola che nasconda qualcosa, quindi uno script che non arriva
+   o un errore a monte lasciano la pagina leggibile invece che bianca. E' la
+   differenza fra un'animazione che manca e un sito che sembra rotto. */
+.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--mo-editorial) var(--ease-entrance),
+              transform var(--mo-editorial) var(--ease-entrance);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-ready .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+/* Sipario. Il ritaglio sta sul figlio, non sul contenitore osservato:
+   Chromium conta il clip-path nel calcolo dell'intersezione, e un elemento
+   ritagliato a zero non verrebbe mai considerato visibile. */
+.reveal-ready .reveal-mask {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path var(--mo-cinematic) var(--ease-entrance);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-ready .reveal-host.is-in .reveal-mask {
+  clip-path: inset(0 0 0 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+  .reveal-mask { clip-path: none; }
+}
+
 @keyframes marqueeMobile {
   from { transform: translateX(0); }
   to { transform: translateX(calc(-100% - var(--gap-mobile, 12px))); }

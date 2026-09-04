@@ -13,5 +13,6 @@ Disallow: /payment-cancel
 Disallow: /booking-success
 Disallow: /car-booking-success
 Disallow: /confirmation-success
+Disallow: /styleguide
 
 Sitemap: https://dr7.app/sitemap.xml

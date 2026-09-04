@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
+import StyleguidePage from './pages/StyleguidePage';
 import RentalPage from './pages/RentalPage';
 import FlottaIndexPage from './pages/FlottaIndexPage';
 import NoleggioServicePage from './pages/NoleggioServicePage';
@@ -393,6 +394,8 @@ const AnimatedRoutes = () => {
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-cancel" element={<PaymentCancelPage />} />
         <Route path="/post/:id" element={<PostPage />} />
+        {/* Pagina interna del design system. Non indicizzata (robots.txt). */}
+        <Route path="/styleguide" element={<StyleguidePage />} />
       </Routes>
     </AnimatePresence>
   );

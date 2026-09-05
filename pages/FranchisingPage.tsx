@@ -40,7 +40,7 @@ const BenefitIcon: React.FC<{ icon: FranchisingBenefitIcon }> = ({ icon }) => {
 
 const FranchisingPage: React.FC = () => {
     const { t, lang } = useTranslation();
-    const [reviewCount, setReviewCount] = useState(246);
+    const [reviewCount, setReviewCount] = useState(300);
     const [copy, setCopy] = useState<FranchisingCopy | null>(null);
 
     useEffect(() => {
@@ -66,7 +66,7 @@ const FranchisingPage: React.FC = () => {
         );
     }
 
-    const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 250 ? String(reviewCount) : '250');
+    const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 300 ? String(reviewCount) : '300');
 
     return (
         <LegalPageLayout title={t('Franchising')}>

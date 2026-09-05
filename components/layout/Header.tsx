@@ -213,8 +213,11 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            /* Il velo se ne va per ultimo: prima escono le voci, poi torna
+               fuori la pagina. Al contrario si vedrebbero le voci uscire nel
+               vuoto. */
+            exit={{ opacity: 0, transition: { duration: 0.42, delay: 0.34, ease: [0.22, 1, 0.36, 1] } }}
+            transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 bg-[#08090A]/[0.985] backdrop-blur-[3px] lg:bg-transparent lg:backdrop-blur-[2px]"
             onClick={onClose}
           >
@@ -233,8 +236,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            /* Anche il pannello aspetta: se sfumasse subito, la cascata di
+               uscita delle voci non si vedrebbe proprio. */
+            exit={{ opacity: 0, transition: { duration: 0.3, delay: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex h-full flex-col overflow-hidden"
           >
             {/* Barra alta: chiudi a sinistra, marchio al centro, lingua a destra.
@@ -311,10 +316,24 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                         <motion.div
                           initial={menoMovimento ? false : { x: '-100%', opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
+                          /* Uscita: lo stesso tragitto al contrario — le voci
+                             tornano a sinistra invece di sparire sul posto.
+                             Due differenze rispetto all'ingresso, ed e' quello
+                             che rende la chiusura riconoscibile:
+                             - la cascata riparte dall'ALTO (la prima voce esce
+                               per prima), specchio dell'ingresso che parte dal
+                               basso;
+                             - accelera invece di frenare, e dura meno della
+                               meta': si esce in fretta, si entra con calma. */
+                          exit={
+                            menoMovimento
+                              ? { opacity: 0 }
+                              : { x: '-100%', opacity: 0, transition: { duration: 0.44, delay: i * 0.035, ease: [0.7, 0, 0.84, 0] } }
+                          }
                           transition={
                             menoMovimento
                               ? { duration: 0 }
-                              : { duration: 0.75, delay: (MENU_ITEMS.length - 1 - i) * 0.11, ease: [0.19, 1, 0.22, 1] }
+                              : { duration: 0.92, delay: (MENU_ITEMS.length - 1 - i) * 0.135, ease: [0.19, 1, 0.22, 1] }
                           }
                         >
                           <NavLink
@@ -493,14 +512,14 @@ const Header: React.FC = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-editorial ${scrolled
-            ? 'bg-black/70 backdrop-blur-xl border-b border-white/10'
-            : 'bg-transparent border-b border-transparent'
+        className={`fixed top-0 left-0 right-0 z-40 border-b transition-all duration-500 ease-editorial ${scrolled
+            ? 'bg-black/70 backdrop-blur-xl border-white/15'
+            : 'bg-transparent border-white/15'
           } ${isMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
         aria-hidden={isMenuOpen}
       >
         <div className="container mx-auto px-6 py-5 md:py-6 flex items-center justify-between">
-          {/* Menu ESPLORA a sinistra — con il logo accanto se allineato a sinistra */}
+          {/* Pulsante MENU a sinistra — con il logo accanto se allineato a sinistra */}
           <div className="flex items-center gap-4">
             {aspetto.logo_alignment === 'left' && (
               <SiteLogo aspetto={aspetto} alt={copy?.logo_alt || 'DR7 Logo'} />
@@ -511,7 +530,7 @@ const Header: React.FC = () => {
               aria-expanded={isMenuOpen}
               className="link-reveal text-white/90 hover:text-white font-medium text-[11px] uppercase tracking-[0.28em] transition-colors duration-500 ease-editorial"
             >
-              {h('explore_label_it', 'explore_label_en') || t({ it: 'ESPLORA', en: 'EXPLORE' })}
+              {h('explore_label_it', 'explore_label_en') || t({ it: 'MENU', en: 'MENU' })}
             </button>
           </div>
 

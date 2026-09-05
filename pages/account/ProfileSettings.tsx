@@ -391,15 +391,16 @@ const ProfileSettings = () => {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {/* Client Status Badge */}
-                                    <div className={`px-5 py-3 rounded-full font-bold text-sm flex items-center gap-2 ${
+                                    {/* Stato cliente. Cornice squadrata e sottile,
+                                        la stessa della barra in alto del sito: qui
+                                        erano pastiglie piene e stonavano. Il colore
+                                        del livello resta, ma sul bordo e sul testo. */}
+                                    <div className={`flex items-center gap-2 border px-5 py-3 text-[11px] font-medium uppercase tracking-[0.2em] ${
                                         clientStatus === 'Elite'
-                                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black'
-                                            : clientStatus === 'Member'
-                                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                                                : clientStatus === 'Fidelizzato'
-                                                    ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white'
-                                                    : 'bg-gray-700 text-gray-300'
+                                            ? 'border-amber-500/50 text-amber-300'
+                                            : clientStatus === 'Member' || clientStatus === 'Fidelizzato'
+                                                ? 'border-blue-500/50 text-blue-300'
+                                                : 'border-white/15 text-white/70'
                                     }`}>
                                         {clientStatus === 'Elite' && (
                                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -414,7 +415,7 @@ const ProfileSettings = () => {
                                         {clientStatus === 'Standard' ? 'New Entry' : clientStatus}
                                     </div>
                                     {clubPlan && (
-                                        <div className="px-4 py-3 rounded-full font-bold text-sm bg-gradient-to-r from-[#2d8a7e] to-[#247a6f] text-white flex items-center gap-2">
+                                        <div className="flex items-center gap-2 border border-[#2d8a7e]/40 px-4 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-300">
                                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
@@ -424,7 +425,7 @@ const ProfileSettings = () => {
                                     {/* Ricarica Button */}
                                     <button
                                         onClick={() => navigate('/credit-wallet')}
-                                        className="px-6 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors"
+                                        className="border border-white bg-white px-6 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
                                     >
                                         Ricarica
                                     </button>
@@ -518,7 +519,7 @@ const ProfileSettings = () => {
                     <div className="bg-gradient-to-br from-[#1a2332] to-black border border-[#2d8a7e]/40 rounded-lg overflow-hidden">
                         <div className="p-4 md:p-6 border-b border-gray-800 flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                                <span className="px-3 py-1.5 text-xs font-bold rounded-full bg-gradient-to-r from-[#2d8a7e] to-[#247a6f] text-white">
+                                <span className="border border-[#2d8a7e]/40 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-emerald-300">
                                     Fidelity Card
                                 </span>
                                 <div>
@@ -570,10 +571,10 @@ const ProfileSettings = () => {
                             {/* --- Status Badge (Member/Elite) --- */}
                             {extendedProfile.status_cliente && extendedProfile.status_cliente !== 'standard' && extendedProfile.status_cliente !== 'blacklist' && (
                                 <div className="mb-4">
-                                    <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-bold border ${
+                                    <span className={`inline-block border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] ${
                                         extendedProfile.status_cliente === 'elite'
-                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                                            : 'bg-blue-500/20 text-blue-400 border-blue-500/50'
+                                            ? 'border-amber-500/50 text-amber-400'
+                                            : 'border-blue-500/50 text-blue-400'
                                     }`}>
                                         {extendedProfile.status_cliente === 'elite' ? 'DR7 Elite' : 'DR7 Member'}
                                     </span>
@@ -687,7 +688,7 @@ const ProfileSettings = () => {
                 </div>
                 <div className="p-4 md:p-6 bg-gray-900 flex flex-col sm:flex-row items-center justify-end gap-3 rounded-b-lg">
                     {successMessage && <span className={`text-sm ${successError ? 'text-red-400' : 'text-green-400'}`}>{successMessage}</span>}
-                    <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">
+                    <button type="submit" disabled={isSubmitting} className="border border-white bg-white px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white disabled:opacity-60">
                         {isSubmitting ? t('Please_wait') : t('Save_Changes')}
                     </button>
                 </div>

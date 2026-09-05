@@ -42,6 +42,7 @@ import {
   msDaYmdOra,
   primoOccupatoDopo,
   slotLiberi,
+  slotRitiroUtili,
   statoGiornoRiconsegna,
   statoGiornoRitiro,
   ultimaRiconsegnaPossibile,
@@ -117,7 +118,9 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     return ymdLocale(d);
   }, [oggi]);
 
-  // Mese in alto a sinistra della griglia (se ne mostrano due su desktop).
+  // Si mostra UN mese alla volta — quello corrente all'apertura — e si
+  // scorre con le frecce. Due mesi affiancati riempivano la finestra e
+  // costringevano a scorrere per arrivare a orari e prezzo.
   const [mese, setMese] = useState(() => new Date(oggi.getFullYear(), oggi.getMonth(), 1));
 
   // Gli id "veri" dei veicoli: per un gruppo (es. 3 Panda bianche) sono
@@ -249,7 +252,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     // Terza selezione (periodo gia' completo) o click su un giorno
     // precedente al ritiro: si ricomincia da questo giorno.
     if (!ritiroYmd || riconsegnaYmd || ymd <= ritiroYmd) {
-      const slot = slotLiberi(ymd, getPickupTimesForDateString(ymd), occupati);
+      const slot = slotRitiroUtili(ymd, getPickupTimesForDateString(ymd), occupati);
       if (slot.length === 0) return;
       setRitiroYmd(ymd);
       setRitiroOra(slot[0]);
@@ -267,8 +270,11 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     setRitiroYmd(''); setRitiroOra(''); setRiconsegnaYmd(''); setRiconsegnaOra('');
   };
 
+  // Solo gli orari che lasciano davanti almeno un giorno intero: proporre
+  // le 10:00 quando l'auto esce alle 10:30 manderebbe il cliente in un
+  // vicolo cieco (nessuna riconsegna selezionabile).
   const slotRitiro = ritiroYmd
-    ? slotLiberi(ritiroYmd, getPickupTimesForDateString(ritiroYmd), occupati) : [];
+    ? slotRitiroUtili(ritiroYmd, getPickupTimesForDateString(ritiroYmd), occupati) : [];
   // Gli orari di riconsegna scartano anche quelli che farebbero
   // attraversare la prenotazione successiva.
   const slotRiconsegna = riconsegnaYmd && ritiroYmd
@@ -317,17 +323,13 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
 
   const nomiMesi = it ? MESI_IT : MESI_EN;
   const nomiGiorni = it ? GIORNI_IT : GIORNI_EN;
-  const meseSuccessivo = new Date(mese.getFullYear(), mese.getMonth() + 1, 1);
   const puoIndietro = mese > new Date(oggi.getFullYear(), oggi.getMonth(), 1);
-  const puoAvanti = meseSuccessivo < new Date(oggi.getFullYear(), oggi.getMonth() + MESI_ORIZZONTE, 1);
+  const puoAvanti = mese < new Date(oggi.getFullYear(), oggi.getMonth() + MESI_ORIZZONTE - 1, 1);
 
   const rendiMese = (m: Date) => {
     const celle = grigliaMese(m.getFullYear(), m.getMonth());
     return (
-      <div key={`${m.getFullYear()}-${m.getMonth()}`} className="min-w-0 flex-1">
-        <p className="mb-4 text-center font-serif text-[17px] tracking-[-0.01em] text-[color:var(--fg)]">
-          {nomiMesi[m.getMonth()]} {m.getFullYear()}
-        </p>
+      <div key={`${m.getFullYear()}-${m.getMonth()}`} className="min-w-0">
         <div className="mb-2 grid grid-cols-7 gap-px">
           {nomiGiorni.map((g) => (
             <div key={g} className="py-1 text-center text-[9px] uppercase tracking-[0.18em] text-[color:var(--fg-dim)]">
@@ -395,7 +397,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.97, opacity: 0, y: 12 }}
         transition={{ type: 'spring', duration: 0.4, bounce: 0.12 }}
-        className="relative w-full max-w-[720px] border border-[color:var(--line)] bg-[color:var(--c-graphite)] p-6 sm:p-9"
+        className="relative w-full max-w-[480px] border border-[color:var(--line)] bg-[color:var(--c-graphite)] p-6 sm:p-9"
         style={{ boxShadow: '0 40px 90px -40px rgba(0,0,0,0.9)' }}
         role="dialog"
         aria-modal="true"
@@ -449,8 +451,8 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span className="t-eyebrow">
-                {it ? 'Prossimi 12 mesi' : 'Next 12 months'}
+              <span className="font-serif text-[19px] tracking-[-0.01em] text-[color:var(--fg)]">
+                {nomiMesi[mese.getMonth()]} {mese.getFullYear()}
               </span>
               <button
                 type="button"
@@ -465,10 +467,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
               </button>
             </div>
 
-            <div className="flex flex-col gap-8 sm:flex-row sm:gap-7">
-              {rendiMese(mese)}
-              <div className="hidden sm:block">{rendiMese(meseSuccessivo)}</div>
-            </div>
+            {rendiMese(mese)}
 
             {/* Legenda: il cliente deve capire perche' un giorno e' spento. */}
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] uppercase tracking-[0.16em] text-[color:var(--fg-dim)]">

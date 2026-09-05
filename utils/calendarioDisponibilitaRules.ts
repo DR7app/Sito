@@ -134,6 +134,15 @@ export function grigliaMese(anno: number, mese0: number): Array<string | null> {
  *
  * `chiuso` e `occupato` sono distinti apposta: al cliente va detto
  * perche' non puo' cliccare (siamo chiusi vs. l'auto e' gia' fuori).
+ *
+ * Non basta che il giorno abbia uno slot libero: siccome il noleggio
+ * minimo e' 1 giorno, la finestra libera che parte da quello slot deve
+ * arrivare almeno al giorno dopo. Caso reale (Huracan Performante,
+ * 09/09/2026): l'auto esce alle 10:30, i ritiri aprono alle 10:00 —
+ * lo slot delle 10:00 e' libero ma non porta da nessuna parte, e il
+ * cliente si trovava un giorno cliccabile senza nessuna riconsegna
+ * possibile. Si guardano TUTTI gli slot: basta che UNO apra una
+ * finestra che scavalca la mezzanotte.
  */
 export function statoGiornoRitiro(
   ymd: string,
@@ -143,8 +152,28 @@ export function statoGiornoRitiro(
 ): StatoGiorno {
   if (ymd < oggiYmd) return 'passato';
   if (slotRitiro.length === 0) return 'chiuso';
-  if (slotLiberi(ymd, slotRitiro, occupati).length === 0) return 'occupato';
+
+  if (slotRitiroUtili(ymd, slotRitiro, occupati).length === 0) return 'occupato';
   return 'libero';
+}
+
+/**
+ * Gli slot di ritiro davvero utilizzabili: liberi E con davanti una
+ * finestra che arriva almeno al giorno dopo (noleggio minimo 1 giorno).
+ *
+ * E' la stessa condizione di `statoGiornoRitiro`, esposta a parte perche'
+ * la tendina degli orari non deve proporre un orario che poi non porta a
+ * nessuna riconsegna possibile.
+ */
+export function slotRitiroUtili(
+  ymd: string,
+  slotRitiro: string[],
+  occupati: Intervallo[],
+): string[] {
+  return slotLiberi(ymd, slotRitiro, occupati).filter((s) => {
+    const prossimo = primoOccupatoDopo(msDaYmdOra(ymd, s), occupati);
+    return !prossimo || ymdLocale(new Date(prossimo.start)) > ymd;
+  });
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   istanteOccupato,
   periodoOccupato,
   slotLiberi,
+  slotRitiroUtili,
   primoOccupatoDopo,
   giorniFatturati,
   grigliaMese,
@@ -140,5 +141,59 @@ test('ultimaRiconsegnaPossibile si ferma alla prenotazione successiva', () => {
   assert.equal(
     ultimaRiconsegnaPossibile('2026-12-01', '10:30', OCCUPATI, '2027-09-05'),
     '2027-09-05',
+  );
+});
+
+// ─── Caso reale: Lamborghini Huracan Performante Spyder, 09/09/2026 ──────
+// L'auto esce alle 10:30 e i ritiri aprono alle 10:00 (orari veri di
+// produzione, 10:00-18:30). Lo slot delle 10:00 e' libero ma non porta a
+// nessuna riconsegna: il noleggio minimo e' 1 giorno.
+const SLOT_RITIRO_REALI = ['10:00', '10:15', '10:30', '11:00', '15:00', '18:30'];
+const HURACAN = [{
+  start: msDaYmdOra('2026-09-09', '10:30'),
+  end: msDaYmdOra('2026-09-10', '10:30'),
+}];
+
+test('un giorno di ritiro senza nessuna riconsegna possibile e occupato', () => {
+  // Slot 10:00 libero, ma la prenotazione parte alle 10:30 dello STESSO
+  // giorno: la finestra non arriva mai al giorno dopo.
+  assert.deepEqual(slotLiberi('2026-09-09', SLOT_RITIRO_REALI, HURACAN), ['10:00', '10:15']);
+  assert.deepEqual(slotRitiroUtili('2026-09-09', SLOT_RITIRO_REALI, HURACAN), []);
+  assert.equal(
+    statoGiornoRitiro('2026-09-09', '2026-09-05', SLOT_RITIRO_REALI, HURACAN),
+    'occupato',
+  );
+});
+
+test('il giorno del rientro resta prenotabile dopo il buffer', () => {
+  // Rientro + buffer finisce alle 10:30 del 10: gli slot dalle 10:30 in
+  // poi sono liberi e davanti non c'e' piu' niente.
+  assert.deepEqual(
+    slotRitiroUtili('2026-09-10', SLOT_RITIRO_REALI, HURACAN),
+    ['10:30', '11:00', '15:00', '18:30'],
+  );
+  assert.equal(
+    statoGiornoRitiro('2026-09-10', '2026-09-05', SLOT_RITIRO_REALI, HURACAN),
+    'libero',
+  );
+});
+
+test('uno slot tardivo che scavalca la mezzanotte rende il giorno valido', () => {
+  // Prenotazione corta 11:00-14:00 (+buffer a 15:30): il ritiro delle
+  // 18:30 ha davanti il calendario libero, quindi il giorno resta buono.
+  const corta = [{
+    start: msDaYmdOra('2026-09-16', '11:00'),
+    end: msDaYmdOra('2026-09-16', '15:30'),
+  }];
+  // Liberi ce ne sono quattro, ma i tre della mattina sbattono contro le
+  // 11:00 dello stesso giorno: solo le 18:30 aprono una finestra vera.
+  assert.deepEqual(
+    slotLiberi('2026-09-16', SLOT_RITIRO_REALI, corta),
+    ['10:00', '10:15', '10:30', '18:30'],
+  );
+  assert.deepEqual(slotRitiroUtili('2026-09-16', SLOT_RITIRO_REALI, corta), ['18:30']);
+  assert.equal(
+    statoGiornoRitiro('2026-09-16', '2026-09-05', SLOT_RITIRO_REALI, corta),
+    'libero',
   );
 });

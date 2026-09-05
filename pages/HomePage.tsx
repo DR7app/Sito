@@ -1,33 +1,26 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
-import { useVehicles } from '../hooks/useVehicles';
-import { useFlottaCategories } from '../hooks/useFlottaCategories';
-import { categoryAliases } from '../utils/flottaConfig';
 import { getHomeCopy, type HomeCopy, type HomeSlide } from '../utils/siteCopy';
-import type { RentalItem } from '../types';
 import { Shell, Section, Eyebrow, Statement, Cta, Metric, SeamRule } from '../components/editorial/primitives';
 import { Grid } from '../components/editorial/layout';
 import Reveal from '../components/editorial/Reveal';
 import MediaVideo from '../components/editorial/MediaVideo';
-import VehicleScene from '../components/editorial/VehicleScene';
 
 /**
  * Homepage DR7 — sei atti.
  *
  *   01 Arrivo      film a tutto schermo, una frase, una CTA
  *   02 Silenzio    lo statement, molto spazio, niente altro
- *   03 Collezione  pochi veicoli, ognuno una scena, dati veri dal gestionale
+ *   03 Collezione  un'immagine e un invito al catalogo
  *   04 Esperienze  cosa rendono possibile — solo servizi realmente attivi
  *   05 Marca       il momento di marca, piu' le metriche se verificate
  *   06 Accesso     una frase, una CTA, fine
  *
  * Ogni testo, immagine, video e destinazione arriva da `getHomeCopy()`, cioe'
- * dal gestionale: qui non c'e' una sola frase scritta a mano che l'operatore
- * non possa cambiare. I veicoli in evidenza arrivano da `useVehicles()`, con
- * le specifiche vere: se un dato manca non viene mostrato e non viene
- * inventato.
+ * dal gestionale: qui non c'e' una sola frase scritta a mano, ne' un'immagine,
+ * che l'operatore non possa cambiare.
  */
 
 /* ── Atto 01 — Arrivo ─────────────────────────────────────────────────── */
@@ -140,67 +133,12 @@ const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) =
 const HomePage: React.FC = () => {
   const { lang } = useTranslation();
   const [copy, setCopy] = useState<HomeCopy | null>(null);
-  const { vehicles } = useVehicles(undefined);
-  const { categories: flottaCats } = useFlottaCategories();
 
   useEffect(() => {
     let cancelled = false;
     getHomeCopy().then((c) => { if (!cancelled) setCopy(c); });
     return () => { cancelled = true; };
   }, []);
-
-  /**
-   * I veicoli in evidenza.
-   *
-   * Se l'operatore ha indicato degli id, si usano quelli e in quell'ordine.
-   * Altrimenti si prendono i primi delle categorie visibili in Flotta — cioe'
-   * le stesse che il gestionale ha deciso di mostrare, non una lista a parte.
-   * Nessun veicolo inventato: se il gestionale non ne restituisce, l'atto
-   * della Collezione non viene renderizzato.
-   */
-  type Featured = { item: RentalItem; catId: string; catLabel: string };
-  const featured = useMemo<Featured[]>(() => {
-    if (!copy || vehicles.length === 0) return [];
-
-    // Etichetta leggibile della categoria, dalla stessa fonte del menu e della
-    // pagina Flotta: e' l'unica informazione che la locandina non contiene.
-    const labelFor = (catId: string): string => {
-      const c = flottaCats.find((x) => x.id === catId);
-      if (c) return c.label;
-      const byAlias = flottaCats.find((x) =>
-        categoryAliases(x.id).map((a) => a.toLowerCase()).includes((catId || '').toLowerCase()));
-      return byAlias ? byAlias.label : '';
-    };
-
-    const byId = new Map(vehicles.map((v) => [v.id, v]));
-    if (copy.collection_featured_ids.length > 0) {
-      return copy.collection_featured_ids
-        .map((id) => byId.get(id))
-        .filter(Boolean)
-        .map((v) => {
-          const catId = ((v as any).category || '') as string;
-          return { item: v as unknown as RentalItem, catId, catLabel: labelFor(catId) };
-        });
-    }
-
-    const out: Featured[] = [];
-    const seen = new Set<string>();
-    for (const cat of flottaCats) {
-      const aliases = new Set(categoryAliases(cat.id).map((a) => a.toLowerCase()));
-      const hit = vehicles.find((v) => !seen.has(v.id) && aliases.has((v.category || '').toLowerCase()));
-      if (hit) { seen.add(hit.id); out.push({ item: hit as unknown as RentalItem, catId: cat.id, catLabel: cat.label }); }
-      if (out.length >= copy.collection_featured_count) break;
-    }
-    // Se le categorie configurate non bastano, si completa con i primi veicoli.
-    for (const v of vehicles) {
-      if (out.length >= copy.collection_featured_count) break;
-      if (seen.has(v.id)) continue;
-      seen.add(v.id);
-      const catId = (v.category || '') as string;
-      out.push({ item: v as unknown as RentalItem, catId, catLabel: labelFor(catId) });
-    }
-    return out;
-  }, [copy, vehicles, flottaCats]);
 
   if (!copy) {
     // Guscio silenzioso mentre la configurazione arriva: nessun lampo bianco,
@@ -231,7 +169,17 @@ const HomePage: React.FC = () => {
       </Section>
 
       {/* ═══ ATTO 03 — LA COLLEZIONE ════════════════════════════════════ */}
-      {featured.length > 0 && (
+      {/* 05/09/2026 — un'immagine sola al posto delle tre tavole.
+          Prima l'atto montava tre `VehicleScene`, una per categoria, ognuna
+          alta quanto lo schermo: tre locandine 9:16 in fila prima ancora di
+          arrivare alle Esperienze. Ora la Collezione e' un'immagine e un
+          invito; le categorie restano dove servono davvero, nel menu e nella
+          pagina Flotta, raggiunte dalla CTA qui sotto.
+          L'immagine e' una fotografia (non una locandina della flotta): si
+          puo' quindi mostrare a piena larghezza nel suo rapporto nativo.
+          `alt` vuoto perche' non porta informazione che il titolo e
+          l'introduzione qui accanto non diano gia'. */}
+      {copy.collection_image && (
         <Section surface="graphite" rhythm="none" id="collezione">
           <Shell className="pt-[var(--sp-2xl)] pb-[var(--sp-xl)]">
             <Reveal><Eyebrow>{t(copy.collection_eyebrow_it, copy.collection_eyebrow_en)}</Eyebrow></Reveal>
@@ -243,20 +191,19 @@ const HomePage: React.FC = () => {
                 {t(copy.collection_intro_it, copy.collection_intro_en)}
               </p>
             </Reveal>
-          </Shell>
 
-          {featured.map((f, i) => (
-            <VehicleScene
-              key={f.item.id}
-              item={f.item}
-              index={String(i + 1).padStart(2, '0')}
-              categoryLabel={f.catLabel}
-              lang={lang}
-              align={i % 3 === 0 ? 'left' : i % 3 === 1 ? 'right' : 'center'}
-              ctaTo={f.catId ? `${copy.collection_cta_to}#${f.catId}` : copy.collection_cta_to}
-              ctaLabel={t(copy.collection_item_cta_it, copy.collection_item_cta_en)}
-            />
-          ))}
+            <Reveal variant="mask" delay={300} className="mt-[var(--sp-lg)] overflow-hidden">
+              <div className="border border-[color:var(--line)] bg-black">
+                <img
+                  src={copy.collection_image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="block h-auto w-full"
+                />
+              </div>
+            </Reveal>
+          </Shell>
 
           <Shell className="border-t border-[color:var(--line)] py-[var(--sp-lg)]">
             <Reveal>

@@ -178,9 +178,9 @@ const DR7Club = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-white">DR7 Club</h2>
           {isActive ? (
-            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-bold rounded-full">{t({ it: "Attivo", en: "Active" })}</span>
+            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-bold">{t({ it: "Attivo", en: "Active" })}</span>
           ) : (
-            <span className="px-3 py-1 bg-gray-700 text-gray-400 text-sm font-bold rounded-full">{t({ it: "Non iscritto", en: "Not enrolled" })}</span>
+            <span className="px-3 py-1 bg-gray-700 text-gray-400 text-sm font-bold">{t({ it: "Non iscritto", en: "Not enrolled" })}</span>
           )}
         </div>
         <p className="text-gray-400 text-sm">
@@ -217,7 +217,7 @@ const DR7Club = () => {
               <button
                 onClick={() => handleSubscribe('monthly')}
                 disabled={subscribing}
-                className="w-full mt-3 py-2.5 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                className="w-full mt-3 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm"
               >
                 {t({ it: "Iscriviti ora", en: "Join now" })}
               </button>
@@ -225,7 +225,7 @@ const DR7Club = () => {
 
             {/* Annual */}
             <div className="border-2 border-[#C9A96E]/50 rounded-lg p-5 relative">
-              <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#C9A96E] text-black text-xs font-bold rounded">{t({ it: "RISPARMIA 33%", en: "SAVE 33%" })}</div>
+              <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#C9A96E] text-black text-xs font-bold">{t({ it: "RISPARMIA 33%", en: "SAVE 33%" })}</div>
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h4 className="text-white font-bold text-lg">{plans.annual.label}</h4>
@@ -239,7 +239,7 @@ const DR7Club = () => {
               <button
                 onClick={() => handleSubscribe('annual')}
                 disabled={subscribing}
-                className="w-full mt-3 py-2.5 bg-[#C9A96E] text-black font-bold rounded-lg hover:bg-[#D4B896] transition-colors text-sm"
+                className="w-full mt-3 py-2.5 bg-[#C9A96E] text-black font-bold hover:bg-[#D4B896] transition-colors text-sm"
               >
                 {t({ it: "Iscriviti ora", en: "Join now" })}
               </button>
@@ -273,7 +273,7 @@ const DR7Club = () => {
         <div className={`${currentColors.bg} border ${currentColors.border} rounded-lg p-6`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1.5 text-sm font-bold rounded-full ${currentColors.badge}`}>
+              <span className={`px-3 py-1.5 text-sm font-bold ${currentColors.badge}`}>
                 {tierInfo.label}
               </span>
               <div>

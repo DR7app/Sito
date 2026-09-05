@@ -502,7 +502,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     placeholder="RSSMRA80A01H501U"
                   />
                   <CalcolaCFButton
-                    className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg whitespace-nowrap transition-colors"
+                    className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
                     config={{
                       getCognome: () => formData.cognome,
                       getNome: () => formData.nome,
@@ -1021,14 +1021,14 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
           <div className="flex justify-end gap-3">
             <button
               onClick={handleClose}
-              className="px-6 py-2 border border-white/30 text-white rounded-lg hover:bg-white/10 transition-colors font-medium"
+              className="px-6 py-2 border border-white/30 text-white hover:bg-white/10 transition-colors font-medium"
             >
               {t({ it: "Annulla", en: "Cancel" })}
             </button>
             <button
               onClick={handleSave}
               disabled={isSaveDisabled() || isSaving}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${isSaveDisabled() || isSaving
+              className={`px-6 py-2 font-medium transition-colors ${isSaveDisabled() || isSaving
                 ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 : 'bg-white text-black hover:bg-gray-200'
                 }`}

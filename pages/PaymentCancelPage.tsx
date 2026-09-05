@@ -36,14 +36,14 @@ const PaymentCancelPage: React.FC = () => {
                     <div className="space-y-3">
                         <button
                             onClick={() => navigate('/')}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
                         >
                             {c('cta_home_it', 'cta_home_en')}
                         </button>
 
                         <button
                             onClick={() => window.history.back()}
-                            className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+                            className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
                         >
                             {c('cta_retry_it', 'cta_retry_en')}
                         </button>

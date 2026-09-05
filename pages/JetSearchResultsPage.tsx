@@ -105,7 +105,7 @@ const JetSearchResultsPage: React.FC = () => {
                     </div>
                     <button
                         onClick={() => navigate('/jets')}
-                        className="bg-gray-800 text-white px-6 py-2 rounded-full font-semibold text-sm hover:bg-gray-700 transition-colors"
+                        className="bg-gray-800 text-white px-6 py-2 font-semibold text-sm hover:bg-gray-700 transition-colors"
                     >
                         {tx('modify_search_cta_it', 'modify_search_cta_en', 'Modify Search')}
                     </button>

@@ -1581,13 +1581,13 @@ const CarWashBookingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate('/signin', { state: { from: location.pathname } })}
-                className="px-8 py-3 bg-dr7-gold text-black font-bold rounded hover:bg-dr7-gold/90 transition-colors"
+                className="px-8 py-3 bg-dr7-gold text-black font-bold hover:bg-dr7-gold/90 transition-colors"
               >
                 {lang === 'it' ? 'Accedi' : 'Login'}
               </button>
               <button
                 onClick={() => navigate('/signup', { state: { from: location.pathname } })}
-                className="px-8 py-3 bg-gray-700 text-white font-bold rounded hover:bg-gray-600 transition-colors"
+                className="px-8 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors"
               >
                 {lang === 'it' ? 'Registrati' : 'Sign Up'}
               </button>
@@ -1609,7 +1609,7 @@ const CarWashBookingPage: React.FC = () => {
           <div className="flex items-center gap-4 mb-2">
             <button
               onClick={() => navigate('/car-wash-services')}
-              className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white hover:border-white transition-all"
+              className="w-10 h-10 flex items-center justify-center border border-gray-700 text-gray-400 hover:text-white hover:border-white transition-all"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -1925,7 +1925,7 @@ const CarWashBookingPage: React.FC = () => {
                           type="button"
                           disabled={!canSelect}
                           onClick={() => setChosenSupercar(vehicle)}
-                          className={`text-left rounded-lg border p-4 transition-colors ${
+                          className={`text-left border p-4 transition-colors ${
                             isSelected
                               ? 'border-yellow-400 bg-yellow-400/10'
                               : vehicle.available
@@ -1941,7 +1941,7 @@ const CarWashBookingPage: React.FC = () => {
                               )}
                             </div>
                             <span
-                              className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                              className={`shrink-0 text-[10px] font-bold px-2 py-0.5 border ${
                                 isSelected
                                   ? 'bg-yellow-400 text-black border-yellow-400'
                                   : vehicle.available
@@ -1996,7 +1996,7 @@ const CarWashBookingPage: React.FC = () => {
             {/* Prime Flex — Cancellation protection */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <div
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${primeFlexSelected
+                className={`p-4 border-2 cursor-pointer transition-colors ${primeFlexSelected
                   ? 'border-green-500 bg-green-500/10' : 'border-gray-600 hover:border-gray-500'}`}
                 onClick={() => setPrimeFlexSelected(!primeFlexSelected)}
               >
@@ -2055,7 +2055,7 @@ const CarWashBookingPage: React.FC = () => {
                     type="button"
                     onClick={validateDiscountCode}
                     disabled={isValidatingCode || !discountCode.trim()}
-                    className="px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isValidatingCode ? 'Verifica...' : 'Applica'}
                   </button>
@@ -2101,7 +2101,7 @@ const CarWashBookingPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-white text-black font-bold py-4 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
+                className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
                 {lang === 'it' ? 'PROCEDI AL PAGAMENTO' : 'PROCEED TO PAYMENT'}
               </button>
@@ -2201,7 +2201,7 @@ const CarWashBookingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('credit')}
-                    className={`p-4 rounded-lg border-2 transition-all ${paymentMethod === 'credit'
+                    className={`p-4 border-2 transition-all ${paymentMethod === 'credit'
                       ? 'border-white bg-white/10'
                       : 'border-gray-700 bg-gray-800 hover:border-gray-600'
                       }`}
@@ -2220,7 +2220,7 @@ const CarWashBookingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('nexi')}
-                    className={`p-4 rounded-lg border-2 transition-all ${paymentMethod === 'nexi'
+                    className={`p-4 border-2 transition-all ${paymentMethod === 'nexi'
                       ? 'border-white bg-white/10'
                       : 'border-gray-700 bg-gray-800 hover:border-gray-600'
                       }`}
@@ -2264,7 +2264,7 @@ const CarWashBookingPage: React.FC = () => {
                   <button
                     onClick={handlePayment}
                     disabled={isProcessing}
-                    className="w-full bg-white text-black font-bold py-3 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
+                    className="w-full bg-white text-black font-bold py-3 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing
@@ -2314,7 +2314,7 @@ const CarWashBookingPage: React.FC = () => {
                   <button
                     onClick={handlePayment}
                     disabled={isProcessing || creditBalance < calculateTotal()}
-                    className="w-full bg-white text-black font-bold py-3 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white text-black font-bold py-3 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing

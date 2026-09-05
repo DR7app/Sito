@@ -130,13 +130,13 @@ const AviationQuoteRequestPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate('/signin', { state: { from: location.pathname } })}
-                className="px-8 py-3 bg-white text-black font-bold rounded hover:bg-gray-200 transition-colors"
+                className="px-8 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
               >
                 {tx('auth_login_cta_it', 'auth_login_cta_en')}
               </button>
               <button
                 onClick={() => navigate('/signup', { state: { from: location.pathname } })}
-                className="px-8 py-3 bg-gray-700 text-white font-bold rounded hover:bg-gray-600 transition-colors"
+                className="px-8 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors"
               >
                 {tx('auth_signup_cta_it', 'auth_signup_cta_en')}
               </button>
@@ -311,7 +311,7 @@ const AviationQuoteRequestPage: React.FC = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-white text-black font-bold py-4 px-6 rounded-full hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+            className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
           >
             {submitting
               ? tx('submit_submitting_it', 'submit_submitting_en')

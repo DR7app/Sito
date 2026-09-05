@@ -152,7 +152,7 @@ const HomePage: React.FC = () => {
           >
             <Link
               to="/membership"
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest text-sm hover:bg-white hover:text-black transition-all duration-300 transform hover:scale-105"
+              className="bg-transparent border-2 border-white text-white px-8 py-4 font-bold uppercase tracking-widest text-sm hover:bg-white hover:text-black transition-all duration-300 transform hover:scale-105"
             >
               {t('View_Tiers')}
             </Link>

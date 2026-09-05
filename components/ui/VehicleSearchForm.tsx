@@ -246,7 +246,7 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
                     <button
                         type="submit"
                         disabled={isSearching || pickupClosedFor(formData.pickupDate) || returnClosedFor(formData.returnDate)}
-                        className="px-10 py-3.5 bg-white text-black font-bold rounded-full text-sm uppercase tracking-wider hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
+                        className="px-10 py-3.5 bg-white text-black font-bold text-sm uppercase tracking-wider hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
                     >
                         {isSearching ? (
                             <>

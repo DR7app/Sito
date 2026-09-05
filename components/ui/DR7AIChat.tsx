@@ -210,7 +210,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
             </div>
             <button
               onClick={onClose}
-              className="text-black hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-black/10"
+              className="text-black hover:text-gray-700 transition-colors p-2 hover:bg-black/10"
             >
               
             </button>
@@ -268,7 +268,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
                   <button
                     key={index}
                     onClick={() => setInput(question)}
-                    className="text-xs bg-gray-900 text-white px-3 py-2 rounded-full border border-gray-800 hover:bg-gray-800 transition-colors"
+                    className="text-xs bg-gray-900 text-white px-3 py-2 border border-gray-800 hover:bg-gray-800 transition-colors"
                   >
                     {question}
                   </button>
@@ -292,7 +292,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || isLoading}
-                className="bg-white text-black p-3 rounded-full hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-white text-black p-3 hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 
               </button>
@@ -355,7 +355,7 @@ export const DR7AIFloatingButton: React.FC<{ avatarUrl?: string }> = ({ avatarUr
         whileHover={{ scale: isVisible ? 1.1 : 0 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full shadow-2xl hover:shadow-white/20 transition-all border-2 border-white overflow-hidden"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 shadow-2xl hover:shadow-white/20 transition-all border-2 border-white overflow-hidden"
         title={t({ it: "Chatta con DR7 AI", en: "Chat with DR7 AI" })}
         style={{ pointerEvents: isVisible ? 'auto' : 'none' }}
       >

@@ -399,7 +399,7 @@ export default function FirmaPage() {
                         </p>
                         <button
                             onClick={handleRequestOtp}
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 rounded-lg transition-colors text-lg"
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 transition-colors text-lg"
                         >
                             {f('otp_step1_cta_it', 'otp_step1_cta_en')}
                         </button>
@@ -450,7 +450,7 @@ export default function FirmaPage() {
                             <button
                                 onClick={handleVerifyOtp}
                                 disabled={otp.join('').length !== 6 || status === 'otp_verifying'}
-                                className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-300 text-white font-bold py-3 px-8 rounded-lg transition-colors w-full max-w-xs"
+                                className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-300 text-white font-bold py-3 px-8 transition-colors w-full max-w-xs"
                             >
                                 {status === 'otp_verifying' ? f('otp_verifying_it', 'otp_verifying_en') : f('otp_verify_cta_it', 'otp_verify_cta_en')}
                             </button>
@@ -501,7 +501,7 @@ export default function FirmaPage() {
                         <button
                             onClick={handleSign}
                             disabled={!acceptedTerms}
-                            className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-300 text-white font-bold py-4 rounded-lg transition-colors text-lg"
+                            className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-300 text-white font-bold py-4 transition-colors text-lg"
                         >
                             {f('signing_submit_cta_it', 'signing_submit_cta_en')}
                         </button>
@@ -528,7 +528,7 @@ export default function FirmaPage() {
                                 href={signedPdfUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 rounded-lg transition-colors"
+                                className="inline-block bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 transition-colors"
                             >
                                 {f('signed_download_cta_it', 'signed_download_cta_en')}
                             </a>

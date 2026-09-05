@@ -294,7 +294,7 @@ const BookingSearchBox: React.FC<BookingSearchBoxProps> = ({ variant = 'hero', o
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-white/40 uppercase tracking-widest">{b('return_section_label_it', 'return_section_label_en')}</p>
             {days > 0 && (
-              <span className="text-xs font-bold text-white bg-white/10 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold text-white bg-white/10 px-3 py-1">
                 {days} {days === 1 ? 'giorno' : 'giorni'}
               </span>
             )}
@@ -381,7 +381,7 @@ const BookingSearchBox: React.FC<BookingSearchBoxProps> = ({ variant = 'hero', o
         <button
           onClick={handleSearch}
           disabled={!pickupDate || !returnDate}
-          className={`w-full py-4 rounded-2xl font-bold text-[16px] transition-all ${
+          className={`w-full py-4 font-bold text-[16px] transition-all ${
             pickupDate && returnDate
               ? 'bg-white text-black hover:bg-white/90 active:scale-[0.97]'
               : 'bg-white/[0.06] text-white/20 cursor-not-allowed'

@@ -44,7 +44,7 @@ const MembershipStatus = () => {
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-5 md:p-8 text-center">
                 <h2 className="text-xl font-bold text-white">{t('No_Active_Membership')}</h2>
                 <p className="text-sm text-gray-400 mt-2 max-w-sm mx-auto">{t('You_do_not_have_an_active_membership')}</p>
-                <button onClick={() => navigate('/membership')} className="mt-6 px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm">
+                <button onClick={() => navigate('/membership')} className="mt-6 px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm">
                     {t('Explore_Tiers')}
                 </button>
             </div>
@@ -63,7 +63,7 @@ const MembershipStatus = () => {
                             {lang === 'it' ? 'Scade il' : 'Expires on'} {renewalDate}
                         </p>
                     </div>
-                    <span className={`px-3 py-1 text-sm font-bold rounded-full ${currentTier.isPopular ? 'bg-white text-black' : 'bg-gray-700 text-white'}`}>
+                    <span className={`px-3 py-1 text-sm font-bold ${currentTier.isPopular ? 'bg-white text-black' : 'bg-gray-700 text-white'}`}>
                         {currentTier.name[lang]}
                     </span>
                 </div>
@@ -91,7 +91,7 @@ const MembershipStatus = () => {
             <div className="p-4 md:p-6 bg-gray-900 flex items-center justify-end rounded-b-lg">
                 <button
                     onClick={() => navigate(`/membership/enroll/${currentTier.id}?billing=${user.membership?.billingCycle}`)}
-                    className="px-5 py-2.5 bg-white text-black font-bold rounded-full text-sm hover:bg-gray-200 transition-colors"
+                    className="px-5 py-2.5 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors"
                 >
                     {lang === 'it' ? 'Rinnova Membership' : 'Renew Membership'}
                 </button>

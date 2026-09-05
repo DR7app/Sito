@@ -123,7 +123,7 @@ const AboutPage: React.FC = () => {
                         transition={{ duration: 0.5, delay: 0.4 }}
                         className="mt-8"
                     >
-                        <Link to="/careers" className="inline-flex items-center justify-center bg-white text-black rounded-full font-bold uppercase tracking-widest text-sm md:text-base px-6 py-3 md:px-8 md:py-4 w-[min(320px,90vw)] whitespace-nowrap transition-all duration-300 hover:bg-gray-200 md:transform md:hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-gray-900">
+                        <Link to="/careers" className="inline-flex items-center justify-center bg-white text-black font-bold uppercase tracking-widest text-sm md:text-base px-6 py-3 md:px-8 md:py-4 w-[min(320px,90vw)] whitespace-nowrap transition-all duration-300 hover:bg-gray-200 md:transform md:hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-gray-900">
   {t('View_Openings')}
 </Link>
                     </motion.div>

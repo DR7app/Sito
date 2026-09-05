@@ -91,7 +91,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
         <button
           type="button"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 border-r-0 rounded-l-md px-3 py-3 text-white hover:bg-gray-700 transition-colors flex-shrink-0"
+          className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 border-r-0 px-3 py-3 text-white hover:bg-gray-700 transition-colors flex-shrink-0"
         >
           <span className="text-lg leading-none">{selectedCountry.flag}</span>
           <span className="text-sm text-gray-400">{selectedCountry.dial}</span>

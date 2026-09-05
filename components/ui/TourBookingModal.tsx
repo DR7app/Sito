@@ -48,7 +48,7 @@ interface Props {
   selectedDuration?: TourDuration | null; // durata scelta (prezzo per persona)
 }
 
-const SEAT_BASE = 'w-12 h-12 rounded-lg border text-sm font-semibold flex items-center justify-center transition-colors';
+const SEAT_BASE = 'w-12 h-12 border text-sm font-semibold flex items-center justify-center transition-colors';
 
 // Posizioni posti (% sulla foto cabina) — Bell 407 GX/GXP: 1 anteriore, 2-3 centrali, 4-5-6 posteriori.
 const HELI_407_SEATS: Record<number, { x: number; y: number }> = {
@@ -303,14 +303,14 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
             <p className="text-gray-400 text-sm">
               {t({ it: 'Pagamento effettuato con Credit Wallet. Riceverai la conferma su WhatsApp.', en: 'Payment made with Credit Wallet. You will receive the confirmation on WhatsApp.' })}
             </p>
-            <button onClick={onClose} className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90">
+            <button onClick={onClose} className="inline-flex items-center justify-center px-6 py-3 bg-white text-black font-semibold hover:opacity-90">
               {t({ it: "Chiudi", en: "Close" })}
             </button>
           </div>
         ) : departures.length === 0 ? (
           <div className="py-8 text-center space-y-4">
             <p className="text-gray-400">{t({ it: "Nessuna data disponibile al momento.", en: "No dates available at the moment." })}</p>
-            <a href={waHref} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-5 py-3 rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">
+            <a href={waHref} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-5 py-3 border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">
               {t({ it: "Richiedi su WhatsApp", en: "Request on WhatsApp" })}
             </a>
           </div>
@@ -322,7 +322,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
               <div className="mt-2 flex flex-wrap gap-2">
                 {dates.map(d => (
                   <button key={d} onClick={() => { setDate(d); setDepartureId(''); }}
-                    className={`px-3 py-2 rounded-lg border text-sm capitalize ${date === d ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
+                    className={`px-3 py-2 border text-sm capitalize ${date === d ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
                     {fmtDate(d, lang)}
                   </button>
                 ))}
@@ -336,7 +336,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                 <div className="mt-2 flex flex-wrap gap-2">
                   {timesForDate.map(t => (
                     <button key={t.id} onClick={() => setDepartureId(t.id)}
-                      className={`px-3 py-2 rounded-lg border text-sm tabular-nums ${departureId === t.id ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
+                      className={`px-3 py-2 border text-sm tabular-nums ${departureId === t.id ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
                       {t.departure_time.slice(0, 5)}
                     </button>
                   ))}
@@ -365,7 +365,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                       return (
                         <button key={s.id} type="button" onClick={() => avail && toggleSeat(s)} disabled={!avail}
                           style={{ left: `${posn.x}%`, top: `${posn.y}%` }}
-                          className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full text-sm font-bold flex items-center justify-center ring-2 shadow-lg transition ${cls}`}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 text-sm font-bold flex items-center justify-center ring-2 shadow-lg transition ${cls}`}
                           title={avail ? `Posto ${s.seat_label} disponibile` : 'Occupato'}>
                           {s.seat_label}
                         </button>
@@ -429,7 +429,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                       <div className="text-xl font-bold">{totalCents > 0 ? eur(totalCents) : t({ it: 'Prezzo da definire', en: 'Price to be confirmed' })}</div>
                     </div>
                     <button onClick={submit} disabled={submitting || totalCents <= 0}
-                      className="px-6 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 disabled:opacity-50">
+                      className="px-6 py-3 bg-white text-black font-semibold hover:opacity-90 disabled:opacity-50">
                       {submitting ? t({ it: "Attendi…", en: "Please wait…" }) : t({ it: "Prenota e paga", en: "Book and pay" })}
                     </button>
                   </div>
@@ -442,7 +442,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                         <span className="text-white font-semibold">{eur(walletBalanceCents as number)}</span>
                       </div>
                       <button onClick={submitWallet} disabled={submitting || totalCents <= 0 || !sufficient}
-                        className="w-full px-6 py-3 rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-white">
+                        className="w-full px-6 py-3 border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-white">
                         {submitting ? t({ it: "Attendi…", en: "Please wait…" }) : !sufficient ? t({ it: "Credito insufficiente", en: "Insufficient credit" }) : t({ it: "Paga con Credit Wallet", en: "Pay with Credit Wallet" })}
                       </button>
                       {!sufficient && totalCents > 0 && (

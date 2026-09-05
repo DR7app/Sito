@@ -70,7 +70,7 @@ const ForgotPasswordPage: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || !email}
-                                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-gray-900 transition-colors disabled:opacity-60"
+                                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-gray-900 transition-colors disabled:opacity-60"
                             >
                                 {isSubmitting ? t('Please_wait') : t('Send_Reset_Link')}
                             </button>

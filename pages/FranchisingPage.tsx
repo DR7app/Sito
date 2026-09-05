@@ -180,7 +180,7 @@ const FranchisingPage: React.FC = () => {
                     <div className="flex justify-center">
                         <a
                             href={`mailto:${copy.contact_email}`}
-                            className="inline-block bg-white text-black px-6 md:px-8 py-4 rounded-full font-bold text-base md:text-lg hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 break-all max-w-full"
+                            className="inline-block bg-white text-black px-6 md:px-8 py-4 font-bold text-base md:text-lg hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 break-all max-w-full"
                         >
                             {copy.contact_email}
                         </a>

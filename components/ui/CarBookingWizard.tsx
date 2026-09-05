@@ -5122,7 +5122,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <div className="flex gap-2 mt-1">
                       <input type="text" name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} placeholder="es. RSSMRA85M01H501Z" className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
                       <CalcolaCFButton
-                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md whitespace-nowrap transition-colors"
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
                         config={{
                           getCognome: () => formData.lastName,
                           getNome: () => formData.firstName,
@@ -5203,7 +5203,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             <section>
               <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                 A. CARICA DOCUMENTI
-                <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5 rounded">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
+                <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
               </h3>
               <p className="text-sm text-gray-400 mb-4">
                 Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
@@ -5315,7 +5315,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     'bg-red-900/20 border-red-600'
                   }`}>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                      <span className={`inline-block px-2 py-0.5 text-xs font-bold ${
                         driverTierInfo.tier === 'TIER_2' ? 'bg-green-600 text-white' :
                         driverTierInfo.tier === 'TIER_1' ? 'bg-white text-black' :
                         'bg-red-600 text-white'
@@ -5387,7 +5387,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="mt-4">
                     <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                       Documenti secondo conducente
-                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5 rounded">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
+                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -5509,7 +5509,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           return (
             <div className="space-y-6">
               <div className="text-center mb-2">
-                <span className="text-xs font-bold text-white bg-white/10 px-4 py-1.5 rounded-full uppercase tracking-widest">{t({ it: "Cliente VIP", en: "VIP Customer" })}</span>
+                <span className="text-xs font-bold text-white bg-white/10 px-4 py-1.5 uppercase tracking-widest">{t({ it: "Cliente VIP", en: "VIP Customer" })}</span>
               </div>
 
               <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 space-y-4">
@@ -5600,7 +5600,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       type="button"
                       onClick={validateDiscountCode}
                       disabled={isValidatingCode || !discountCode.trim()}
-                      className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="px-4 py-2 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       {isValidatingCode ? 'Verifica...' : 'Applica'}
                     </button>
@@ -5774,17 +5774,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             {isSelected ? (
                               <div className="flex items-center gap-2">
                                 <button type="button" disabled={isUnlimitedActive} onClick={(e) => { e.stopPropagation(); setQty(qty - 1) }}
-                                  className="w-8 h-8 rounded-full bg-gray-700 text-white text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-600 disabled:opacity-50">−</button>
+                                  className="w-8 h-8 bg-gray-700 text-white text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-600 disabled:opacity-50">−</button>
                                 <span className="text-white font-bold min-w-[1.5rem] text-center">{qty}</span>
                                 <button type="button" disabled={isUnlimitedActive || qty >= maxQty} onClick={(e) => { e.stopPropagation(); setQty(qty + 1) }}
-                                  className="w-8 h-8 rounded-full bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title={t({ it: "Aggiungi pacchetto", en: "Add package" })}>+</button>
+                                  className="w-8 h-8 bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title={t({ it: "Aggiungi pacchetto", en: "Add package" })}>+</button>
                                 <span className="font-bold text-dr7-gold ml-2">+{formatPrice(pkg.price * qty)}</span>
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-dr7-gold">+{formatPrice(pkg.price)}</span>
                                 <button type="button" disabled={isUnlimitedActive} onClick={(e) => { e.stopPropagation(); setQty(1) }}
-                                  className="w-8 h-8 rounded-full bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title={t({ it: "Aggiungi pacchetto", en: "Add package" })}>+</button>
+                                  className="w-8 h-8 bg-white text-black text-xl font-bold leading-none flex items-center justify-center hover:bg-gray-200 disabled:opacity-50" title={t({ it: "Aggiungi pacchetto", en: "Add package" })}>+</button>
                               </div>
                             )}
                           </div>
@@ -6088,7 +6088,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex gap-3">
                     <button
                       onClick={() => setShowNoCauzionePopup(false)}
-                      className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors"
+                      className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                     >
                       Annulla
                     </button>
@@ -6098,7 +6098,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         setNoCauzioneRequested(true);
                         setShowNoCauzionePopup(false);
                       }}
-                      className="flex-1 py-3 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      className="flex-1 py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
                       {noCauzioneSending ? 'Invio...' : 'Invia Richiesta'}
                     </button>
@@ -6158,7 +6158,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               }
                             }}
                             disabled={vehicleDepositLoading || vehicleDepositTarga.length < 5}
-                            className="px-4 py-2.5 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm"
+                            className="px-4 py-2.5 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 text-sm"
                           >
                             {vehicleDepositLoading ? '...' : 'Verifica'}
                           </button>
@@ -6179,7 +6179,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             setVehicleDepositError(null);
                             setVehicleDepositInfo(null);
                           }}
-                          className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors"
+                          className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                         >
                           Annulla
                         </button>
@@ -6274,7 +6274,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           type="file"
                           accept="image/*,.pdf"
                           onChange={(e) => setVehicleDepositLibretto(e.target.files?.[0] || null)}
-                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200"
+                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200"
                         />
                         {vehicleDepositLibretto && (
                           <p className="text-green-400 text-xs mt-1">✓ {vehicleDepositLibretto.name}</p>
@@ -6288,7 +6288,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           type="file"
                           accept="image/*,.pdf"
                           onChange={(e) => setVehicleDepositLibrettoVerso(e.target.files?.[0] || null)}
-                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200"
+                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200"
                         />
                         {vehicleDepositLibrettoVerso && (
                           <p className="text-green-400 text-xs mt-1">✓ {vehicleDepositLibrettoVerso.name}</p>
@@ -6319,7 +6319,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             setVehicleDepositInfo(null);
                             setVehicleDepositIsOwner(true);
                           }}
-                          className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors"
+                          className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                         >
                           Annulla
                         </button>
@@ -6353,7 +6353,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             setFormData(prev => ({ ...prev, depositOption: 'vehicle_deposit' }));
                             setShowVehicleDepositPopup(false);
                           }}
-                          className="flex-1 py-3 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Conferma
                         </button>
@@ -6389,13 +6389,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <span className="font-semibold text-white text-sm whitespace-nowrap">€{svc.price.toFixed(2)}{unitLabel}</span>
                           {(svc.unit === 'per_item' || svc.unit === 'per_hour') ? (
                             <div className="flex items-center gap-1">
-                              <button type="button" className="w-7 h-7 rounded bg-gray-700 text-white font-bold hover:bg-gray-600"
+                              <button type="button" className="w-7 h-7 bg-gray-700 text-white font-bold hover:bg-gray-600"
                                 onClick={() => setFormData(prev => ({
                                   ...prev,
                                   selectedExperiences: { ...prev.selectedExperiences, [svc.id]: Math.max(0, qty - 1) }
                                 }))}>-</button>
                               <span className="w-6 text-center text-white text-sm">{qty}</span>
-                              <button type="button" className="w-7 h-7 rounded bg-gray-700 text-white font-bold hover:bg-gray-600"
+                              <button type="button" className="w-7 h-7 bg-gray-700 text-white font-bold hover:bg-gray-600"
                                 onClick={() => setFormData(prev => ({
                                   ...prev,
                                   selectedExperiences: { ...prev.selectedExperiences, [svc.id]: qty + 1 }
@@ -6403,7 +6403,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             </div>
                           ) : (
                             <button type="button"
-                              className={`px-3 py-1 rounded text-sm font-bold ${isSelected ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                              className={`px-3 py-1 text-sm font-bold ${isSelected ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
                               onClick={() => setFormData(prev => ({
                                 ...prev,
                                 selectedExperiences: { ...prev.selectedExperiences, [svc.id]: isSelected ? 0 : 1 }
@@ -6443,7 +6443,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <button
                   type="button"
                   onClick={() => window.location.href = '/'}
-                  className="mt-4 px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors"
+                  className="mt-4 px-8 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
                 >
                   Torna alla Home
                 </button>
@@ -6605,7 +6605,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     setNoCauzioneSending(false);
                   }
                 }}
-                className="w-full py-4 bg-white text-black font-bold text-lg rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
+                className="w-full py-4 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
                 {noCauzioneSending ? 'Salvataggio...' : 'SALVA PREVENTIVO'}
               </button>
@@ -6905,7 +6905,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <div className="flex justify-between text-green-400 text-sm">
                         <span className="flex items-center gap-1">
                           Prezzo dinamico
-                          <span className={`text-xs px-1 py-0.5 rounded-full font-semibold ${dynamicDiscountPct > 0 ? 'bg-green-500/20' : 'bg-red-500/20 text-red-400'}`}>
+                          <span className={`text-xs px-1 py-0.5 font-semibold ${dynamicDiscountPct > 0 ? 'bg-green-500/20' : 'bg-red-500/20 text-red-400'}`}>
                             {dynamicDiscountPct > 0 ? `-${dynamicDiscountPct}%` : `+${Math.abs(dynamicDiscountPct)}%`}
                           </span>
                         </span>
@@ -7125,7 +7125,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         type="button"
                         onClick={validateDiscountCode}
                         disabled={isValidatingCode || !discountCode.trim()}
-                        className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        className="px-4 py-2 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                       >
                         {isValidatingCode ? 'Verifica...' : 'Applica'}
                       </button>
@@ -7186,8 +7186,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         <h2 className="text-2xl font-bold text-white mb-4">{t({ it: "Accesso Richiesto", en: "Sign-in required" })}</h2>
         <p className="text-gray-300 mb-6">{t({ it: "Devi effettuare l'accesso o registrarti per poter completare una prenotazione.", en: "You must sign in or create an account to complete a booking." })}</p>
         <div className="flex justify-center space-x-4">
-          <Link to="/signin" onClick={onClose} className="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">{t({ it: "Accedi", en: "Sign in" })}</Link>
-          <Link to="/signup" onClick={onClose} className="px-8 py-3 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors">{t({ it: "Registrati", en: "Create account" })}</Link>
+          <Link to="/signin" onClick={onClose} className="px-8 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors">{t({ it: "Accedi", en: "Sign in" })}</Link>
+          <Link to="/signup" onClick={onClose} className="px-8 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors">{t({ it: "Registrati", en: "Create account" })}</Link>
         </div>
       </div>
     );
@@ -7210,10 +7210,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 >
                   <video ref={videoRef} autoPlay playsInline className="max-w-full max-h-[70vh] rounded-lg mb-4" style={{ transform: 'scaleX(-1)' }}></video>
                   <div className="flex space-x-4">
-                    <button type="button" onClick={handleTakePhoto} className="px-6 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">
+                    <button type="button" onClick={handleTakePhoto} className="px-6 py-2 bg-white text-black font-bold hover:bg-gray-200 transition-colors">
                       {t('Take_Photo')}
                     </button>
-                    <button type="button" onClick={handleCloseCamera} className="px-6 py-2 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors">
+                    <button type="button" onClick={handleCloseCamera} className="px-6 py-2 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors">
                       {t('Close')}
                     </button>
                   </div>
@@ -7278,7 +7278,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           type="button"
                           onClick={handleUpsellTargaSearch}
                           disabled={!isValidItalianPlate(upsellTargaInput) || upsellTargaLoading}
-                          className={`px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+                          className={`px-5 py-3 font-bold text-sm transition-all duration-200 ${
                             isValidItalianPlate(upsellTargaInput) && !upsellTargaLoading
                               ? 'bg-white text-black hover:bg-gray-200'
                               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -7295,7 +7295,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <button
                               type="button"
                               onClick={() => { setUpsellTargaManualCategory('urban'); setUpsellCarCategory('urban'); setUpsellCarInput('Veicolo cliente'); }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                              className={`px-4 py-1.5 text-xs font-bold transition-all ${
                                 upsellTargaManualCategory === 'urban'
                                   ? 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500'
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500'
@@ -7306,7 +7306,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <button
                               type="button"
                               onClick={() => { setUpsellTargaManualCategory('maxi'); setUpsellCarCategory('maxi'); setUpsellCarInput('Veicolo cliente'); }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                              className={`px-4 py-1.5 text-xs font-bold transition-all ${
                                 upsellTargaManualCategory === 'maxi'
                                   ? 'bg-amber-600/20 text-amber-400 border-2 border-amber-500'
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500'
@@ -7324,7 +7324,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       {upsellTargaResult && (
                         <div className="mt-3 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-                            <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
+                            <span className="inline-block px-2.5 py-1 text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
                               {upsellTargaResult.plate}
                             </span>
                             {upsellCarModel && (
@@ -7336,7 +7336,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <button
                               type="button"
                               onClick={() => { setUpsellTargaManualCategory('urban'); setUpsellCarCategory('urban'); setSelectedUpsellWash(null); }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                              className={`px-4 py-1.5 text-xs font-bold transition-all ${
                                 upsellCarCategory === 'urban'
                                   ? 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500'
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500'
@@ -7347,7 +7347,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <button
                               type="button"
                               onClick={() => { setUpsellTargaManualCategory('maxi'); setUpsellCarCategory('maxi'); setSelectedUpsellWash(null); }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                              className={`px-4 py-1.5 text-xs font-bold transition-all ${
                                 upsellCarCategory === 'maxi'
                                   ? 'bg-amber-600/20 text-amber-400 border-2 border-amber-500'
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500'
@@ -7371,7 +7371,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               key={svc.id}
                               type="button"
                               onClick={() => setSelectedUpsellWash(isSelected ? null : svc)}
-                              className={`text-left rounded-xl border overflow-hidden transition-all ${
+                              className={`text-left border overflow-hidden transition-all ${
                                 isSelected
                                   ? 'border-white ring-2 ring-white/50'
                                   : 'border-gray-700 hover:border-gray-500'
@@ -7410,7 +7410,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                 onClick={() => setSelectedUpsellExtras(prev =>
                                   isSelected ? prev.filter(s => s.id !== svc.id) : [...prev, svc]
                                 )}
-                                className={`text-left rounded-xl border overflow-hidden transition-all ${
+                                className={`text-left border overflow-hidden transition-all ${
                                   isSelected
                                     ? 'border-blue-400 ring-2 ring-blue-400/50'
                                     : 'border-gray-700 hover:border-gray-500'
@@ -7442,7 +7442,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         type="button"
                         onClick={handleWashUpsellAccept}
                         disabled={!selectedUpsellWash && selectedUpsellExtras.length === 0}
-                        className={`w-full py-3.5 rounded-full font-bold text-sm sm:text-base transition-all ${
+                        className={`w-full py-3.5 font-bold text-sm sm:text-base transition-all ${
                           selectedUpsellWash || selectedUpsellExtras.length > 0
                             ? 'bg-white text-black hover:bg-gray-100'
                             : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -7509,7 +7509,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <button
                         type="button"
                         onClick={() => setSelectedSubscription('monthly')}
-                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                        className={`w-full text-left p-4 border-2 transition-all ${
                           selectedSubscription === 'monthly'
                             ? 'border-white bg-white/5'
                             : 'border-gray-700 hover:border-gray-500'
@@ -7530,13 +7530,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <button
                         type="button"
                         onClick={() => setSelectedSubscription('annual')}
-                        className={`w-full text-left p-4 rounded-xl border-2 transition-all relative overflow-hidden ${
+                        className={`w-full text-left p-4 border-2 transition-all relative overflow-hidden ${
                           selectedSubscription === 'annual'
                             ? 'border-green-400 bg-green-400/5'
                             : 'border-gray-700 hover:border-gray-500'
                         }`}
                       >
-                        <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
+                        <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-2 py-0.5">
                           6 MESI GRATIS
                         </div>
                         <div className="flex items-center justify-between">
@@ -7560,7 +7560,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Sconti esclusivi su noleggi e lavaggi", en: "Exclusive discounts on rentals and washes" })}</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Accesso prioritario alle nuove supercar", en: "Priority access to new supercars" })}</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Promozioni riservate ai membri", en: "Members-only promotions" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Bonus fino al 33%</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Bonus fino al 100%</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Privilege fino al 36%</li>
                       </ul>
                     </div>
@@ -7571,7 +7571,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         type="button"
                         onClick={handleSubscriptionAccept}
                         disabled={!selectedSubscription}
-                        className={`w-full py-3.5 rounded-full font-bold text-sm sm:text-base transition-all ${
+                        className={`w-full py-3.5 font-bold text-sm sm:text-base transition-all ${
                           selectedSubscription
                             ? 'bg-white text-black hover:bg-gray-100'
                             : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -7685,7 +7685,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         <div className="flex justify-between items-center text-sm">
                           <span className="flex items-center gap-2 text-green-400">
                             Prezzo dinamico
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${dynamicDiscountPct > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            <span className={`text-xs px-1.5 py-0.5 font-semibold ${dynamicDiscountPct > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                               {dynamicDiscountPct > 0 ? `-${dynamicDiscountPct}%` : `+${Math.abs(dynamicDiscountPct)}%`}
                             </span>
                           </span>
@@ -7874,7 +7874,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         href={whatsAppFallbackUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block px-6 py-2 bg-green-600 text-white font-bold rounded-full hover:bg-green-500 transition-colors text-sm"
+                        className="inline-block px-6 py-2 bg-green-600 text-white font-bold hover:bg-green-500 transition-colors text-sm"
                       >
                         Apri WhatsApp
                       </a>
@@ -7891,12 +7891,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )}
 
                   <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 mt-6 sm:mt-8">
-                    <button type="button" onClick={handleBack} disabled={step === 1} className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gray-700 text-white text-sm sm:text-base font-bold rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{t('Back')}</button>
+                    <button type="button" onClick={handleBack} disabled={step === 1} className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gray-700 text-white text-sm sm:text-base font-bold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{t('Back')}</button>
                     {step < steps.length ? (
                       <button
                         type="button"
                         onClick={handleNext}
-                        className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold rounded-full hover:bg-gray-200 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold hover:bg-gray-200 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={(step === 1 && !isFromSearch && isCheckingAvailability) || (step === 1 && !!availabilityError) || (licenseYears < 3 && step === 2) || (step === 2 && !formData.confirmsInformation) || (step === 2 && (() => {
                           // Keep this check in sync with the Step 2 residenza
                           // validator. Strict on CAP + street/city + length;
@@ -7929,7 +7929,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <button
                               type="button"
                               onClick={onClose}
-                              className="w-full px-6 py-3 bg-white text-black text-sm sm:text-base font-bold rounded-full hover:bg-gray-200 transition-colors"
+                              className="w-full px-6 py-3 bg-white text-black text-sm sm:text-base font-bold hover:bg-gray-200 transition-colors"
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
                               {t({ it: "Chiudi", en: "Close" })}
@@ -7940,7 +7940,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <button
                               type="submit"
                               disabled={isProcessing || !formData.agreesToTerms || !formData.agreesToPrivacy || !formData.confirmsDocuments}
-                              className="flex-1 px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold rounded-full hover:bg-gray-200 transition-colors flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
+                              className="flex-1 px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold hover:bg-gray-200 transition-colors flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
                               {isProcessing ? 'Elaborazione in corso...' : 'CONFERMA PRENOTAZIONE'}
@@ -7949,7 +7949,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               type="button"
                               onClick={handleSavePreventivo}
                               disabled={isSavingPreventivo || !formData.agreesToTerms || !formData.agreesToPrivacy}
-                              className="flex-1 px-6 sm:px-8 py-3 border border-white text-white text-sm sm:text-base font-bold rounded-full hover:bg-white hover:text-black transition-colors flex items-center justify-center disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"
+                              className="flex-1 px-6 sm:px-8 py-3 border border-white text-white text-sm sm:text-base font-bold hover:bg-white hover:text-black transition-colors flex items-center justify-center disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
                               {isSavingPreventivo ? 'Salvataggio...' : 'RICHIEDI PREVENTIVO'}

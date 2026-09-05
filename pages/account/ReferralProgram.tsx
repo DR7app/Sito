@@ -116,7 +116,7 @@ const ReferralProgram: React.FC = () => {
             />
             <button
               onClick={handleCopy}
-              className="px-5 py-3 bg-white text-black font-bold rounded-md hover:bg-gray-200 transition-colors text-sm whitespace-nowrap"
+              className="px-5 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm whitespace-nowrap"
             >
               {copied ? t({ it: "Copiato!", en: "Copied!" }) : t({ it: "Copia link", en: "Copy link" })}
             </button>
@@ -129,13 +129,13 @@ const ReferralProgram: React.FC = () => {
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2.5 bg-[#25D366] text-white font-semibold rounded-md hover:opacity-90 text-sm"
+            className="px-4 py-2.5 bg-[#25D366] text-white font-semibold hover:opacity-90 text-sm"
           >
             {t({ it: "Condividi su WhatsApp", en: "Share on WhatsApp" })}
           </a>
           <a
             href={emailHref}
-            className="px-4 py-2.5 bg-gray-800 text-white font-semibold rounded-md hover:bg-gray-700 text-sm"
+            className="px-4 py-2.5 bg-gray-800 text-white font-semibold hover:bg-gray-700 text-sm"
           >
             {t({ it: "Condividi via Email", en: "Share by email" })}
           </a>

@@ -107,7 +107,7 @@ const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, o
                                 <button
                                     onClick={handleConfirm}
                                     disabled={isSaving}
-                                    className="w-full py-3.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="w-full py-3.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {isSaving ? 'Salvataggio...' : 'Acconsento'}
                                 </button>

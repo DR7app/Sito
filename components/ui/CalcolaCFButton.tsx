@@ -23,7 +23,7 @@ export default function CalcolaCFButton({ config, className }: CalcolaCFButtonPr
       type="button"
       onClick={calcola}
       title={title}
-      className={className || 'px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded whitespace-nowrap transition-colors'}
+      className={className || 'px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors'}
     >
       Calcola
     </button>

@@ -136,13 +136,13 @@ const CarBookingConfirmationPage: React.FC = () => {
         <div className="mt-10 flex flex-col md:flex-row justify-center items-center gap-4">
           <button
             onClick={() => navigate('/account')}
-            className="w-full md:w-auto px-6 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors"
+            className="w-full md:w-auto px-6 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
           >
             {t({ it: "Vai al Mio Account", en: "Go to My Account" })}
           </button>
           <button
             onClick={() => navigate('/')}
-            className="w-full md:w-auto px-6 py-3 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors"
+            className="w-full md:w-auto px-6 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors"
           >
             {t({ it: "Torna alla pagina iniziale", en: "Back to Home" })}
           </button>

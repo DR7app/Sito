@@ -117,7 +117,7 @@ const ResetPasswordPage: React.FC = () => {
                         </p>
                         <button
                             onClick={() => navigate('/forgot-password')}
-                            className="w-full py-3 px-4 text-sm font-medium rounded-md text-black bg-white hover:bg-gray-200"
+                            className="w-full py-3 px-4 text-sm font-medium text-black bg-white hover:bg-gray-200"
                         >
                             {t('Request_New_Link')}
                         </button>
@@ -153,7 +153,7 @@ const ResetPasswordPage: React.FC = () => {
                     {isSuccess ? (
                          <button
                             onClick={() => navigate('/signin')}
-                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-white hover:bg-gray-200"
+                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium text-black bg-white hover:bg-gray-200"
                         >
                             {t('Proceed_to_Sign_In')}
                         </button>
@@ -182,7 +182,7 @@ const ResetPasswordPage: React.FC = () => {
                                 </button>
                             </div>
                             <div>
-                                <button type="submit" disabled={isSubmitting || !password || !confirmPassword} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-white hover:bg-gray-200 disabled:opacity-60">
+                                <button type="submit" disabled={isSubmitting || !password || !confirmPassword} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium text-black bg-white hover:bg-gray-200 disabled:opacity-60">
                                     {isSubmitting ? t('Please_wait') : t('Update_Password')}
                                 </button>
                             </div>

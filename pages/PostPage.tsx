@@ -107,7 +107,7 @@ const PostPage: React.FC = () => {
               <div className="mt-12 text-center">
                 <button
                   onClick={scrollToTop}
-                  className="bg-white text-black px-8 py-3 rounded-full font-bold uppercase tracking-widest text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
+                  className="bg-white text-black px-8 py-3 font-bold uppercase tracking-widest text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
                 >
                   {t('Go_to_Top')}
                 </button>

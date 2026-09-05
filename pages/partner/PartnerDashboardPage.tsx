@@ -16,7 +16,7 @@ const StatusBadge: React.FC<{ status: 'unverified' | 'pending' | 'verified' }> =
         pending: { text: t('Pending'), color: 'bg-yellow-500/20 text-yellow-400' },
         verified: { text: t('Verified'), color: 'bg-green-500/20 text-green-400' },
     };
-    return <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusMap[status].color}`}>{statusMap[status].text}</span>;
+    return <span className={`px-2.5 py-1 text-xs font-semibold ${statusMap[status].color}`}>{statusMap[status].text}</span>;
 }
 
 
@@ -71,7 +71,7 @@ const PartnerDashboardPage: React.FC = () => {
                 <h3 className="text-lg font-bold text-white">{t(title as any)}</h3>
                 <p className="text-sm text-gray-400 mt-2">{t(description as any)}</p>
                 <div className="mt-4">
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2 py-1 rounded-full">{t('Coming_Soon')}</span>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2 py-1">{t('Coming_Soon')}</span>
                 </div>
             </div>
         </div>
@@ -173,7 +173,7 @@ const PartnerDashboardPage: React.FC = () => {
                                                 <p className="text-sm font-bold text-white">
                                                     €{(booking.price_total / 100).toFixed(2)}
                                                 </p>
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${booking.payment_status === 'paid' || booking.payment_status === 'succeeded' || booking.payment_status === 'completed'
+                                                <span className={`text-xs px-2 py-0.5 ${booking.payment_status === 'paid' || booking.payment_status === 'succeeded' || booking.payment_status === 'completed'
                                                     ? 'bg-green-500/20 text-green-400'
                                                     : 'bg-yellow-500/20 text-yellow-400'
                                                     }`}>

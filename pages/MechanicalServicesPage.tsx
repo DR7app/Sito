@@ -106,7 +106,7 @@ const MechanicalServicesPage: React.FC = () => {
                       €{service.price}
                     </div>
                   </div>
-                  <button className="w-full bg-white text-black font-bold py-2 md:py-3 px-4 md:px-6 rounded-full hover:bg-gray-200 transition-colors text-sm md:text-base mt-auto">
+                  <button className="w-full bg-white text-black font-bold py-2 md:py-3 px-4 md:px-6 hover:bg-gray-200 transition-colors text-sm md:text-base mt-auto">
                     {tx(copy.book_now_label_it, copy.book_now_label_en)}
                   </button>
                 </motion.div>

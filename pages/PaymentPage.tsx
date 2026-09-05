@@ -180,7 +180,7 @@ export default function PaymentPage() {
             <p className="text-gray-400 text-xs">{c('blocked_help_it', 'blocked_help_en')}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 px-6 py-3 bg-white text-black rounded-full font-semibold text-sm hover:bg-gray-200 transition-colors"
+              className="mt-6 px-6 py-3 bg-white text-black font-semibold text-sm hover:bg-gray-200 transition-colors"
             >
               {c('blocked_retry_cta_it', 'blocked_retry_cta_en')}
             </button>
@@ -205,7 +205,7 @@ export default function PaymentPage() {
             <p className="text-gray-500 text-sm mb-4">{c('cancelled_subtitle_it', 'cancelled_subtitle_en')}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-white text-black rounded-full font-semibold text-sm hover:bg-gray-200 transition-colors"
+              className="px-6 py-3 bg-white text-black font-semibold text-sm hover:bg-gray-200 transition-colors"
             >
               {c('cancelled_retry_cta_it', 'cancelled_retry_cta_en')}
             </button>

@@ -177,7 +177,7 @@ export const ReviewsMarquee: React.FC<ReviewsMarqueeProps> = ({
                         href={googleReviewsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-300 ${
+                        className={`flex items-center gap-3 px-6 py-4 transition-all duration-300 ${
                             dark
                                 ? 'bg-black/50 border border-white/20 hover:border-white/50 hover:bg-black/70'
                                 : 'bg-white/90 border border-gray-200 hover:border-gray-300 hover:bg-white'

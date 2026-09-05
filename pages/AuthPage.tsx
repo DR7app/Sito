@@ -86,7 +86,7 @@ const AuthPage: React.FC = () => {
               <div className="text-right text-sm">
                 <Link to="/forgot-password" className="font-medium text-white hover:text-gray-300">{t('Forgot_Password')}</Link>
               </div>
-              <button type="submit" disabled={isSubmitting} className="w-full py-3 px-4 text-white font-bold rounded-full transition-all disabled:opacity-60 bg-gradient-to-r from-[#0A8FA3] via-[#19C2D6] to-[#4DE3F0] hover:from-[#19C2D6] hover:via-[#4DE3F0] hover:to-[#19C2D6]">{isSubmitting ? t('Please_wait') : t('Sign_In')}</button>
+              <button type="submit" disabled={isSubmitting} className="w-full py-3 px-4 text-white font-bold transition-all disabled:opacity-60 bg-gradient-to-r from-[#0A8FA3] via-[#19C2D6] to-[#4DE3F0] hover:from-[#19C2D6] hover:via-[#4DE3F0] hover:to-[#19C2D6]">{isSubmitting ? t('Please_wait') : t('Sign_In')}</button>
             </form>
 
             <div className="text-sm text-center pt-2">

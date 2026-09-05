@@ -731,7 +731,7 @@ const SignUpPage: React.FC = () => {
                           className="flex-1 bg-gray-800 border border-gray-700 rounded-md p-3 text-white uppercase"
                         />
                         <CalcolaCFButton
-                          className="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md whitespace-nowrap transition-colors"
+                          className="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium whitespace-nowrap transition-colors"
                           config={{
                             getCognome: () => formData.cognome,
                             getNome: () => formData.nome,
@@ -1136,7 +1136,7 @@ const SignUpPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 px-4 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
+                    className="w-full py-3 px-4 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-60"
                   >
                     {isSubmitting ? t('Please_wait') : t('Create_Account')}
                   </button>

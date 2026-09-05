@@ -99,7 +99,7 @@ const PartnerSecuritySettings = () => {
                     </div>
                     <div className="p-4 md:p-6 bg-gray-900 flex items-center justify-end space-x-4 rounded-b-lg">
                         {successMessage && <span className="text-sm text-green-400">{successMessage}</span>}
-                        <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">
+                        <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">
                             {isSubmitting ? t('Please_wait') : t('Save_Changes')}
                         </button>
                     </div>
@@ -113,7 +113,7 @@ const PartnerSecuritySettings = () => {
                         href="https://myaccount.google.com/security"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-4 inline-block px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm"
+                        className="mt-4 inline-block px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm"
                     >
                         Go to Google Security
                     </a>

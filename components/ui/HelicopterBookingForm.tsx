@@ -1038,7 +1038,7 @@ const HelicopterBookingForm: React.FC = () => {
         {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-white hover:bg-gray-200 text-black font-semibold py-3 rounded-md transition text-lg"
+          className="w-full bg-white hover:bg-gray-200 text-black font-semibold py-3 transition text-lg"
         >
           {t({ it: "Invia Richiesta via WhatsApp", en: "Send Request via WhatsApp" })}
         </button>

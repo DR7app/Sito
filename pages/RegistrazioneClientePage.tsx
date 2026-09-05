@@ -325,7 +325,7 @@ export default function RegistrazioneClientePage() {
                                             key={t}
                                             type="button"
                                             onClick={() => update('tipo_cliente', t)}
-                                            className={`px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
+                                            className={`px-4 py-3 border text-sm font-semibold transition-all ${
                                                 active
                                                     ? 'border-white bg-white text-black'
                                                     : 'border-white/30 bg-black text-white/80 hover:border-white hover:bg-white/5'
@@ -360,7 +360,7 @@ export default function RegistrazioneClientePage() {
                                                 />
                                                 <CalcolaCFButton
                                                     config={cfConfig}
-                                                    className="px-4 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 whitespace-nowrap"
+                                                    className="px-4 py-2.5 bg-white text-black text-sm font-bold hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 whitespace-nowrap"
                                                 />
                                             </div>
                                             {cfMsg && (
@@ -442,7 +442,7 @@ export default function RegistrazioneClientePage() {
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50"
+                                className="px-8 py-3 bg-white text-black font-bold hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50"
                             >
                                 {submitting ? r('cta_submitting_it', 'cta_submitting_en') : r('cta_submit_it', 'cta_submit_en')}
                             </button>
@@ -469,7 +469,7 @@ export default function RegistrazioneClientePage() {
                             <ul className="border border-white/30 rounded-xl divide-y divide-white/20 overflow-hidden">
                                 {docs.map((d, i) => (
                                     <li key={i} className="px-4 py-3 flex items-center gap-3 text-sm bg-black">
-                                        <span className="font-mono text-[10px] px-2 py-0.5 rounded border border-white/30 text-white/80">{d.kind.replace('_', ' ')}</span>
+                                        <span className="font-mono text-[10px] px-2 py-0.5 border border-white/30 text-white/80">{d.kind.replace('_', ' ')}</span>
                                         <span className="flex-1 truncate text-white">{d.file.name}</span>
                                         {d.uploaded ? <span className="text-white text-xs font-semibold">{r('docs_chip_uploaded_it', 'docs_chip_uploaded_en')}</span>
                                             : d.uploading ? <span className="text-white/70 text-xs">{r('docs_chip_uploading_it', 'docs_chip_uploading_en')}</span>
@@ -486,12 +486,12 @@ export default function RegistrazioneClientePage() {
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <button type="button" onClick={uploadDocs}
                                     disabled={docs.length === 0 || docs.every(d => d.uploaded)}
-                                    className="px-5 py-2.5 bg-black text-white border border-white/40 font-semibold rounded-xl hover:bg-white/5 hover:border-white active:scale-[0.98] transition-all disabled:opacity-40">
+                                    className="px-5 py-2.5 bg-black text-white border border-white/40 font-semibold hover:bg-white/5 hover:border-white active:scale-[0.98] transition-all disabled:opacity-40">
                                     {r('cta_upload_selected_it', 'cta_upload_selected_en')}
                                 </button>
                                 <button type="button" onClick={() => setStep('done')}
                                     disabled={docs.some(d => !d.uploaded && !d.error)}
-                                    className="px-5 py-2.5 bg-white text-black font-bold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-40">
+                                    className="px-5 py-2.5 bg-white text-black font-bold hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-40">
                                     {r('cta_finish_it', 'cta_finish_en')}
                                 </button>
                             </div>
@@ -604,7 +604,7 @@ function DocPicker({ label, kind, onAdd }: {
                     if (f) onAdd(kind, f)
                     e.currentTarget.value = ''
                 }}
-                className="text-xs text-white/70 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-white/40 file:bg-black file:text-white file:font-semibold file:text-xs hover:file:bg-white/10 file:cursor-pointer"
+                className="text-xs text-white/70 file:mr-3 file:py-1.5 file:px-3 file:border file:border-white/40 file:bg-black file:text-white file:font-semibold file:text-xs hover:file:bg-white/10 file:cursor-pointer"
             />
         </label>
     )

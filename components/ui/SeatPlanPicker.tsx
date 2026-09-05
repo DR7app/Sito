@@ -144,7 +144,7 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
                   aria-label={etichetta}
                   title={etichetta}
                   style={{ left: `${b.x}%`, top: `${rowY[b.row]}%`, width: `${b.width}%` }}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 h-11 rounded-lg text-[10px] font-bold tracking-wide flex flex-col items-center justify-end pb-1 border-2 shadow-lg transition-colors ${
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 h-11 text-[10px] font-bold tracking-wide flex flex-col items-center justify-end pb-1 border-2 shadow-lg transition-colors ${
                     on
                       ? 'bg-white text-black border-white'
                       : 'bg-[#1c1c1c] text-gray-300 border-gray-500 hover:border-white hover:text-white'
@@ -173,15 +173,15 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <button type="button" onClick={selectAll}
-              className="text-[11px] px-3 py-1.5 rounded-full border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
+              className="text-[11px] px-3 py-1.5 border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
               {t({ it: 'Tutti', en: 'All' })}
             </button>
             <button type="button" onClick={clearAll}
-              className="text-[11px] px-3 py-1.5 rounded-full border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
+              className="text-[11px] px-3 py-1.5 border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
               {t({ it: 'Nessuno', en: 'None' })}
             </button>
             <button type="button" onClick={() => (thirdRow ? hideThirdRow() : setThirdRow(true))}
-              className="text-[11px] px-3 py-1.5 rounded-full border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
+              className="text-[11px] px-3 py-1.5 border border-gray-700 text-gray-300 hover:border-white hover:text-white transition-colors">
               {thirdRow
                 ? t({ it: 'Togli terza fila', en: 'Remove third row' })
                 : t({ it: '+ Terza fila', en: '+ Third row' })}
@@ -205,7 +205,7 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
             type="button"
             disabled={count === 0}
             onClick={() => onConfirm(ordered)}
-            className={`mt-4 w-full py-3.5 rounded-full font-bold transition-colors ${
+            className={`mt-4 w-full py-3.5 font-bold transition-colors ${
               count === 0
                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 : 'bg-white text-black hover:bg-gray-200'

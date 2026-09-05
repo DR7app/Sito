@@ -268,7 +268,7 @@ const BookingModal: React.FC = () => {
           >
             <button
               onClick={handleClose}
-              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors z-10"
+              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center bg-black/40 text-white hover:bg-black/60 transition-colors z-10"
               aria-label={t('Close')}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -389,7 +389,7 @@ const BookingModal: React.FC = () => {
                     <button
                       type="submit"
                       disabled={totalDays <= 0}
-                      className="w-full mt-6 bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100"
+                      className="w-full mt-6 bg-white text-black px-6 py-3 font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100"
                     >
                       {isYacht ? t('Request_Quote') : t('Confirm_Booking')}
                     </button>
@@ -441,7 +441,7 @@ const BookingModal: React.FC = () => {
                 <div className="text-center mt-8">
                   <button
                     onClick={handleClose}
-                    className="bg-gray-700 text-white px-6 py-2 rounded-full font-semibold text-sm hover:bg-gray-600 transition-colors"
+                    className="bg-gray-700 text-white px-6 py-2 font-semibold text-sm hover:bg-gray-600 transition-colors"
                   >
                     {t('Close')}
                   </button>

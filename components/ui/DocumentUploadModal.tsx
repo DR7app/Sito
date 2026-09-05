@@ -136,7 +136,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
             >
               <div className="p-6 md:p-8">
                 <div className="text-center mb-6">
-                  <div className="inline-block bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-lg mb-4">
+                  <div className="inline-block bg-yellow-500 text-black px-4 py-2 font-bold text-lg mb-4">
                     {t({ it: 'FINO A 60€ DI VANTAGGI', en: 'UP TO €60 IN BENEFITS' })}
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
@@ -180,13 +180,13 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 <div className="flex gap-3">
                   <button
                     onClick={handleSkip}
-                    className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-colors"
                   >
                     {t({ it: 'Salto', en: 'Skip' })}
                   </button>
                   <button
                     onClick={() => setStep('upload')}
-                    className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-600 transition-colors"
+                    className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition-colors"
                   >
                     {t({ it: 'Carica Documenti', en: 'Upload Documents' })}
                   </button>
@@ -239,13 +239,13 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 <div className="flex gap-3">
                   <button
                     onClick={handleConfirmSkip}
-                    className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-colors"
                   >
                     {t({ it: 'Continua Senza Caricare', en: 'Continue Without Uploading' })}
                   </button>
                   <button
                     onClick={handleCancelSkip}
-                    className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-600 transition-colors"
+                    className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition-colors"
                   >
                     {t({ it: 'Torna Indietro', en: 'Go Back' })}
                   </button>
@@ -286,7 +286,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
 
             <div className="p-6 md:p-8">
               <div className="text-center mb-6">
-                <div className="inline-block bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-lg mb-4">
+                <div className="inline-block bg-yellow-500 text-black px-4 py-2 font-bold text-lg mb-4">
                   {t({ it: 'FINO A 60€ DI VANTAGGI', en: 'UP TO €60 IN BENEFITS' })}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
@@ -308,7 +308,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onChange={(e) => setPatenteFront(e.target.files?.[0] || null)}
                     accept="image/*,.pdf"
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
-                      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                      file:mr-4 file:py-2 file:px-4 file:border-0
                       file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
                       hover:file:bg-yellow-600 file:cursor-pointer"
                   />
@@ -327,7 +327,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onChange={(e) => setPatenteBack(e.target.files?.[0] || null)}
                     accept="image/*,.pdf"
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
-                      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                      file:mr-4 file:py-2 file:px-4 file:border-0
                       file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
                       hover:file:bg-yellow-600 file:cursor-pointer"
                   />
@@ -346,7 +346,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onChange={(e) => setCartaIdentitaFront(e.target.files?.[0] || null)}
                     accept="image/*,.pdf"
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
-                      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                      file:mr-4 file:py-2 file:px-4 file:border-0
                       file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
                       hover:file:bg-yellow-600 file:cursor-pointer"
                   />
@@ -365,7 +365,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onChange={(e) => setCartaIdentitaBack(e.target.files?.[0] || null)}
                     accept="image/*,.pdf"
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
-                      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                      file:mr-4 file:py-2 file:px-4 file:border-0
                       file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
                       hover:file:bg-yellow-600 file:cursor-pointer"
                   />
@@ -384,7 +384,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                     onChange={(e) => setCodiceFiscale(e.target.files?.[0] || null)}
                     accept="image/*,.pdf"
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
-                      file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                      file:mr-4 file:py-2 file:px-4 file:border-0
                       file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
                       hover:file:bg-yellow-600 file:cursor-pointer"
                   />
@@ -397,14 +397,14 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={handleSkip}
-                  className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors"
+                  className="flex-1 px-6 py-3 bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-colors"
                 >
                   {t({ it: 'Salta', en: 'Skip' })}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={uploading || !patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscale}
-                  className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploading ? t({ it: "Caricamento...", en: "Uploading..." }) : t({ it: "Carica Documenti", en: "Upload Documents" })}
                 </button>

@@ -170,7 +170,7 @@ const TermsOfServicePage: React.FC = () => {
                                 <li key={s.id}>
                                     <button
                                         onClick={() => scrollTo(s.id)}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                                        className={`w-full text-left px-3 py-2 text-sm transition-all duration-200 ${
                                             activeSection === s.id
                                                 ? 'bg-white/10 text-white font-medium'
                                                 : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'

@@ -180,7 +180,7 @@ const MyPreventivi: React.FC = () => {
                       {formatDate(p.pickup_date, lang)} — {formatDate(p.dropoff_date, lang)} ({p.rental_days} {p.rental_days === 1 ? t({ it: "giorno", en: "day" }) : t({ it: "giorni", en: "days" })})
                     </p>
                   </div>
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusInfo.color}`}>
+                  <span className={`text-xs font-semibold px-3 py-1 ${statusInfo.color}`}>
                     {t(statusInfo.label)}
                   </span>
                 </div>
@@ -252,13 +252,13 @@ const MyPreventivi: React.FC = () => {
                           converted to a booking. */}
                       <a
                         href={`/supercar-luxury?preventivo=${p.id}&edit=1`}
-                        className="px-5 py-2.5 bg-transparent border border-white/40 text-white text-sm font-bold rounded-full hover:bg-white/10 transition-colors"
+                        className="px-5 py-2.5 bg-transparent border border-white/40 text-white text-sm font-bold hover:bg-white/10 transition-colors"
                       >
                         {t({ it: "Modifica", en: "Edit" })}
                       </a>
                       <a
                         href={`/supercar-luxury?preventivo=${p.id}`}
-                        className="px-5 py-2.5 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-colors"
+                        className="px-5 py-2.5 bg-white text-black text-sm font-bold hover:bg-gray-200 transition-colors"
                       >
                         {p.status === 'accettato' ? t({ it: "Completa Prenotazione", en: "Complete Booking" }) : t({ it: "Prenota Ora", en: "Book Now" })}
                       </a>
@@ -269,7 +269,7 @@ const MyPreventivi: React.FC = () => {
                     <div className="flex flex-col items-end gap-2">
                       <a
                         href={`/supercar-luxury?preventivo=${p.id}`}
-                        className="px-5 py-2.5 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-colors"
+                        className="px-5 py-2.5 bg-white text-black text-sm font-bold hover:bg-gray-200 transition-colors"
                       >
                         {t({ it: "Prenota Ora con Cauzione", en: "Book Now with Deposit" })}
                       </a>

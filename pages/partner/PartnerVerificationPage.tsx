@@ -80,7 +80,7 @@ const VerificationForm: React.FC = () => {
         <div className="border-b border-gray-700 pb-6">
           <h3 className="text-xl font-bold text-white mb-4">{t('Upload_Registration_Document')}</h3>
           {formData.registrationDoc ? (
-            <div className="relative"><div className="bg-gray-800 p-3 rounded-md text-sm text-green-400 border border-green-700">{t('Document_uploaded')}</div><button type="button" onClick={() => setFormData(p => ({...p, registrationDoc: ''}))} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 text-xs hover:bg-black">✕</button></div>
+            <div className="relative"><div className="bg-gray-800 p-3 rounded-md text-sm text-green-400 border border-green-700">{t('Document_uploaded')}</div><button type="button" onClick={() => setFormData(p => ({...p, registrationDoc: ''}))} className="absolute top-2 right-2 bg-black/50 text-white p-1.5 text-xs hover:bg-black">✕</button></div>
           ) : (
             <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-6 text-center"><p className="text-sm text-gray-400 mb-4">{t('Please_upload_your_business_registration')}</p><Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>{t('Upload_File')}</Button><input type="file" accept=".pdf,.png,.jpg,.jpeg" ref={fileInputRef} onChange={handleFileChange} className="hidden" /></div>
           )}
@@ -89,8 +89,8 @@ const VerificationForm: React.FC = () => {
           <h3 className="text-xl font-bold text-white mb-4">{t('Payout_Method')}</h3>
           <p className="text-sm text-gray-400 mb-4">{t('How_would_you_like_to_receive_payouts')}</p>
           <div className="flex gap-4 mb-4">
-              <label className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${formData.payoutMethod === 'iban' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="iban" checked={formData.payoutMethod === 'iban'} onChange={handleChange} className="sr-only"/><span>{t('Bank_Transfer')}</span></label>
-              <label className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${formData.payoutMethod === 'paypal' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="paypal" checked={formData.payoutMethod === 'paypal'} onChange={handleChange} className="sr-only"/><span>{t('PayPal')}</span></label>
+              <label className={`flex-1 p-4 border cursor-pointer transition-colors ${formData.payoutMethod === 'iban' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="iban" checked={formData.payoutMethod === 'iban'} onChange={handleChange} className="sr-only"/><span>{t('Bank_Transfer')}</span></label>
+              <label className={`flex-1 p-4 border cursor-pointer transition-colors ${formData.payoutMethod === 'paypal' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="paypal" checked={formData.payoutMethod === 'paypal'} onChange={handleChange} className="sr-only"/><span>{t('PayPal')}</span></label>
           </div>
           <div><label htmlFor="payoutDetails" className="sr-only">{payoutPlaceholder}</label><input type="text" id="payoutDetails" name="payoutDetails" value={formData.payoutDetails} onChange={handleChange} placeholder={payoutPlaceholder} required className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"/></div>
         </div>

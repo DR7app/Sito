@@ -34,7 +34,7 @@ const TokenPage: React.FC = () => {
         </p>
         <Link
           to="/"
-          className="inline-block bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-all"
+          className="inline-block bg-white text-black px-8 py-4 font-bold text-lg hover:bg-gray-200 transition-all"
         >
           {tk('cta_button_it', 'cta_button_en')}
         </Link>

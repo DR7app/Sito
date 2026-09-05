@@ -69,8 +69,8 @@ const PartnerPayoutSettings = () => {
                         <h3 className="text-lg font-semibold text-white">{t('Payout_Method')}</h3>
                         <p className="text-sm text-gray-400 mb-4">{t('How_would_you_like_to_receive_payouts')}</p>
                         <div className="flex gap-4 mb-4">
-                            <label className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${formData.payoutMethod === 'iban' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="iban" checked={formData.payoutMethod === 'iban'} onChange={() => handleMethodChange('iban')} className="sr-only"/><span>{t('Bank_Transfer')}</span></label>
-                            <label className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${formData.payoutMethod === 'paypal' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="paypal" checked={formData.payoutMethod === 'paypal'} onChange={() => handleMethodChange('paypal')} className="sr-only"/><span>{t('PayPal')}</span></label>
+                            <label className={`flex-1 p-4 border cursor-pointer transition-colors ${formData.payoutMethod === 'iban' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="iban" checked={formData.payoutMethod === 'iban'} onChange={() => handleMethodChange('iban')} className="sr-only"/><span>{t('Bank_Transfer')}</span></label>
+                            <label className={`flex-1 p-4 border cursor-pointer transition-colors ${formData.payoutMethod === 'paypal' ? 'bg-white/10 border-white' : 'border-gray-700 hover:border-gray-500'}`}><input type="radio" name="payoutMethod" value="paypal" checked={formData.payoutMethod === 'paypal'} onChange={() => handleMethodChange('paypal')} className="sr-only"/><span>{t('PayPal')}</span></label>
                         </div>
                         <div>
                             <label htmlFor="payoutDetails" className="sr-only">{payoutPlaceholder}</label>
@@ -80,7 +80,7 @@ const PartnerPayoutSettings = () => {
                 </div>
                 <div className="p-4 md:p-6 bg-gray-900 flex items-center justify-end space-x-4 rounded-b-lg">
                     {successMessage && <span className="text-sm text-green-400">{successMessage}</span>}
-                    <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">{isSubmitting ? t('Please_wait') : t('Save_Changes')}</button>
+                    <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">{isSubmitting ? t('Please_wait') : t('Save_Changes')}</button>
                 </div>
             </form>
         </div>

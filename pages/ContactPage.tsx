@@ -122,7 +122,7 @@ const ContactPage: React.FC = () => {
                   href={copy.whatsapp_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-2 px-8 py-3 bg-green-600 text-white font-bold rounded-full hover:bg-green-500 transition-colors"
+                  className="inline-block mt-2 px-8 py-3 bg-green-600 text-white font-bold hover:bg-green-500 transition-colors"
                 >
                   {lang === 'it' ? copy.whatsapp_button_it : copy.whatsapp_button_en}
                 </a>

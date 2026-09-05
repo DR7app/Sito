@@ -515,7 +515,7 @@ const CarWashServicesPage: React.FC = () => {
             <button
               onClick={handleTargaSearch}
               disabled={!isValidItalianPlate(targaInput) || targaLoading}
-              className={`px-6 py-3 rounded-full font-bold text-sm transition-all duration-200 ${
+              className={`px-6 py-3 font-bold text-sm transition-all duration-200 ${
                 isValidItalianPlate(targaInput) && !targaLoading
                   ? 'bg-white text-black hover:bg-gray-200'
                   : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -544,7 +544,7 @@ const CarWashServicesPage: React.FC = () => {
                   <button
                     key={opt.id}
                     onClick={() => applyWashOverride(opt.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 text-xs font-bold transition-all ${
                       washCategory === opt.id ? opt.selected : opt.idle
                     }`}
                   >
@@ -565,7 +565,7 @@ const CarWashServicesPage: React.FC = () => {
               className="mt-3 text-center"
             >
               <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
+                <span className="inline-block px-3 py-1 text-xs font-bold bg-gray-700/60 text-white border border-gray-600">
                   {targaResult.plate}
                 </span>
                 {detectedModel && (
@@ -580,7 +580,7 @@ const CarWashServicesPage: React.FC = () => {
                   <button
                     key={opt.id}
                     onClick={() => applyWashOverride(opt.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 text-xs font-bold transition-all ${
                       washCategory === opt.id ? opt.selected : opt.idle
                     }`}
                   >
@@ -608,7 +608,7 @@ const CarWashServicesPage: React.FC = () => {
         <div className="flex justify-center gap-4">
           <button
             onClick={() => setMainTab('lavaggio')}
-            className={`px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 ${
+            className={`px-8 py-3 font-bold text-lg transition-all duration-300 ${
               mainTab === 'lavaggio'
                 ? 'bg-white text-black'
                 : 'bg-transparent text-white border-2 border-white hover:bg-white/10'
@@ -618,7 +618,7 @@ const CarWashServicesPage: React.FC = () => {
           </button>
           <button
             onClick={() => setMainTab('meccanica')}
-            className={`px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 ${
+            className={`px-8 py-3 font-bold text-lg transition-all duration-300 ${
               mainTab === 'meccanica'
                 ? 'bg-white text-black'
                 : 'bg-transparent text-white border-2 border-white hover:bg-white/10'
@@ -639,7 +639,7 @@ const CarWashServicesPage: React.FC = () => {
                 ? setLavaggioCategory(cat.id as LavaggioCategory)
                 : setMeccanicaCategory(cat.id as MeccanicaCategory)
               }
-              className={`px-4 py-2 rounded-full font-bold text-xs sm:text-sm transition-all duration-300 ${
+              className={`px-4 py-2 font-bold text-xs sm:text-sm transition-all duration-300 ${
                 activeCategory === cat.id
                   ? 'bg-gray-700 text-white'
                   : 'bg-gray-900/50 text-white border border-gray-700 hover:border-white'
@@ -681,7 +681,7 @@ const CarWashServicesPage: React.FC = () => {
                       {autoService ? (
                         <button
                           onClick={() => handleCombinedWashSelect(autoService)}
-                          className="w-full bg-white text-black px-3 py-2 rounded-full font-semibold text-sm hover:bg-gray-200 transition-all duration-300"
+                          className="w-full bg-white text-black px-3 py-2 font-semibold text-sm hover:bg-gray-200 transition-all duration-300"
                         >
                           €{formatPrice(autoService.price)}
                         </button>
@@ -694,7 +694,7 @@ const CarWashServicesPage: React.FC = () => {
                               searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
                           }}
-                          className="w-full bg-transparent border-2 border-white text-white px-3 py-2 rounded-full font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                          className="w-full bg-transparent border-2 border-white text-white px-3 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
                         >
                           {lang === 'it' ? 'da' : 'from'} €{formatPrice(lowestPrice)}
                         </button>
@@ -725,7 +725,7 @@ const CarWashServicesPage: React.FC = () => {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center bg-white text-black px-3 py-2 rounded-full font-semibold text-sm hover:bg-gray-200 transition-all duration-300"
+                      className="w-full inline-flex items-center justify-center bg-white text-black px-3 py-2 font-semibold text-sm hover:bg-gray-200 transition-all duration-300"
                     >
                       Su preventivo
                     </a>
@@ -738,7 +738,7 @@ const CarWashServicesPage: React.FC = () => {
                           searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                       }}
-                      className="w-full bg-transparent border-2 border-white text-white px-3 py-2 rounded-full font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                      className="w-full bg-transparent border-2 border-white text-white px-3 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
                     >
                       Su preventivo
                     </button>
@@ -771,7 +771,7 @@ const CarWashServicesPage: React.FC = () => {
                     <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent">
                       <button
                         onClick={() => addToCart(service)}
-                        className="w-full bg-black/50 border-2 border-white text-white px-6 py-2 rounded-full font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                        className="w-full bg-black/50 border-2 border-white text-white px-6 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
                       >
                         {cw('add_to_cart_it', 'add_to_cart_en', 'AGGIUNGI AL CARRELLO')}
                       </button>
@@ -785,7 +785,7 @@ const CarWashServicesPage: React.FC = () => {
                       <button
                         key={option.label}
                         onClick={() => addToCart(service, option)}
-                        className="w-full flex justify-between items-center bg-transparent border-2 border-white text-white px-6 py-2 rounded-full font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                        className="w-full flex justify-between items-center bg-transparent border-2 border-white text-white px-6 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
                       >
                         <span>{option.label}</span>
                         <span>€{option.price.toFixed(2)}</span>
@@ -806,7 +806,7 @@ const CarWashServicesPage: React.FC = () => {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           onClick={() => setShowCart(true)}
-          className="fixed bottom-6 right-6 bg-white text-black px-6 py-4 rounded-full font-bold shadow-2xl flex items-center gap-3 z-40 hover:bg-gray-200 transition-colors"
+          className="fixed bottom-6 right-6 bg-white text-black px-6 py-4 font-bold shadow-2xl flex items-center gap-3 z-40 hover:bg-gray-200 transition-colors"
         >
           <span className="bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
             {cart.reduce((sum, item) => sum + item.quantity, 0)}
@@ -866,7 +866,7 @@ const CarWashServicesPage: React.FC = () => {
                       {item.seats && item.seats.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-2">
                           {item.seats.map(id => (
-                            <span key={id} className="px-2 py-0.5 rounded-full bg-white/10 border border-gray-700 text-gray-200 text-[11px]">
+                            <span key={id} className="px-2 py-0.5 bg-white/10 border border-gray-700 text-gray-200 text-[11px]">
                               {seatLabel(id, lang)}
                             </span>
                           ))}
@@ -878,7 +878,7 @@ const CarWashServicesPage: React.FC = () => {
                           // sedili scelti, si cambia solo dalla pianta.
                           <button
                             onClick={() => setSeatPicker({ service: item.service, index, initial: item.seats || [], fromUpsell: false })}
-                            className="text-xs px-3 py-1.5 rounded-full border border-gray-600 text-white hover:bg-gray-800 transition-colors"
+                            className="text-xs px-3 py-1.5 border border-gray-600 text-white hover:bg-gray-800 transition-colors"
                           >
                             {lang === 'it' ? 'Modifica sedili' : 'Edit seats'}
                           </button>
@@ -886,14 +886,14 @@ const CarWashServicesPage: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => updateQuantity(index, -1)}
-                              className="w-8 h-8 rounded-full border border-gray-600 text-white hover:bg-gray-800"
+                              className="w-8 h-8 border border-gray-600 text-white hover:bg-gray-800"
                             >
                               -
                             </button>
                             <span className="text-white font-bold">{item.quantity}</span>
                             <button
                               onClick={() => updateQuantity(index, 1)}
-                              className="w-8 h-8 rounded-full border border-gray-600 text-white hover:bg-gray-800"
+                              className="w-8 h-8 border border-gray-600 text-white hover:bg-gray-800"
                             >
                               +
                             </button>
@@ -916,7 +916,7 @@ const CarWashServicesPage: React.FC = () => {
                   </div>
                   <button
                     onClick={handleCheckout}
-                    className="w-full bg-white text-black py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-colors"
+                    className="w-full bg-white text-black py-4 font-bold text-lg hover:bg-gray-200 transition-colors"
                   >
                     {cw('cart_checkout_it', 'cart_checkout_en', 'PROCEDI')}
                   </button>
@@ -961,7 +961,7 @@ const CarWashServicesPage: React.FC = () => {
                 </div>
                 <button
                   onClick={handleReviewCart}
-                  className="bg-white text-black px-5 py-2 rounded-full font-bold text-sm hover:bg-gray-200 transition-colors flex-shrink-0"
+                  className="bg-white text-black px-5 py-2 font-bold text-sm hover:bg-gray-200 transition-colors flex-shrink-0"
                 >
                   {cw('upsell_review_cart_it', 'upsell_review_cart_en', 'Rivedi carrello')}
                 </button>
@@ -1038,7 +1038,7 @@ const CarWashServicesPage: React.FC = () => {
                             </span>
                             <button
                               onClick={() => handleUpsellToggleExtra(extra)}
-                              className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-all duration-300 ${
+                              className={`px-3 py-1.5 font-semibold text-xs transition-all duration-300 ${
                                 isAdded
                                   ? 'bg-green-600 text-white hover:bg-red-500'
                                   : 'bg-white text-black hover:bg-gray-200'
@@ -1087,7 +1087,7 @@ const CarWashServicesPage: React.FC = () => {
                                 <button
                                   key={option.label}
                                   onClick={() => handleUpsellToggleExtra(exp, option)}
-                                  className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-all duration-300 ${
+                                  className={`px-3 py-1.5 font-semibold text-xs transition-all duration-300 ${
                                     isSelected
                                       ? 'bg-green-600 text-white hover:bg-red-500'
                                       : 'border border-white/40 text-white hover:bg-white hover:text-black'
@@ -1111,7 +1111,7 @@ const CarWashServicesPage: React.FC = () => {
               <div className="max-w-md mx-auto text-center space-y-4">
                 <button
                   onClick={handleNextUpsellStep}
-                  className="w-full bg-white text-black py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-colors"
+                  className="w-full bg-white text-black py-4 font-bold text-lg hover:bg-gray-200 transition-colors"
                 >
                   {upsellStep === 1
                     ? (lang === 'it' ? 'Continua' : 'Continue')

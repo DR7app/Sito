@@ -46,7 +46,7 @@ const PartnerDashboardLayout = () => {
                                     key={item.path}
                                     to={item.path}
                                     className={({ isActive }) =>
-                                        `flex items-center min-h-[44px] p-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 ` +
+                                        `flex items-center min-h-[44px] p-3 text-sm font-medium transition-colors whitespace-nowrap shrink-0 ` +
                                         (isActive || (item.path === '/partner/settings' && isSettingsPage) ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white')
                                     }
                                 >
@@ -62,7 +62,7 @@ const PartnerDashboardLayout = () => {
                                         key={item.path}
                                         to={item.path}
                                         className={({ isActive }) =>
-                                            `block min-h-[44px] flex items-center py-1.5 px-3 rounded-md text-sm transition-colors ` +
+                                            `block min-h-[44px] flex items-center py-1.5 px-3 text-sm transition-colors ` +
                                             (isActive ? 'font-semibold text-white' : 'text-gray-400 hover:text-white')
                                         }
                                     >

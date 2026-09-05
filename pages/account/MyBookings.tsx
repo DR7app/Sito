@@ -204,7 +204,7 @@ const MyBookings = () => {
       cancelled: 'bg-red-500/20 text-red-400',
     };
     return (
-      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColors[status] || 'bg-gray-500/20 text-gray-400'}`}>
+      <span className={`px-2.5 py-1 text-xs font-semibold ${statusColors[status] || 'bg-gray-500/20 text-gray-400'}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -220,7 +220,7 @@ const MyBookings = () => {
       failed: 'bg-red-500/20 text-red-400',
     };
     return (
-      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${colors[paymentStatus] || 'bg-gray-500/20 text-gray-400'}`}>
+      <span className={`px-2.5 py-1 text-xs font-semibold ${colors[paymentStatus] || 'bg-gray-500/20 text-gray-400'}`}>
         {isPaid ? 'Pagato' : paymentStatus === 'pending' ? 'In attesa' : paymentStatus}
       </span>
     );
@@ -1105,7 +1105,7 @@ const MyBookings = () => {
                               setModifyTime(booking.appointment_time || appt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' }));
                             }
                           }}
-                          className="px-4 py-2 bg-transparent border border-blue-500/50 text-blue-400 hover:bg-blue-500/10 text-sm font-medium rounded-lg transition-colors"
+                          className="px-4 py-2 bg-transparent border border-blue-500/50 text-blue-400 hover:bg-blue-500/10 text-sm font-medium transition-colors"
                         >
                           {booking.service_type === 'car_rental' ? 'Modifica prenotazione' : 'Modifica appuntamento'}
                         </button>
@@ -1129,13 +1129,13 @@ const MyBookings = () => {
                               <button
                                 onClick={() => handleCancel(booking)}
                                 disabled={cancellingId === booking.id}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
                               >
                                 {cancellingId === booking.id ? 'Cancellazione...' : 'Conferma cancellazione'}
                               </button>
                               <button
                                 onClick={() => setConfirmCancelId(null)}
-                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors"
                               >
                                 {t({ it: "Annulla", en: "Cancel" })}
                               </button>
@@ -1144,7 +1144,7 @@ const MyBookings = () => {
                         ) : (
                           <button
                             onClick={() => { setConfirmCancelId(booking.id); setCancelError(null); setCancelSuccess(null); }}
-                            className="px-4 py-2 bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/10 text-sm font-medium rounded-lg transition-colors"
+                            className="px-4 py-2 bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/10 text-sm font-medium transition-colors"
                           >
                             Cancella prenotazione
                           </button>
@@ -1184,13 +1184,13 @@ const MyBookings = () => {
             <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 to="/car-rentals"
-                className="inline-block px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm"
+                className="inline-block px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm"
               >
                 {lang === 'it' ? 'Noleggio Auto' : 'Rent a Car'}
               </Link>
               <Link
                 to="/prime-wash"
-                className="inline-block px-5 py-2.5 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors text-sm"
+                className="inline-block px-5 py-2.5 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors text-sm"
               >
                 {lang === 'it' ? 'Autolavaggio' : 'Car Wash'}
               </Link>
@@ -1268,8 +1268,8 @@ const MyBookings = () => {
                 {modifyError && <p className="text-red-400 text-sm mb-4">{modifyError}</p>}
 
                 <div className="flex gap-3">
-                  <button onClick={() => setModifyingBooking(null)} className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors">{t({ it: "Annulla", en: "Cancel" })}</button>
-                  <button onClick={handleModify} disabled={modifySaving || !rentalPickupDate || !rentalPickupTime || !rentalDropoffDate || !rentalDropoffTime || rentalRecalcing} className="flex-1 py-3 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50">
+                  <button onClick={() => setModifyingBooking(null)} className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors">{t({ it: "Annulla", en: "Cancel" })}</button>
+                  <button onClick={handleModify} disabled={modifySaving || !rentalPickupDate || !rentalPickupTime || !rentalDropoffDate || !rentalDropoffTime || rentalRecalcing} className="flex-1 py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50">
                     {modifySaving ? t({ it: "Salvataggio…", en: "Saving…" }) : willPayByCard ? t({ it: "Paga differenza con carta", en: "Pay difference by card" }) : diff > 0 ? t({ it: "Conferma e paga dal wallet", en: "Confirm and pay from wallet" }) : t({ it: "Conferma modifica", en: "Confirm change" })}
                   </button>
                 </div>
@@ -1319,14 +1319,14 @@ const MyBookings = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setModifyingBooking(null)}
-                  className="flex-1 py-3 border border-gray-600 text-white rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors"
+                  className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                 >
                   {t({ it: "Annulla", en: "Cancel" })}
                 </button>
                 <button
                   onClick={handleModify}
                   disabled={modifySaving || !modifyDate || !modifyTime}
-                  className="flex-1 py-3 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  className="flex-1 py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   {modifySaving ? t({ it: "Salvataggio...", en: "Saving..." }) : t({ it: "Conferma modifica", en: "Confirm change" })}
                 </button>

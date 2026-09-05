@@ -145,13 +145,13 @@ const InvestitoriPage: React.FC = () => {
                   href={copy.cta_whatsapp_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-200 transition-colors"
+                  className="inline-block bg-white text-black px-8 py-4 font-semibold text-lg hover:bg-gray-200 transition-colors"
                 >
                   {bilingual(copy, 'cta_button_label', lang)}
                 </a>
                 <a
                   href={`mailto:${copy.cta_email}`}
-                  className="inline-block bg-gray-800 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-700 transition-colors border border-gray-700"
+                  className="inline-block bg-gray-800 text-white px-8 py-4 font-semibold text-lg hover:bg-gray-700 transition-colors border border-gray-700"
                 >
                   {copy.cta_email}
                 </a>

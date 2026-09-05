@@ -79,7 +79,7 @@ export default function RentalFilters({
                   onCategoryChange([...selectedCategories, cat])
                 }
               }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium transition-all ${
                 selectedCategories.length === 0 || selectedCategories.includes(cat)
                   ? 'bg-white text-black'
                   : 'bg-gray-800 text-gray-400 border border-gray-700'

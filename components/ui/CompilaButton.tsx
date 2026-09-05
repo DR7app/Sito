@@ -334,7 +334,7 @@ export default function CompilaButton({
         type="button"
         onClick={handleCompila}
         disabled={disabled || isExtracting || validDocs.length === 0}
-        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+        className={`px-4 py-2 font-semibold text-sm transition-all ${
           isExtracting
             ? 'bg-yellow-600 text-white cursor-wait animate-pulse'
             : validDocs.length === 0
@@ -398,19 +398,19 @@ export default function CompilaButton({
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleApplyWithOverwrite}
-                className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold text-sm hover:bg-yellow-500"
+                className="flex-1 px-4 py-2 bg-yellow-600 text-white font-semibold text-sm hover:bg-yellow-500"
               >
                 Usa dati documento
               </button>
               <button
                 onClick={handleApplyKeepExisting}
-                className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg font-semibold text-sm hover:bg-gray-600"
+                className="flex-1 px-4 py-2 bg-gray-700 text-white font-semibold text-sm hover:bg-gray-600"
               >
                 Mantieni attuali
               </button>
               <button
                 onClick={() => { setShowConflicts(false); setPendingData(null); setConflicts([]); }}
-                className="px-4 py-2 bg-gray-800 text-gray-400 rounded-lg text-sm hover:bg-gray-700"
+                className="px-4 py-2 bg-gray-800 text-gray-400 text-sm hover:bg-gray-700"
               >
                 Annulla
               </button>

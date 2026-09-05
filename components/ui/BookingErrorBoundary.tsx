@@ -80,7 +80,7 @@ const BookingErrorFallback: React.FC<{ whatsappUrl: string; onRetry: () => void 
         <div className="flex flex-col gap-3">
           <button
             onClick={onRetry}
-            className="w-full py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm"
+            className="w-full py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm"
           >
             {t({ it: 'Riprova', en: 'Try again' })}
           </button>
@@ -88,7 +88,7 @@ const BookingErrorFallback: React.FC<{ whatsappUrl: string; onRetry: () => void 
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors text-sm"
+            className="w-full py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors text-sm"
           >
             {t({ it: 'Contattaci su WhatsApp', en: 'Contact us on WhatsApp' })}
           </a>

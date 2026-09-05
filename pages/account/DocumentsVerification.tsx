@@ -9,7 +9,7 @@ const StatusBadge: React.FC<{ status: 'pending_verification' | 'verified' | 'rej
         verified: { text: 'Verificato', color: 'bg-green-500/20 text-green-400' },
         rejected: { text: 'Rifiutato', color: 'bg-red-500/20 text-red-400' },
     };
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusMap[status].color}`}>{statusMap[status].text}</span>;
+    return <span className={`px-2 py-1 text-xs font-medium ${statusMap[status].color}`}>{statusMap[status].text}</span>;
 }
 
 const DocumentsVerification = () => {
@@ -222,7 +222,7 @@ const DocumentsVerification = () => {
                                             <StatusBadge status={doc.status} />
                                             <button
                                                 onClick={() => getDocumentUrl(doc)}
-                                                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors"
+                                                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs transition-colors"
                                             >
                                                 Visualizza
                                             </button>
@@ -248,7 +248,7 @@ const DocumentsVerification = () => {
                                                         alert(`Errore eliminazione: ${e instanceof Error ? e.message : 'sconosciuto'}`)
                                                     }
                                                 }}
-                                                className="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-white text-xs rounded transition-colors"
+                                                className="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-white text-xs transition-colors"
                                             >
                                                 Elimina
                                             </button>
@@ -285,7 +285,7 @@ const DocumentsVerification = () => {
                                                 {step.label}
                                             </h3>
                                             {!step.required && (
-                                                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5 rounded">
+                                                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5">
                                                     Opzionale
                                                 </span>
                                             )}
@@ -305,7 +305,7 @@ const DocumentsVerification = () => {
                                                 accept="image/*,.pdf"
                                                 onChange={handleFileChange(index)}
                                                 disabled={isUploaded}
-                                                className="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                             />
                                             {hasFile && !isUploaded && (
                                                 <p className="text-xs text-gray-400">
@@ -318,7 +318,7 @@ const DocumentsVerification = () => {
                                     <button
                                         onClick={() => handleUploadStep(index)}
                                         disabled={uploading || !hasFile || isUploaded}
-                                        className="w-full sm:w-auto px-6 py-2 min-h-[44px] bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                        className="w-full sm:w-auto px-6 py-2 min-h-[44px] bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                                     >
                                         {isUploaded ? 'Caricato ✓' : uploading ? 'Caricamento...' : 'Carica'}
                                     </button>

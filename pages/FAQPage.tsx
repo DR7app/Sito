@@ -83,7 +83,7 @@ const FAQPage: React.FC = () => {
                                             aria-controls={`faq-answer-${e.id}`}
                                         >
                                             <span className="flex items-center gap-4 min-w-0 flex-1">
-                                                <span className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-[12px] font-mono font-semibold transition-colors ${
+                                                <span className={`shrink-0 inline-flex items-center justify-center w-8 h-8 text-[12px] font-mono font-semibold transition-colors ${
                                                     isOpen ? 'bg-white text-black' : 'bg-white/10 text-gray-300 group-hover:bg-white/15'
                                                 }`}>
                                                     {String(idx + 1).padStart(2, '0')}
@@ -95,7 +95,7 @@ const FAQPage: React.FC = () => {
                                             <motion.span
                                                 animate={{ rotate: isOpen ? 45 : 0 }}
                                                 transition={{ duration: 0.25 }}
-                                                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                                                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 transition-colors ${
                                                     isOpen ? 'bg-white text-black' : 'text-gray-400 group-hover:text-white'
                                                 }`}
                                             >
@@ -138,7 +138,7 @@ const FAQPage: React.FC = () => {
                             </p>
                             <a
                                 href="mailto:info@dr7.app"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-gray-200 transition-colors"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-black bg-white hover:bg-gray-200 transition-colors"
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>

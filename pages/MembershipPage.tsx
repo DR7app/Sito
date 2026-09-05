@@ -110,10 +110,10 @@ const MembershipPage: React.FC = () => {
                     >
                         {/* Billing Toggle */}
                         <div className="flex justify-center mb-10">
-                            <div className="inline-flex bg-gray-900 border border-gray-800 rounded-full p-1">
+                            <div className="inline-flex bg-gray-900 border border-gray-800 p-1">
                                 <button
                                     onClick={() => setBillingCycle('monthly')}
-                                    className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                                    className={`px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                                         billingCycle === 'monthly'
                                             ? 'bg-white text-black'
                                             : 'text-gray-400 hover:text-white'
@@ -123,14 +123,14 @@ const MembershipPage: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setBillingCycle('annually')}
-                                    className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 relative ${
+                                    className={`px-6 py-2.5 text-sm font-semibold transition-all duration-200 relative ${
                                         billingCycle === 'annually'
                                             ? 'bg-white text-black'
                                             : 'text-gray-400 hover:text-white'
                                     }`}
                                 >
                                     {tx(copy.pricing_billing_annual_it, copy.pricing_billing_annual_en)}
-                                    <span className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                    <span className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] font-bold px-1.5 py-0.5">
                                         {copy.pricing_billing_save_badge}
                                     </span>
                                 </button>
@@ -172,7 +172,7 @@ const MembershipPage: React.FC = () => {
 
                             <button
                                 onClick={handleSubscribe}
-                                className="w-full py-4 bg-white text-black font-bold text-lg rounded-full hover:bg-gray-200 transition-all duration-200 transform hover:scale-[1.02]"
+                                className="w-full py-4 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all duration-200 transform hover:scale-[1.02]"
                             >
                                 {tx(copy.pricing_cta_it, copy.pricing_cta_en)}
                             </button>
@@ -207,7 +207,7 @@ const MembershipPage: React.FC = () => {
                                 <p className="text-gray-300 mb-6">{tx(copy.elite_cta_text_it, copy.elite_cta_text_en)}</p>
                                 <button
                                     onClick={() => user ? navigate('/account') : navigate('/signin')}
-                                    className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
+                                    className="bg-white text-black px-8 py-3 font-bold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
                                 >
                                     {user
                                         ? tx(copy.elite_cta_logged_in_it, copy.elite_cta_logged_in_en)
@@ -264,7 +264,7 @@ const MembershipPage: React.FC = () => {
                                         <span className="text-white font-semibold text-sm">
                                             {tx(rule.label_it, rule.label_en)}
                                         </span>
-                                        <span className="bg-white text-black text-sm font-bold px-2.5 py-0.5 rounded-full">
+                                        <span className="bg-white text-black text-sm font-bold px-2.5 py-0.5">
                                             {rule.reward}
                                         </span>
                                     </div>
@@ -281,7 +281,7 @@ const MembershipPage: React.FC = () => {
                         transition={{ duration: 0.5, delay: 0.4 }}
                         className="mt-10 text-center"
                     >
-                        <div className="inline-flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-full px-5 py-2.5">
+                        <div className="inline-flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-5 py-2.5">
                             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>

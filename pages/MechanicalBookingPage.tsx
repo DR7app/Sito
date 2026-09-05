@@ -727,13 +727,13 @@ const MechanicalBookingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate('/signin', { state: { from: location.pathname } })}
-                className="px-8 py-3 bg-dr7-gold text-black font-bold rounded hover:bg-dr7-gold/90 transition-colors"
+                className="px-8 py-3 bg-dr7-gold text-black font-bold hover:bg-dr7-gold/90 transition-colors"
               >
                 {lang === 'it' ? 'Accedi' : 'Login'}
               </button>
               <button
                 onClick={() => navigate('/signup', { state: { from: location.pathname } })}
-                className="px-8 py-3 bg-gray-700 text-white font-bold rounded hover:bg-gray-600 transition-colors"
+                className="px-8 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors"
               >
                 {lang === 'it' ? 'Registrati' : 'Sign Up'}
               </button>
@@ -1002,7 +1002,7 @@ const MechanicalBookingPage: React.FC = () => {
                         disabled={!slot.available}
                         onClick={() => setFormData(prev => ({ ...prev, appointmentTime: slot.time }))}
                         className={`
-                          px-3 py-2 rounded-lg font-semibold text-sm transition-all
+                          px-3 py-2 font-semibold text-sm transition-all
                           ${formData.appointmentTime === slot.time
                             ? 'bg-white text-black ring-2 ring-white'
                             : slot.available
@@ -1064,7 +1064,7 @@ const MechanicalBookingPage: React.FC = () => {
                     type="button"
                     onClick={validateDiscountCode}
                     disabled={isValidatingCode || !discountCode.trim()}
-                    className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm"
+                    className="px-4 py-2 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 text-sm"
                   >
                     {isValidatingCode ? '...' : 'Applica'}
                   </button>
@@ -1095,7 +1095,7 @@ const MechanicalBookingPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-white text-black font-bold py-4 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
+                className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
                 {lang === 'it' ? 'PROCEDI AL PAGAMENTO' : 'PROCEED TO PAYMENT'}
               </button>
@@ -1164,7 +1164,7 @@ const MechanicalBookingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('credit')}
-                    className={`p-4 rounded-lg border-2 transition-all ${paymentMethod === 'credit'
+                    className={`p-4 border-2 transition-all ${paymentMethod === 'credit'
                       ? 'border-white bg-white/10'
                       : 'border-gray-700 bg-gray-800 hover:border-gray-600'
                       }`}
@@ -1183,7 +1183,7 @@ const MechanicalBookingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('nexi')}
-                    className={`p-4 rounded-lg border-2 transition-all ${paymentMethod === 'nexi'
+                    className={`p-4 border-2 transition-all ${paymentMethod === 'nexi'
                       ? 'border-white bg-white/10'
                       : 'border-gray-700 bg-gray-800 hover:border-gray-600'
                       }`}
@@ -1227,7 +1227,7 @@ const MechanicalBookingPage: React.FC = () => {
                   <button
                     onClick={handlePayment}
                     disabled={isProcessing}
-                    className="w-full bg-white text-black font-bold py-3 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
+                    className="w-full bg-white text-black font-bold py-3 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing
@@ -1277,7 +1277,7 @@ const MechanicalBookingPage: React.FC = () => {
                   <button
                     onClick={handlePayment}
                     disabled={isProcessing || creditBalance < discountedPrice}
-                    className="w-full bg-white text-black font-bold py-3 px-6 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white text-black font-bold py-3 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing

@@ -220,7 +220,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
               <button
                 type="button"
                 onClick={() => changeMonth(-1)}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-white"
+                className="p-2 hover:bg-gray-800 transition-colors text-white"
               >
                 ‹
               </button>
@@ -230,7 +230,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
               <button
                 type="button"
                 onClick={() => changeMonth(1)}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-white"
+                className="p-2 hover:bg-gray-800 transition-colors text-white"
               >
                 ›
               </button>
@@ -263,7 +263,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
                     onClick={() => !disabled && handleDateClick(day)}
                     disabled={disabled}
                     className={`
-                      aspect-square rounded-lg text-sm font-medium transition-all
+                      aspect-square text-sm font-medium transition-all
                       ${disabled ? 'text-gray-600 cursor-not-allowed' : 'text-white hover:bg-gray-800 cursor-pointer'}
                       ${today && !selected ? 'ring-2 ring-blue-500' : ''}
                       ${selected ? 'bg-blue-500 text-black font-bold' : ''}

@@ -231,7 +231,7 @@ const Step3 = ({ images, onImageUpload, onRemoveImage }: any) => {
                     {images.map((img: string, index: number) => (
                         <motion.div key={index} layout initial={{scale:0.5, opacity: 0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity: 0}} className="relative aspect-square">
                             <img src={img} alt={`preview ${index}`} className="w-full h-full object-cover rounded-md" />
-                            <button type="button" onClick={() => onRemoveImage(index)} className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold hover:bg-red-500">
+                            <button type="button" onClick={() => onRemoveImage(index)} className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-500">
                                 
                             </button>
                         </motion.div>

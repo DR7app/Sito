@@ -98,7 +98,7 @@ const AutoBookingPopup: React.FC = () => {
               type="button"
               onClick={close}
               aria-label={t({ it: "Chiudi", en: "Close" })}
-              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

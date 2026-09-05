@@ -713,7 +713,7 @@ const PaymentSuccessPage: React.FC = () => {
                         )}
                         <button
                             onClick={() => navigate('/')}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
                         >
                             {s('cta_home_it', 'cta_home_en')}
                         </button>
@@ -786,7 +786,7 @@ const PaymentSuccessPage: React.FC = () => {
                     <div className="space-y-3">
                         <button
                             onClick={() => navigate('/')}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
                         >
                             {s('cta_home_it', 'cta_home_en')}
                         </button>
@@ -796,7 +796,7 @@ const PaymentSuccessPage: React.FC = () => {
                                 href={whatsappUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block w-full bg-[#25D366] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#20bd5a] transition-all flex items-center justify-center gap-2"
+                                className="block w-full bg-[#25D366] text-white py-3 px-6 font-semibold hover:bg-[#20bd5a] transition-all flex items-center justify-center gap-2"
                             >
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.698c1.09.587 2.107.89 3.037.89h.007c3.181 0 5.768-2.587 5.768-5.776 0-1.545-.6-2.994-1.692-4.085-1.096-1.09-2.55-1.693-4.316-1.693l.002.015zm6.814 10.373c-1.045 1.049-2.227 1.58-3.567 1.458-1.5-.138-3.037-1.127-4.436-2.527-1.4-1.4-2.39-2.936-2.527-4.436-.122-1.341.408-2.523 1.458-3.567l.156-.155c.319-.317.76-.325 1.082-.016l1.373 1.346c.321.319.311.751.01.996l-.974.795c-.295.241-.482.72.064 1.266.545.546 1.023.36 1.265.064l.795-.974c.245-.301.677-.311.996.01l1.347 1.373c.31.322.302.763-.017 1.082l-.155.156z" />
@@ -808,21 +808,21 @@ const PaymentSuccessPage: React.FC = () => {
                         {purchaseType === 'cauzione' ? null : purchaseType === 'membership' ? (
                             <button
                                 onClick={() => navigate('/account/membership')}
-                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
                             >
                                 {s('cta_membership_it', 'cta_membership_en')}
                             </button>
                         ) : purchaseType === 'wallet' ? (
                             <button
                                 onClick={() => navigate('/credit-wallet')}
-                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
                             >
                                 {s('cta_wallet_it', 'cta_wallet_en')}
                             </button>
                         ) : (
                             <button
                                 onClick={() => navigate('/account/bookings')}
-                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
                             >
                                 {s('cta_bookings_it', 'cta_bookings_en')}
                             </button>

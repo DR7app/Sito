@@ -142,7 +142,7 @@ const SecuritySettings = () => {
                     </div>
                     <div className="p-4 md:p-6 bg-gray-900 flex items-center justify-end space-x-4 rounded-b-lg">
                         {successMessage && <span className="text-sm text-green-400">{successMessage}</span>}
-                        <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">
+                        <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm disabled:opacity-60">
                             {isSubmitting ? t('Please_wait') : t('Save_Changes')}
                         </button>
                     </div>
@@ -157,7 +157,7 @@ const SecuritySettings = () => {
                 <div className="p-4 md:p-6">
                     <button
                         onClick={() => setShowDeleteModal(true)}
-                        className="px-5 py-2.5 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-colors text-sm"
+                        className="px-5 py-2.5 bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-sm"
                     >
                         {t({ en: 'Delete My Account', it: 'Elimina il mio Account' })}
                     </button>
@@ -181,14 +181,14 @@ const SecuritySettings = () => {
                                     <button
                                         onClick={() => { setShowDeleteModal(false); setError(''); }}
                                         disabled={isDeleting}
-                                        className="flex-1 px-5 py-2.5 bg-gray-700 text-white font-bold rounded-full hover:bg-gray-600 transition-colors text-sm disabled:opacity-50"
+                                        className="flex-1 px-5 py-2.5 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors text-sm disabled:opacity-50"
                                     >
                                         {t({ en: 'Cancel', it: 'Annulla' })}
                                     </button>
                                     <button
                                         onClick={handleDeleteAccount}
                                         disabled={isDeleting}
-                                        className="flex-1 px-5 py-2.5 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+                                        className="flex-1 px-5 py-2.5 bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                                     >
                                         {isDeleting ? t({ en: 'Deleting...', it: 'Eliminazione...' }) : t({ en: 'Yes, Delete', it: 'Sì, elimina' })}
                                     </button>

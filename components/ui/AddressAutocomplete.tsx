@@ -263,7 +263,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium leading-tight">{l.nome}</span>
                 {l.categoria && (
-                  <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+                  <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-gray-700 text-gray-300">
                     {l.categoria}
                   </span>
                 )}

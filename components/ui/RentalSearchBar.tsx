@@ -252,7 +252,7 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
         <button
           type="submit"
           disabled={!isValid || isSearching}
-          className="px-8 py-3 bg-white text-black font-bold uppercase tracking-wider text-sm rounded-full hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          className="px-8 py-3 bg-white text-black font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
           {isSearching ? t({ it: 'Ricerca...', en: 'Searching...' }) : t({ it: 'Verifica Disponibilita', en: 'Check availability' })}
         </button>

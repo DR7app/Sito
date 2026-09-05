@@ -142,13 +142,13 @@ const VehicleSearchResults: React.FC<VehicleSearchResultsProps> = ({ results, se
                                 />
                                 {/* KASKO badge */}
                                 <div className="absolute top-3 left-3">
-                                    <span className="bg-green-600/90 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                                    <span className="bg-green-600/90 text-white text-xs font-bold px-2.5 py-1 backdrop-blur-sm">
                                         KASKO Inclusa
                                     </span>
                                 </div>
                                 {vehicle.availableCount > 1 && (
                                     <div className="absolute top-3 right-3">
-                                        <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                                        <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 backdrop-blur-sm">
                                             {vehicle.availableCount} disponibili
                                         </span>
                                     </div>
@@ -163,12 +163,12 @@ const VehicleSearchResults: React.FC<VehicleSearchResultsProps> = ({ results, se
                                 {vehicle.metadata?.specs && (
                                     <div className="flex flex-wrap gap-2 mt-2 mb-3">
                                         {vehicle.metadata.specs.power && (
-                                            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
+                                            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1">
                                                 {vehicle.metadata.specs.power}
                                             </span>
                                         )}
                                         {vehicle.metadata.specs.acceleration && (
-                                            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
+                                            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1">
                                                 {vehicle.metadata.specs.acceleration}
                                             </span>
                                         )}
@@ -189,7 +189,7 @@ const VehicleSearchResults: React.FC<VehicleSearchResultsProps> = ({ results, se
                                 {/* Book Button */}
                                 <button
                                     onClick={() => onBook(vehicle)}
-                                    className="w-full bg-white text-black font-bold py-3 rounded-full uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-[1.02]"
+                                    className="w-full bg-white text-black font-bold py-3 uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-[1.02]"
                                 >
                                     PRENOTA
                                 </button>

@@ -132,11 +132,11 @@ const MembershipEnrollmentPage: React.FC = () => {
                 <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 md:p-8">
                     {/* Billing Toggle */}
                     <div className="flex justify-center mb-6">
-                        <div className="inline-flex bg-gray-800 border border-gray-700 rounded-full p-1 w-full">
+                        <div className="inline-flex bg-gray-800 border border-gray-700 p-1 w-full">
                             <button
                                 type="button"
                                 onClick={() => setBillingCycle('monthly')}
-                                className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${
+                                className={`flex-1 py-2 text-sm font-semibold transition-all ${
                                     billingCycle === 'monthly' ? 'bg-white text-black' : 'text-gray-400'
                                 }`}
                             >
@@ -145,7 +145,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setBillingCycle('annually')}
-                                className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${
+                                className={`flex-1 py-2 text-sm font-semibold transition-all ${
                                     billingCycle === 'annually' ? 'bg-white text-black' : 'text-gray-400'
                                 }`}
                             >
@@ -205,7 +205,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isProcessing}
-                            className="w-full py-3.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
+                            className="w-full py-3.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-60"
                         >
                             {isProcessing
                                 ? (lang === 'it' ? 'Elaborazione...' : 'Processing...')

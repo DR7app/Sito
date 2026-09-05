@@ -117,7 +117,7 @@ const HeliTourPopup: React.FC = () => {
                 type="button"
                 onClick={close}
                 aria-label={t({ it: "Chiudi", en: "Close" })}
-                className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white/80 hover:text-white transition-colors"
+                className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center bg-black/50 hover:bg-black/70 text-white/80 hover:text-white transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -140,7 +140,7 @@ const HeliTourPopup: React.FC = () => {
                       <button
                         key={i}
                         onClick={() => onPrenota(d)}
-                        className={`w-full text-left rounded-xl border p-3 transition-colors ${d.best_value ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500'}`}
+                        className={`w-full text-left border p-3 transition-colors ${d.best_value ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500'}`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-white font-semibold">
@@ -162,7 +162,7 @@ const HeliTourPopup: React.FC = () => {
                     )}
                     <button
                       onClick={() => onPrenota(null)}
-                      className="mt-4 w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity"
+                      className="mt-4 w-full px-4 py-3 bg-white text-black font-semibold hover:opacity-90 transition-opacity"
                     >
                       {t({ it: "Prenota il tour", en: "Book the tour" })}
                     </button>
@@ -194,8 +194,8 @@ const HeliTourPopup: React.FC = () => {
             <h3 className="text-xl font-semibold text-white">{t({ it: "Accedi per prenotare", en: "Sign in to book" })}</h3>
             <p className="mt-2 text-sm text-gray-400">{t({ it: "Per prenotare il tour devi essere registrato e accedere al tuo account DR7.", en: "To book the tour you must be registered and signed in to your DR7 account." })}</p>
             <div className="mt-6 space-y-3">
-              <button onClick={() => goAuth('/signin')} className="w-full px-4 py-3 rounded-full bg-white text-black font-semibold hover:opacity-90 transition-opacity">{t({ it: "Accedi", en: "Sign in" })}</button>
-              <button onClick={() => goAuth('/signup')} className="w-full px-4 py-3 rounded-full bg-transparent border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">{t({ it: "Registrati", en: "Sign up" })}</button>
+              <button onClick={() => goAuth('/signin')} className="w-full px-4 py-3 bg-white text-black font-semibold hover:opacity-90 transition-opacity">{t({ it: "Accedi", en: "Sign in" })}</button>
+              <button onClick={() => goAuth('/signup')} className="w-full px-4 py-3 bg-transparent border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">{t({ it: "Registrati", en: "Sign up" })}</button>
             </div>
           </div>
         </div>

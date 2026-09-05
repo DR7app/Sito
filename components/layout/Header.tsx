@@ -164,6 +164,13 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/contact', img: mi('menu_contatti_img', '/menu-contatti.jpeg'), Icon: SendIcon,
       title: mc('menu_contatti_title_it', 'menu_contatti_title_en', 'Contattaci', 'Contact Us'),
       subtitle: mc('menu_contatti_sub_it', 'menu_contatti_sub_en', 'Siamo a tua disposizione', 'We are at your service') },
+    // Ultima riga: l'area cliente. Da quando la barra in alto non porta piu'
+    // il Credit Wallet ne' l'uscita, il menu e' la via principale per
+    // arrivarci. Chi non ha ancora fatto l'accesso viene mandato al modulo di
+    // accesso, non a una pagina che lo rimbalzerebbe.
+    { to: user ? accountLink : '/signin', img: mi('menu_account_img', '/menu-club.jpeg'), Icon: UserCircleIcon,
+      title: user ? accountLabel : t('Sign_In'),
+      subtitle: '' },
   ];
 
   /**
@@ -508,31 +515,14 @@ const Header: React.FC = () => {
             </div>
           )}
 
-          {/* Controlli utente a destra — con il logo in coda se allineato a destra.
-              La lingua e' scesa nel fondo pagina (come nel riferimento) e il
-              saldo del Credit Wallet vive dentro Mio Account: la barra tiene
-              solo l'ingresso all'area cliente e l'uscita. */}
+          {/* A destra resta solo l'accesso per chi non l'ha ancora fatto, e il
+              logo se e' allineato di qua. Lingua, Credit Wallet, uscita e
+              adesso anche l'ingresso all'area cliente sono usciti dalla barra:
+              stanno nel menu e nel fondo pagina. Chi ha gia' fatto l'accesso
+              non vede piu' nulla qui. */}
           <div className="flex items-center space-x-4">
             <AnimatePresence mode="wait">
-              {user ? (
-                <motion.div
-                  key="user-controls"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  className="flex items-center space-x-3"
-                >
-                  <Link
-                    to={user.role === 'business' ? '/partner/dashboard' : '/account'}
-                    className="hidden md:flex items-center justify-center w-9 h-9 border border-white/15 text-gray-400 hover:text-white hover:border-white/35 transition-colors duration-500 ease-editorial"
-                    title={
-                      user.role === 'business' ? t('Partner_Dashboard') : t('My_Account')
-                    }
-                  >
-                    <UserCircleIcon className="w-5 h-5" />
-                  </Link>
-                </motion.div>
-              ) : (
+              {user ? null : (
                 <Link
                   to="/signin"
                   className="hidden md:inline-flex items-center justify-center border border-white bg-white px-6 py-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"

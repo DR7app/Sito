@@ -33,30 +33,24 @@ function isExternal(link: FooterLinkData): boolean {
   return /^https?:\/\//i.test(link.to);
 }
 
-const LinkRow: React.FC<{ links: FooterLinkData[]; lang: 'it' | 'en'; bold?: boolean }> = ({ links, lang, bold }) => (
-  <ul className="flex flex-wrap justify-center gap-x-10 gap-y-3">
-    {links.map((l) => {
-      const label = lang === 'it' ? l.label_it : l.label_en;
-      if (isExternal(l)) {
-        return (
-          <li key={l.id}>
-            <a
-              href={l.to}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`link-reveal hover:text-white transition-colors duration-500 ease-editorial ${bold ? 'text-gray-300' : ''}`}
-            >{label}</a>
-          </li>
-        );
-      }
-      return (
-        <li key={l.id}>
-          <Link to={l.to} className={`link-reveal hover:text-white transition-colors duration-500 ease-editorial ${bold ? 'text-gray-300' : ''}`}>{label}</Link>
-        </li>
-      );
-    })}
-  </ul>
-);
+/**
+ * Una voce del blocco finale. Impaginazione del riferimento: maiuscolo,
+ * lettere larghe, nessun raggruppamento visibile — le colonne nascono dal
+ * flusso, non da tre liste separate.
+ */
+const FooterLink: React.FC<{ link: FooterLinkData; lang: 'it' | 'en' }> = ({ link, lang }) => {
+  const label = lang === 'it' ? link.label_it : link.label_en;
+  const cls = 'link-reveal transition-colors duration-500 ease-editorial hover:text-white';
+  return (
+    <li className="mb-6 break-inside-avoid">
+      {isExternal(link) ? (
+        <a href={link.to} target="_blank" rel="noopener noreferrer" className={cls}>{label}</a>
+      ) : (
+        <Link to={link.to} className={cls}>{label}</Link>
+      )}
+    </li>
+  );
+};
 
 const Footer: React.FC = () => {
   const { lang, t } = useTranslation();
@@ -142,37 +136,58 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Division Links */}
-        <div className="flex flex-col items-center justify-center gap-4 text-[11px] uppercase tracking-[0.18em] my-10">
-          <LinkRow links={copy.division_links} lang={lang} bold />
-        </div>
-
-        {/* Corporate & Legal Links */}
-        <div className="flex flex-col items-center justify-center gap-4 text-[12px] my-10">
-          <LinkRow links={copy.corporate_links} lang={lang} />
-          <LinkRow links={copy.legal_links} lang={lang} />
-        </div>
-
-        {/* Bottom Section: Copyright */}
-        <div className="mt-16 pt-10 text-center border-t border-white/[0.07]">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <Link to="/" className="inline-block">
-              <img src={aspetto.logo_url} alt="DR7 Cagliari Logo" className="w-auto mx-auto" style={{ height: aspetto.footer_logo_height }} />
-            </Link>
-            <div className="order-last md:order-none text-center">
-              <p className="font-serif text-lg text-white mb-1.5">{bilingual(copy, 'bottom_brand_line', lang)}</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-600">{bilingual(copy, 'bottom_copyright', lang)}</p>
-            </div>
+        {/* Chiusura della pagina, impaginata come il riferimento:
+            torna-su a sinistra e logo al centro, un filo per tutta la
+            larghezza, poi le voci in colonne allineate a sinistra con le
+            icone social in fondo a destra. Prima erano righe centrate: le
+            stesse voci, nello stesso ordine, solo disposte diversamente. */}
+        <div className="mt-16">
+          <div className="relative flex items-center justify-center py-8">
             <button
               onClick={scrollToTop}
-              className="text-[10px] uppercase tracking-[0.2em] hover:text-white transition-colors duration-500 ease-editorial flex items-center gap-1.5"
               aria-label={t({ en: 'Back to top', it: 'Torna su' })}
+              className="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 text-white/60 transition-colors duration-500 ease-editorial hover:border-white/60 hover:text-white"
             >
-              {t({ en: 'Back to Top', it: 'Torna su' })}
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
               </svg>
             </button>
+            <Link to="/" className="inline-block">
+              <img src={aspetto.logo_url} alt="DR7 Cagliari Logo" className="w-auto" style={{ height: aspetto.footer_logo_height }} />
+            </Link>
+          </div>
+
+          <div className="border-t border-white/[0.12]" />
+
+          <div className="flex flex-col gap-12 pt-12 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
+            {/* Le tre liste del pannello (divisioni, corporate, legali)
+                scorrono in un'unica colonnatura: l'ordine resta quello, e
+                nessuna voce si perde per strada. */}
+            <ul className="columns-2 gap-x-10 text-[12px] uppercase tracking-[0.2em] text-gray-400 sm:columns-3 lg:columns-5 lg:gap-x-14">
+              {[...copy.division_links, ...copy.corporate_links, ...copy.legal_links].map((l) => (
+                <FooterLink key={l.id} link={l} lang={lang} />
+              ))}
+            </ul>
+
+            <div className="flex shrink-0 gap-6 lg:pt-1">
+              {copy.social_links.map((s) => (
+                <a
+                  key={s.id}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  className="text-gray-600 transition-colors duration-500 ease-editorial hover:text-white"
+                >
+                  <SocialIcon icon={s.icon} className="w-5 h-5" />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-14 flex flex-col items-center gap-2 border-t border-white/[0.07] pt-10 md:flex-row md:justify-between">
+            <p className="font-serif text-lg text-white">{bilingual(copy, 'bottom_brand_line', lang)}</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-600">{bilingual(copy, 'bottom_copyright', lang)}</p>
           </div>
         </div>
       </div>

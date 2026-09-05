@@ -9,7 +9,7 @@ let RENTAL_BUFFER_MINUTES = 90;
 let RENTAL_BUFFER_MS = RENTAL_BUFFER_MINUTES * 60 * 1000;
 let LATE_RETURN_GRACE_MINUTES = 90;
 
-;(async () => {
+const CARICAMENTO_AUTOMAZIONI: Promise<void> = (async () => {
   try {
     const { data } = await supabase
       .from('centralina_pro_config')
@@ -37,6 +37,19 @@ let LATE_RETURN_GRACE_MINUTES = 90;
 /** Read-only getter so other modules (e.g. CarBookingWizard) can read the
  * latest hydrated grace minutes without importing supabase themselves. */
 export function getLateReturnGraceMinutes(): number { return LATE_RETURN_GRACE_MINUTES; }
+
+/**
+ * Si risolve quando le automazioni sono state lette (o la lettura e'
+ * fallita e restano i valori di fabbrica). Non rifiuta mai.
+ *
+ * Serve a chi mostra un CONTEGGIO GIORNI o un PREZZO prima che l'utente
+ * interagisca: in produzione la grace e' 30 minuti, non i 90 di fabbrica,
+ * e la differenza vale un giorno di noleggio. Chi ricalcola a ogni click
+ * (il wizard) non ne ha bisogno.
+ */
+export function automazioniPronte(): Promise<void> {
+  return CARICAMENTO_AUTOMAZIONI;
+}
 
 export interface BookingConflict {
   pickup_date: string;

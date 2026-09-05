@@ -53,7 +53,16 @@ const DEFAULT_CONFIG: NoleggioHoursConfig = {
 
 let CONFIG: NoleggioHoursConfig = DEFAULT_CONFIG;
 
-;(async () => {
+/**
+ * La lettura degli orari da Centralina Pro parte al caricamento del modulo
+ * e sostituisce `CONFIG` quando arriva. Chi legge gli orari in modo
+ * SINCRONO mentre disegna (il calendario disponibilita' costruisce la
+ * griglia dei mesi una volta sola) userebbe i valori di fabbrica e non si
+ * ridisegnerebbe mai piu': `orariPronti()` esiste per aspettare quel
+ * momento. Chi legge gli orari a ogni interazione (il wizard) non ne ha
+ * bisogno e non cambia.
+ */
+const CARICAMENTO: Promise<void> = (async () => {
   try {
     const { data } = await supabase
       .from('centralina_pro_config')
@@ -74,6 +83,12 @@ let CONFIG: NoleggioHoursConfig = DEFAULT_CONFIG;
     // keep DEFAULT_CONFIG
   }
 })();
+
+/** Si risolve quando gli orari sono stati letti (o la lettura e' fallita
+ *  e restano quelli di fabbrica). Non rifiuta mai. */
+export function orariPronti(): Promise<void> {
+  return CARICAMENTO;
+}
 
 const DAY_INDEX: DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 

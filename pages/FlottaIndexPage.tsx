@@ -14,6 +14,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
 import BookingSearchBox from '../components/ui/BookingSearchBox';
+import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
 import { getHeaderCopy, type HeaderCopy } from '../utils/siteCopy';
 import type { RentalItem } from '../types';
 // Alias storici categoria DB <-> id Centralina Pro: definiti una volta
@@ -22,7 +23,7 @@ import { categoryAliases } from '../utils/flottaConfig';
 
 const FlottaIndexPage: React.FC = () => {
   const { lang } = useTranslation();
-  const { openCarWizard } = useBooking();
+  const { openCarWizard, setInitialSearchDates } = useBooking();
   const { categories: flottaCats, loading: catsLoading, status: catsStatus } = useFlottaCategories();
   const { vehicles: allVehicles, loading: vehLoading } = useVehicles(undefined);
 
@@ -31,6 +32,12 @@ const FlottaIndexPage: React.FC = () => {
   // aprire la ricerca. Stessa finestra della barra in alto, stesse etichette
   // dal pannello: una sola cosa da cambiare se cambiano.
   const [prenotaAperto, setPrenotaAperto] = useState(false);
+
+  // Calendario di UN veicolo: si apre cliccando la sua locandina. Tiene
+  // anche il categoryContext della sezione da cui e' partito il click,
+  // perche' e' quello che il wizard usa per il routing urban/cars.
+  const [calendarioVeicolo, setCalendarioVeicolo] = useState<RentalItem | null>(null);
+  const [calendarioContesto, setCalendarioContesto] = useState('cars');
   const [headerCopy, setHeaderCopy] = useState<HeaderCopy | null>(null);
   useEffect(() => {
     let annullato = false;
@@ -70,6 +77,23 @@ const FlottaIndexPage: React.FC = () => {
 
   const handleBook = (item: RentalItem, catId: string) => {
     openCarWizard(item, categoryContextFor(catId));
+  };
+
+  // Le date scelte nel calendario restano nel contesto finche' il wizard
+  // le legge al montaggio. Uscendo dalla pagina si azzerano, altrimenti
+  // una prenotazione aperta altrove ripartirebbe con date vecchie (stessa
+  // pulizia che fa RentalPage).
+  useEffect(() => {
+    return () => { setInitialSearchDates(null); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const apriCalendario = (item: RentalItem, catId: string) => {
+    // I veicoli con prenotazione disabilitata restano in vetrina ma non
+    // aprono il calendario: non c'e' niente da prenotare.
+    if ((item as { bookingDisabled?: boolean }).bookingDisabled) return;
+    setCalendarioContesto(categoryContextFor(catId));
+    setCalendarioVeicolo(item);
   };
 
   return (
@@ -138,6 +162,7 @@ const FlottaIndexPage: React.FC = () => {
                         key={v.id}
                         item={v as RentalItem}
                         onBook={(item) => handleBook(item, group.id)}
+                        onCardClick={(item) => apriCalendario(item, group.id)}
                         categoryId={categoryContextFor(group.id)}
                         // Su "La Nostra Flotta" rimuoviamo il "Prenota Ora"
                         // dal card. Il cliente clicca il veicolo e usa il
@@ -158,6 +183,12 @@ const FlottaIndexPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <CalendarioDisponibilitaPortale
+        item={calendarioVeicolo}
+        categoryContext={calendarioContesto}
+        onClose={() => setCalendarioVeicolo(null)}
+      />
 
       <AnimatePresence>
         {prenotaAperto && (

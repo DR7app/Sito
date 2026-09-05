@@ -16,6 +16,12 @@ interface RentalCardProps {
   totalDays?: number;
   hidePrice?: boolean;
   hideBookButton?: boolean;
+  /**
+   * Click sulla scheda intera (immagine + nome). In pagina Flotta apre il
+   * calendario disponibilita' del veicolo. Se non passata, la scheda resta
+   * quello che era: statica, con il suo bottone "Prenota Ora".
+   */
+  onCardClick?: (item: RentalItem) => void;
   availableFrom?: string | null;
   jetSearchData?: {
     departure?: string;
@@ -40,7 +46,7 @@ interface RentalCardProps {
  * stesse azioni. E' cambiata solo l'impaginazione — piu' il NOME del
  * veicolo, che in modalita' flotta prima non compariva affatto.
  */
-const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, marketingTooltip, categoryId, totalPrice, totalDays, hidePrice, hideBookButton, jetSearchData, availableFrom }) => {
+const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, marketingTooltip, categoryId, totalPrice, totalDays, hidePrice, hideBookButton, onCardClick, jetSearchData, availableFrom }) => {
   const { t } = useTranslation();
   const { currency } = useCurrency();
   const contact = useContactInfo();
@@ -101,15 +107,34 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
       transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
       className="group flex flex-col"
     >
-      <div className={`media ${isFlottaMode ? '' : imageAspectRatio}`}>
-        <img
-          src={item.image}
-          alt={item.name}
-          loading="lazy"
-          decoding="async"
-          className={isFlottaMode ? 'w-full' : 'h-full w-full object-cover'}
-        />
-      </div>
+      {/* Con `onCardClick` la locandina diventa il bottone della scheda:
+          in Flotta e' il gesto che apre il calendario del veicolo. */}
+      {onCardClick ? (
+        <button
+          type="button"
+          onClick={() => onCardClick(item)}
+          aria-label={item.name}
+          className={`media block w-full cursor-pointer text-left ${isFlottaMode ? '' : imageAspectRatio}`}
+        >
+          <img
+            src={item.image}
+            alt={item.name}
+            loading="lazy"
+            decoding="async"
+            className={isFlottaMode ? 'w-full' : 'h-full w-full object-cover'}
+          />
+        </button>
+      ) : (
+        <div className={`media ${isFlottaMode ? '' : imageAspectRatio}`}>
+          <img
+            src={item.image}
+            alt={item.name}
+            loading="lazy"
+            decoding="async"
+            className={isFlottaMode ? 'w-full' : 'h-full w-full object-cover'}
+          />
+        </div>
+      )}
 
       {/* Fascia informazioni.
           Il nome del veicolo e' GIA' STAMPATO dentro la locandina (marca,
@@ -129,6 +154,20 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
             </span>
           )}
         </div>
+
+        {/* In Flotta la scheda non ha bottone: questa riga dice che si puo'
+            cliccare, altrimenti il calendario resta nascosto dietro una
+            locandina che sembra un'immagine e basta. */}
+        {onCardClick && (
+          <button
+            type="button"
+            onClick={() => onCardClick(item)}
+            className="btn-text mt-3 self-start text-[10px] uppercase tracking-[0.2em]"
+            style={{ color: 'var(--c-metal)' }}
+          >
+            {t({ it: 'Vedi disponibilita', en: 'See availability' })}
+          </button>
+        )}
 
         {!isFlottaMode && (
           <div className="mt-5 flex flex-grow flex-col">

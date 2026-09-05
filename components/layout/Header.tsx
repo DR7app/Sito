@@ -444,12 +444,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
 };
 
 const Header: React.FC = () => {
-  const { t, lang, setLanguage } = useTranslation();
-  const { user, logout } = useAuth();
+  const { t, lang } = useTranslation();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [creditBalance, setCreditBalance] = useState<number>(0);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [copy, setCopy] = useState<HeaderCopy | null>(null);
   // Logo e widget: si parte dai valori di fabbrica cosi' la barra non appare
   // mai senza logo, poi arriva la configurazione dell'operatore.
@@ -472,39 +470,6 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Fetch credit balance when user is logged in + refresh on navigation/focus
-  useEffect(() => {
-    if (!user?.id) {
-      setCreditBalance(0);
-      return;
-    }
-
-    const fetchBalance = async () => {
-      setIsLoadingBalance(true);
-      try {
-        const balance = await getUserCreditBalance(user.id);
-        setCreditBalance(balance);
-      } catch (error) {
-        console.error('Error fetching credit balance:', error);
-        setCreditBalance(0);
-      } finally {
-        setIsLoadingBalance(false);
-      }
-    };
-
-    // Fetch on mount
-    const timer = setTimeout(fetchBalance, 500);
-
-    // Re-fetch when user returns to tab or navigates
-    const handleFocus = () => fetchBalance();
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [user?.id]);
 
   return (
     <>
@@ -542,13 +507,11 @@ const Header: React.FC = () => {
             </div>
           )}
 
-          {/* Controlli utente a destra — con il logo in coda se allineato a destra */}
+          {/* Controlli utente a destra — con il logo in coda se allineato a destra.
+              La lingua e' scesa nel fondo pagina (come nel riferimento) e il
+              saldo del Credit Wallet vive dentro Mio Account: la barra tiene
+              solo l'ingresso all'area cliente e l'uscita. */}
           <div className="flex items-center space-x-4">
-            {/* Toggle lingua IT/EN — cambia TUTTO il sito */}
-            <div className="hidden sm:flex items-center border border-white/15 p-0.5 font-mono text-[10px] tracking-[0.16em]">
-              <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
-              <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
-            </div>
             <AnimatePresence mode="wait">
               {user ? (
                 <motion.div
@@ -559,15 +522,6 @@ const Header: React.FC = () => {
                   className="flex items-center space-x-3"
                 >
                   <Link
-                    to="/credit-wallet"
-                    className="flex items-center gap-2.5 border border-white/15 px-3 md:px-4 py-2 text-white transition-colors duration-500 ease-editorial hover:border-white/35"
-                  >
-                    <span className="hidden md:inline text-[10px] uppercase tracking-[0.2em] text-gray-400">{h('credit_wallet_pill_it', 'credit_wallet_pill_en') || 'Credit Wallet'}</span>
-                    <span className="t-meta text-xs text-white">
-                      {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
-                    </span>
-                  </Link>
-                  <Link
                     to={user.role === 'business' ? '/partner/dashboard' : '/account'}
                     className="hidden md:flex items-center justify-center w-9 h-9 border border-white/15 text-gray-400 hover:text-white hover:border-white/35 transition-colors duration-500 ease-editorial"
                     title={
@@ -576,13 +530,6 @@ const Header: React.FC = () => {
                   >
                     <UserCircleIcon className="w-5 h-5" />
                   </Link>
-                  <button
-                    onClick={logout}
-                    className="hidden md:flex items-center justify-center w-9 h-9 border border-white/15 text-gray-400 hover:text-white hover:border-white/35 transition-colors duration-500 ease-editorial"
-                    title={t('Sign_Out')}
-                  >
-                    <SignOutIcon className="w-5 h-5" />
-                  </button>
                 </motion.div>
               ) : (
                 <Link

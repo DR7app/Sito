@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const AccountPage = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const location = useLocation();
 
     const navItems = [
@@ -14,6 +14,9 @@ const AccountPage = () => {
         { path: '/account/security', label: t('Security') },
         { path: '/account/documents', label: t('Documents') },
         { path: '/account/club', label: 'DR7 Club' },
+        // Il Credit Wallet e' uscito dalla barra in alto del sito: il saldo si
+        // guarda da qui dentro, come le altre cose dell'area cliente.
+        { path: '/credit-wallet', label: 'Credit Wallet' },
         { path: '/account/membership', label: t('My_Membership') },
         { path: '/account/bookings', label: t('My_Bookings') },
         { path: '/account/preventivi', label: t({ it: 'I Miei Preventivi', en: 'My Quotes' }) },
@@ -47,13 +50,22 @@ const AccountPage = () => {
                                     key={item.path}
                                     to={item.path}
                                     className={({ isActive }) =>
-                                        `flex items-center min-h-[44px] p-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 ` +
-                                        (isActive ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white')
+                                        `flex items-center min-h-[44px] border p-3 text-sm font-medium transition-colors whitespace-nowrap shrink-0 ` +
+                                        (isActive ? 'border-white/30 bg-gray-800 text-white' : 'border-transparent text-gray-400 hover:border-white/15 hover:bg-gray-800/50 hover:text-white')
                                     }
                                 >
                                     {item.label}
                                 </NavLink>
                             ))}
+                            {/* Esci sta qui, non piu' in alto a destra nel sito:
+                                e' un'azione dell'area cliente, e in barra
+                                occupava un posto a ogni schermata. */}
+                            <button
+                                onClick={logout}
+                                className="flex min-h-[44px] shrink-0 items-center whitespace-nowrap border border-white/15 p-3 text-sm font-medium text-gray-400 transition-colors hover:border-white/35 hover:text-white md:mt-6"
+                            >
+                                {t('Sign_Out')}
+                            </button>
                         </nav>
                     </aside>
                     <main className="flex-1">

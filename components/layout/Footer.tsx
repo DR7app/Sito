@@ -53,7 +53,7 @@ const FooterLink: React.FC<{ link: FooterLinkData; lang: 'it' | 'en' }> = ({ lin
 };
 
 const Footer: React.FC = () => {
-  const { lang, t } = useTranslation();
+  const { lang, t, setLanguage } = useTranslation();
   const [copy, setCopy] = useState<FooterCopy | null>(null);
   // Stesso logo della barra in alto (admin > Sito > Aspetto & Funzionalita).
   const [aspetto, setAspetto] = useState<Required<AspettoCopy>>(DEFAULT_ASPETTO);
@@ -167,6 +167,26 @@ const Footer: React.FC = () => {
               {[...copy.division_links, ...copy.corporate_links, ...copy.legal_links].map((l) => (
                 <FooterLink key={l.id} link={l} lang={lang} />
               ))}
+              {/* La lingua sta qui, in coda alle voci, come nel riferimento:
+                  nella barra in alto occupava spazio a ogni schermata. Le due
+                  sigle restano entrambe visibili — un solo interruttore
+                  dietro una bandiera non si capirebbe. */}
+              <li className="mb-6 break-inside-avoid">
+                <span className="text-gray-600">{t({ it: 'Lingua', en: 'Language' })}</span>
+                <span className="ml-3 inline-flex items-center gap-2">
+                  <button
+                    onClick={() => setLanguage('it')}
+                    aria-label="Italiano"
+                    className={`transition-colors duration-500 ease-editorial ${lang === 'it' ? 'text-white' : 'hover:text-white'}`}
+                  >IT</button>
+                  <span className="text-gray-700">/</span>
+                  <button
+                    onClick={() => setLanguage('en')}
+                    aria-label="English"
+                    className={`transition-colors duration-500 ease-editorial ${lang === 'en' ? 'text-white' : 'hover:text-white'}`}
+                  >EN</button>
+                </span>
+              </li>
             </ul>
 
             <div className="flex shrink-0 gap-6 lg:pt-1">

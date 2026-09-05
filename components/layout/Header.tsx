@@ -529,9 +529,9 @@ const Header: React.FC = () => {
               onClick={() => setCercaAperto(true)}
               aria-label={t({ it: 'Cerca una sede', en: 'Find a location' })}
               title={t({ it: 'Cerca una sede', en: 'Find a location' })}
-              className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-400 transition-colors duration-500 ease-editorial hover:border-white/35 hover:text-white"
+              className="flex items-center justify-center text-white/90 transition-colors duration-500 ease-editorial hover:text-white"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+              <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="7" />
                 <path strokeLinecap="round" d="M20 20l-3.6-3.6" />
               </svg>

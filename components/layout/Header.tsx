@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import {
   UserCircleIcon, SignOutIcon,
@@ -191,6 +191,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
    * l'area cliente: cambia come si presentano, non cosa fanno.
    */
   const [hovered, setHovered] = useState(-1);
+  // Chi ha chiesto meno movimento al sistema operativo non deve subire la
+  // cascata: framer-motion anima con JavaScript, quindi la regola CSS di
+  // `prefers-reduced-motion` non la fermerebbe.
+  const menoMovimento = useReducedMotion();
 
   // Il menu si monta sul <body>, non dove vive l'header.
   //
@@ -278,11 +282,25 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                 <nav className="mr-auto w-full text-left lg:max-w-[46%] lg:text-right">
                   <ul>
                     {MENU_ITEMS.map(({ to, title, subtitle }, i) => (
-                      <li key={title} className="overflow-hidden">
+                      <li key={title}>
+                        {/* Ingresso: la voce arriva da SINISTRA, di una
+                            larghezza esatta della propria riga, mentre sfuma.
+                            La verticale non si muove.
+                            La cascata parte dal BASSO: l'ultima voce entra per
+                            prima, la prima per ultima. E' il contrario di
+                            quello che verrebbe spontaneo, ed e' proprio quello
+                            che rende l'apertura riconoscibile.
+                            Circa 750 ms a voce, con una decelerazione molto
+                            forte: a un sesto del tempo il tragitto e' gia'
+                            fatto per due terzi. */}
                         <motion.div
-                          initial={{ y: '110%', opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ duration: 0.72, delay: 0.08 + i * 0.045, ease: [0.16, 1, 0.3, 1] }}
+                          initial={menoMovimento ? false : { x: '-100%', opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={
+                            menoMovimento
+                              ? { duration: 0 }
+                              : { duration: 0.75, delay: (MENU_ITEMS.length - 1 - i) * 0.11, ease: [0.19, 1, 0.22, 1] }
+                          }
                         >
                           <NavLink
                             to={to}

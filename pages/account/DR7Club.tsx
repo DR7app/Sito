@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient'
 import { getUserCreditBalance, getCreditTransactions } from '../../utils/creditWallet'
 import type { CreditTransaction } from '../../utils/creditWallet'
 import { useTranslation } from '../../hooks/useTranslation'
+import ClubTiersBoard from '../../components/ui/ClubTiersBoard'
 import { dateLocale } from '../../utils/i18nDate'
 import {
   getClubStatus,
@@ -311,33 +312,21 @@ const DR7Club = () => {
         </div>
       )}
 
-      {/* Tiers Table — la lista viene da Centralina Pro. Se l'operatore ha
-          spento tutti i livelli non c'e' nulla da mostrare. */}
+      {/* Tiers Table — le vignette dei livelli, le stesse che vede il
+          pubblico su /membership: un solo componente, cosi' non possono
+          divergere. La lista viene da Centralina Pro; se l'operatore ha spento
+          tutti i livelli non c'e' nulla da mostrare. */}
       {tiers.length > 0 && (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Livelli DR7 Club", en: "DR7 Club tiers" })}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {tiers.map(tier => (
-            <div
-              key={tier.tier}
-              className={`p-4 rounded-lg border text-center ${tierInfo?.tier === tier.tier
-                ? `${colorsFor(tier.tier).border} ${colorsFor(tier.tier).bg}`
-                : 'border-gray-700 bg-gray-800/30'}`}
-            >
-              <p className={`font-bold text-lg ${tierInfo?.tier === tier.tier ? colorsFor(tier.tier).text : 'text-gray-400'}`}>
-                {tier.label}
-              </p>
-              <p className="text-gray-500 text-xs mt-1">
-                {tier.max === Infinity ? `${t({ it: 'da', en: 'from' })} €${tier.min.toLocaleString()}` : `€${tier.min.toLocaleString()} – €${tier.max.toLocaleString()}`}
-              </p>
-              <p className={`text-2xl font-bold mt-2 ${tierInfo?.tier === tier.tier ? 'text-[#D4B896]' : 'text-gray-500'}`}>
-                {tier.rewardPercent}%
-              </p>
-              <p className="text-gray-500 text-xs">{t({ it: 'premio', en: 'reward' })}</p>
-            </div>
-          ))}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Livelli DR7 Club", en: "DR7 Club tiers" })}</h3>
+          <ClubTiersBoard
+            bare
+            lang={lang}
+            eyebrow=""
+            title=""
+            currentTier={tierInfo?.tier || null}
+          />
         </div>
-      </div>
       )}
 
       {/* Interesse Wallet — 0.1%/giorno DR7 Club */}

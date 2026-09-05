@@ -213,7 +213,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute z-50 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-4 w-80"
+            className="absolute z-50 mt-2 bg-dr7-graphite border border-gray-700 rounded-lg shadow-2xl p-4 w-80"
           >
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-4">

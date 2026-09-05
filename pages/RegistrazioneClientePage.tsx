@@ -313,7 +313,7 @@ export default function RegistrazioneClientePage() {
                 />
 
                 {step === 'form' && (
-                    <form onSubmit={handleSubmit} className="bg-black rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8 space-y-7">
+                    <form onSubmit={handleSubmit} className="bg-black/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8 space-y-7">
                         {/* 1. Tipo Cliente */}
                         <section>
                             <SectionTitle index="1" title={r('section_1_tipo_it', 'section_1_tipo_en').replace(/^1\.\s*/, '')} />
@@ -451,7 +451,7 @@ export default function RegistrazioneClientePage() {
                 )}
 
                 {step === 'documents' && customerId && (
-                    <div className="bg-black rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8 space-y-5">
+                    <div className="bg-black/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8 space-y-5">
                         <div>
                             <SectionTitle index="✓" title={r('section_docs_it', 'section_docs_en').replace(/^✓\s*/, '')} />
                             <p className="text-sm text-white/70">
@@ -524,7 +524,7 @@ function PageIntro({ title, subtitle }: { title: string; subtitle: string }) {
 function Centered({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-[60vh] flex items-center justify-center px-4 py-10">
-            <div className="bg-black border border-white/30 rounded-2xl shadow-2xl p-8 max-w-md text-center">
+            <div className="bg-black/70 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl p-8 max-w-md text-center">
                 {children}
             </div>
         </div>

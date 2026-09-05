@@ -111,7 +111,7 @@ const HeliTourPopup: React.FC = () => {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="relative w-full max-w-[340px] my-4 bg-black border border-white/[0.12] rounded-2xl overflow-hidden"
+              className="relative w-full max-w-[340px] my-4 bg-black/85 backdrop-blur-sm border border-white/[0.12] rounded-2xl overflow-hidden"
             >
               <button
                 type="button"
@@ -187,7 +187,7 @@ const HeliTourPopup: React.FC = () => {
       {/* Popup: accesso richiesto per prenotare */}
       {authPrompt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={() => setAuthPrompt(false)}>
-          <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
+          <div className="bg-black/85 backdrop-blur-sm border border-gray-800 rounded-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
             <div className="flex justify-end -mt-2 -mr-2">
               <button onClick={() => setAuthPrompt(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>

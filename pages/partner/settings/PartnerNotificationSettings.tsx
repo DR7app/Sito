@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from '../../../hooks/useTranslation';
 
+// La pallina resta nera piena: corre su una pista bianca o grigia, non sul
+// marmo, e trasparente sparirebbe.
 const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }> = ({ checked, onChange, disabled }) => (
     <div className="relative">
         <input type="checkbox" className="sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} disabled={disabled} />
         <div className={`block w-12 h-6 rounded-full transition-colors ${checked ? 'bg-white' : 'bg-gray-700'}`}></div>
-        <div className={`dot absolute left-1 top-1 bg-black w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-6' : ''}`}></div>
+        <div className={`dot absolute left-1 top-1 bg-dr7-obsidian w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-6' : ''}`}></div>
     </div>
 );
 

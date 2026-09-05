@@ -70,7 +70,7 @@ const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, o
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="relative bg-black border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden"
+                        className="relative bg-black/85 backdrop-blur-sm border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden"
                     >
                         <button
                             onClick={onClose}

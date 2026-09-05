@@ -56,7 +56,7 @@ const AuthPage: React.FC = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-black border border-white/10 rounded-lg shadow-2xl shadow-black/60 p-8 space-y-6"
+            className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg shadow-2xl shadow-black/60 p-8 space-y-6"
           >
             <div className="text-center">
               <h2 className="text-3xl font-bold text-white">{t('Access_Your_Account')}</h2>

@@ -126,7 +126,7 @@ const JetSearchPage: React.FC = () => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute z-10 w-full mt-1 bg-gray-900 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto"
+              className="absolute z-10 w-full mt-1 bg-dr7-graphite border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto"
             >
               {suggestions.map(airport => (
                 <li

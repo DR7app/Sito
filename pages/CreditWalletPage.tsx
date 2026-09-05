@@ -34,7 +34,7 @@ const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: Cr
         } rounded-lg p-6 flex flex-col transition-all duration-300 hover:border-white hover:shadow-xl hover:shadow-white/20`}
     >
       {pkg.popular && (
-        <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full text-sm font-semibold">
+        <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 text-sm font-semibold">
           {c('card_popular_badge_it', 'card_popular_badge_en')}
         </div>
       )}
@@ -66,7 +66,7 @@ const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: Cr
 
       <button
         onClick={onSelect}
-        className={`w-full mt-auto py-3 px-6 font-bold rounded-full transition-all duration-300 transform hover:scale-105 ${pkg.popular
+        className={`w-full mt-auto py-3 px-6 font-bold transition-all duration-300 transform hover:scale-105 ${pkg.popular
           ? 'bg-white text-black hover:bg-gray-200'
           : 'bg-gray-700 text-white hover:bg-gray-600'
           }`}
@@ -348,7 +348,7 @@ const CreditWalletPage: React.FC = () => {
                 <button
                   key={s}
                   onClick={() => setSelectedSeries(s)}
-                  className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 ${selectedSeries === s
+                  className={`px-6 py-2 font-semibold transition-all duration-300 ${selectedSeries === s
                     ? 'bg-white text-black'
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                     }`}
@@ -456,7 +456,7 @@ const CreditWalletPage: React.FC = () => {
               onClick={() => {
                 window.scrollTo({ top: 400, behavior: 'smooth' });
               }}
-              className="bg-white text-black px-12 py-4 rounded-full text-xl font-bold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-white/50"
+              className="bg-white text-black px-12 py-4 text-xl font-bold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-white/50"
             >
               {w('cta_button_it', 'cta_button_en')}
             </button>
@@ -535,14 +535,14 @@ const CreditWalletPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPaymentModal(false)}
-                    className="flex-1 px-6 py-3 bg-gray-800 text-white rounded-full font-bold hover:bg-gray-700 transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-800 text-white font-bold hover:bg-gray-700 transition-colors"
                   >
                     {w('modal_cancel_it', 'modal_cancel_en')}
                   </button>
                   <button
                     type="submit"
                     disabled={isProcessing}
-                    className="flex-1 px-6 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-6 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing
                       ? w('modal_processing_it', 'modal_processing_en')

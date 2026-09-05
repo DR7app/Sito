@@ -144,13 +144,20 @@
 }
 
 /* Superfici: invertono i ruoli di colore in blocco. */
+/* Le due superfici scure non dipingono piu' un fondo pieno: e' li' che il
+   marmo deve vedersi, cioe' nelle sezioni del sito — la Collezione, gli atti
+   della homepage — non dietro ai filmati.
+   `--bg` resta impostata: serve a chi la legge per calcolare un colore
+   (bordi, sfumature di lettura), non per dipingere la sezione.
+   La grafite non sparisce del tutto: resta al 55%, quel tanto che basta a
+   distinguerla dalla superficie accanto senza chiudere il marmo. */
 .surface-dark {
   --fg: var(--c-ivory);
   --fg-dim: var(--c-mineral);
   --bg: var(--c-obsidian);
   --line: rgba(246, 243, 237, 0.12);
   --line-strong: rgba(246, 243, 237, 0.26);
-  background: var(--bg);
+  background: transparent;
   color: var(--fg);
 }
 .surface-graphite {
@@ -159,8 +166,16 @@
   --bg: var(--c-graphite);
   --line: rgba(246, 243, 237, 0.12);
   --line-strong: rgba(246, 243, 237, 0.26);
-  background: var(--bg);
+  background: rgba(19, 20, 22, 0.55);
   color: var(--fg);
+}
+
+/* Eccezione: dietro a un filmato il marmo non ci va. Nei passaggi da una
+   scena all'altra i due video si incrociano in dissolvenza e per un attimo
+   il fondo si vede: con il marmo li' sotto l'apertura del sito diventava
+   marmo, che e' l'unico posto dove non era stato chiesto. */
+.superficie-piena {
+  background: var(--c-obsidian);
 }
 .surface-light {
   --fg: #14150f;
@@ -210,12 +225,40 @@ body::before {
   background-repeat: no-repeat;
 }
 
-/* Il contenitore radice dell'app dipinge un nero pieno che coprirebbe il
-   marmo. Qui torna trasparente. Il selettore e' volutamente stretto — figlio
-   DIRETTO di #root — cosi' i veli delle finestre modali, che stanno piu' in
-   fondo nell'albero o usano `bg-black/80`, restano quelli che erano. */
-#root > .bg-black {
+/* Il marmo si vede solo dove sopra non c'e' un altro fondo pieno. Nel markup
+   il nero pieno e' ripetuto quasi cento volte — il contenitore radice, i
+   wrapper di pagina, le sezioni — e ognuno di quei rettangoli richiudeva il
+   marmo schermo per schermo. Una regola sola qui vale per tutti: piu' corta
+   di cento modifiche nei componenti, e reversibile cancellando questa regola.
+
+   Cosa NON tocca, di proposito:
+   - i controlli di modulo. Un campo trasparente appoggiato su una venatura
+     d'oro non si legge piu', e il testo che ci si scrive dentro nemmeno. Le
+     eccezioni sotto li lasciano al nero pieno del tema (la regola `.bg-black`
+     piu' in basso).
+   - le varianti con trasparenza (`bg-black/70`) e quelle con prefisso di
+     stato (`hover:bg-black`, `file:bg-black`): sono nomi di classe DIVERSI,
+     quindi restano quelli che erano. I veli delle finestre modali continuano
+     a fare il loro lavoro.
+   La specificita' e' volutamente bassa (una classe + quattro tipi): un
+   `hover:bg-*` sullo stesso elemento vale una classe in piu' e vince ancora,
+   quindi nessuno stato al passaggio del mouse si perde. */
+.bg-black:not(input):not(select):not(textarea):not(option) {
   background-color: transparent;
+}
+
+/* Schede, pannelli e finestre non diventano trasparenti come le pagine: sopra
+   una venatura d'oro il testo piccolo e grigio sparirebbe. Diventano appena
+   traslucidi, quel tanto che basta perche' il marmo si legga come materia
+   sotto la superficie invece che come disegno.
+
+   L'82% e' scelto sul contrasto, non a occhio: il velo del marmo e' gia'
+   all'86-91%, quindi cio' che passa attraverso la scheda e' un fondo che va
+   dal quasi nero al bruno scuro delle venature. Sopra quel fondo il grigio
+   della scheda si sposta di pochissimo — il testo resta leggibile esattamente
+   come prima, cambia solo la materia. */
+.bg-gray-900:not(input):not(select):not(textarea):not(option) {
+  background-color: rgba(25, 25, 23, 0.82);
 }
 
 /* Alias storici: restano perche' potrebbero comparire in classi composte a
@@ -251,13 +294,12 @@ p { line-height: 1.62; }
   .container { padding-left: var(--gutter); padding-right: var(--gutter); }
 }
 
-/* I due colori piu' usati nel markup passano dal tema.
-   `bg-black` e `text-white` compaiono in centinaia di punti: legandoli alle
-   variabili, cambiare fondo e inchiostro dal pannello si vede ovunque senza
-   riscrivere un solo componente. Le varianti con trasparenza (`bg-white/10`)
-   restano quelle compilate: sono veli, non colore di marca.
-   Oggi i valori coincidono con quelli di Tailwind, quindi non cambia nulla
-   finche' l'operatore non tocca il tema. */
+/* I colori piu' usati nel markup passano dal tema: legandoli alle variabili,
+   cambiare inchiostro dal pannello si vede ovunque senza riscrivere un solo
+   componente. Le varianti con trasparenza (`bg-white/10`) restano quelle
+   compilate: sono veli, non colore di marca.
+   `.bg-black` qui sotto ha meno specificita' della regola del marmo, quindi
+   oggi dipinge solo cio' che quella regola esclude: i controlli di modulo. */
 .bg-black { background-color: var(--c-obsidian); }
 .text-black { color: var(--c-obsidian); }
 .bg-white { background-color: var(--c-ivory); }

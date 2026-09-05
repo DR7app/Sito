@@ -191,12 +191,12 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
           exit={{ y: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-black border border-gray-800 w-full md:w-[500px] h-[600px] md:h-[700px] md:rounded-2xl flex flex-col shadow-2xl"
+          className="bg-black/85 backdrop-blur-lg border border-gray-800 w-full md:w-[500px] h-[600px] md:h-[700px] md:rounded-2xl flex flex-col shadow-2xl"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-white to-gray-300 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-black bg-black flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-black bg-dr7-obsidian flex items-center justify-center">
                 <img
                   src="/DR7logo.png"
                   alt="DR7"

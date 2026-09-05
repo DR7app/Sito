@@ -28,7 +28,7 @@ const SiteLogo: React.FC<{ aspetto: Required<AspettoCopy>; alt: string }> = ({ a
 );
 
 const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy; aspetto: Required<AspettoCopy> }> = ({ isOpen, onClose, copy, aspetto }) => {
-  const { t, lang, setLanguage } = useTranslation();
+  const { t, lang } = useTranslation();
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const [creditBalance, setCreditBalance] = useState<number>(0);
@@ -96,7 +96,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   }, [isOpen, user?.id]);
 
   const navLinkClasses =
-    'block py-3 pl-3 text-[15px] font-normal text-gray-400 hover:text-white transition-all duration-200 rounded-lg hover:bg-white/5';
+    'block py-3 pl-3 text-[15px] font-normal text-gray-400 hover:text-white transition-all duration-200 hover:bg-white/5';
 
   const handleLogout = () => {
     logout();
@@ -216,7 +216,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             /* Il velo se ne va per ultimo: prima escono le voci, poi torna
                fuori la pagina. Al contrario si vedrebbero le voci uscire nel
                vuoto. */
-            exit={{ opacity: 0, transition: { duration: 0.42, delay: 0.34, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 bg-[#08090A]/[0.985] backdrop-blur-[3px] lg:bg-transparent lg:backdrop-blur-[2px]"
             onClick={onClose}
@@ -238,7 +238,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate={{ opacity: 1 }}
             /* Anche il pannello aspetta: se sfumasse subito, la cascata di
                uscita delle voci non si vedrebbe proprio. */
-            exit={{ opacity: 0, transition: { duration: 0.3, delay: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.45, delay: 0.9, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex h-full flex-col overflow-hidden"
           >
@@ -256,7 +256,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                     <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   <span className="relative inline-flex h-9 items-center justify-center px-4">
-                    <span className="absolute inset-0 rounded-full border border-white/20 transition-colors duration-standard group-hover:border-white/50" />
+                    <span className="absolute inset-0 border border-white/20 transition-colors duration-standard group-hover:border-white/50" />
                     <span className="t-nav relative">{isIt ? 'Chiudi' : 'Close'}</span>
                   </span>
                 </button>
@@ -280,10 +280,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto" style={{ height: aspetto.logo_height_mobile }} />
                 </NavLink>
 
-                <div className="flex items-center border border-white/15 p-0.5 font-mono text-[10px] tracking-[0.16em]">
-                  <button onClick={() => setLanguage('it')} aria-label="Italiano" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'it' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>IT</button>
-                  <button onClick={() => setLanguage('en')} aria-label="English" className={`px-2.5 py-1 transition-colors duration-300 ${lang === 'en' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>EN</button>
-                </div>
               </div>
               <div className="container mx-auto px-6"><span className="block h-px w-full bg-white/10" /></div>
             </div>
@@ -323,12 +319,14 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                              - la cascata riparte dall'ALTO (la prima voce esce
                                per prima), specchio dell'ingresso che parte dal
                                basso;
-                             - accelera invece di frenare, e dura meno della
-                               meta': si esce in fretta, si entra con calma. */
+                             - accelera invece di frenare, invece di frenare
+                               come all'ingresso.
+                             Circa 1,3 s in tutto contro i 2,1 dell'apertura:
+                             piu' svelta, ma non tanto da non vedersi. */
                           exit={
                             menoMovimento
                               ? { opacity: 0 }
-                              : { x: '-100%', opacity: 0, transition: { duration: 0.44, delay: i * 0.035, ease: [0.7, 0, 0.84, 0] } }
+                              : { x: '-100%', opacity: 0, transition: { duration: 0.7, delay: i * 0.07, ease: [0.5, 0, 0.75, 0] } }
                           }
                           transition={
                             menoMovimento

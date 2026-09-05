@@ -116,7 +116,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
               `Potete inviarmi disponibilità e preventivo?`;
             const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
             return (
-              <div key={item.id} className="bg-black border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col">
+              <div key={item.id} className="bg-black/70 border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col">
                 <div className="relative overflow-hidden">
                   {item.image_url ? (
                     <img src={item.image_url} alt={item.name} className="w-full aspect-[9/16] object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -176,7 +176,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
       {/* Popup: accesso richiesto per prenotare il tour */}
       {authPrompt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={() => setAuthPrompt(false)}>
-          <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
+          <div className="bg-black/85 backdrop-blur-sm border border-gray-800 rounded-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
             <div className="flex justify-end -mt-2 -mr-2">
               <button onClick={() => setAuthPrompt(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>

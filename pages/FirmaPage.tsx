@@ -300,7 +300,10 @@ export default function FirmaPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-black text-white py-4 px-6 flex items-center justify-between">
+            {/* Nero pieno dichiarato: questa fascia sta su una pagina CHIARA, non sul
+                marmo. Con `bg-black` la regola globale la renderebbe trasparente e il
+                logo bianco finirebbe su fondo bianco. */}
+            <div className="bg-dr7-obsidian text-white py-4 px-6 flex items-center justify-between">
                 <img src="https://dr7.app/DR7logo1.png" alt="DR7" className="h-10" />
                 <span className="text-sm text-gray-400">{f('header_pill_it', 'header_pill_en')}</span>
             </div>

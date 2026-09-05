@@ -808,7 +808,9 @@ const CarWashServicesPage: React.FC = () => {
           onClick={() => setShowCart(true)}
           className="fixed bottom-6 right-6 bg-white text-black px-6 py-4 font-bold shadow-2xl flex items-center gap-3 z-40 hover:bg-gray-200 transition-colors"
         >
-          <span className="bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
+          {/* Pastiglia del contatore: sta dentro un bottone BIANCO, quindi resta
+              nera piena invece di lasciar passare il marmo. */}
+          <span className="bg-dr7-obsidian text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
             {cart.reduce((sum, item) => sum + item.quantity, 0)}
           </span>
           <span>€{getCartTotal().toFixed(2)}</span>
@@ -831,7 +833,7 @@ const CarWashServicesPage: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
-              className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-black border-l border-gray-800 z-50 flex flex-col"
+              className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-black/90 backdrop-blur-xl border-l border-gray-800 z-50 flex flex-col"
             >
               <div className="p-6 border-b border-gray-800 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-white">
@@ -946,7 +948,7 @@ const CarWashServicesPage: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black overflow-y-auto"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl overflow-y-auto"
           >
             {/* Sticky header */}
             <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-md border-b border-gray-800">

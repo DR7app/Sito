@@ -63,7 +63,7 @@ const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) =
 
   return (
     <section
-      className="relative flex h-screen min-h-[36rem] items-end overflow-hidden surface-dark"
+      className="relative flex h-screen min-h-[36rem] items-end overflow-hidden surface-dark superficie-piena"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

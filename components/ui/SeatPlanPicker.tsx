@@ -79,7 +79,7 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
           initial={{ opacity: 0, scale: 0.97, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="bg-black border border-gray-800 rounded-2xl w-full max-w-md p-6 my-4"
+          className="bg-black/85 backdrop-blur-sm border border-gray-800 rounded-2xl w-full max-w-md p-6 my-4"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-3 mb-1">

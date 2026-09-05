@@ -3591,7 +3591,7 @@ const DEFAULT_HOME: HomeCopy = {
       copy_en: 'Private flights and helicopters to travel without limits.',
       cta_it: 'Scopri', cta_en: 'Discover' },
     { id: 'soggiorni', to: '/soggiorni', image_src: '/menu-property.jpeg',
-      title_it: 'Soggiorni', title_en: 'Stays',
+      title_it: 'Soggiorni & Ospitalità', title_en: 'Stays & Hospitality',
       copy_it: 'Ville, appartamenti e residenze selezionate.',
       copy_en: 'Villas, apartments and selected residences.',
       cta_it: 'Scopri', cta_en: 'Discover' },

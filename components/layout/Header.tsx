@@ -144,7 +144,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
       title: mc('menu_aria_title_it', 'menu_aria_title_en', 'Aria', 'Air'),
       subtitle: mc('menu_aria_sub_it', 'menu_aria_sub_en', 'Voli privati ed elicotteri per viaggiare senza confini', 'Private jets and helicopters to travel without limits') },
     { to: '/soggiorni', img: mi('menu_property_img', '/menu-property.jpeg'), Icon: HomeIcon,
-      title: mc('menu_property_title_it', 'menu_property_title_en', 'Proprietà', 'Property'),
+      title: mc('menu_property_title_it', 'menu_property_title_en', 'Soggiorni & Ospitalità', 'Stays & Hospitality'),
       subtitle: mc('menu_property_sub_it', 'menu_property_sub_en', 'Ville, appartamenti e residenze selezionate in tutto il mondo', 'Villas, apartments and residences selected worldwide') },
     { to: '/prime-wash', img: mi('menu_servizi_img', '/servizi-lavaggio.jpeg'), Icon: SparklesIcon,
       title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanics'),

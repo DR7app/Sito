@@ -54,6 +54,10 @@ const FooterLink: React.FC<{ link: FooterLinkData; lang: 'it' | 'en' }> = ({ lin
 
 const Footer: React.FC = () => {
   const { lang, t, setLanguage } = useTranslation();
+  // I dati societari non stanno piu' distesi in pagina: sono una riga sola in
+  // fondo che apre una finestra. Cosi' la chiusura della pagina resta pulita e
+  // chi cerca partita IVA e sedi le trova comunque in due click.
+  const [datiSocietari, setDatiSocietari] = useState(false);
   const [copy, setCopy] = useState<FooterCopy | null>(null);
   // Stesso logo della barra in alto (admin > Sito > Aspetto & Funzionalita).
   const [aspetto, setAspetto] = useState<Required<AspettoCopy>>(DEFAULT_ASPETTO);
@@ -122,18 +126,6 @@ const Footer: React.FC = () => {
             <span className="t-meta text-base">{copy.contact_whatsapp_number}</span>
           </a>
 
-          <div className="mt-10 text-[13px] leading-relaxed text-gray-500 max-w-2xl mx-auto space-y-1.5 px-4">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white">{copy.contact_company_name}</p>
-            <p className="break-words">{lang === 'it' ? copy.contact_legal_address_it : copy.contact_legal_address_en}</p>
-            {(lang === 'it' ? copy.contact_operative_address_it : copy.contact_operative_address_en) && (
-              <p className="break-words">{lang === 'it' ? copy.contact_operative_address_it : copy.contact_operative_address_en}</p>
-            )}
-            <p className="break-words">{lang === 'it' ? copy.contact_capitale_sociale_it : copy.contact_capitale_sociale_en}</p>
-            <p className="break-words">{copy.contact_piva}</p>
-            <p className="text-xs mt-2 break-words whitespace-pre-line">
-              {lang === 'it' ? copy.contact_disclaimer_it : copy.contact_disclaimer_en}
-            </p>
-          </div>
         </div>
 
         {/* Chiusura della pagina, impaginata come il riferimento:
@@ -171,6 +163,12 @@ const Footer: React.FC = () => {
                   nella barra in alto occupava spazio a ogni schermata. Le due
                   sigle restano entrambe visibili — un solo interruttore
                   dietro una bandiera non si capirebbe. */}
+              <li className="mb-6 break-inside-avoid">
+                <button
+                  onClick={() => setDatiSocietari(true)}
+                  className="link-reveal transition-colors duration-500 ease-editorial hover:text-white"
+                >{copy.contact_company_name}</button>
+              </li>
               <li className="mb-6 break-inside-avoid">
                 <span className="text-gray-600">{t({ it: 'Lingua', en: 'Language' })}</span>
                 <span className="ml-3 inline-flex items-center gap-2">
@@ -211,6 +209,44 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Dati societari. Sobria e squadrata come il resto: nessun angolo
+          tondo, il velo chiude il fondo pagina dietro. */}
+      {datiSocietari && (
+        <div
+          className="fixed inset-0 z-[95] flex items-center justify-center bg-black/85 p-6"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setDatiSocietari(false)}
+        >
+          <div
+            className="relative w-full max-w-lg border border-white/15 bg-[#0b0b0c] p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDatiSocietari(false)}
+              aria-label={t({ it: 'Chiudi', en: 'Close' })}
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center border border-white/15 text-white/60 transition-colors duration-500 ease-editorial hover:border-white/40 hover:text-white"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.4} viewBox="0 0 24 24">
+                <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white">{copy.contact_company_name}</p>
+            <div className="mt-5 space-y-2 text-[13px] leading-relaxed text-gray-400">
+              <p className="break-words">{lang === 'it' ? copy.contact_legal_address_it : copy.contact_legal_address_en}</p>
+              {(lang === 'it' ? copy.contact_operative_address_it : copy.contact_operative_address_en) && (
+                <p className="break-words">{lang === 'it' ? copy.contact_operative_address_it : copy.contact_operative_address_en}</p>
+              )}
+              <p className="break-words">{lang === 'it' ? copy.contact_capitale_sociale_it : copy.contact_capitale_sociale_en}</p>
+              <p className="break-words">{copy.contact_piva}</p>
+              <p className="mt-4 whitespace-pre-line break-words text-xs text-gray-500">
+                {lang === 'it' ? copy.contact_disclaimer_it : copy.contact_disclaimer_en}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };

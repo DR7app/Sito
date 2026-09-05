@@ -216,7 +216,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             /* Il velo se ne va per ultimo: prima escono le voci, poi torna
                fuori la pagina. Al contrario si vedrebbero le voci uscire nel
                vuoto. */
-            exit={{ opacity: 0, transition: { duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 bg-[#08090A]/[0.985] backdrop-blur-[3px] lg:bg-transparent lg:backdrop-blur-[2px]"
             onClick={onClose}
@@ -238,7 +238,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate={{ opacity: 1 }}
             /* Anche il pannello aspetta: se sfumasse subito, la cascata di
                uscita delle voci non si vedrebbe proprio. */
-            exit={{ opacity: 0, transition: { duration: 0.45, delay: 0.9, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.55, delay: 0.6, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex h-full flex-col overflow-hidden"
           >
@@ -319,14 +319,18 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                              - la cascata riparte dall'ALTO (la prima voce esce
                                per prima), specchio dell'ingresso che parte dal
                                basso;
-                             - accelera invece di frenare, invece di frenare
-                               come all'ingresso.
-                             Circa 1,3 s in tutto contro i 2,1 dell'apertura:
-                             piu' svelta, ma non tanto da non vedersi. */
+                             - frena come all'ingresso, stessa famiglia di
+                               curva. Con una curva che ACCELERA le voci
+                               strappavano via, ed era quello a far sembrare la
+                               chiusura sbagliata.
+                             Voci, velo e pannello atterrano tutti insieme
+                             intorno a 1,15 s: prima il velo aspettava mezzo
+                             secondo di troppo e restava un buco a schermo
+                             vuoto. Contro i 2,1 s dell'apertura. */
                           exit={
                             menoMovimento
                               ? { opacity: 0 }
-                              : { x: '-100%', opacity: 0, transition: { duration: 0.7, delay: i * 0.07, ease: [0.5, 0, 0.75, 0] } }
+                              : { x: '-100%', opacity: 0, transition: { duration: 0.75, delay: i * 0.045, ease: [0.22, 1, 0.36, 1] } }
                           }
                           transition={
                             menoMovimento

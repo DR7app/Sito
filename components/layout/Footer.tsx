@@ -127,7 +127,7 @@ const Footer: React.FC = () => {
               </svg>
             </button>
             <Link to="/" className="inline-block">
-              <img src={aspetto.logo_url} alt="DR7 Cagliari Logo" className="w-auto" style={{ height: aspetto.footer_logo_height }} />
+              <img src={aspetto.logo_url} alt="DR7 Cagliari Logo" className="logo-bianco w-auto" style={{ height: aspetto.footer_logo_height }} />
             </Link>
           </div>
 

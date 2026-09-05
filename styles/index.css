@@ -151,6 +151,13 @@
    (bordi, sfumature di lettura), non per dipingere la sezione.
    La grafite non sparisce del tutto: resta al 55%, quel tanto che basta a
    distinguerla dalla superficie accanto senza chiudere il marmo. */
+/* Logo in bianco. `brightness(0)` schiaccia l'immagine a nero pieno,
+   `invert(1)` la ribalta a bianco: la trasparenza resta intatta, quindi non
+   serve un secondo file. Si toglie cancellando questa classe dai tag. */
+.logo-bianco {
+  filter: brightness(0) invert(1);
+}
+
 .surface-dark {
   --fg: var(--c-ivory);
   --fg-dim: var(--c-mineral);

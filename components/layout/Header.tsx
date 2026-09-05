@@ -22,8 +22,8 @@ import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
  */
 const SiteLogo: React.FC<{ aspetto: Required<AspettoCopy>; alt: string }> = ({ aspetto, alt }) => (
   <NavLink to="/" className="flex items-center shrink-0">
-    <img src={aspetto.logo_url} alt={alt} className="w-auto md:hidden" style={{ height: aspetto.logo_height_mobile }} />
-    <img src={aspetto.logo_url} alt={alt} className="w-auto hidden md:block" style={{ height: aspetto.logo_height_desktop }} />
+    <img src={aspetto.logo_url} alt={alt} className="logo-bianco w-auto md:hidden" style={{ height: aspetto.logo_height_mobile }} />
+    <img src={aspetto.logo_url} alt={alt} className="logo-bianco w-auto hidden md:block" style={{ height: aspetto.logo_height_desktop }} />
   </NavLink>
 );
 
@@ -277,7 +277,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                         : 'order-last mr-2'
                   }
                 >
-                  <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto" style={{ height: aspetto.logo_height_mobile }} />
+                  <img src={aspetto.logo_url} alt={copy.logo_alt} className="logo-bianco w-auto" style={{ height: aspetto.logo_height_mobile }} />
                 </NavLink>
 
               </div>

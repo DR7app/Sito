@@ -166,6 +166,13 @@ export interface MembershipRewardItem {
   note_en: string | null;
 }
 
+/** Una riga della tabella d'esempio del Privilege Bonus. */
+export interface MembershipPrivilegeRow {
+  label_it: string;
+  label_en: string;
+  value: string;        // "€1", "€30", ... — testo libero, lo scrive l'admin
+}
+
 export interface MembershipCopy {
   // Hero band
   hero_eyebrow_it: string; hero_eyebrow_en: string;
@@ -204,6 +211,24 @@ export interface MembershipCopy {
   reward_intro_it: string; reward_intro_en: string;
   reward_items: MembershipRewardItem[];
   reward_footnote_it: string; reward_footnote_en: string;
+
+  // ─── DR7 Club Privilege (maturazione giornaliera sul Wallet) ──────────
+  // OPZIONALI: la riga `membership` gia' salvata in centralina_pro_config
+  // non li contiene, e getMembershipCopy la restituisce cosi' com'e'. Se
+  // fossero obbligatori la pagina si svuoterebbe per tutti fino alla
+  // migrazione dei dati. Il valore di fabbrica arriva dalla fusione con
+  // DEFAULT_MEMBERSHIP dentro getMembershipCopy.
+  privilege_eyebrow_it?: string; privilege_eyebrow_en?: string;
+  privilege_title_it?: string; privilege_title_en?: string;
+  privilege_intro_it?: string; privilege_intro_en?: string;
+  privilege_claim_1_it?: string; privilege_claim_1_en?: string;
+  privilege_claim_2_it?: string; privilege_claim_2_en?: string;
+  privilege_calc_it?: string; privilege_calc_en?: string;
+  privilege_example_label_it?: string; privilege_example_label_en?: string;
+  privilege_rows?: MembershipPrivilegeRow[];
+  privilege_principle_it?: string; privilege_principle_en?: string;
+  privilege_usage_it?: string; privilege_usage_en?: string;
+  privilege_closing_it?: string; privilege_closing_en?: string;
 }
 
 export interface MembershipPlaceholderValues {
@@ -214,6 +239,12 @@ export interface MembershipPlaceholderValues {
 }
 
 export function applyMembershipPlaceholders(s: string, vals: MembershipPlaceholderValues): string {
+  // Un campo assente nella riga salvata arriva qui come undefined e
+  // `.split()` farebbe saltare l'INTERA pagina /membership (schermata
+  // bianca), non solo quella riga: il tsconfig non ha `strict`, quindi
+  // il compilatore non lo segnala. Ogni testo aggiunto dopo che la riga
+  // e' stata salvata passa da questo punto.
+  if (typeof s !== 'string') return '';
   return s
     .split('{monthlyPrice}').join(vals.monthlyPrice)
     .split('{annualPrice}').join(vals.annualPrice)
@@ -1742,7 +1773,12 @@ export function applyCancellazionePlaceholders(s: string, vals: CancellazionePla
 export async function getMembershipCopy(): Promise<MembershipCopy> {
   const snap = await loadOnce();
   if (snap.membership && Array.isArray(snap.membership.elite_sections)) {
-    return snap.membership;
+    // I default stanno SOTTO la riga salvata: ogni campo che l'admin ha
+    // gia' scritto vince, quelli che non esistono ancora nella riga (i
+    // blocchi aggiunti dopo, come Privilege) ricadono sul valore di
+    // fabbrica invece di renderizzare vuoto. Senza questa fusione una
+    // sezione nuova resterebbe invisibile fino alla migrazione dei dati.
+    return { ...DEFAULT_MEMBERSHIP, ...snap.membership };
   }
   return DEFAULT_MEMBERSHIP;
 }
@@ -3835,6 +3871,38 @@ const DEFAULT_MEMBERSHIP: MembershipCopy = {
   ],
   reward_footnote_it: 'Senza DR7 Club il sistema premi non è attivo.',
   reward_footnote_en: 'Without DR7 Club the reward system is not active.',
+
+  // DR7 Club Privilege. Il motore sta in DR7-AI:
+  // netlify/functions/accrue-club-wallet-interest.ts matura ogni giorno
+  // 0,1% (DAILY_RATE = 0.001) sul capitale = saldo meno il bonus residuo,
+  // e solo per gli iscritti con abbonamento attivo;
+  // payout-club-wallet-interest lo accredita nel Wallet una volta al mese.
+  // Il bonus accreditato e' classificato come bonus, quindi non matura a
+  // sua volta: l'esempio qui sotto e' lineare, senza capitalizzazione.
+  // Se cambia DAILY_RATE, questi numeri vanno rifatti.
+  privilege_eyebrow_it: 'DR7 CLUB PRIVILEGE', privilege_eyebrow_en: 'DR7 CLUB PRIVILEGE',
+  privilege_title_it: 'Il tuo Wallet non resta fermo. Cresce ogni giorno.',
+  privilege_title_en: 'Your Wallet does not stand still. It grows every day.',
+  privilege_intro_it: 'Con DR7 Club Privilege, il saldo idoneo presente nel tuo Wallet matura automaticamente un Privilege Bonus dello 0,10% al giorno, fino a un valore nominale equivalente al 36% su base annua.',
+  privilege_intro_en: 'With DR7 Club Privilege, the eligible balance in your Wallet automatically accrues a Privilege Bonus of 0.10% per day, up to a nominal value equivalent to 36% on an annual basis.',
+  privilege_claim_1_it: 'Non devi attivare nulla.', privilege_claim_1_en: 'Nothing to activate.',
+  privilege_claim_2_it: 'Non devi aspettare la fine dell\'anno.', privilege_claim_2_en: 'No waiting until year end.',
+  privilege_calc_it: 'La maturazione viene calcolata giorno dopo giorno, direttamente sul saldo idoneo presente nel tuo Wallet.',
+  privilege_calc_en: 'The accrual is calculated day after day, directly on the eligible balance in your Wallet.',
+  privilege_example_label_it: 'Esempio: mantieni €1.000 di saldo idoneo nel Wallet.',
+  privilege_example_label_en: 'Example: you keep €1,000 of eligible balance in the Wallet.',
+  privilege_rows: [
+    { label_it: 'Dopo 1 giorno', label_en: 'After 1 day', value: '€1 di Privilege Bonus maturato' },
+    { label_it: 'Dopo 30 giorni', label_en: 'After 30 days', value: '€30' },
+    { label_it: 'Dopo 180 giorni', label_en: 'After 180 days', value: '€180' },
+    { label_it: 'Dopo 360 giorni', label_en: 'After 360 days', value: '€360' },
+  ],
+  privilege_principle_it: 'Il principio è semplice: più valore mantieni nel tuo ecosistema DR7 e più privilegi accumuli nel tempo.',
+  privilege_principle_en: 'The principle is simple: the more value you keep in your DR7 ecosystem, the more privileges you build over time.',
+  privilege_usage_it: 'Il Privilege Bonus maturato resta nel tuo Wallet, non ha scadenza e puoi utilizzarlo su tutti i servizi DR7.',
+  privilege_usage_en: 'The accrued Privilege Bonus stays in your Wallet, never expires, and you can use it on all DR7 services.',
+  privilege_closing_it: 'Il valore non aspetta. Matura ogni giorno.',
+  privilege_closing_en: 'Value does not wait. It accrues every day.',
 };
 
 // ─── Default Cancellazione seed ─────────────────────────────────────────────

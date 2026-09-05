@@ -230,6 +230,69 @@ const MembershipPage: React.FC = () => {
                 note={tx(copy.tiers_note_it || 'Un solo percorso.', copy.tiers_note_en || 'One single path.')}
             />
 
+            {/* DR7 Club Privilege — maturazione giornaliera sul Wallet.
+                Il motore vero sta nel gestionale (accrue-club-wallet-interest,
+                0,1% al giorno sul capitale, accredito mensile): qui c'e' solo
+                il racconto, editabile da admin > Sito > Membership. */}
+            <div className="bg-black border-t border-gray-900">
+                <div className="container mx-auto px-6 max-w-4xl py-20">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <p className="t-eyebrow text-center">
+                            {tx(copy.privilege_eyebrow_it, copy.privilege_eyebrow_en)}
+                        </p>
+                        <h2 className="mt-5 text-center font-serif text-3xl md:text-4xl font-normal leading-tight tracking-[-0.015em] text-white">
+                            {tx(copy.privilege_title_it, copy.privilege_title_en)}
+                        </h2>
+                        <p className="mt-8 mx-auto max-w-2xl text-center text-gray-300 leading-relaxed">
+                            {tx(copy.privilege_intro_it, copy.privilege_intro_en)}
+                        </p>
+
+                        <div className="mt-8 flex flex-col items-center gap-1.5 text-center text-sm text-gray-400">
+                            <span>{tx(copy.privilege_claim_1_it, copy.privilege_claim_1_en)}</span>
+                            <span>{tx(copy.privilege_claim_2_it, copy.privilege_claim_2_en)}</span>
+                        </div>
+
+                        <p className="mt-8 mx-auto max-w-2xl text-center text-gray-400 text-sm leading-relaxed">
+                            {tx(copy.privilege_calc_it, copy.privilege_calc_en)}
+                        </p>
+
+                        {/* L'esempio: una tabella, non un grafico — sono quattro
+                            numeri esatti, un grafico li renderebbe solo vaghi. */}
+                        <div className="mt-12 mx-auto max-w-xl border border-gray-800">
+                            <p className="border-b border-gray-800 px-6 py-4 text-sm text-white">
+                                {tx(copy.privilege_example_label_it, copy.privilege_example_label_en)}
+                            </p>
+                            {(copy.privilege_rows || []).map((row, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-baseline justify-between gap-5 border-b border-gray-900 px-6 py-3.5 last:border-b-0"
+                                >
+                                    <span className="text-sm text-gray-400">
+                                        {tx(row.label_it, row.label_en)}
+                                    </span>
+                                    <span className="text-right text-sm text-white">{row.value}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p className="mt-12 mx-auto max-w-2xl text-center text-gray-300 leading-relaxed">
+                            {tx(copy.privilege_principle_it, copy.privilege_principle_en)}
+                        </p>
+                        <p className="mt-5 mx-auto max-w-2xl text-center text-gray-500 text-sm leading-relaxed">
+                            {tx(copy.privilege_usage_it, copy.privilege_usage_en)}
+                        </p>
+                        <p className="mt-10 text-center font-serif text-xl tracking-[-0.01em] text-white">
+                            {tx(copy.privilege_closing_it, copy.privilege_closing_en)}
+                        </p>
+                    </motion.div>
+                </div>
+            </div>
+
             {/* Reward System Section */}
             <div className="bg-black pb-24 border-t border-gray-900">
                 <div className="container mx-auto px-6 max-w-4xl pt-20">

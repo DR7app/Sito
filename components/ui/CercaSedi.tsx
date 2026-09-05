@@ -1,12 +1,17 @@
 /**
  * CercaSedi — la ricerca delle sedi, dalla lente in alto a destra.
  *
- * Cerca dentro il catalogo delle sedi del pannello (Sito > Locations):
- * aeroporti, punti di ritiro e riconsegna, marina, eliporti. Scrivendo
- * "Olbia" escono l'aeroporto e ogni altro punto che porta quel nome.
+ * Cerca dentro il catalogo del pannello (Sito > Locations): le SEDI DR7 —
+ * punti di ritiro e riconsegna, marina, eliporti.
  *
- * Non e' un motore di ricerca del sito: e' l'elenco dei posti da cui DR7
- * parte, ed e' esattamente quello che chiede chi scrive il nome di una citta'.
+ * Gli AEROPORTI restano fuori di proposito. Sono scali di terzi che servono
+ * ai voli, non posti dove DR7 sta: in elenco facevano sembrare che DR7 avesse
+ * una sede a Nizza o a Ibiza. Chi cerca "Olbia" oggi non trova niente, ed e'
+ * la risposta giusta finche' li' una sede non c'e'.
+ *
+ * Fuori anche la consegna a domicilio: e' un servizio, non un posto.
+ *
+ * Non e' un motore di ricerca del sito: e' l'elenco delle sedi DR7.
  * Ogni risultato porta alla pagina del servizio a cui appartiene — auto, mare
  * o aria — cosi' dalla ricerca si arriva alla prenotazione.
  *
@@ -62,7 +67,6 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
   const tutte = useMemo<Risultato[]>(() => {
     if (!locations) return [];
     const et = {
-      aeroporti: t({ it: 'Aeroporti', en: 'Airports' }),
       ritiro: t({ it: 'Ritiro e riconsegna', en: 'Pickup and return' }),
       marina: t({ it: 'Marina', en: 'Marinas' }),
       eliporti: t({ it: 'Eliporti', en: 'Heliports' }),
@@ -70,15 +74,15 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
     const bil = (i: { label_it: string; label_en: string }) => (lang === 'it' ? i.label_it : i.label_en);
     const out: Risultato[] = [];
 
-    for (const a of locations.airports || []) {
-      out.push({ chiave: `air-${a.iata}`, titolo: a.name, dettaglio: `${a.city} · ${a.iata}`, gruppo: et.aeroporti, to: '/flotta' });
-    }
     // Ritiro e riconsegna condividono quasi sempre gli stessi posti: si
     // mostrano una volta sola, se no la lista dice tutto due volte.
+    // La consegna a domicilio non e' una sede: non e' un posto dove andare.
+    const domicilio = (v: string) => /domicili|delivery|home pickup/i.test(v);
     const visti = new Set<string>();
     for (const p of [...(locations.pickup_locations || []), ...(locations.return_locations || [])]) {
       const etichetta = bil(p);
-      if (visti.has(etichetta)) continue;
+      if (!etichetta || visti.has(etichetta)) continue;
+      if (domicilio(etichetta) || domicilio(p.id)) continue;
       visti.add(etichetta);
       out.push({ chiave: `pick-${p.id}-${etichetta}`, titolo: etichetta, gruppo: et.ritiro, to: '/flotta' });
     }
@@ -137,7 +141,7 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t({ it: 'Olbia, Cagliari, Porto Cervo...', en: 'Olbia, Cagliari, Porto Cervo...' })}
+                placeholder={t({ it: 'Cagliari, Porto Cervo...', en: 'Cagliari, Porto Cervo...' })}
                 className="mt-8 w-full border-b border-white/20 bg-transparent pb-5 font-serif text-3xl font-normal text-white placeholder:text-white/25 focus:border-white/50 focus:outline-none md:text-5xl"
               />
 

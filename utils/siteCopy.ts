@@ -2230,8 +2230,8 @@ const DEFAULT_HEADER: HeaderCopy = {
 export const DEFAULT_ASPETTO: Required<AspettoCopy> = {
   logo_url: '/DR7logo1.png',
   logo_alignment: 'center',
-  logo_height_desktop: 84,
-  logo_height_mobile: 72,
+  logo_height_desktop: 96,
+  logo_height_mobile: 80,
   footer_logo_height: 48,
   chatbot_enabled: true,
   chatbot_avatar_url: '/Valerio.jpg',

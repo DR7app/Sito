@@ -218,6 +218,19 @@ p { line-height: 1.62; }
   .container { padding-left: var(--gutter); padding-right: var(--gutter); }
 }
 
+/* I due colori piu' usati nel markup passano dal tema.
+   `bg-black` e `text-white` compaiono in centinaia di punti: legandoli alle
+   variabili, cambiare fondo e inchiostro dal pannello si vede ovunque senza
+   riscrivere un solo componente. Le varianti con trasparenza (`bg-white/10`)
+   restano quelle compilate: sono veli, non colore di marca.
+   Oggi i valori coincidono con quelli di Tailwind, quindi non cambia nulla
+   finche' l'operatore non tocca il tema. */
+.bg-black { background-color: var(--c-obsidian); }
+.text-black { color: var(--c-obsidian); }
+.bg-white { background-color: var(--c-ivory); }
+.text-white { color: var(--c-ivory); }
+.border-white { border-color: var(--c-ivory); }
+
 ::selection { background: rgba(201, 190, 168, 0.28); color: var(--c-ivory); }
 :focus-visible { outline: 1px solid var(--c-metal); outline-offset: 3px; }
 html { scroll-behavior: smooth; }

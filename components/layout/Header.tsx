@@ -241,7 +241,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                 Le stesse posizioni della barra del sito: aprendo il menu non si
                 sposta niente, cambia solo cosa c'e' scritto a sinistra. */}
             <div className="shrink-0">
-              <div className="container mx-auto flex items-center justify-between px-6 py-5 md:py-6">
+              <div className="container mx-auto flex items-center justify-between gap-4 px-6 py-5 md:py-6">
                 <button
                   onClick={onClose}
                   aria-label={h('close_menu_aria_it', 'close_menu_aria_en')}
@@ -256,7 +256,22 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   </span>
                 </button>
 
-                <NavLink to="/" onClick={onClose} className="absolute left-1/2 -translate-x-1/2">
+                {/* Il logo segue la posizione scelta in Sito > Aspetto, come nella
+                    barra del sito: se e' a sinistra sta accanto a "Chiudi", se e'
+                    a destra sta prima della lingua, altrimenti al centro. Prima
+                    era inchiodato al centro e la scelta dell'operatore valeva
+                    ovunque tranne che qui. */}
+                <NavLink
+                  to="/"
+                  onClick={onClose}
+                  className={
+                    aspetto.logo_alignment === 'center'
+                      ? 'absolute left-1/2 -translate-x-1/2'
+                      : aspetto.logo_alignment === 'left'
+                        ? 'order-first ml-5'
+                        : 'order-last mr-2'
+                  }
+                >
                   <img src={aspetto.logo_url} alt={copy.logo_alt} className="w-auto" style={{ height: aspetto.logo_height_mobile }} />
                 </NavLink>
 

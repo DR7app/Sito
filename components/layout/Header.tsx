@@ -11,6 +11,7 @@ import {
 } from '../icons/Icons';
 import { getUserCreditBalance } from '../../utils/creditWallet';
 import BookingSearchBox from '../ui/BookingSearchBox';
+import CercaSedi from '../ui/CercaSedi';
 import { getHeaderCopy, getAspettoCopy, DEFAULT_ASPETTO, type HeaderCopy, type AspettoCopy } from '../../utils/siteCopy';
 import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
 
@@ -456,6 +457,9 @@ const Header: React.FC = () => {
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // La lente in alto a destra: cerca fra le sedi del pannello. Oggi c'e'
+  // Cagliari, domani ce ne saranno altre e si troveranno da sole.
+  const [cercaAperto, setCercaAperto] = useState(false);
   const [copy, setCopy] = useState<HeaderCopy | null>(null);
   // Logo e widget: si parte dai valori di fabbrica cosi' la barra non appare
   // mai senza logo, poi arriva la configurazione dell'operatore.
@@ -521,6 +525,17 @@ const Header: React.FC = () => {
               stanno nel menu e nel fondo pagina. Chi ha gia' fatto l'accesso
               non vede piu' nulla qui. */}
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCercaAperto(true)}
+              aria-label={t({ it: 'Cerca una sede', en: 'Find a location' })}
+              title={t({ it: 'Cerca una sede', en: 'Find a location' })}
+              className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-400 transition-colors duration-500 ease-editorial hover:border-white/35 hover:text-white"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path strokeLinecap="round" d="M20 20l-3.6-3.6" />
+              </svg>
+            </button>
             <AnimatePresence mode="wait">
               {user ? null : (
                 <Link
@@ -538,6 +553,7 @@ const Header: React.FC = () => {
         </div>
       </motion.header>
 
+      <CercaSedi aperto={cercaAperto} onClose={() => setCercaAperto(false)} />
       {copy && <NavigationMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} copy={copy} aspetto={aspetto} />}
     </>
   );

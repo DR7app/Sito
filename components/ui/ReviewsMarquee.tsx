@@ -196,6 +196,14 @@ export const ReviewsMarquee: React.FC<ReviewsMarqueeProps> = ({
                         <div className={`text-left ${dark ? 'text-white' : 'text-gray-900'}`}>
                             <div className="flex items-center gap-2">
                                 <p className="text-2xl font-bold leading-none">{ratingSummary.ratingValue.toFixed(1)}</p>
+                                {/* Sigillo di verifica accanto al voto. Non
+                                    nomina nessun ente: e' il segno di attivita'
+                                    verificata, e sta dentro alla targhetta che
+                                    porta a Google, che e' il suo contesto. */}
+                                <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path fill="#4285F4" d="M12 1.5l2.31 1.68 2.79-.53 1.06 2.65 2.65 1.06-.53 2.79L22 12l-1.72 2.85.53 2.79-2.65 1.06-1.06 2.65-2.79-.53L12 22.5l-2.31-1.68-2.79.53-1.06-2.65-2.65-1.06.53-2.79L2 12l1.72-2.85-.53-2.79 2.65-1.06L6.9 2.65l2.79.53L12 1.5z"/>
+                                    <path fill="#FFFFFF" d="M10.75 15.6l-3.2-3.2 1.27-1.27 1.93 1.93 4.43-4.43 1.27 1.27-5.7 5.7z"/>
+                                </svg>
                                 <div className="flex items-center gap-0.5" aria-hidden="true">
                                     {[0, 1, 2, 3, 4].map((i) => (
                                         <svg key={i} className="h-4 w-4 text-[#FBBC05]" fill="currentColor" viewBox="0 0 20 20">

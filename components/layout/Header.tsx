@@ -297,7 +297,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               <div className="container m-auto w-full px-6 py-5 lg:py-6">
                 <nav className="mr-auto w-full text-left lg:max-w-[46%] lg:text-right">
                   <ul>
-                    {MENU_ITEMS.map(({ to, title, subtitle }, i) => (
+                    {MENU_ITEMS.map(({ to, title }, i) => (
                       <li key={title}>
                         {/* Ingresso: la voce arriva da SINISTRA, di una
                             larghezza esatta della propria riga, mentre sfuma.
@@ -339,7 +339,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                             onClick={onClose}
                             onMouseEnter={() => setHovered(i)}
                             onFocus={() => setHovered(i)}
-                            className="group flex min-h-[48px] flex-col justify-center border-b border-white/[0.07] py-2.5 md:py-3"
+                            className="group flex min-h-[48px] flex-col justify-center border-b border-white/20 py-3.5 md:py-4"
                           >
                             <span
                               className={`t-nav block text-[13px] leading-none transition-colors duration-standard md:text-[15px] ${
@@ -349,7 +349,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                             >
                               {title}
                             </span>
-                            <span className="mt-1.5 block text-[11px] leading-snug text-white/35 md:text-[12px]">{subtitle}</span>
                           </NavLink>
                         </motion.div>
                       </li>

@@ -124,7 +124,51 @@ const PaymentSuccessPage: React.FC = () => {
             // Cauzione: la riga `cauzioni` la aggiorna il callback server
             // (nexi-preauth-callback). Qui mostriamo solo l'esito al cliente,
             // che spesso non ha nemmeno un account sul sito.
+            //
+            // 05/09/2026 — questo ramo usciva SUBITO, cioe' PRIMA della verifica
+            // Nexi qui sotto, e mostrava la schermata verde "Cauzione
+            // Pre-autorizzata - l'importo risulta bloccato sulla tua carta" per
+            // il solo fatto di essere stati raggiunti. Ma su 3DS fallito Nexi
+            // rimanda comunque a `resultUrl`: Ivan Piras (order
+            // Cafd3c814mto3mpyx, THREEDS_FAILED, authorizedAmount 0) ha letto
+            // "importo bloccato" con zero euro bloccati, mentre il gestionale
+            // registrava correttamente "Preautorizzazione RIFIUTATA".
+            // Vale la stessa regola di ogni altro pagamento: l'esito lo dice
+            // Nexi, non il fatto di essere su questa pagina.
             if (isCauzione) {
+                if (!orderId) {
+                    console.warn('[PaymentSuccess] Cauzione senza orderId: esito non verificabile');
+                    setPagamentoNonConfermato(true);
+                    setUpdating(false);
+                    return;
+                }
+                try {
+                    const verificaRes = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/nexi-verify-order`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId }),
+                    });
+                    const verifica = await verificaRes.json();
+                    // `paid` e' true su AUTHORIZED (fondi bloccati: la
+                    // pre-autorizzazione corretta) e su EXECUTED (incassati).
+                    // Tutto il resto — THREEDS_FAILED, DECLINED, PENDING,
+                    // ordine sconosciuto — non e' una pre-autorizzazione.
+                    if (!verifica?.paid) {
+                        console.warn('[PaymentSuccess] Pre-autorizzazione NON confermata da Nexi:', verifica);
+                        setPagamentoNonConfermato(true);
+                        setUpdating(false);
+                        return;
+                    }
+                    console.log('[PaymentSuccess] Pre-autorizzazione confermata da Nexi:', verifica?.result);
+                } catch (verificaErr) {
+                    // Fail-closed come gli altri pagamenti: nel dubbio niente
+                    // schermata verde. La cauzione viene comunque allineata da
+                    // nexi-preauth-callback, che interroga Nexi direttamente.
+                    console.error('[PaymentSuccess] Verifica Nexi fallita:', verificaErr);
+                    setPagamentoNonConfermato(true);
+                    setUpdating(false);
+                    return;
+                }
                 setPurchaseType('cauzione');
                 setUpdating(false);
                 return;

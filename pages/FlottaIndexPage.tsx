@@ -6,13 +6,15 @@
  * cosi' il design (aspect 9/16, hover, prezzo, bottone) e' lo
  * stesso della pagina /supercar-luxury.
  */
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useFlottaCategories } from '../hooks/useFlottaCategories';
 import { useVehicles } from '../hooks/useVehicles';
 import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
+import BookingSearchBox from '../components/ui/BookingSearchBox';
+import { getHeaderCopy, type HeaderCopy } from '../utils/siteCopy';
 import type { RentalItem } from '../types';
 // Alias storici categoria DB <-> id Centralina Pro: definiti una volta
 // sola in flottaConfig, insieme alla regola di visibilita'.
@@ -23,6 +25,20 @@ const FlottaIndexPage: React.FC = () => {
   const { openCarWizard } = useBooking();
   const { categories: flottaCats, loading: catsLoading, status: catsStatus } = useFlottaCategories();
   const { vehicles: allVehicles, loading: vehLoading } = useVehicles(undefined);
+
+  // "Prenota Ora" anche qui, sotto l'invito a scegliere: e' la pagina dove il
+  // cliente guarda i mezzi, ed era l'unica in cui doveva tornare al menu per
+  // aprire la ricerca. Stessa finestra della barra in alto, stesse etichette
+  // dal pannello: una sola cosa da cambiare se cambiano.
+  const [prenotaAperto, setPrenotaAperto] = useState(false);
+  const [headerCopy, setHeaderCopy] = useState<HeaderCopy | null>(null);
+  useEffect(() => {
+    let annullato = false;
+    getHeaderCopy().then((c) => { if (!annullato) setHeaderCopy(c); });
+    return () => { annullato = true; };
+  }, []);
+  const hc = (it: keyof HeaderCopy, en: keyof HeaderCopy): string =>
+    headerCopy ? (headerCopy as Record<string, string>)[(lang === 'it' ? it : en) as string] : '';
 
   // categoryContext serve a CarBookingWizard per scegliere il routing:
   // 'urban-cars' per la fascia urban, 'cars' per tutto il resto.
@@ -75,6 +91,12 @@ const FlottaIndexPage: React.FC = () => {
               ? 'Scegli il tuo veicolo dalla nostra flotta esclusiva.'
               : 'Pick your vehicle from our exclusive fleet.'}
           </p>
+          <button
+            onClick={() => setPrenotaAperto(true)}
+            className="mt-10 inline-flex items-center justify-center border border-white bg-white px-8 py-3.5 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
+          >
+            {hc('drawer_book_cta_it', 'drawer_book_cta_en') || (lang === 'it' ? 'Prenota Ora' : 'Book Now')}
+          </button>
         </div>
 
         {isLoading ? (
@@ -136,6 +158,40 @@ const FlottaIndexPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {prenotaAperto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setPrenotaAperto(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 10 }}
+              transition={{ type: 'spring', duration: 0.4, bounce: 0.15 }}
+              className="relative w-full max-w-[440px] border border-white/10 bg-[#0A0B0C] p-8 sm:p-10"
+              style={{ boxShadow: '0 40px 90px -40px rgba(0,0,0,0.9)' }}
+            >
+              <button
+                onClick={() => setPrenotaAperto(false)}
+                aria-label={lang === 'it' ? 'Chiudi' : 'Close'}
+                className="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center border border-white/10 text-white/40 transition-colors duration-300 hover:border-white/30 hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <h3 className="mb-2 text-center font-serif text-[26px] font-normal tracking-[-0.01em] text-white">{hc('popup_title_it', 'popup_title_en')}</h3>
+              <p className="mb-8 text-center text-[12px] text-white/35">{hc('popup_subtitle_it', 'popup_subtitle_en')}</p>
+              <BookingSearchBox variant="popup" onClose={() => setPrenotaAperto(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

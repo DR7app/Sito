@@ -81,26 +81,6 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-black border-t border-white/10 text-gray-500">
       <div className="container mx-auto px-6 py-20 md:py-28">
-        {/* Top Section: Social */}
-        <div className="mb-16 pb-16 border-b border-white/[0.07] text-center">
-          <h3 className="font-serif text-3xl md:text-4xl font-normal text-white mb-4 tracking-[-0.012em]">{bilingual(copy, 'network_title', lang)}</h3>
-          <p className="text-sm mb-8 max-w-xl mx-auto">{lang === 'it' ? copy.network_text_it : copy.network_text_en}</p>
-          <div className="flex justify-center gap-7">
-            {copy.social_links.map((s) => (
-              <a
-                key={s.id}
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={s.label}
-                className="text-gray-500 hover:text-white transition-colors duration-500 ease-editorial"
-              >
-                <SocialIcon icon={s.icon} className="w-5 h-5" />
-              </a>
-            ))}
-          </div>
-        </div>
-
         {/* Reviews Section */}
         <div className="mb-16 pb-16 border-b border-white/[0.07]">
           <div className="text-center mb-10">

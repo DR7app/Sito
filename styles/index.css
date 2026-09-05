@@ -185,6 +185,39 @@ body {
   background: var(--c-obsidian);
 }
 
+/* ==========================================================================
+   Fondo della pagina: marmo nero
+   --------------------------------------------------------------------------
+   Dove il sito era nero pieno ora c'e' il marmo di casa (public/marmo-nero.jpeg),
+   sotto un velo scuro: la foto da sola e' troppo chiara e le venature d'oro si
+   mangerebbero il testo. Il velo la porta piu' giu' del nero della foto, come
+   richiesto.
+
+   Strato FISSO in un pseudo-elemento invece di `background-attachment: fixed`:
+   su Safari mobile quella proprieta' fa saltare lo scorrimento.
+   ========================================================================== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(6, 6, 7, 0.86), rgba(6, 6, 7, 0.91)),
+    url('/marmo-nero.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Il contenitore radice dell'app dipinge un nero pieno che coprirebbe il
+   marmo. Qui torna trasparente. Il selettore e' volutamente stretto — figlio
+   DIRETTO di #root — cosi' i veli delle finestre modali, che stanno piu' in
+   fondo nell'albero o usano `bg-black/80`, restano quelli che erano. */
+#root > .bg-black {
+  background-color: transparent;
+}
+
 /* Alias storici: restano perche' potrebbero comparire in classi composte a
    runtime o salvate dall'admin. Puntano alle famiglie nuove. */
 .font-playfair { font-family: var(--f-display); }

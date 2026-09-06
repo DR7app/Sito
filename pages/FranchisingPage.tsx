@@ -72,9 +72,14 @@ const FranchisingPage: React.FC = () => {
         <LegalPageLayout title={t('Franchising')}>
             <div className="space-y-8">
                 {/* Hero banner — Global Franchising */}
-                <div className="relative -mt-2 rounded-2xl overflow-hidden border border-gray-800">
-                    <img src="/franchising-hero.jpeg" alt="" className="w-full h-40 md:h-56 object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                {/* 06/09/2026 — la fotografia si vede intera.
+                    Era schiacciata in una fascia alta 160px (224 da schermo
+                    grande) con `object-cover`: di un'immagine 3:2 restava una
+                    striscia centrale. Via anche il velo scuro che la copriva
+                    tutta: qui sopra non c'e' scritto niente, serviva solo a
+                    spegnerla. */}
+                <div className="-mt-2 rounded-2xl overflow-hidden border border-gray-800">
+                    <img src="/franchising-hero.jpeg" alt="" loading="lazy" decoding="async" className="block h-auto w-full" />
                 </div>
                 {/* Hero Statement */}
                 <div className="text-center py-6 md:py-8 border-b border-gray-800">

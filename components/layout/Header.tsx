@@ -5,11 +5,10 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  UserCircleIcon, SignOutIcon,
+  UserCircleIcon,
   CarIcon, AnchorIcon, PaperAirplaneIcon, HomeIcon,
   SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon, WalletIcon,
 } from '../icons/Icons';
-import { getUserCreditBalance } from '../../utils/creditWallet';
 import BookingSearchBox from '../ui/BookingSearchBox';
 import CercaSedi from '../ui/CercaSedi';
 import { getHeaderCopy, getAspettoCopy, DEFAULT_ASPETTO, type HeaderCopy, type AspettoCopy } from '../../utils/siteCopy';
@@ -30,10 +29,8 @@ const SiteLogo: React.FC<{ aspetto: Required<AspettoCopy>; alt: string }> = ({ a
 
 const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: HeaderCopy; aspetto: Required<AspettoCopy> }> = ({ isOpen, onClose, copy, aspetto }) => {
   const { t, lang } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
-  const [creditBalance, setCreditBalance] = useState<number>(0);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const h = (it: keyof HeaderCopy, en: keyof HeaderCopy): string =>
     (copy as Record<string, string>)[(lang === 'it' ? it : en) as string];
@@ -74,39 +71,11 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     } catch { /* ignore */ }
   }, [user]);
 
-  // Fetch credit balance when menu opens (with debounce to prevent rapid calls)
-  useEffect(() => {
-    if (!isOpen || !user?.id) return;
-
-    const fetchBalance = async () => {
-      setIsLoadingBalance(true);
-      try {
-        const balance = await getUserCreditBalance(user.id);
-        setCreditBalance(balance);
-      } catch (error) {
-        console.error('Error fetching credit balance:', error);
-        setCreditBalance(0); // Set to 0 on error to stop retries
-      } finally {
-        setIsLoadingBalance(false);
-      }
-    };
-
-    // Debounce: only fetch after 300ms of menu being open
-    const timer = setTimeout(fetchBalance, 300);
-    return () => clearTimeout(timer);
-  }, [isOpen, user?.id]);
-
   const navLinkClasses =
     'block py-3 pl-3 text-[15px] font-normal text-gray-400 hover:text-white transition-all duration-200 hover:bg-white/5';
 
-  const handleLogout = () => {
-    logout();
-    onClose();
-  };
-
   const accountLink = user?.role === 'business' ? '/partner/dashboard' : '/account';
   const accountLabel = user?.role === 'business' ? t('Partner_Dashboard') : t('My_Account');
-  const userFullName = user?.fullName || 'User';
 
   // Voci del menu (redesign): icona oro + immagine + titolo + sottotitolo.
   // Titolo/sottotitolo sono editabili da Admin > Sito > Header (chiavi
@@ -174,6 +143,18 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
       subtitle: '' },
   ];
 
+  // Il movimento del menu: una sola serie di numeri, usata sia in ingresso
+  // che in uscita. Aprire e chiudere devono essere lo stesso gesto — stessa
+  // durata, stesso passo fra una voce e l'altra, stessa curva, stesso ordine
+  // (la cascata parte sempre dal BASSO: l'ultima voce si muove per prima).
+  const VOCE_DURATA = 0.92;
+  const VOCE_PASSO = 0.135;
+  const VOCE_CURVA: [number, number, number, number] = [0.19, 1, 0.22, 1];
+  const voceRitardo = (i: number) => (MENU_ITEMS.length - 1 - i) * VOCE_PASSO;
+  // Velo e pannello se ne vanno quando le voci hanno quasi finito: prima
+  // sparirebbe il fondo nero e le ultime voci scorrerebbero sopra la pagina.
+  const codaUscita = (MENU_ITEMS.length - 1) * VOCE_PASSO + VOCE_DURATA * 0.6;
+
   /**
    * Il menu.
    *
@@ -195,8 +176,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
    * dopo l'altra. E' quello a dare il senso di apertura, non un effetto sopra
    * al testo.
    *
-   * Restano tutte le destinazioni, il pulsante di prenotazione, la lingua e
-   * l'area cliente: cambia come si presentano, non cosa fanno.
+   * Restano tutte le destinazioni e l'area cliente, che e' l'ultima voce
+   * della lista. Il piede con prenotazione, credito, profilo e uscita non
+   * c'e' piu': erano scorciatoie a cose che stanno gia' dentro l'area
+   * cliente, e occupavano una fascia intera in fondo allo schermo.
    */
   const [hovered, setHovered] = useState(-1);
   // Chi ha chiesto meno movimento al sistema operativo non deve subire la
@@ -224,7 +207,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             /* Il velo se ne va per ultimo: prima escono le voci, poi torna
                fuori la pagina. Al contrario si vedrebbero le voci uscire nel
                vuoto. */
-            exit={{ opacity: 0, transition: { duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.62, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 bg-[#08090A]/[0.985] backdrop-blur-[3px] lg:bg-transparent lg:backdrop-blur-[2px]"
             onClick={onClose}
@@ -246,7 +229,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate={{ opacity: 1 }}
             /* Anche il pannello aspetta: se sfumasse subito, la cascata di
                uscita delle voci non si vedrebbe proprio. */
-            exit={{ opacity: 0, transition: { duration: 0.55, delay: 0.6, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.55, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex h-full flex-col overflow-hidden"
           >
@@ -307,43 +290,28 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   <ul>
                     {MENU_ITEMS.map(({ to, title }, i) => (
                       <li key={title}>
-                        {/* Ingresso: la voce arriva da SINISTRA, di una
-                            larghezza esatta della propria riga, mentre sfuma.
-                            La verticale non si muove.
-                            La cascata parte dal BASSO: l'ultima voce entra per
-                            prima, la prima per ultima. E' il contrario di
-                            quello che verrebbe spontaneo, ed e' proprio quello
-                            che rende l'apertura riconoscibile.
-                            Circa 750 ms a voce, con una decelerazione molto
-                            forte: a un sesto del tempo il tragitto e' gia'
-                            fatto per due terzi. */}
+                        {/* Apertura e chiusura sono lo stesso gesto.
+                            La voce arriva da SINISTRA, di una larghezza esatta
+                            della propria riga, mentre sfuma; la verticale non
+                            si muove. Alla chiusura rifa' lo stesso tragitto al
+                            contrario con gli stessi numeri: stessa durata,
+                            stesso passo, stessa curva e la cascata che riparte
+                            dal BASSO, cioe' l'ultima voce si muove per prima.
+                            Prima la chiusura andava piu' veloce, con un passo
+                            piu' corto e partendo dall'alto: era un movimento
+                            diverso, e si vedeva. */}
                         <motion.div
                           initial={menoMovimento ? false : { x: '-100%', opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
-                          /* Uscita: lo stesso tragitto al contrario — le voci
-                             tornano a sinistra invece di sparire sul posto.
-                             Due differenze rispetto all'ingresso, ed e' quello
-                             che rende la chiusura riconoscibile:
-                             - la cascata riparte dall'ALTO (la prima voce esce
-                               per prima), specchio dell'ingresso che parte dal
-                               basso;
-                             - frena come all'ingresso, stessa famiglia di
-                               curva. Con una curva che ACCELERA le voci
-                               strappavano via, ed era quello a far sembrare la
-                               chiusura sbagliata.
-                             Voci, velo e pannello atterrano tutti insieme
-                             intorno a 1,15 s: prima il velo aspettava mezzo
-                             secondo di troppo e restava un buco a schermo
-                             vuoto. Contro i 2,1 s dell'apertura. */
                           exit={
                             menoMovimento
                               ? { opacity: 0 }
-                              : { x: '-100%', opacity: 0, transition: { duration: 0.75, delay: i * 0.045, ease: [0.22, 1, 0.36, 1] } }
+                              : { x: '-100%', opacity: 0, transition: { duration: VOCE_DURATA, delay: voceRitardo(i), ease: VOCE_CURVA } }
                           }
                           transition={
                             menoMovimento
                               ? { duration: 0 }
-                              : { duration: 0.92, delay: (MENU_ITEMS.length - 1 - i) * 0.135, ease: [0.19, 1, 0.22, 1] }
+                              : { duration: VOCE_DURATA, delay: voceRitardo(i), ease: VOCE_CURVA }
                           }
                         >
                           <NavLink
@@ -370,45 +338,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               </div>
             </div>
 
-            {/* Piede: prenotazione, credito, account. Le stesse azioni di prima. */}
-            <div className="shrink-0 border-t border-white/10">
-              <div className="container mx-auto flex flex-col gap-6 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      onClose();
-                      nav('/signin?returnTo=' + encodeURIComponent(window.location.pathname + '?openBooking=1'));
-                      return;
-                    }
-                    setShowBookingPopup(true);
-                    try { window.dispatchEvent(new CustomEvent('dr7:prenota-ora:manual-opened')); } catch { /* ignore */ }
-                  }}
-                  className="t-nav self-start border px-8 py-4 transition-colors duration-500 ease-editorial hover:bg-[#C9BEA8] hover:text-black sm:self-auto"
-                  style={{ color: 'var(--c-metal)', borderColor: 'rgba(201,190,168,0.45)' }}
-                >
-                  {h('drawer_book_cta_it', 'drawer_book_cta_en')}
-                </button>
-
-                {user ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="t-eyebrow mr-2 hidden md:inline">{userFullName}</span>
-                    <Link to="/credit-wallet" onClick={onClose} className="t-meta border border-white/15 px-3 py-2 text-xs text-white transition-colors duration-500 ease-editorial hover:border-white/40">
-                      {isLoadingBalance ? '...' : `€${creditBalance.toFixed(2)}`}
-                    </Link>
-                    <Link to={accountLink} onClick={onClose} title={accountLabel} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:border-white/40 hover:text-white">
-                      <UserCircleIcon className="w-5 h-5" />
-                    </Link>
-                    <button onClick={handleLogout} title={t('Sign_Out')} className="flex h-9 w-9 items-center justify-center border border-white/15 text-gray-300 transition-colors duration-500 ease-editorial hover:border-white/40 hover:text-white">
-                      <SignOutIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                ) : (
-                  <Link to="/signin" onClick={onClose} className="t-nav self-start border border-white bg-white px-8 py-4 text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white sm:self-auto">
-                    {t('Sign_In')}
-                  </Link>
-                )}
-              </div>
-            </div>
           </motion.div>
 
           {/* PRENOTA ORA POPUP — outside scroll container for proper z-index */}

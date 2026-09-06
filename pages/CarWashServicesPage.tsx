@@ -480,8 +480,15 @@ const CarWashServicesPage: React.FC = () => {
       {/* Hero banner — Servizi: Lavaggio & Meccanica */}
       <div className="container mx-auto px-4 mb-8">
         <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden border border-white/10">
-          <img src="/servizi-lavaggio.jpeg" alt="" loading="lazy" decoding="async" className="w-full h-40 md:h-56 object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-end p-5 md:p-7">
+          {/* 06/09/2026 — la fotografia si vede intera.
+              Prima era schiacciata in una fascia alta 160px (224 da schermo
+              grande) con `object-cover`: di un'immagine 3:2 restava una
+              striscia centrale, tagliata sopra e sotto. Ora tiene il suo
+              rapporto nativo e il riquadro si adatta a lei. */}
+          <img src="/servizi-lavaggio.jpeg" alt="" loading="lazy" decoding="async" className="block h-auto w-full" />
+          {/* Il velo scuro copre solo la parte bassa: serve a rendere
+              leggibile il titolo, non a spegnere la fotografia. */}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-5 md:p-7 pt-24">
             <div>
               <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">{t({ it: "Servizi", en: "Services" })}</p>
               <h1 className="text-2xl md:text-3xl font-bold text-white">{t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}</h1>

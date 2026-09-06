@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import SEOHead from '../components/seo/SEOHead';
 import { useTranslation } from '../hooks/useTranslation';
-import { getContactCopy, bilingual, type ContactCopy } from '../utils/siteCopy';
+import { getContactCopy, type ContactCopy } from '../utils/siteCopy';
 import { trackPhoneCall } from '../utils/analytics';
 
 const ContactPage: React.FC = () => {
@@ -157,8 +157,10 @@ const ContactPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Company Info */}
-            <div className="text-center mb-16">
+            {/* Company Info — ultimo blocco della pagina.
+                06/09/2026 — sotto c'era una mappa OpenStreetMap in un
+                iframe alto 400px: a schermo restava un rettangolo vuoto. */}
+            <div className="text-center">
               <h2 className="text-2xl font-bold text-white mb-4">{lang === 'it' ? copy.office_heading_it : copy.office_heading_en}</h2>
               <div className="text-gray-400 space-y-1">
                 <p className="font-semibold text-white">{copy.office_company_name}</p>
@@ -167,17 +169,6 @@ const ContactPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Map */}
-            <div className="rounded-2xl overflow-hidden border border-gray-800">
-              <iframe
-                title={bilingual(copy, 'map_title', lang)}
-                src={copy.map_iframe_url}
-                width="100%"
-                height="400"
-                style={{ border: 0 }}
-                loading="lazy"
-              />
-            </div>
           </>
         )}
       </div>

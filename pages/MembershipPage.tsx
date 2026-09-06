@@ -323,38 +323,18 @@ const MembershipPage: React.FC = () => {
                         </p>
                     </motion.div>
 
-                    <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                        {copy.reward_items.map((rule, i) => {
-                            const note = lang === 'it' ? rule.note_it : rule.note_en;
-                            return (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.4, delay: i * 0.1 }}
-                                    className="bg-gray-900/50 border border-gray-800 rounded-xl p-5"
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-white font-semibold text-sm">
-                                            {tx(rule.label_it, rule.label_en)}
-                                        </span>
-                                        <span className="bg-white text-black text-sm font-bold px-2.5 py-0.5">
-                                            {rule.reward}
-                                        </span>
-                                    </div>
-                                    {note && <p className="text-gray-500 text-xs">{tx(note, note)}</p>}
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-
+                    {/* 06/09/2026 — via la griglia delle percentuali
+                        (anticipato 2%, acconto 1%, extra 2%, lavaggio 3%).
+                        Erano numeri fissi scritti a mano che contraddicevano
+                        i livelli veri qui sopra, quelli che il gestionale
+                        calcola davvero. Restano titolo, introduzione e la
+                        nota in fondo. */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: 0.4 }}
-                        className="mt-10 text-center"
+                        className="text-center"
                     >
                         <div className="inline-flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-5 py-2.5">
                             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

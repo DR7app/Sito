@@ -7,6 +7,16 @@ import { supabase } from '../../supabaseClient';
 import type { CreditTransaction } from '../../utils/creditWallet';
 import { splitWalletBalance } from '../../utils/walletCredit';
 import CalcolaCFButton from '../../components/ui/CalcolaCFButton';
+import {
+    clientStatusClasses,
+    fetchClientStatusDefsFresh,
+    fetchClientStatusKey,
+    isDistinctClientStatus,
+    loadClientStatusDefs,
+    publicClientStatus,
+    resolveClientStatusKey,
+    type ClientStatusDef,
+} from '../../utils/clientStatus';
 
 interface CustomerExtended {
     id: string;
@@ -38,7 +48,11 @@ interface CustomerExtended {
     rappresentante_ruolo?: string;
     sede_operativa?: string;
 
-    status_cliente?: 'standard' | 'member' | 'elite' | 'blacklist';
+    // Status assegnato dall'admin. Testo libero: oltre ai 4 di sistema puo'
+    // essere una chiave creata in Centralina Pro > Status Clienti.
+    // Due colonne parallele per ragioni storiche, vedi resolveClientStatusKey.
+    status?: string | null;
+    status_cliente?: string | null;
     metadata?: any;
     // Fidelity Card — accumulates points from car wash bookings.
     // 1 € spent = 1 punto. At 250 punti the system auto-issues a €25 voucher
@@ -99,8 +113,9 @@ const ProfileSettings = () => {
     const [extendedProfile, setExtendedProfile] = useState<CustomerExtended | null>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-    type ClientStatus = 'Standard' | 'Member' | 'Fidelizzato' | 'Elite';
-    const [clientStatus, setClientStatus] = useState<ClientStatus>('Standard');
+    // Status cliente: nome e colore arrivano da Centralina Pro, non piu' da un
+    // elenco scritto qui dentro (prima si vedevano solo 'elite' e 'member').
+    const [statusDef, setStatusDef] = useState<ClientStatusDef | null>(null);
     const [clubPlan, setClubPlan] = useState<string | null>(null);
 
     useEffect(() => {
@@ -193,16 +208,18 @@ const ProfileSettings = () => {
                     setExtendedProfile(null);
                 }
 
-                // --- Client Status — only from admin-set status in customers_extended ---
-                const adminStatus = data?.status || null;
-                if (adminStatus === 'elite') {
-                    setClientStatus('Elite');
-                } else if (adminStatus === 'member') {
-                    setClientStatus('Member');
-                } else {
-                    // No status or blacklist → New Entry
-                    setClientStatus('Standard');
-                }
+                // --- Status cliente: quello assegnato dall'admin, con nome e
+                // colore configurati in Centralina Pro > Status Clienti.
+                // La chiave arriva dal server (client-status): la scheda che
+                // l'ufficio modifica non e' sempre quella agganciata
+                // all'account, e dal browser le RLS non la mostrerebbero.
+                // La riga letta qui resta come ripiego se la funzione non
+                // risponde. La blacklist non arriva mai al cliente.
+                const [defs, statusKey] = await Promise.all([
+                    loadClientStatusDefs(),
+                    fetchClientStatusKey(),
+                ]);
+                setStatusDef(publicClientStatus(defs, statusKey ?? resolveClientStatusKey(data)));
 
                 // 3. Check DR7 Club subscription
                 const { data: clubSub } = await supabase
@@ -227,6 +244,50 @@ const ProfileSettings = () => {
     useEffect(() => {
         loadData();
     }, [user]);
+
+    // Lo status cambia dall'admin, non da qui: se restasse quello letto
+    // all'apertura della pagina il cliente vedrebbe il vecchio badge finche'
+    // non ricarica. Si rilegge quando il gestionale tocca la scheda (realtime)
+    // e quando il cliente torna sulla scheda del browser — cosi' anche una
+    // rinomina fatta in Centralina si vede senza ricaricare.
+    useEffect(() => {
+        if (!user?.id) return;
+        let alive = true;
+
+        const refreshStatus = async () => {
+            try {
+                const [statusKey, defs] = await Promise.all([
+                    fetchClientStatusKey(),
+                    fetchClientStatusDefsFresh(),
+                ]);
+                if (!alive || statusKey === null) return;
+                setStatusDef(publicClientStatus(defs, statusKey));
+            } catch (err) {
+                console.warn('[ProfileSettings] refresh status cliente fallito:', err);
+            }
+        };
+
+        const onVisible = () => { if (document.visibilityState === 'visible') refreshStatus(); };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', refreshStatus);
+
+        const channel = supabase
+            .channel(`client-status-${user.id}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'customers_extended',
+                filter: `user_id=eq.${user.id}`,
+            }, refreshStatus)
+            .subscribe();
+
+        return () => {
+            alive = false;
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', refreshStatus);
+            supabase.removeChannel(channel);
+        };
+    }, [user?.id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -395,24 +456,20 @@ const ProfileSettings = () => {
                                         la stessa della barra in alto del sito: qui
                                         erano pastiglie piene e stonavano. Il colore
                                         del livello resta, ma sul bordo e sul testo. */}
-                                    <div className={`flex items-center gap-2 border px-5 py-3 text-[11px] font-medium uppercase tracking-[0.2em] ${
-                                        clientStatus === 'Elite'
-                                            ? 'border-amber-500/50 text-amber-300'
-                                            : clientStatus === 'Member' || clientStatus === 'Fidelizzato'
-                                                ? 'border-blue-500/50 text-blue-300'
-                                                : 'border-white/15 text-white/70'
-                                    }`}>
-                                        {clientStatus === 'Elite' && (
+                                    <div className={`flex items-center gap-2 border px-5 py-3 text-[11px] font-medium uppercase tracking-[0.2em] ${clientStatusClasses(statusDef?.colore)}`}>
+                                        {/* Le icone restano legate alle due chiavi storiche: il
+                                            nome e il colore invece seguono la Centralina. */}
+                                        {statusDef?.key === 'elite' && (
                                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                             </svg>
                                         )}
-                                        {(clientStatus === 'Member' || clientStatus === 'Fidelizzato') && (
+                                        {statusDef?.key === 'member' && (
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
                                         )}
-                                        {clientStatus === 'Standard' ? 'New Entry' : clientStatus}
+                                        {statusDef?.label || 'New Entry'}
                                     </div>
                                     {clubPlan && (
                                         <div className="flex items-center gap-2 border border-[#2d8a7e]/40 px-4 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-300">
@@ -568,15 +625,11 @@ const ProfileSettings = () => {
                         <div className="text-center py-4 text-gray-400">{t({ it: "Caricamento dati profilo...", en: "Loading profile data..." })}</div>
                     ) : extendedProfile ? (
                         <>
-                            {/* --- Status Badge (Member/Elite) --- */}
-                            {extendedProfile.status_cliente && extendedProfile.status_cliente !== 'standard' && extendedProfile.status_cliente !== 'blacklist' && (
+                            {/* --- Status assegnato dall'admin (qualsiasi, non solo Member/Elite) --- */}
+                            {statusDef && isDistinctClientStatus(statusDef) && (
                                 <div className="mb-4">
-                                    <span className={`inline-block border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] ${
-                                        extendedProfile.status_cliente === 'elite'
-                                            ? 'border-amber-500/50 text-amber-400'
-                                            : 'border-blue-500/50 text-blue-400'
-                                    }`}>
-                                        {extendedProfile.status_cliente === 'elite' ? 'DR7 Elite' : 'DR7 Member'}
+                                    <span className={`inline-block border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] ${clientStatusClasses(statusDef.colore)}`}>
+                                        {statusDef.label}
                                     </span>
                                 </div>
                             )}

@@ -687,6 +687,7 @@ export interface TokenCopy {
   hero_eyebrow_it: string; hero_eyebrow_en: string;      // "Coming Soon"
   body_message_it: string; body_message_en: string;
   cta_button_it: string; cta_button_en: string;          // "Torna alla Home"
+  hero_image?: string;                                   // percorso sotto public
 }
 
 // ─── Credit Wallet page (recharge funnel + benefits + checkout modal) ────
@@ -2034,7 +2035,12 @@ function normalizeCreditPackages(raw: unknown): CreditPackage[] {
 /** Token page (DR7 Coin / Up / APP manifesto) — chrome only. */
 export async function getTokenCopy(): Promise<TokenCopy> {
   const snap = await loadOnce();
-  if (snap.token && snap.token.coin_section_title_it) return snap.token;
+  // 06/09/2026 — la guardia guardava `coin_section_title_it`, un campo
+  // sparito con il redesign della pagina a maggio: la copia salvata non lo
+  // ha, quindi si ricadeva SEMPRE sui valori di fabbrica e quello che si
+  // scriveva nel gestionale non arrivava mai a schermo. Ora si controlla un
+  // campo che esiste davvero.
+  if (snap.token && snap.token.hero_title_it) return snap.token;
   return DEFAULT_TOKEN;
 }
 
@@ -2637,6 +2643,7 @@ const DEFAULT_TOKEN: TokenCopy = {
   body_message_it: 'Il sistema DR7 Token è in fase di sviluppo. Tornate presto per scoprire la moneta digitale del lusso reale.',
   body_message_en: 'The DR7 Token system is under development. Come back soon to discover the digital currency of real luxury.',
   cta_button_it: 'Torna alla pagina iniziale', cta_button_en: 'Back to Home',
+  hero_image: '/dr7-token.jpeg',
 };
 
 // ─── Default Credit Wallet seed ──────────────────────────────────────────

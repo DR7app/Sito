@@ -14,6 +14,9 @@ const TokenPage: React.FC = () => {
   }, []);
   const tk = (it: keyof TokenCopy, en: keyof TokenCopy): string =>
     copy ? (copy[lang === 'it' ? it : en] as string) : '';
+  // La copia salvata prima di oggi non ha il campo: si ricade sul valore di
+  // fabbrica invece di lasciare la pagina senza moneta.
+  const immagine = (copy?.hero_image || '/dr7-token.jpeg').trim();
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
@@ -23,6 +26,19 @@ const TokenPage: React.FC = () => {
         transition={{ duration: 0.8 }}
         className="max-w-2xl text-center"
       >
+        {/* La moneta. Sta sopra tutto: e' la cosa che si riconosce prima di
+            leggere. Fondo nero come quello della pagina, quindi niente
+            cornice — il ritaglio si vedrebbe. */}
+        {immagine && (
+          <img
+            src={immagine}
+            alt=""
+            loading="eager"
+            decoding="async"
+            className="mx-auto mb-10 block h-auto w-full max-w-[260px] md:max-w-[320px]"
+          />
+        )}
+
         <p className="text-sm text-gray-500 uppercase tracking-widest mb-4">
           {tk('hero_eyebrow_it', 'hero_eyebrow_en')}
         </p>

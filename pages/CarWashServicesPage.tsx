@@ -194,10 +194,25 @@ const CarWashServicesPage: React.FC = () => {
       });
       const makeModel = `${result.carMake} ${result.carModel}`.trim();
       const auto = washClass.toLowerCase() as VehicleCategory;
-      setDetectedCategory(auto);
       setDetectedModel(makeModel || null);
-      // Preselect the auto-detected tier; the customer can still override it.
-      setWashCategory(auto);
+
+      // Due ruote: il classificatore conosce solo Urban e Maxi, quindi una
+      // moto uscirebbe "Urban" e — ora che la categoria e' bloccata — il
+      // cliente resterebbe incastrato sul listino sbagliato. La riconosciamo
+      // qui dal tipo di veicolo che torna dalla targa e mandiamo la persona
+      // sui servizi Prime Moto.
+      const descrizioneVeicolo = `${result.bodyType || ''} ${result.description || ''} ${result.carMake || ''} ${result.carModel || ''}`.toLowerCase();
+      const eUnaMoto = /(motocicl|motoveicol|ciclomotor|scooter|quadricicl|\bmoto\b)/.test(descrizioneVeicolo);
+
+      if (eUnaMoto) {
+        setDetectedCategory(null);
+        setWashCategory('moto');
+        setMainTab('lavaggio');
+        setLavaggioCategory('moto');
+      } else {
+        setDetectedCategory(auto);
+        setWashCategory(auto);
+      }
     } catch (err: any) {
       setTargaError(err.message || (lang === 'it' ? 'Errore nella ricerca.' : 'Search error.'));
     } finally {
@@ -562,9 +577,14 @@ const CarWashServicesPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Targa Result — always-available manual override (Urban / Maxi / Moto).
-              The auto-detected tier is preselected; tapping any button overrides
-              it and is what drives the displayed price and the saved booking. */}
+          {/* Targa trovata: la categoria la decide la targa, punto.
+              06/09/2026 — qui c'erano i tre pulsanti Urban/Maxi/Moto sempre
+              premibili: un Maxi poteva farsi passare per Urban e pagare il
+              listino piccolo, e allora tanto valeva non chiedere la targa.
+              Ora la categoria trovata si mostra e basta; per cambiarla si
+              cambia veicolo. La scelta a mano resta solo quando la targa non
+              risponde (riquadro qui sopra), altrimenti nessuno potrebbe
+              prenotare. */}
           {targaResult && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
@@ -580,20 +600,18 @@ const CarWashServicesPage: React.FC = () => {
                 )}
               </div>
               <p className="text-gray-400 text-xs mb-2">
-                {cw('plate_manual_prompt_it', 'plate_manual_prompt_en', 'Seleziona manualmente la categoria:')}
+                {cw('plate_detected_it', 'plate_detected_en', 'Categoria rilevata dalla targa:')}
               </p>
-              <div className="flex justify-center gap-2">
-                {WASH_OVERRIDE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => applyWashOverride(opt.id)}
-                    className={`px-4 py-1.5 text-xs font-bold transition-all ${
-                      washCategory === opt.id ? opt.selected : opt.idle
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <div className="flex justify-center">
+                {(() => {
+                  const opt = WASH_OVERRIDE_OPTIONS.find(o => o.id === washCategory);
+                  if (!opt) return null;
+                  return (
+                    <span className={`px-4 py-1.5 text-xs font-bold ${opt.selected}`}>
+                      {opt.label}
+                    </span>
+                  );
+                })()}
               </div>
               <p className="text-gray-500 text-xs mt-1.5">{targaResult.description}</p>
               <button

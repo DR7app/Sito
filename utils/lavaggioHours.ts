@@ -58,13 +58,24 @@ let CONFIG: LavaggioHoursConfig = DEFAULT_CONFIG;
 
 ;(async () => {
   try {
+    // 06/09/2026 — si legge PRIMA `business_lavaggio`, poi `main`.
+    // La sezione Orari di Centralina Pro salva nella riga del business
+    // aperto: chi imposta gli orari stando su "Lavaggio & Meccanica" li
+    // scrive in `business_lavaggio`. Il gestionale legge cosi' dal 14/08, il
+    // sito no: restava fermo su `main`, quindi gli orari salvati non
+    // arrivavano mai agli slot prenotabili — e senza errore, che e' la parte
+    // peggiore. Stessa regola dei due capi, stesso ordine.
     const { data } = await supabase
       .from('centralina_pro_config')
-      .select('config')
-      .eq('id', 'main')
-      .maybeSingle();
-    const cfg = (data?.config ?? null) as Record<string, unknown> | null;
-    const lh = cfg?.lavaggio_hours as Partial<LavaggioHoursConfig> | undefined;
+      .select('id, config')
+      .in('id', ['business_lavaggio', 'main']);
+    const righe = (data || []) as { id: string; config: Record<string, unknown> | null }[];
+    const leggi = (id: string): Partial<LavaggioHoursConfig> | null => {
+      const c = righe.find((r) => r.id === id)?.config as Record<string, unknown> | undefined;
+      const l = c?.lavaggio_hours as Partial<LavaggioHoursConfig> | undefined;
+      return l && l.hours && typeof l.hours === 'object' ? l : null;
+    };
+    const lh = leggi('business_lavaggio') ?? leggi('main');
     if (lh && lh.hours && typeof lh.hours === 'object') {
       const slot = typeof lh.slot_minutes === 'number' && lh.slot_minutes > 0 ? lh.slot_minutes : DEFAULT_CONFIG.slot_minutes;
       CONFIG = {

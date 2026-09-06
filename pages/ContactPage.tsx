@@ -53,18 +53,17 @@ const ContactPage: React.FC = () => {
               postalCode: '09131',
               addressCountry: 'IT',
             },
+            // 06/09/2026 — orario continuato 8:30-19:00 dal lunedi' al
+            // sabato, domenica chiuso: gli stessi che la pagina mostra nella
+            // scheda "Orari". Quando cambiano vanno cambiati in tutti e due i
+            // posti, qui e in Sito > Contatti: questo blocco lo legge Google,
+            // non il visitatore.
             openingHoursSpecification: [
               {
                 '@type': 'OpeningHoursSpecification',
-                dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                opens: '09:00',
+                dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                opens: '08:30',
                 closes: '19:00',
-              },
-              {
-                '@type': 'OpeningHoursSpecification',
-                dayOfWeek: ['Saturday'],
-                opens: '09:00',
-                closes: '18:00',
               },
             ],
             priceRange: '$$$',

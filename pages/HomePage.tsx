@@ -14,7 +14,7 @@ import MediaVideo from '../components/editorial/MediaVideo';
  *   01 Arrivo      film a tutto schermo, una frase, una CTA
  *   02 Silenzio    lo statement, molto spazio, niente altro
  *   03 Collezione  un'immagine e un invito al catalogo
- *   04 Esperienze  cosa rendono possibile — solo servizi realmente attivi
+ *   04 Esperienza   una scena a piena larghezza per servizio, in colonna
  *   05 Marca       il momento di marca, piu' le metriche se verificate
  *   06 Accesso     una frase, una CTA, fine
  *
@@ -215,7 +215,15 @@ const HomePage: React.FC = () => {
         </Section>
       )}
 
-      {/* ═══ ATTO 04 — ESPERIENZE ═══════════════════════════════════════ */}
+      {/* ═══ ATTO 04 — ESPERIENZA ══════════════════════════════════════ */}
+      {/* 06/09/2026 — le esperienze scendono in colonna.
+          Prima erano quattro riquadri 4:3 in griglia a due colonne: due file
+          di francobolli, e Mare, Aria, Soggiorni e Lavaggio finivano piccoli
+          quanto una miniatura del menu. Ora ognuna e' un'immagine a piena
+          larghezza nel suo rapporto nativo, una sotto l'altra, con la stessa
+          cornice della Collezione qui sopra: stesso formato, stesso peso.
+          Il video, quando c'e', ha bisogno di un'altezza propria (il player
+          si dimensiona sul contenitore), quindi resta in un riquadro 16:9. */}
       {copy.experiences.length > 0 && (
         <Section rhythm="lg" id="esperienze">
           <Shell>
@@ -224,29 +232,33 @@ const HomePage: React.FC = () => {
               <h2 className="t-display">{t(copy.experiences_title_it, copy.experiences_title_en)}</h2>
             </Reveal>
 
-            <div className="mt-20">
-              <Grid cols={2} gap="lg">
-                {copy.experiences.map((e, i) => (
-                  <Reveal key={e.id} delay={(i % 2) * 90}>
-                    <Link to={e.to} className="group block">
-                      <div className="media media-veil-soft aspect-[4/3]">
-                        {e.video_src ? (
-                          <MediaVideo src={e.video_src} poster={e.image_src} className="h-full w-full" />
-                        ) : (
-                          <img src={e.image_src} alt="" loading="lazy" decoding="async" />
-                        )}
-                      </div>
-                      <div className="mt-7">
-                        <h3 className="t-h2">{t(e.title_it, e.title_en)}</h3>
-                        <p className="t-body measure mt-3" style={{ color: 'var(--fg-dim)' }}>
-                          {t(e.copy_it, e.copy_en)}
-                        </p>
-                        <span className="t-nav link-reveal mt-6 inline-block">{t(e.cta_it, e.cta_en)}</span>
-                      </div>
-                    </Link>
-                  </Reveal>
-                ))}
-              </Grid>
+            <div className="mt-[var(--sp-xl)] flex flex-col gap-[var(--sp-xl)]">
+              {copy.experiences.map((e) => (
+                <Reveal key={e.id} variant="mask" className="overflow-hidden">
+                  <Link to={e.to} className="group block">
+                    <div className="overflow-hidden border border-[color:var(--line)] bg-black">
+                      {e.video_src ? (
+                        <MediaVideo src={e.video_src} poster={e.image_src} className="aspect-[16/9] w-full" />
+                      ) : (
+                        <img
+                          src={e.image_src}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="block h-auto w-full"
+                        />
+                      )}
+                    </div>
+                    <div className="mt-7">
+                      <h3 className="t-h2">{t(e.title_it, e.title_en)}</h3>
+                      <p className="t-body measure mt-3" style={{ color: 'var(--fg-dim)' }}>
+                        {t(e.copy_it, e.copy_en)}
+                      </p>
+                      <span className="t-nav link-reveal mt-6 inline-block">{t(e.cta_it, e.cta_en)}</span>
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
             </div>
           </Shell>
         </Section>

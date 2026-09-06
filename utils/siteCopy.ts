@@ -3692,10 +3692,10 @@ const DEFAULT_HOME: HomeCopy = {
 
   // ── Atto 04 — Esperienze ───────────────────────────────────────────────
   // Solo servizi realmente attivi sul sito, con le stesse destinazioni del menu.
-  experiences_eyebrow_it: '02 \u2014 Esperienze',
-  experiences_eyebrow_en: '02 \u2014 Experiences',
-  experiences_title_it: 'Ci\u00f2 che rendono possibile',
-  experiences_title_en: 'What they make possible',
+  experiences_eyebrow_it: '02 \u2014 Esperienza',
+  experiences_eyebrow_en: '02 \u2014 Experience',
+  experiences_title_it: 'Esperienza',
+  experiences_title_en: 'Experience',
   experiences: [
     { id: 'mare', to: '/noleggio-mare', image_src: '/menu-mare.jpeg',
       title_it: 'Mare', title_en: 'Sea',

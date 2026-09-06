@@ -1340,10 +1340,14 @@ const CarWashBookingPage: React.FC = () => {
         // Fidelity Card — award points on the wallet-paid car wash booking too.
         // The Nexi callback path covers card payments separately. Idempotent
         // server-side via fidelity_point_awards.booking_id UNIQUE.
+        // `keepalive`: subito dopo si va alla pagina di conferma e senza
+        // questo il browser puo' annullare la richiesta a meta', lasciando il
+        // lavaggio senza punti.
         fetch('/.netlify/functions/award-fidelity-points', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookingId: data.id })
+          body: JSON.stringify({ bookingId: data.id }),
+          keepalive: true
         }).catch(e => console.error('Fidelity Card award error (non-blocking):', e));
 
         const emailSent = true;

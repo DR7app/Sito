@@ -67,6 +67,35 @@ async function buildBookingWhatsAppUrl(booking: any, whatsappBase: string): Prom
   return `${whatsappBase}?text=${encodeURIComponent(msg)}`;
 }
 
+/**
+ * Punti Fidelity del lavaggio.
+ *
+ * 06/09/2026 — un lavaggio pagato con carta non faceva salire i punti.
+ * L'accredito viveva solo dentro nexi-callback, il webhook di Nexi: quando
+ * quello non arriva (o esce prima), a chiudere la prenotazione e' questa
+ * pagina, che il cliente apre sempre — e qui i punti non li dava nessuno.
+ * Stessa storia della fattura e dei messaggi, che infatti da qui partono
+ * gia'.
+ *
+ * La funzione lato server e' idempotente (fidelity_point_awards.booking_id
+ * e' UNIQUE): se il webhook ha gia' fatto il suo lavoro, questa chiamata non
+ * raddoppia niente. `keepalive` perche' subito dopo si puo' cambiare pagina
+ * e il browser butterebbe via la richiesta a meta'.
+ */
+function premiaPuntiLavaggio(base: string, booking: { id?: string; service_type?: string | null; booking_details?: { type?: string | null } | null } | null | undefined): void {
+    if (!booking?.id) return;
+    const tipo = String(booking.service_type || booking.booking_details?.type || '').toLowerCase();
+    if (tipo !== 'car_wash' && tipo !== 'carwash') return;
+    fetch(`${base}/.netlify/functions/award-fidelity-points`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id }),
+        keepalive: true,
+    })
+        .then(r => console.log('[PaymentSuccess] punti fidelity lavaggio:', r.status))
+        .catch(e => console.error('[PaymentSuccess] punti fidelity falliti (non bloccante):', e));
+}
+
 const PaymentSuccessPage: React.FC = () => {
     const navigate = useNavigate();
     const { lang } = useTranslation();
@@ -290,6 +319,8 @@ const PaymentSuccessPage: React.FC = () => {
                             .eq('id', booking.id);
                     }
 
+                    premiaPuntiLavaggio(FUNCTIONS_BASE, booking);
+
                     // FATTURA servizio: genera SEMPRE (idempotente lato admin
                     // contro fatture esistenti). Il webhook nexi-callback puo' non
                     // completare e questa pagina e' sempre raggiunta dal cliente:
@@ -377,6 +408,8 @@ const PaymentSuccessPage: React.FC = () => {
 
                             // Clean up pending record
                             await supabase.from('pending_nexi_bookings').delete().eq('id', pending.id);
+
+                            premiaPuntiLavaggio(FUNCTIONS_BASE, newBooking);
 
                             // Send notifications
                             fetch(`${FUNCTIONS_BASE}/.netlify/functions/send-booking-confirmation`, {
@@ -474,6 +507,8 @@ const PaymentSuccessPage: React.FC = () => {
                         .eq('id', pending.id);
 
                     console.log('Booking created:', newBooking.id);
+
+                    premiaPuntiLavaggio(FUNCTIONS_BASE, newBooking);
 
                     // Send notifications
                     fetch(`${FUNCTIONS_BASE}/.netlify/functions/send-booking-confirmation`, {

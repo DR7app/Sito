@@ -1402,27 +1402,50 @@ exports.handler = async (event) => {
           process.env.URL || 'https://dr7.app'
         );
 
-        // Generate fattura for membership purchase
+        // Fattura dell'iscrizione DR7 Club.
+        //
+        // 06/09/2026 — prima questa chiamata partiva "a vuoto": nessuno
+        // guardava la risposta e la riga di log diceva comunque "Fattura
+        // generated". L'altro capo rispondeva 401 (il caso
+        // 'membership_purchase' non esisteva), quindi chi si iscriveva
+        // pagava e non riceveva niente. Ora si controlla l'esito e si
+        // riprova una volta, come per la ricarica del Wallet.
         try {
           const membershipSiteUrl = process.env.URL || 'https://dr7.app';
-          await fetch(`${membershipSiteUrl}/.netlify/functions/generate-fattura`, {
+          const membershipFatturaBody = JSON.stringify({
+            purchaseType: 'membership_purchase',
+            purchaseId: membership.id,
+            includeIVA: true,
+            purchaseData: {
+              userId: membership.user_id,
+              tierName: membership.tier_name,
+              billingCycle: membership.billing_cycle,
+              price: membership.price,
+            }
+          });
+          const chiamaFattura = () => fetch(`${membershipSiteUrl}/.netlify/functions/generate-fattura`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              purchaseType: 'membership_purchase',
-              purchaseId: membership.id,
-              includeIVA: true,
-              purchaseData: {
-                userId: membership.user_id,
-                tierName: membership.tier_name,
-                billingCycle: membership.billing_cycle,
-                price: membership.price,
-              }
-            }),
+            body: membershipFatturaBody,
           });
-          console.log(`Fattura generated for membership ${membership.id}`);
+
+          const fatturaRes = await chiamaFattura();
+          if (fatturaRes.ok) {
+            console.log(`[nexi-callback] Fattura generata per l'iscrizione DR7 Club ${membership.id}`);
+          } else {
+            const errText = await fatturaRes.text().catch(() => '');
+            console.error(`[nexi-callback] Fattura DR7 Club fallita (${fatturaRes.status}): ${errText}`);
+            setTimeout(async () => {
+              try {
+                const retryRes = await chiamaFattura();
+                console.log('[nexi-callback] Fattura DR7 Club, secondo tentativo:', retryRes.ok ? 'RIUSCITO' : `FALLITO (${retryRes.status})`);
+              } catch (retryErr) {
+                console.error('[nexi-callback] Fattura DR7 Club, secondo tentativo fallito:', retryErr);
+              }
+            }, 3000);
+          }
         } catch (e) {
-          console.error('Fattura generation failed for membership:', e);
+          console.error('[nexi-callback] Errore nella fattura DR7 Club:', e);
         }
 
         console.log(`Membership ${membership.id} activated with contractId: ${contractId}`);

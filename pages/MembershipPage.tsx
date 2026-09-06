@@ -234,7 +234,7 @@ const MembershipPage: React.FC = () => {
                 Il motore vero sta nel gestionale (accrue-club-wallet-interest,
                 0,1% al giorno sul capitale, accredito mensile): qui c'e' solo
                 il racconto, editabile da admin > Sito > Membership. */}
-            <div className="bg-black border-t border-gray-900">
+            <div id="privilege" className="scroll-mt-28 bg-black border-t border-gray-900">
                 <div className="container mx-auto px-6 max-w-4xl py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

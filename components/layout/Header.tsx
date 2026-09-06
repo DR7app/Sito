@@ -125,6 +125,11 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/membership', img: mi('menu_club_img', '/menu-club.jpeg'), Icon: CrownIcon,
       title: mc('menu_club_title_it', 'menu_club_title_en', 'DR7 Club', 'DR7 Club'),
       subtitle: mc('menu_club_sub_it', 'menu_club_sub_en', 'Accesso esclusivo, eventi riservati e vantaggi unici', 'Exclusive access, private events and unique benefits') },
+    // Non e' una pagina a se: porta al blocco Privilege dentro DR7 Club
+    // (ancora #privilege). Un testo solo, in un posto solo.
+    { to: '/membership#privilege', img: mi('menu_privilege_img', '/menu-club.jpeg'), Icon: CrownIcon,
+      title: mc('menu_privilege_title_it', 'menu_privilege_title_en', 'DR7 Club Privilege', 'DR7 Club Privilege'),
+      subtitle: mc('menu_privilege_sub_it', 'menu_privilege_sub_en', 'Il saldo idoneo del tuo Wallet matura ogni giorno', 'Your eligible Wallet balance grows every day') },
     { to: '/franchising', img: mi('menu_business_img', '/menu-business.jpeg'), Icon: TrendingUpIcon,
       title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
       subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },

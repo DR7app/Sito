@@ -66,6 +66,12 @@ import MarketingConsentModal from './components/ui/MarketingConsentModal';
 import { supabase } from './supabaseClient';
 import { resolveFlottaCategories } from './utils/flottaConfig';
 import { HelmetProvider } from 'react-helmet-async';
+// Website Builder (04/09/2026). `WbOppure` avvolge le pagine React
+// esistenti: le sostituisce SOLO se nel gestionale esiste una pagina
+// pubblicata con l'interruttore "prende il posto" acceso. Finche' quello
+// resta spento il sito e' identico a prima. `WbRotta` serve gli indirizzi
+// nuovi creati dal builder, che oggi non esistono.
+import { WbRotta, WbOppure, WbSovrapposti, WbIntegrazioni, WbHeaderOppure, WbFooterOppure } from './components/website/WbSiteRuntime';
 
 import CancellationPolicyPage from './pages/CancellationPolicyPage';
 import MyBookings from './pages/account/MyBookings';
@@ -271,7 +277,7 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<WbOppure><HomePage /></WbOppure>} />
         <Route path="/jets/search" element={<JetSearchResultsPage />} />
         <Route path="/jets/quote" element={<AviationQuoteRequestPage />} />
         <Route path="/helicopters/quote" element={<AviationQuoteRequestPage />} />
@@ -286,7 +292,7 @@ const AnimatedRoutes = () => {
         <Route path="/supercar-luxury" element={<RentalPage categoryId="cars" />} />
         <Route path="/urban" element={<Navigate to="/supercar-luxury" replace />} />
         <Route path="/prime-wash" element={<CarWashServicesPage />} />
-        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/contact" element={<WbOppure><ContactPage /></WbOppure>} />
 
         {/* Legacy redirects */}
         <Route path="/cars" element={<Navigate to="/supercar-luxury" replace />} />
@@ -367,7 +373,7 @@ const AnimatedRoutes = () => {
           <Route path="settings/payouts" element={<PartnerPayoutSettings />} />
         </Route>
 
-        <Route path="/about" element={<AboutPage />} />
+        <Route path="/about" element={<WbOppure><AboutPage /></WbOppure>} />
         <Route path="/investitori" element={<InvestitoriPage />} />
         <Route path="/token" element={<TokenPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
@@ -377,8 +383,8 @@ const AnimatedRoutes = () => {
         <Route path="/careers" element={<CareersPage />} />
         <Route path="/franchising" element={<FranchisingPage />} />
         <Route path="/press" element={<PressPage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/faq" element={<WbOppure><FAQPage /></WbOppure>} />
+        <Route path="/contact" element={<WbOppure><ContactPage /></WbOppure>} />
         <Route path="/signin" element={<AuthPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -396,6 +402,10 @@ const AnimatedRoutes = () => {
         <Route path="/post/:id" element={<PostPage />} />
         {/* Pagina interna del design system. Non indicizzata (robots.txt). */}
         <Route path="/styleguide" element={<StyleguidePage />} />
+        {/* Indirizzi che il sito non conosce: se il Website Builder ha una
+            pagina pubblicata li' sopra la disegna, altrimenti non
+            renderizza niente — esattamente come prima di questa riga. */}
+        <Route path="*" element={<WbRotta />} />
       </Routes>
     </AnimatePresence>
   );
@@ -440,11 +450,13 @@ const MainContent = () => {
       <div className="bg-black min-h-screen font-sans antialiased relative overflow-x-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-grid-white/[0.05] z-0"></div>
         <div className="relative z-10 flex flex-col min-h-screen">
-          <Header />
+          {/* Header e footer del Website Builder, se gli interruttori sono
+              accesi in Impostazioni globali. Altrimenti restano questi. */}
+          <WbHeaderOppure><Header /></WbHeaderOppure>
           <main className="flex-grow">
             <AnimatedRoutes />
           </main>
-          <Footer />
+          <WbFooterOppure><Footer /></WbFooterOppure>
         </div>
         <BookingModal />
         <VerificationModal />
@@ -453,6 +465,10 @@ const MainContent = () => {
         {aspetto.auto_booking_popup_enabled && <AutoBookingPopup />}
         {aspetto.heli_tour_popup_enabled && <HeliTourPopup />}
         {aspetto.chatbot_enabled && <DR7AIFloatingButton avatarUrl={aspetto.chatbot_avatar_url} />}
+        {/* Popup e striscioni configurati nel Website Builder, e gli script
+            di terze parti (che partono solo dopo il consenso ai cookie). */}
+        <WbSovrapposti />
+        <WbIntegrazioni />
         <AnimatePresence>
           {isCarWizardOpen && selectedCar && (
             <motion.div

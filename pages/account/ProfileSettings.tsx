@@ -580,7 +580,7 @@ const ProfileSettings = () => {
                                     Fidelity Card
                                 </span>
                                 <div>
-                                    <p className="text-white font-bold">{t({ it: "Programma Fedeltà Prime Wash", en: "Prime Wash Loyalty Programme" })}</p>
+                                    <p className="text-white font-bold">{t({ it: "Programma Fedeltà Lavaggio", en: "Car Wash Loyalty Programme" })}</p>
                                     <p className="text-gray-400 text-xs">{t({ it: "1 € speso al lavaggio = 1 punto · A 250 punti ricevi un buono di €25", en: "€1 spent on a wash = 1 point · At 250 points you get a €25 voucher" })}</p>
                                 </div>
                             </div>

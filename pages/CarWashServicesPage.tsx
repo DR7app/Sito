@@ -61,13 +61,13 @@ interface CombinedWashService {
 }
 
 const COMBINED_TEMPLATES: { suffix: string; name: string; nameEn: string; image: string }[] = [
-  { suffix: 'exterior',  name: 'PRIME EXTERIOR CLEAN', nameEn: 'PRIME EXTERIOR CLEAN', image: '/combined-exterior.jpeg' },
-  { suffix: 'interior',  name: 'PRIME INTERIOR CLEAN', nameEn: 'PRIME INTERIOR CLEAN', image: '/combined-interior.jpeg' },
-  { suffix: 'full',      name: 'PRIME FULL CLEAN',     nameEn: 'PRIME FULL CLEAN',     image: '/combined-full.jpeg' },
-  { suffix: 'full-n2',   name: 'PRIME FULL CLEAN N2',  nameEn: 'PRIME FULL CLEAN N2',  image: '/combined-full-n2.jpeg' },
-  { suffix: 'top-shine', name: 'PRIME TOP SHINE',      nameEn: 'PRIME TOP SHINE',      image: '/combined-topshine.jpeg' },
-  { suffix: 'vip',       name: 'PRIME VIP',            nameEn: 'PRIME VIP',            image: '/combined-vip.jpeg' },
-  { suffix: 'luxury',    name: 'PRIME LUXURY',         nameEn: 'PRIME LUXURY',         image: '/combined-luxury.jpeg' },
+  { suffix: 'exterior',  name: 'EXTERIOR CLEAN',      nameEn: 'EXTERIOR CLEAN', image: '/combined-exterior.jpeg' },
+  { suffix: 'interior',  name: 'INTERIOR CLEAN',      nameEn: 'INTERIOR CLEAN', image: '/combined-interior.jpeg' },
+  { suffix: 'full',      name: 'FULL CLEAN',          nameEn: 'FULL CLEAN',     image: '/combined-full.jpeg' },
+  { suffix: 'full-n2',   name: 'FULL CLEAN N2',       nameEn: 'FULL CLEAN N2',  image: '/combined-full-n2.jpeg' },
+  { suffix: 'top-shine', name: 'TOP SHINE',           nameEn: 'TOP SHINE',      image: '/combined-topshine.jpeg' },
+  { suffix: 'vip',       name: 'VIP',                 nameEn: 'VIP',            image: '/combined-vip.jpeg' },
+  { suffix: 'luxury',    name: 'LUXURY',              nameEn: 'LUXURY',         image: '/combined-luxury.jpeg' },
 ];
 
 type MainTabType = 'lavaggio' | 'meccanica';
@@ -81,18 +81,18 @@ type WashOverrideCategory = 'urban' | 'maxi' | 'moto';
 
 // Static Tailwind classes per override category (literals so JIT keeps them).
 const WASH_OVERRIDE_OPTIONS: { id: WashOverrideCategory; label: string; selected: string; idle: string }[] = [
-  { id: 'urban', label: 'PRIME URBAN', selected: 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500', idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500' },
-  { id: 'maxi',  label: 'PRIME MAXI',  selected: 'bg-amber-600/20 text-amber-400 border-2 border-amber-500',       idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500' },
-  { id: 'moto',  label: 'PRIME MOTO',  selected: 'bg-sky-600/20 text-sky-400 border-2 border-sky-500',             idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-sky-500' },
+  { id: 'urban', label: 'URBAN', selected: 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500', idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500' },
+  { id: 'maxi',  label: 'MAXI',  selected: 'bg-amber-600/20 text-amber-400 border-2 border-amber-500',       idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500' },
+  { id: 'moto',  label: 'MOTO',  selected: 'bg-sky-600/20 text-sky-400 border-2 border-sky-500',             idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-sky-500' },
 ];
 
 const LAVAGGIO_CATEGORIES = [
   { id: 'wash' as LavaggioCategory, name: 'LAVAGGIO', nameEn: 'CAR WASH' },
-  { id: 'moto' as LavaggioCategory, name: 'PRIME MOTO EXPERIENCE', nameEn: 'PRIME MOTO EXPERIENCE' },
+  { id: 'moto' as LavaggioCategory, name: 'MOTO EXPERIENCE', nameEn: 'MOTO EXPERIENCE' },
 ];
 
 const MECCANICA_CATEGORIES = [
-  { id: 'tech' as MeccanicaCategory, name: 'PRIME TECH SERVICE', nameEn: 'PRIME TECH SERVICE', subtitle: 'manodopera' },
+  { id: 'tech' as MeccanicaCategory, name: 'TECH SERVICE', nameEn: 'TECH SERVICE', subtitle: 'manodopera' },
 ];
 
 const CarWashServicesPage: React.FC = () => {
@@ -740,13 +740,13 @@ const CarWashServicesPage: React.FC = () => {
                 <RiquadroCatalogo
                   src={absoluteDetailImage}
                   fallback="/absolute-detail.jpeg"
-                  alt="Prime Absolute Detail"
+                  alt="Absolute Detail"
                 />
                 <div className="p-4">
                   {targaResult && washCategory ? (
                     <a
                       href={`${contact.whatsapp_url}?text=${encodeURIComponent(
-                        `Ciao, vorrei richiedere un preventivo per il servizio PRIME ABSOLUTE DETAIL.\nVeicolo: ${targaResult.carMake} ${targaResult.carModel} (${targaResult.plate}) – ${washCategory.toUpperCase()}`
+                        `Ciao, vorrei richiedere un preventivo per il servizio ABSOLUTE DETAIL.\nVeicolo: ${targaResult.carMake} ${targaResult.carModel} (${targaResult.plate}) – ${washCategory.toUpperCase()}`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"

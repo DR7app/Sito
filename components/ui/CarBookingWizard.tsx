@@ -7342,7 +7342,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500'
                               }`}
                             >
-                              PRIME URBAN
+                              URBAN
                             </button>
                             <button
                               type="button"
@@ -7353,7 +7353,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                   : 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500'
                               }`}
                             >
-                              PRIME MAXI
+                              MAXI
                             </button>
                           </div>
                         </div>

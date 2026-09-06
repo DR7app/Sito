@@ -170,6 +170,18 @@ const MembershipPage: React.FC = () => {
                                 ))}
                             </ul>
 
+                            {/* Rimando a DR7 Club Privilege, subito sopra il
+                                bottone: chi sta per iscriversi e' anche chi ha
+                                motivo di sapere che il Wallet matura da solo.
+                                La sezione sta piu' in basso in questa stessa
+                                pagina (id="privilege", con scroll-mt-28). */}
+                            <a
+                                href="#privilege"
+                                className="mb-5 block text-center text-sm text-gray-300 underline decoration-gray-600 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
+                            >
+                                {tx(copy.privilege_link_it || 'Scopri DR7 Club Privilege', copy.privilege_link_en || 'Discover DR7 Club Privilege')}
+                            </a>
+
                             <button
                                 onClick={handleSubscribe}
                                 className="w-full py-4 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all duration-200 transform hover:scale-[1.02]"

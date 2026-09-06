@@ -115,6 +115,13 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
               `Ciao DR7, vorrei richiedere un preventivo per ${asset.it}: ${item.name}. ` +
               `Potete inviarmi disponibilità e preventivo?`;
             const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+            // 06/09/2026 — l'aria non passa piu' da WhatsApp. "Richiedi
+            // Preventivo" apre il modulo di /helicopters/quote con il mezzo
+            // gia' scelto: quel modulo si manda a DR7 (resta scritto fra i
+            // Preventivi Aviation e arriva l'avviso), invece di aprire una
+            // chat sul telefono del cliente con una frase preconfezionata
+            // che poteva anche non partire mai.
+            const quoteHref = `/helicopters/quote?aircraft=${encodeURIComponent(item.name)}`;
             return (
               <div key={item.id} className="bg-black/70 border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col">
                 <div className="relative overflow-hidden">
@@ -143,6 +150,13 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                     >
                       {t({ it: "Prenota il tour", en: "Book the tour" })}
                     </button>
+                  ) : serviceType === 'heli_rental' ? (
+                    <button
+                      onClick={() => navigate(quoteHref)}
+                      className="mt-5 inline-flex items-center justify-center gap-2 w-full px-4 py-3 bg-transparent border-2 border-white text-white font-semibold transition-all duration-300 hover:bg-white hover:text-black"
+                    >
+                      {t({ it: "Richiedi Preventivo", en: "Request a Quote" })}
+                    </button>
                   ) : (
                     <a
                       href={waHref}
@@ -161,7 +175,9 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
         </div>
 
         <p className="mt-10 text-center text-xs text-gray-500">
-          {t({ it: 'Disponibilità e preventivo si concordano direttamente con il nostro operatore via WhatsApp.', en: 'Availability and pricing are agreed directly with our operator on WhatsApp.' })}
+          {serviceType === 'heli_rental'
+            ? t({ it: 'Compila la richiesta: ti rispondiamo con disponibilità e preventivo ai contatti che lasci.', en: 'Fill in the request: we reply with availability and a quote to the contacts you leave us.' })
+            : t({ it: 'Disponibilità e preventivo si concordano direttamente con il nostro operatore via WhatsApp.', en: 'Availability and pricing are agreed directly with our operator on WhatsApp.' })}
         </p>
       </div>
 

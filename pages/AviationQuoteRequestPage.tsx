@@ -11,6 +11,7 @@ const AviationQuoteRequestPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { lang } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
+  const [inviata, setInviata] = useState(false);
   const [copy, setCopy] = useState<AviationQuoteCopy | null>(null);
   const [template, setTemplate] = useState<string>('');
 
@@ -25,6 +26,11 @@ const AviationQuoteRequestPage: React.FC = () => {
   }, []);
 
   const isHelicopter = location.pathname.includes('helicopter');
+
+  // Il mezzo scelto a catalogo, quando si arriva dalla scheda di /noleggio-aria.
+  // Viaggia in chiaro nell'indirizzo perche' deve sopravvivere all'accesso:
+  // chi non e' loggato passa da /signin e torna qui.
+  const mezzoScelto = new URLSearchParams(location.search).get('aircraft') || '';
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -79,20 +85,44 @@ const AviationQuoteRequestPage: React.FC = () => {
     return out;
   }
 
+  /**
+   * L'invio.
+   *
+   * 06/09/2026 — prima questo modulo apriva WhatsApp sul telefono del
+   * cliente con il messaggio gia' scritto: se non premeva "invia", DR7 non
+   * sapeva nemmeno che qualcuno avesse chiesto un preventivo, e la
+   * richiesta non restava scritta da nessuna parte.
+   *
+   * Ora il modulo si manda a DR7: il server lo salva fra i Preventivi
+   * Aviation del gestionale e avvisa su WhatsApp. WhatsApp resta solo come
+   * rete di sicurezza, per quando il server non risponde: meglio far
+   * partire un messaggio dal telefono del cliente che perdere la richiesta.
+   */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!copy) return;
+    const isIt = lang === 'it';
     setSubmitting(true);
     try {
-      const isIt = lang === 'it';
+      const res = await fetch('/.netlify/functions/send-aviation-quote-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: serviceType,
+          preferred_aircraft: mezzoScelto,
+          lang,
+          ...formData,
+        }),
+      });
+      if (!res.ok) throw new Error(`server ${res.status}`);
+      setInviata(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('Richiesta preventivo non inviata al server, ripiego su WhatsApp:', error);
       const msg = applyVars(template);
-      const whatsappUrl = `https://wa.me/${copy.whatsapp_phone}?text=${encodeURIComponent(msg)}`;
-      window.open(whatsappUrl, '_blank');
+      window.open(`https://wa.me/${copy.whatsapp_phone}?text=${encodeURIComponent(msg)}`, '_blank');
       alert(isIt ? copy.alert_success_it : copy.alert_success_en);
       navigate('/');
-    } catch (error) {
-      console.error('Failed to submit quote request:', error);
-      alert(lang === 'it' ? copy.alert_error_it : copy.alert_error_en);
     } finally {
       setSubmitting(false);
     }
@@ -149,6 +179,40 @@ const AviationQuoteRequestPage: React.FC = () => {
 
   const headerTitle = applyVars(lang === 'it' ? copy.header_title_template_it : copy.header_title_template_en);
 
+  // Richiesta partita: la persona ha finito, non le si rimette davanti il
+  // modulo pieno dei suoi dati.
+  if (inviata) {
+    return (
+      <div className="min-h-screen bg-black py-20 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-xl mx-auto pt-20 text-center"
+        >
+          <div className="border border-gray-800 bg-gray-900 rounded-2xl p-10">
+            <h1 className="text-3xl font-bold text-white mb-4">
+              {lang === 'it' ? 'Richiesta inviata' : 'Request sent'}
+            </h1>
+            <p className="text-gray-400 mb-2">
+              {lang === 'it' ? copy.alert_success_it : copy.alert_success_en}
+            </p>
+            <p className="text-gray-500 text-sm mb-8">
+              {lang === 'it'
+                ? `Abbiamo registrato la richiesta per ${serviceType.toLowerCase()}${mezzoScelto ? ` — ${mezzoScelto}` : ''}. Ti rispondiamo ai contatti che ci hai lasciato.`
+                : `We have logged your ${serviceType.toLowerCase()} request${mezzoScelto ? ` — ${mezzoScelto}` : ''}. We will reply using the contacts you left us.`}
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-8 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
+            >
+              {lang === 'it' ? 'Torna alla pagina iniziale' : 'Back to home'}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black py-20 px-4">
       <motion.div
@@ -163,6 +227,11 @@ const AviationQuoteRequestPage: React.FC = () => {
           <p className="text-gray-400">
             {tx('header_subtitle_it', 'header_subtitle_en')}
           </p>
+          {mezzoScelto && (
+            <p className="mt-4 inline-block border border-gray-700 px-4 py-2 text-sm text-white">
+              {lang === 'it' ? 'Mezzo scelto:' : 'Selected aircraft:'} <span className="font-semibold">{mezzoScelto}</span>
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-gray-900 rounded-2xl p-6 md:p-8 border border-gray-800 space-y-6">

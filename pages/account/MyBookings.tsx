@@ -1283,7 +1283,7 @@ const MyBookings = () => {
             <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
               <h3 className="text-lg font-bold text-white mb-2">{t({ it: "Modifica Appuntamento", en: "Modify Appointment" })}</h3>
               <p className="text-gray-400 text-sm mb-4">
-                {modifyingBooking.service_name} — {t({ it: 'Prime Flex attivo', en: 'Prime Flex active' })}
+                {modifyingBooking.service_name} — {t({ it: 'DR7 Flex attivo', en: 'DR7 Flex active' })}
               </p>
 
               <div className="space-y-4 mb-6">

@@ -2008,7 +2008,7 @@ const CarWashBookingPage: React.FC = () => {
                   <div className="flex items-start gap-3 min-w-0">
                     <input type="checkbox" checked={primeFlexSelected} onChange={() => {}} className="h-5 w-5 mt-0.5 flex-shrink-0" />
                     <div className="min-w-0">
-                      <span className="font-bold text-white">PRIME FLEX</span>
+                      <span className="font-bold text-white">DR7 FLEX</span>
                       <ul className="text-sm text-gray-400 mt-2 space-y-1 list-disc list-inside marker:text-yellow-400">
                         <li>{t({ it: "Cancellazione consentita fino al giorno stesso del servizio.", en: "Cancellation allowed up to the day of the service." })}</li>
                         <li>{t({ it: "Rimborso del 90% in credito DR7 Wallet per utilizzi futuri.", en: "90% refunded as DR7 Wallet credit for future use." })}</li>
@@ -2079,7 +2079,7 @@ const CarWashBookingPage: React.FC = () => {
               </div>
               {primeFlexSelected && (
                 <div className="flex justify-between items-center mb-3 text-green-400">
-                  <span>Prime Flex</span>
+                  <span>DR7 Flex</span>
                   <span>+€{PRIME_FLEX_PRICE.toFixed(2)}</span>
                 </div>
               )}
@@ -2180,7 +2180,7 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 {primeFlexSelected && (
                   <div className="flex justify-between text-sm text-green-400 mb-1">
-                    <span>Prime Flex:</span>
+                    <span>DR7 Flex:</span>
                     <span>+€{PRIME_FLEX_PRICE.toFixed(2)}</span>
                   </div>
                 )}

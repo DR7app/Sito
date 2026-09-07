@@ -83,6 +83,10 @@ interface SiteCopySnapshot {
   // first migration — a raw FaqEntry[]. The getter normalizes both shapes.
   faq?: FaqCopy | FaqEntry[];
   cancellazione?: CancellazioneCopy;
+  /** Testi liberi: ogni stringa del sito riscritta dal gestionale.
+   *  Chiave `k:<voce del dizionario>` o `s:<impronta del testo italiano>`,
+   *  vedi utils/testiSito.ts. */
+  testi?: Record<string, { it?: string; en?: string }>;
   membership?: MembershipCopy;
   home?: HomeCopy;
   about?: AboutCopy;
@@ -1767,6 +1771,15 @@ export async function getCancellazioneCopy(): Promise<CancellazioneCopy> {
     return snap.cancellazione;
   }
   return DEFAULT_CANCELLAZIONE;
+}
+
+/**
+ * Testi liberi riscritti dal gestionale (onglet Sito > "Testi della pagina").
+ * Mappa vuota se nessuno ha ancora toccato niente: il sito usa il codice.
+ */
+export async function getTestiSito(): Promise<Record<string, { it?: string; en?: string }>> {
+  const snap = await loadOnce();
+  return snap.testi && typeof snap.testi === 'object' ? snap.testi : {};
 }
 
 export interface CancellazionePlaceholderValues {

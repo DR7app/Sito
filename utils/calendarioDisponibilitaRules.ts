@@ -223,3 +223,48 @@ export function ultimaRiconsegnaPossibile(
   const limite = ymdLocale(new Date(prossimo.start));
   return limite < orizzonteYmd ? limite : orizzonteYmd;
 }
+
+
+/** Minuti dall'inizio della giornata per un orario "HH:MM". */
+function minutiDa(ora: string): number {
+  const [h, m] = ora.split(':').map(Number)
+  return (h || 0) * 60 + (m || 0)
+}
+
+/** Quanto prima dell'ora di ritiro si propone la riconsegna. */
+export const ANTICIPO_RICONSEGNA_MIN = 90
+
+/**
+ * Orario di riconsegna proposto: un'ora e mezza PRIMA dell'ora di ritiro.
+ *
+ * E' la regola che evita il giorno in piu': riportando il veicolo entro
+ * 1h30 dall'ora in cui e' uscito, il conteggio dei giorni non scatta. La
+ * stessa proposta la fa gia' la finestra di prenotazione del menu; qui
+ * mancava, e il calendario proponeva il PRIMO slot del giorno (le 9:00
+ * dopo un ritiro delle 18:00), cioe' un periodo piu' corto di quello che
+ * il cliente aveva in mente.
+ *
+ * Fra gli orari disponibili si prende il piu' tardi che sta entro il
+ * limite. Se nessuno ci sta - la mattina apre dopo - si tiene il primo
+ * disponibile, che e' comunque il piu' vicino al limite.
+ *
+ * Stesso giorno: non ha senso "prima del ritiro", si prende l'ultimo
+ * orario ancora successivo al ritiro.
+ */
+export function oraRiconsegnaAutomatica(
+  ritiroOra: string,
+  slotDisponibili: string[],
+  stessoGiorno = false,
+): string {
+  if (slotDisponibili.length === 0) return ''
+  const ritiro = minutiDa(ritiroOra)
+
+  if (stessoGiorno) {
+    const dopo = slotDisponibili.filter((s) => minutiDa(s) > ritiro)
+    return dopo.length ? dopo[dopo.length - 1] : slotDisponibili[slotDisponibili.length - 1]
+  }
+
+  const limite = ritiro - ANTICIPO_RICONSEGNA_MIN
+  const entro = slotDisponibili.filter((s) => minutiDa(s) <= limite)
+  return entro.length ? entro[entro.length - 1] : slotDisponibili[0]
+}

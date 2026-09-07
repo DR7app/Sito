@@ -31,6 +31,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useBooking } from '../../hooks/useBooking';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { automazioniPronte, getLateReturnGraceMinutes } from '../../utils/bookingValidation';
+import { getBookingSearchBoxCopy, type BookingSearchBoxCopy } from '../../utils/siteCopy';
 import {
   getPickupTimesForDateString,
   getReturnTimesForDateString,
@@ -49,6 +50,7 @@ import {
   ymdLocale,
   type Intervallo,
   type StatoGiorno,
+  oraRiconsegnaAutomatica,
 } from '../../utils/calendarioDisponibilitaRules';
 
 const FUNCTIONS_BASE =
@@ -88,12 +90,26 @@ const euro = (n: number) => new Intl.NumberFormat('it-IT', {
   maximumFractionDigits: 2,
 }).format(n);
 
+/** Minuti dall'inizio della giornata, per confrontare due orari. */
+function minutiOra(ora: string): number {
+  const [h, m] = ora.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
 const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClose }) => {
   const { lang } = useTranslation();
   const { setInitialSearchDates, openCarWizard } = useBooking();
   const it = lang === 'it';
 
   const [occupati, setOccupati] = useState<Intervallo[]>([]);
+  // Avviso "la tariffa puo' subire variazioni": stesso testo della finestra
+  // di prenotazione, letto dalla stessa chiave di Centralina.
+  const [copyBox, setCopyBox] = useState<BookingSearchBoxCopy | null>(null);
+  useEffect(() => {
+    let annullato = false;
+    getBookingSearchBoxCopy().then((c) => { if (!annullato) setCopyBox(c); });
+    return () => { annullato = true; };
+  }, []);
   const [caricamento, setCaricamento] = useState(true);
   const [erroreDisponibilita, setErroreDisponibilita] = useState(false);
   // Griglia e conteggio giorni leggono la Centralina Pro in modo sincrono
@@ -260,10 +276,12 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
       setRiconsegnaOra('');
       return;
     }
-    const slot = slotLiberi(ymd, getReturnTimesForDateString(ymd), occupati);
+    const slot = slotRiconsegnaValidi(ymd);
     if (slot.length === 0) return;
     setRiconsegnaYmd(ymd);
-    setRiconsegnaOra(slot[0]);
+    // Non il primo orario del giorno: quello che tiene il periodo che il
+    // cliente ha in mente, cioe' 1h30 prima dell'ora di ritiro.
+    setRiconsegnaOra(oraRiconsegnaAutomatica(ritiroOra, slot, ymd === ritiroYmd) || slot[0]);
   };
 
   const azzera = () => {
@@ -275,15 +293,33 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
   // vicolo cieco (nessuna riconsegna selezionabile).
   const slotRitiro = ritiroYmd
     ? slotRitiroUtili(ritiroYmd, getPickupTimesForDateString(ritiroYmd), occupati) : [];
+
+  /**
+   * Gli orari di riconsegna utilizzabili in un giorno: liberi, e che non
+   * fanno attraversare la prenotazione successiva. Una funzione sola perche'
+   * la usano sia il click sul calendario sia la tendina: due copie avrebbero
+   * finito per proporre orari diversi.
+   */
+  function slotRiconsegnaValidi(ymd: string): string[] {
+    if (!ritiroYmd) return [];
+    return slotLiberi(ymd, getReturnTimesForDateString(ymd), occupati).filter((s) => {
+      const prossimo = primoOccupatoDopo(msDaYmdOra(ritiroYmd, ritiroOra), occupati);
+      return !prossimo || msDaYmdOra(ymd, s) <= prossimo.start;
+    });
+  }
   // Gli orari di riconsegna scartano anche quelli che farebbero
   // attraversare la prenotazione successiva.
-  const slotRiconsegna = riconsegnaYmd && ritiroYmd
-    ? slotLiberi(riconsegnaYmd, getReturnTimesForDateString(riconsegnaYmd), occupati)
-      .filter((s) => {
-        const prossimo = primoOccupatoDopo(msDaYmdOra(ritiroYmd, ritiroOra), occupati);
-        return !prossimo || msDaYmdOra(riconsegnaYmd, s) <= prossimo.start;
-      })
-    : [];
+  const slotRiconsegna = riconsegnaYmd && ritiroYmd ? slotRiconsegnaValidi(riconsegnaYmd) : [];
+
+  // L'orario che il calendario proporrebbe da solo: serve anche a decidere
+  // se avvisare il cliente che sta allungando il noleggio.
+  const oraProposta = riconsegnaYmd && ritiroYmd
+    ? oraRiconsegnaAutomatica(ritiroOra, slotRiconsegna, riconsegnaYmd === ritiroYmd)
+    : '';
+  // Mezz'ora di tolleranza: si avvisa chi si sposta davvero, non chi prende
+  // lo slot subito successivo.
+  const riconsegnaTardi = !!(oraProposta && riconsegnaOra && riconsegnaYmd !== ritiroYmd
+    && minutiOra(riconsegnaOra) >= minutiOra(oraProposta) + 30);
 
   const giorni = ritiroYmd && riconsegnaYmd
     ? giorniFatturati(ritiroYmd, ritiroOra, riconsegnaYmd, riconsegnaOra, getLateReturnGraceMinutes())
@@ -530,6 +566,22 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                   </label>
                 </div>
               </>
+            )}
+
+            {/* La riconsegna proposta e' 1h30 prima dell'ora di ritiro: e' il
+                margine che evita di far scattare un giorno in piu'. Chi la
+                sposta piu' tardi deve saperlo PRIMA di continuare, non
+                scoprirlo sul totale. Stesso testo della finestra di
+                prenotazione, dalla stessa chiave di Centralina. */}
+            {riconsegnaTardi && copyBox && (
+              <div className="mt-5 space-y-0.5 text-center">
+                <p className="text-[12px] font-semibold text-red-400">
+                  {it ? copyBox.rate_warning_title_it : copyBox.rate_warning_title_en}
+                </p>
+                <p className="text-[10px] text-red-400/60">
+                  {it ? copyBox.rate_warning_body_it : copyBox.rate_warning_body_en}
+                </p>
+              </div>
             )}
 
             {ritiroYmd && riconsegnaYmd && (

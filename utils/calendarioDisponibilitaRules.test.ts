@@ -7,6 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  oraRiconsegnaAutomatica,
   msDaYmdOra,
   istanteOccupato,
   periodoOccupato,
@@ -197,3 +198,25 @@ test('uno slot tardivo che scavalca la mezzanotte rende il giorno valido', () =>
     'libero',
   );
 });
+
+// ─── Orario di riconsegna proposto ──────────────────────────────────────────
+test('riconsegna proposta: il piu\' tardi entro 1h30 prima del ritiro', () => {
+  const slot = ['09:00', '09:15', '09:30', '15:00', '15:30', '16:00', '17:00']
+  // ritiro 18:00 -> limite 16:30 -> 16:00
+  assert.equal(oraRiconsegnaAutomatica('18:00', slot), '16:00')
+  // ritiro 10:30 -> limite 09:00 -> 09:00
+  assert.equal(oraRiconsegnaAutomatica('10:30', slot), '09:00')
+})
+
+test('riconsegna proposta: se nessuno sta nel limite, il primo disponibile', () => {
+  // ritiro 10:00 -> limite 08:30, la mattina apre alle 09:00
+  assert.equal(oraRiconsegnaAutomatica('10:00', ['09:00', '09:30']), '09:00')
+})
+
+test('riconsegna proposta: stesso giorno, l\'ultimo orario dopo il ritiro', () => {
+  assert.equal(oraRiconsegnaAutomatica('10:30', ['09:00', '11:00', '16:00'], true), '16:00')
+})
+
+test('riconsegna proposta: senza orari disponibili resta vuota', () => {
+  assert.equal(oraRiconsegnaAutomatica('10:30', []), '')
+})

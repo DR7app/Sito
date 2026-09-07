@@ -13,9 +13,7 @@ import { useVehicles } from '../hooks/useVehicles';
 import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
-import BookingSearchBox from '../components/ui/BookingSearchBox';
 import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
-import { getHeaderCopy, type HeaderCopy } from '../utils/siteCopy';
 import { SARDEGNA_LOCATIONS, type SardegnaLocation } from '../data/sardegnaLocations';
 import type { RentalItem } from '../types';
 // Alias storici categoria DB <-> id Centralina Pro: definiti una volta
@@ -32,7 +30,6 @@ const FlottaIndexPage: React.FC = () => {
   // cliente guarda i mezzi, ed era l'unica in cui doveva tornare al menu per
   // aprire la ricerca. Stessa finestra della barra in alto, stesse etichette
   // dal pannello: una sola cosa da cambiare se cambiano.
-  const [prenotaAperto, setPrenotaAperto] = useState(false);
 
   /**
    * Ricerca per citta', localita' o aeroporto — SOLO Sardegna.
@@ -83,14 +80,6 @@ const FlottaIndexPage: React.FC = () => {
   // perche' e' quello che il wizard usa per il routing urban/cars.
   const [calendarioVeicolo, setCalendarioVeicolo] = useState<RentalItem | null>(null);
   const [calendarioContesto, setCalendarioContesto] = useState('cars');
-  const [headerCopy, setHeaderCopy] = useState<HeaderCopy | null>(null);
-  useEffect(() => {
-    let annullato = false;
-    getHeaderCopy().then((c) => { if (!annullato) setHeaderCopy(c); });
-    return () => { annullato = true; };
-  }, []);
-  const hc = (it: keyof HeaderCopy, en: keyof HeaderCopy): string =>
-    headerCopy ? (headerCopy as Record<string, string>)[(lang === 'it' ? it : en) as string] : '';
 
   // categoryContext serve a CarBookingWizard per scegliere il routing:
   // 'urban-cars' per la fascia urban, 'cars' per tutto il resto.
@@ -189,7 +178,7 @@ const FlottaIndexPage: React.FC = () => {
                   luoghiTrovati.map((l) => (
                     <button
                       key={l.chiave}
-                      onClick={() => { setLuogoQuery(l.titolo); setLuogoScelto(l.luogo); setLuoghiAperti(false); setPrenotaAperto(true); }}
+                      onClick={() => { setLuogoQuery(l.titolo); setLuogoScelto(l.luogo); setLuoghiAperti(false); }}
                       className="block w-full border-b border-white/[0.06] px-4 py-3 text-left transition-colors duration-300 last:border-b-0 hover:bg-white/[0.04]"
                     >
                       <span className="block truncate text-[14px] text-white/80">{l.titolo}</span>
@@ -286,39 +275,6 @@ const FlottaIndexPage: React.FC = () => {
         onClose={() => setCalendarioVeicolo(null)}
       />
 
-      <AnimatePresence>
-        {prenotaAperto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4"
-            onMouseDown={(e) => { if (e.target === e.currentTarget) setPrenotaAperto(false); }}
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.96, opacity: 0, y: 10 }}
-              transition={{ type: 'spring', duration: 0.4, bounce: 0.15 }}
-              className="relative w-full max-w-[440px] border border-white/10 bg-[#0A0B0C] p-8 sm:p-10"
-              style={{ boxShadow: '0 40px 90px -40px rgba(0,0,0,0.9)' }}
-            >
-              <button
-                onClick={() => setPrenotaAperto(false)}
-                aria-label={t({ it: 'Chiudi', en: 'Close' })}
-                className="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center border border-white/10 text-white/40 transition-colors duration-300 hover:border-white/30 hover:text-white"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <h3 className="mb-2 text-center font-serif text-[26px] font-normal tracking-[-0.01em] text-white">{hc('popup_title_it', 'popup_title_en')}</h3>
-              <p className="mb-8 text-center text-[12px] text-white/35">{hc('popup_subtitle_it', 'popup_subtitle_en')}</p>
-              <BookingSearchBox variant="popup" initialPickupLocation={luogoScelto} onClose={() => setPrenotaAperto(false)} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 };

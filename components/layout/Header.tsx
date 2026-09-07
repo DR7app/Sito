@@ -9,7 +9,6 @@ import {
   CarIcon, AnchorIcon, PaperAirplaneIcon, HomeIcon,
   SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon, WalletIcon,
 } from '../icons/Icons';
-import BookingSearchBox from '../ui/BookingSearchBox';
 import CercaSedi from '../ui/CercaSedi';
 import { getHeaderCopy, getAspettoCopy, DEFAULT_ASPETTO, type HeaderCopy, type AspettoCopy } from '../../utils/siteCopy';
 import { useNoleggioCatalog } from '../../hooks/useNoleggioCatalog';
@@ -31,7 +30,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   const { t, lang } = useTranslation();
   const { user } = useAuth();
   const nav = useNavigate();
-  const [showBookingPopup, setShowBookingPopup] = useState(false);
   const h = (it: keyof HeaderCopy, en: keyof HeaderCopy): string =>
     (copy as Record<string, string>)[(lang === 'it' ? it : en) as string];
   // "La Nostra Flotta" punta SEMPRE alla landing /flotta (index con
@@ -53,23 +51,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     };
   }, [isOpen]);
 
-  // Re-open booking popup after sign-in. Triggered when the URL contains
-  // `?openBooking=1` (set when an unauthenticated user clicked "Prenota Ora"
-  // and was redirected through /signin). Removes the query param so the
-  // popup doesn't reopen on subsequent navigations.
-  useEffect(() => {
-    if (!user) return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('openBooking') === '1') {
-        setShowBookingPopup(true);
-        try { window.dispatchEvent(new CustomEvent('dr7:prenota-ora:manual-opened')); } catch { /* ignore */ }
-        params.delete('openBooking');
-        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
-        window.history.replaceState(null, '', newUrl);
-      }
-    } catch { /* ignore */ }
-  }, [user]);
 
   const navLinkClasses =
     'block py-3 pl-3 text-[15px] font-normal text-gray-400 hover:text-white transition-all duration-200 hover:bg-white/5';
@@ -347,40 +328,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
 
           </motion.div>
 
-          {/* PRENOTA ORA POPUP — outside scroll container for proper z-index */}
-          <AnimatePresence>
-            {showBookingPopup && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[300] bg-black/90 flex items-center justify-center p-4"
-                onMouseDown={(e) => { if (e.target === e.currentTarget) setShowBookingPopup(false); }}
-                data-prenota-ora-manual="true"
-              >
-                <motion.div
-                  initial={{ scale: 0.96, opacity: 0, y: 10 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.96, opacity: 0, y: 10 }}
-                  transition={{ type: 'spring', duration: 0.4, bounce: 0.15 }}
-                  className="bg-[#0A0B0C] border border-white/10 p-8 sm:p-10 max-w-[440px] w-full relative"
-                  style={{ boxShadow: '0 40px 90px -40px rgba(0,0,0,0.9)' }}
-                >
-                  <button
-                    onClick={() => setShowBookingPopup(false)}
-                    className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-colors duration-300 z-10"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                  <h3 className="font-serif text-[26px] font-normal text-white text-center mb-2 tracking-[-0.01em]">{h('popup_title_it', 'popup_title_en')}</h3>
-                  <p className="text-[12px] text-white/35 text-center mb-8">{h('popup_subtitle_it', 'popup_subtitle_en')}</p>
-                  <BookingSearchBox variant="popup" onClose={() => { setShowBookingPopup(false); onClose(); }} />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       )}
     </AnimatePresence>,

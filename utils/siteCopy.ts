@@ -3127,7 +3127,7 @@ const DEFAULT_AVIATION_QUOTE: AviationQuoteCopy = {
   field_notes_label_it: 'Esigenze o richieste particolari (facoltativo)', field_notes_label_en: 'Any particular needs or requests (optional)',
   field_notes_placeholder_it: 'Inserisci eventuali necessità, preferenze o servizi aggiuntivi. (opzionale)',
   field_notes_placeholder_en: 'Tell us about any needs, preferences or extra services.',
-  submit_idle_it: 'RICHIEDI IL TUO PREVENTIVO', submit_idle_en: 'REQUEST YOUR QUOTE',
+  submit_idle_it: 'SALVA PREVENTIVO', submit_idle_en: 'SAVE QUOTE',
   submit_submitting_it: 'Invio in corso...', submit_submitting_en: 'Submitting...',
   disclaimer_it: 'Verrai reindirizzato su WhatsApp. Ti contatteremo entro 24 ore con un preventivo personalizzato.',
   disclaimer_en: 'You\'ll be redirected to WhatsApp. We\'ll contact you within 24 hours with a personalized quote.',

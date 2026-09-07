@@ -35,12 +35,24 @@ interface QuoteBody {
   departure_location?: string;
   arrival_location?: string;
   departure_date?: string;
+  departure_time?: string;
+  wants_return?: boolean;
   return_date?: string;
+  return_time?: string;
+  is_flexible?: boolean;         // date e orari flessibili
   passenger_count?: number;
+  has_stops?: boolean;
+  intermediate_stops?: string;
+  luggage_details?: string;      // "2 trolley + 2 valigie grandi"
+  budget_indicative?: string;    // testo: quasi sempre una forbice
+  aircraft_category?: "jet" | "helicopter" | "any";
   preferred_aircraft?: string;   // il mezzo scelto a catalogo, se arriva da li'
   notes?: string;
   lang?: "it" | "en";
 }
+
+/** Orario vuoto: la colonna e' `time`, e "" non e' un orario. */
+const ora = (v?: string) => (v && /^\d{2}:\d{2}/.test(v) ? v : null);
 
 /** Il testo di riserva, se il template non c'e' o e' stato spento. */
 function messaggioDiRiserva(q: QuoteBody): string {
@@ -56,9 +68,13 @@ function messaggioDiRiserva(q: QuoteBody): string {
     "",
     `*Da:* ${q.departure_location || "-"}`,
     `*A:* ${q.arrival_location || "-"}`,
-    q.departure_date ? `*Partenza:* ${q.departure_date}` : "",
-    q.return_date ? `*Ritorno:* ${q.return_date}` : "",
+    q.departure_date ? `*Partenza:* ${q.departure_date}${q.departure_time ? ` ${q.departure_time}` : ""}` : "",
+    q.return_date ? `*Ritorno:* ${q.return_date}${q.return_time ? ` ${q.return_time}` : ""}` : "",
+    `*Date flessibili:* ${q.is_flexible ? "Sì" : "No"}`,
     `*Passeggeri:* ${q.passenger_count ?? 1}`,
+    q.has_stops ? `*Tappe:* ${q.intermediate_stops || "sì, da definire"}` : "",
+    q.luggage_details ? `*Bagagli:* ${q.luggage_details}` : "",
+    q.budget_indicative ? `*Budget indicativo:* ${q.budget_indicative}` : "",
     q.notes ? `\n*Note:* ${q.notes}` : "",
   ];
   return righe.filter((r) => r !== "").join("\n");
@@ -84,6 +100,17 @@ function applicaSegnaposto(tpl: string, q: QuoteBody): string {
     "{data_ritorno}": q.return_date || "",
     "{passeggeri}": String(q.passenger_count ?? 1),
     "{note}": q.notes || "",
+    "{orario_partenza}": q.departure_time || "",
+    "{orario_ritorno}": q.return_time || "",
+    "{flessibile}": q.is_flexible ? (it ? "Sì" : "Yes") : "No",
+    "{tappe}": q.has_stops ? (q.intermediate_stops || (it ? "Sì" : "Yes")) : "No",
+    "{bagagli}": q.luggage_details || "",
+    "{budget}": q.budget_indicative || "",
+    "{aeromobile}": q.aircraft_category === "helicopter"
+      ? (it ? "Elicottero" : "Helicopter")
+      : q.aircraft_category === "any"
+        ? (it ? "Da valutare" : "To be advised")
+        : (it ? "Jet privato" : "Private jet"),
     "{return_line}": rigaRitorno,
     "{notes_line}": rigaNote,
   };
@@ -116,8 +143,10 @@ export const handler: Handler = async (event) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // ── 1. La richiesta si scrive ──────────────────────────────────────────
-  // La tabella non ha una colonna per la data di partenza ne' per l'origine
-  // della richiesta: finiscono nelle note, dove l'operatore le legge.
+  // Le note tengono l'origine della richiesta e quello che il cliente ha
+  // scritto di suo. Data e orario di partenza hanno una colonna loro
+  // (migration 20260907_aviation_quote_campi_richiesta.sql): finche' quella
+  // non e' stata eseguita restano qui, vedi `righeDiRipiego`.
   const noteEstese = [
     q.departure_date ? `Data partenza richiesta: ${q.departure_date}` : "",
     q.return_date ? `Data ritorno richiesta: ${q.return_date}` : "",
@@ -133,12 +162,14 @@ export const handler: Handler = async (event) => {
     company_vat: "",
     departure_location: q.departure_location || "",
     arrival_location: q.arrival_location || "",
-    flight_type: q.return_date ? "round_trip" : "one_way",
+    // Andata e ritorno lo dice il cliente, non piu' la presenza di una data.
+    flight_type: (q.wants_return && q.return_date) || q.return_date ? "round_trip" : "one_way",
     return_date: q.return_date || null,
-    return_time: "",
-    direct_flight: true,
-    intermediate_stops: "",
-    flight_flexibility: "fixed",
+    return_time: ora(q.return_time),
+    // "Volo diretto" e' l'opposto di "ci sono tappe".
+    direct_flight: !q.has_stops,
+    intermediate_stops: q.has_stops ? (q.intermediate_stops || "") : "",
+    flight_flexibility: q.is_flexible ? "flexible" : "fixed",
     flight_time: "day",
     passenger_count: Number(q.passenger_count) || 1,
     has_children: false,
@@ -152,6 +183,12 @@ export const handler: Handler = async (event) => {
     luggage_weight: "",
     special_equipment: "",
     bulky_luggage: false,
+    // Colonne aggiunte il 07/09/2026 insieme alle nuove domande del modulo.
+    departure_date: q.departure_date || null,
+    departure_time: ora(q.departure_time),
+    luggage_details: q.luggage_details || "",
+    budget_indicative: q.budget_indicative || "",
+    aircraft_category: q.aircraft_category || null,
     purpose: "tourist",
     priority: "luxury",
     preferred_aircraft: q.preferred_aircraft || "",
@@ -178,6 +215,22 @@ export const handler: Handler = async (event) => {
     quote_amount: 0,
   };
 
+  // Le colonne nuove arrivano con una migration che si esegue a mano: finche'
+  // non e' stata eseguita l'insert le rifiuterebbe (42703) e la richiesta
+  // andrebbe PERSA. Quindi al secondo tentativo si tolgono e il loro
+  // contenuto finisce nelle note, dove l'operatore lo legge lo stesso.
+  const CAMPI_NUOVI = ["departure_date", "departure_time", "luggage_details", "budget_indicative", "aircraft_category"] as const;
+
+  function righeDiRipiego(): string {
+    const r = [
+      q.departure_date ? `Data partenza: ${q.departure_date}${q.departure_time ? ` ${q.departure_time}` : ""}` : "",
+      q.luggage_details ? `Bagagli: ${q.luggage_details}` : "",
+      q.budget_indicative ? `Budget indicativo: ${q.budget_indicative}` : "",
+      q.aircraft_category ? `Tipologia aeromobile: ${q.aircraft_category}` : "",
+    ].filter(Boolean);
+    return r.length ? `\n${r.join("\n")}` : "";
+  }
+
   let quoteId: string | null = null;
   let erroreSalvataggio: string | null = null;
   try {
@@ -186,8 +239,25 @@ export const handler: Handler = async (event) => {
     quoteId = data?.id ?? null;
     console.log("[aviation-quote] richiesta salvata:", quoteId);
   } catch (e: any) {
-    erroreSalvataggio = e?.message || String(e);
-    console.error("[aviation-quote] salvataggio fallito:", erroreSalvataggio);
+    const messaggio = e?.message || String(e);
+    const colonnaMancante = /column|schema cache|42703|PGRST204/i.test(messaggio);
+    if (!colonnaMancante) {
+      erroreSalvataggio = messaggio;
+      console.error("[aviation-quote] salvataggio fallito:", erroreSalvataggio);
+    } else {
+      console.warn("[aviation-quote] colonne nuove assenti, riprovo senza (esegui la migration 20260907_aviation_quote_campi_richiesta.sql):", messaggio);
+      const ridotta: Record<string, unknown> = { ...riga, notes: `${riga.notes}${righeDiRipiego()}` };
+      for (const c of CAMPI_NUOVI) delete ridotta[c];
+      try {
+        const { data, error } = await supabase.from("aviation_quotes").insert([ridotta]).select("id").single();
+        if (error) throw error;
+        quoteId = data?.id ?? null;
+        console.log("[aviation-quote] richiesta salvata senza le colonne nuove:", quoteId);
+      } catch (e2: any) {
+        erroreSalvataggio = e2?.message || String(e2);
+        console.error("[aviation-quote] salvataggio fallito:", erroreSalvataggio);
+      }
+    }
   }
 
   // ── 2. E si manda a DR7 su WhatsApp ────────────────────────────────────

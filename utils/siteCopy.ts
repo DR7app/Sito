@@ -1269,8 +1269,29 @@ export interface AviationQuoteCopy {
   field_arrival_label_it: string; field_arrival_label_en: string;
   field_arrival_placeholder_it: string; field_arrival_placeholder_en: string;
   field_departure_date_label_it: string; field_departure_date_label_en: string;
+  field_departure_time_label_it: string; field_departure_time_label_en: string;
+  field_return_flight_label_it: string; field_return_flight_label_en: string;
   field_return_date_label_it: string; field_return_date_label_en: string;
+  field_return_time_label_it: string; field_return_time_label_en: string;
+  // Flessibilita': nel charter privato sposta il preventivo piu' di ogni
+  // altra risposta, quindi si chiede al cliente invece di darla per fissa.
+  field_flexibility_label_it: string; field_flexibility_label_en: string;
+  field_flexibility_hint_it: string; field_flexibility_hint_en: string;
   field_passengers_label_it: string; field_passengers_label_en: string;
+  field_stops_label_it: string; field_stops_label_en: string;
+  field_stops_detail_label_it: string; field_stops_detail_label_en: string;
+  field_stops_detail_placeholder_it: string; field_stops_detail_placeholder_en: string;
+  field_luggage_label_it: string; field_luggage_label_en: string;
+  field_luggage_placeholder_it: string; field_luggage_placeholder_en: string;
+  field_budget_label_it: string; field_budget_label_en: string;
+  field_budget_placeholder_it: string; field_budget_placeholder_en: string;
+  field_budget_hint_it: string; field_budget_hint_en: string;
+  field_aircraft_label_it: string; field_aircraft_label_en: string;
+  field_aircraft_option_jet_it: string; field_aircraft_option_jet_en: string;
+  field_aircraft_option_helicopter_it: string; field_aircraft_option_helicopter_en: string;
+  field_aircraft_option_any_it: string; field_aircraft_option_any_en: string;
+  option_yes_it: string; option_yes_en: string;
+  option_no_it: string; option_no_en: string;
   field_notes_label_it: string; field_notes_label_en: string;
   field_notes_placeholder_it: string; field_notes_placeholder_en: string;
   // Submit + footer
@@ -2119,7 +2140,12 @@ export async function getCheckEmailCopy(): Promise<CheckEmailCopy> {
 /** Aviation quote request page (bilingual). */
 export async function getAviationQuoteCopy(): Promise<AviationQuoteCopy> {
   const snap = await loadOnce();
-  if (snap.aviationQuote && snap.aviationQuote.header_title_template_it) return snap.aviationQuote;
+  // I default riempiono i buchi. Le domande aggiunte il 07/09/2026 non
+  // esistono nelle righe salvate prima: senza questa fusione, su un'istanza
+  // gia' configurata il modulo mostrerebbe etichette VUOTE.
+  if (snap.aviationQuote && snap.aviationQuote.header_title_template_it) {
+    return { ...DEFAULT_AVIATION_QUOTE, ...snap.aviationQuote };
+  }
   return DEFAULT_AVIATION_QUOTE;
 }
 
@@ -3031,10 +3057,10 @@ const DEFAULT_AVIATION_QUOTE: AviationQuoteCopy = {
   auth_login_cta_it: 'Accedi', auth_login_cta_en: 'Login',
   auth_signup_cta_it: 'Registrati', auth_signup_cta_en: 'Sign Up',
   service_label_jet: 'Jet Privato', service_label_helicopter: 'Elicottero',
-  header_title_template_it: 'Richiedi Preventivo {service}',
-  header_title_template_en: 'Request Quote {service}',
-  header_subtitle_it: 'Compila il form e ti contatteremo con un preventivo personalizzato',
-  header_subtitle_en: 'Fill in the form and we\'ll get back to you with a personalized quote',
+  header_title_template_it: 'RICHIEDI IL TUO PREVENTIVO PERSONALIZZATO',
+  header_title_template_en: 'REQUEST YOUR TAILORED QUOTE',
+  header_subtitle_it: 'Inserisci i dettagli del viaggio. Il nostro team elaborerà una proposta su misura in base alle tue esigenze.',
+  header_subtitle_en: 'Tell us about your trip. Our team will put together a proposal built around what you need.',
   section_customer_it: 'Dati Cliente', section_customer_en: 'Customer Details',
   section_flight_it: 'Dettagli Viaggio', section_flight_en: 'Trip Details',
   field_name_label_it: 'Nome Completo *', field_name_label_en: 'Full Name *',
@@ -3043,17 +3069,39 @@ const DEFAULT_AVIATION_QUOTE: AviationQuoteCopy = {
   field_email_placeholder_it: 'mario@email.com', field_email_placeholder_en: 'john@email.com',
   field_phone_label_it: 'Telefono *', field_phone_label_en: 'Phone *',
   field_phone_placeholder_it: '+39 333 123 4567', field_phone_placeholder_en: '+39 333 123 4567',
-  field_departure_label_it: 'Partenza da *', field_departure_label_en: 'Departure from *',
+  field_departure_label_it: 'Da dove desideri partire?', field_departure_label_en: 'Where would you like to depart from?',
   field_departure_placeholder_it: 'Milano, Roma, Cagliari...', field_departure_placeholder_en: 'Milan, Rome, Cagliari...',
-  field_arrival_label_it: 'Arrivo a *', field_arrival_label_en: 'Arrival at *',
+  field_arrival_label_it: 'Qual è la destinazione?', field_arrival_label_en: 'What is your destination?',
   field_arrival_placeholder_it: 'Parigi, Londra, Ibiza...', field_arrival_placeholder_en: 'Paris, London, Ibiza...',
-  field_departure_date_label_it: 'Data Partenza *', field_departure_date_label_en: 'Departure Date *',
-  field_return_date_label_it: 'Data Ritorno (opzionale)', field_return_date_label_en: 'Return Date (optional)',
-  field_passengers_label_it: 'Numero Passeggeri *', field_passengers_label_en: 'Number of Passengers *',
-  field_notes_label_it: 'Note Aggiuntive', field_notes_label_en: 'Additional Notes',
-  field_notes_placeholder_it: 'Richieste speciali, bagagli, preferenze...',
-  field_notes_placeholder_en: 'Special requests, luggage, preferences...',
-  submit_idle_it: 'Richiedi Preventivo', submit_idle_en: 'Request Quote',
+  field_departure_date_label_it: 'Data di partenza', field_departure_date_label_en: 'Departure date',
+  field_departure_time_label_it: 'Orario indicativo di partenza', field_departure_time_label_en: 'Approximate departure time',
+  field_return_flight_label_it: 'Hai bisogno anche del volo di ritorno?', field_return_flight_label_en: 'Do you also need a return flight?',
+  field_return_date_label_it: 'Data di ritorno (opzionale)', field_return_date_label_en: 'Return date (optional)',
+  field_return_time_label_it: 'Orario indicativo di ritorno (opzionale)', field_return_time_label_en: 'Approximate return time (optional)',
+  field_flexibility_label_it: 'Le date e gli orari sono flessibili?', field_flexibility_label_en: 'Are your dates and times flexible?',
+  field_flexibility_hint_it: '', field_flexibility_hint_en: '',
+  field_passengers_label_it: 'Numero di passeggeri', field_passengers_label_en: 'Number of passengers',
+  field_stops_label_it: 'Sono previste tappe o scali intermedi?', field_stops_label_en: 'Any intermediate stops?',
+  field_stops_detail_label_it: 'Indica le tappe o gli scali desiderati', field_stops_detail_label_en: 'Which stops would you like?',
+  field_stops_detail_placeholder_it: "Esempio: scalo a Nizza all'andata",
+  field_stops_detail_placeholder_en: 'Example: stop in Nice on the way out',
+  field_luggage_label_it: 'Bagagli', field_luggage_label_en: 'Luggage',
+  field_luggage_placeholder_it: 'Quanti e specifica peso',
+  field_luggage_placeholder_en: 'How many, and their approximate weight',
+  field_budget_label_it: 'Budget indicativo', field_budget_label_en: 'Approximate budget',
+  field_budget_placeholder_it: 'Esempio: 8.000 - 10.000 EUR',
+  field_budget_placeholder_en: 'Example: EUR 8,000 - 10,000',
+  field_budget_hint_it: '', field_budget_hint_en: '',
+  field_aircraft_label_it: 'Tipologia di aeromobile', field_aircraft_label_en: 'Aircraft type',
+  field_aircraft_option_jet_it: 'Jet privato', field_aircraft_option_jet_en: 'Private jet',
+  field_aircraft_option_helicopter_it: 'Elicottero', field_aircraft_option_helicopter_en: 'Helicopter',
+  field_aircraft_option_any_it: 'Valuta la soluzione migliore per me', field_aircraft_option_any_en: 'Recommend the best option for me',
+  option_yes_it: 'Sì', option_yes_en: 'Yes',
+  option_no_it: 'No', option_no_en: 'No',
+  field_notes_label_it: 'Esigenze o richieste particolari (facoltativo)', field_notes_label_en: 'Any particular needs or requests (optional)',
+  field_notes_placeholder_it: 'Inserisci eventuali necessità, preferenze o servizi aggiuntivi. (opzionale)',
+  field_notes_placeholder_en: 'Tell us about any needs, preferences or extra services.',
+  submit_idle_it: 'RICHIEDI IL TUO PREVENTIVO', submit_idle_en: 'REQUEST YOUR QUOTE',
   submit_submitting_it: 'Invio in corso...', submit_submitting_en: 'Submitting...',
   disclaimer_it: 'Verrai reindirizzato su WhatsApp. Ti contatteremo entro 24 ore con un preventivo personalizzato.',
   disclaimer_en: 'You\'ll be redirected to WhatsApp. We\'ll contact you within 24 hours with a personalized quote.',

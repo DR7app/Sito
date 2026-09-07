@@ -32,6 +32,15 @@ const AviationQuoteRequestPage: React.FC = () => {
   // chi non e' loggato passa da /signin e torna qui.
   const mezzoScelto = new URLSearchParams(location.search).get('aircraft') || '';
 
+  // 07/09/2026 — il modulo chiedeva otto cose e il resto lo indovinava
+  // l'ufficio al telefono. Nel charter privato orari, tappe, bagagli, budget
+  // e soprattutto la FLESSIBILITA' su date e orari cambiano il preventivo:
+  // se non si chiedono qui, si chiedono dopo, e nel frattempo la proposta e'
+  // gia' partita sbagliata.
+  //
+  // Le colonne su `aviation_quotes` esistevano gia' quasi tutte (il
+  // gestionale le mostra da sempre nella scheda del preventivo): erano solo
+  // riempite con valori finti dal server. Ora arrivano dal cliente.
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_email: '',
@@ -39,10 +48,23 @@ const AviationQuoteRequestPage: React.FC = () => {
     departure_location: '',
     arrival_location: '',
     departure_date: '',
+    departure_time: '',
+    wants_return: false,
     return_date: '',
+    return_time: '',
+    is_flexible: false,
     passenger_count: 1,
+    has_stops: false,
+    intermediate_stops: '',
+    luggage_details: '',
+    budget_indicative: '',
+    aircraft_category: (isHelicopter ? 'helicopter' : 'jet') as 'jet' | 'helicopter' | 'any',
     notes: ''
   });
+
+  // Un solo aspetto per tutti i campi del modulo: scritto una volta, cosi'
+  // aggiungere una domanda non vuol dire ricopiare dieci classi.
+  const campoCls = 'w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white';
 
   const tx = (it: keyof AviationQuoteCopy, en: keyof AviationQuoteCopy, fallback = ''): string => {
     if (!copy) return fallback;
@@ -53,6 +75,13 @@ const AviationQuoteRequestPage: React.FC = () => {
   const serviceType = copy
     ? (isHelicopter ? copy.service_label_helicopter : copy.service_label_jet)
     : (isHelicopter ? 'Elicottero' : 'Jet Privato');
+
+  /** Il nome della tipologia scelta, con le parole della Centralina. */
+  function tipoAeromobileLabel(): string {
+    if (formData.aircraft_category === 'helicopter') return tx('field_aircraft_option_helicopter_it', 'field_aircraft_option_helicopter_en');
+    if (formData.aircraft_category === 'any') return tx('field_aircraft_option_any_it', 'field_aircraft_option_any_en');
+    return tx('field_aircraft_option_jet_it', 'field_aircraft_option_jet_en');
+  }
 
   // Apply all WhatsApp template placeholders. Supports tokens + the
   // optional inline rows {return_line} / {notes_line} which collapse to
@@ -65,6 +94,9 @@ const AviationQuoteRequestPage: React.FC = () => {
     const notesLine = formData.notes
       ? (lang === 'it' ? `\nNote: ${formData.notes}\n` : `\nNotes: ${formData.notes}\n`)
       : '';
+    const isIt = lang === 'it';
+    const si = isIt ? 'Sì' : 'Yes';
+    const no = isIt ? 'No' : 'No';
     const vars: Record<string, string> = {
       '{service}': serviceType,
       '{nome}': formData.customer_name,
@@ -76,6 +108,13 @@ const AviationQuoteRequestPage: React.FC = () => {
       '{data_ritorno}': formData.return_date || '',
       '{passeggeri}': String(formData.passenger_count),
       '{note}': formData.notes || '',
+      '{orario_partenza}': formData.departure_time || '',
+      '{orario_ritorno}': formData.return_time || '',
+      '{flessibile}': formData.is_flexible ? si : no,
+      '{tappe}': formData.has_stops ? (formData.intermediate_stops || si) : no,
+      '{bagagli}': formData.luggage_details || '',
+      '{budget}': formData.budget_indicative || '',
+      '{aeromobile}': tipoAeromobileLabel(),
       // Optional whole-line tokens (collapse to empty when field blank).
       '{return_line}': returnLine,
       '{notes_line}': notesLine,
@@ -329,23 +368,71 @@ const AviationQuoteRequestPage: React.FC = () => {
                   value={formData.departure_date}
                   onChange={(e) => setFormData({ ...formData, departure_date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
+                  className={campoCls}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {tx('field_return_date_label_it', 'field_return_date_label_en')}
+                  {tx('field_departure_time_label_it', 'field_departure_time_label_en')}
                 </label>
                 <input
-                  type="date"
-                  value={formData.return_date}
-                  onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
-                  min={formData.departure_date || new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
+                  type="time"
+                  value={formData.departure_time}
+                  onChange={(e) => setFormData({ ...formData, departure_time: e.target.value })}
+                  className={campoCls}
                 />
               </div>
             </div>
+
+            {/* Volo di ritorno: le due date si chiedono solo a chi risponde di si'. */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {tx('field_return_flight_label_it', 'field_return_flight_label_en')}
+              </label>
+              <select
+                value={formData.wants_return ? 'si' : 'no'}
+                onChange={(e) => {
+                  const vuole = e.target.value === 'si';
+                  // Chi torna sul "No" non lascia dietro una data di ritorno
+                  // che finirebbe comunque nel preventivo.
+                  setFormData({ ...formData, wants_return: vuole, return_date: vuole ? formData.return_date : '', return_time: vuole ? formData.return_time : '' });
+                }}
+                className={campoCls}
+              >
+                <option value="si">{tx('option_yes_it', 'option_yes_en')}</option>
+                <option value="no">{tx('option_no_it', 'option_no_en')}</option>
+              </select>
+            </div>
+
+            {formData.wants_return && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    {tx('field_return_date_label_it', 'field_return_date_label_en')}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.return_date}
+                    onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
+                    min={formData.departure_date || new Date().toISOString().split('T')[0]}
+                    className={campoCls}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    {tx('field_return_time_label_it', 'field_return_time_label_en')}
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.return_time}
+                    onChange={(e) => setFormData({ ...formData, return_time: e.target.value })}
+                    className={campoCls}
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -358,8 +445,91 @@ const AviationQuoteRequestPage: React.FC = () => {
                 required
                 value={formData.passenger_count}
                 onChange={(e) => setFormData({ ...formData, passenger_count: parseInt(e.target.value) })}
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
+                className={campoCls}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {tx('field_stops_label_it', 'field_stops_label_en')}
+              </label>
+              <select
+                value={formData.has_stops ? 'si' : 'no'}
+                onChange={(e) => {
+                  const tappe = e.target.value === 'si';
+                  setFormData({ ...formData, has_stops: tappe, intermediate_stops: tappe ? formData.intermediate_stops : '' });
+                }}
+                className={campoCls}
+              >
+                <option value="si">{tx('option_yes_it', 'option_yes_en')}</option>
+                <option value="no">{tx('option_no_it', 'option_no_en')}</option>
+              </select>
+            </div>
+
+            {formData.has_stops && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {tx('field_stops_detail_label_it', 'field_stops_detail_label_en')}
+                </label>
+                <input
+                  type="text"
+                  value={formData.intermediate_stops}
+                  onChange={(e) => setFormData({ ...formData, intermediate_stops: e.target.value })}
+                  className={campoCls}
+                  placeholder={tx('field_stops_detail_placeholder_it', 'field_stops_detail_placeholder_en')}
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {tx('field_luggage_label_it', 'field_luggage_label_en')}
+              </label>
+              <p className="-mt-1 mb-2 text-xs text-gray-500">
+                {tx('field_luggage_placeholder_it', 'field_luggage_placeholder_en')}
+              </p>
+              <input
+                type="text"
+                value={formData.luggage_details}
+                onChange={(e) => setFormData({ ...formData, luggage_details: e.target.value })}
+                className={campoCls}
+              />
+            </div>
+
+            {/* Budget: campo di testo, non numerico. Qui si scrive una
+                forbice ("8.000 - 10.000"), non una cifra secca. */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {tx('field_budget_label_it', 'field_budget_label_en')}
+              </label>
+              <input
+                type="text"
+                inputMode="text"
+                value={formData.budget_indicative}
+                onChange={(e) => setFormData({ ...formData, budget_indicative: e.target.value })}
+                className={campoCls}
+                placeholder={tx('field_budget_placeholder_it', 'field_budget_placeholder_en')}
+              />
+              {tx('field_budget_hint_it', 'field_budget_hint_en') && (
+                <p className="mt-2 text-xs text-gray-500">{tx('field_budget_hint_it', 'field_budget_hint_en')}</p>
+              )}
+            </div>
+
+            {/* Il mezzo: precompilato dalla pagina da cui si arriva, ma chi
+                non ha ancora deciso puo' farselo consigliare. */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {tx('field_aircraft_label_it', 'field_aircraft_label_en')}
+              </label>
+              <select
+                value={formData.aircraft_category}
+                onChange={(e) => setFormData({ ...formData, aircraft_category: e.target.value as 'jet' | 'helicopter' | 'any' })}
+                className={campoCls}
+              >
+                <option value="jet">{tx('field_aircraft_option_jet_it', 'field_aircraft_option_jet_en')}</option>
+                <option value="helicopter">{tx('field_aircraft_option_helicopter_it', 'field_aircraft_option_helicopter_en')}</option>
+                <option value="any">{tx('field_aircraft_option_any_it', 'field_aircraft_option_any_en')}</option>
+              </select>
             </div>
           </div>
 
@@ -372,9 +542,29 @@ const AviationQuoteRequestPage: React.FC = () => {
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
+              className={campoCls}
               placeholder={tx('field_notes_placeholder_it', 'field_notes_placeholder_en')}
             />
+          </div>
+
+          {/* Flessibilita' su date e orari: ultima domanda prima dell'invio.
+              Nel charter privato e' spesso quella che permette di proporre
+              una soluzione migliore. */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              {tx('field_flexibility_label_it', 'field_flexibility_label_en')}
+            </label>
+            <select
+              value={formData.is_flexible ? 'si' : 'no'}
+              onChange={(e) => setFormData({ ...formData, is_flexible: e.target.value === 'si' })}
+              className={campoCls}
+            >
+              <option value="si">{tx('option_yes_it', 'option_yes_en')}</option>
+              <option value="no">{tx('option_no_it', 'option_no_en')}</option>
+            </select>
+            {tx('field_flexibility_hint_it', 'field_flexibility_hint_en') && (
+              <p className="mt-2 text-xs text-gray-500">{tx('field_flexibility_hint_it', 'field_flexibility_hint_en')}</p>
+            )}
           </div>
 
           <button

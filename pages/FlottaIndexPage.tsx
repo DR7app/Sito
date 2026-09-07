@@ -16,7 +16,7 @@ import RentalCard from '../components/ui/RentalCard';
 import BookingSearchBox from '../components/ui/BookingSearchBox';
 import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
 import { getHeaderCopy, type HeaderCopy } from '../utils/siteCopy';
-import { SARDEGNA_LOCATIONS } from '../data/sardegnaLocations';
+import { SARDEGNA_LOCATIONS, type SardegnaLocation } from '../data/sardegnaLocations';
 import type { RentalItem } from '../types';
 // Alias storici categoria DB <-> id Centralina Pro: definiti una volta
 // sola in flottaConfig, insieme alla regola di visibilita'.
@@ -48,6 +48,9 @@ const FlottaIndexPage: React.FC = () => {
    */
   const [luogoQuery, setLuogoQuery] = useState('');
   const [luoghiAperti, setLuoghiAperti] = useState(false);
+  // Il luogo scelto, non solo il testo: la finestra di prenotazione deve
+  // aprirsi su QUELL'aeroporto, non sulla sede di Viale Marconi.
+  const [luogoScelto, setLuogoScelto] = useState<SardegnaLocation | null>(null);
 
   const normalizzaLuogo = (v: string) =>
     v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -55,6 +58,7 @@ const FlottaIndexPage: React.FC = () => {
   const luoghi = useMemo(
     () => SARDEGNA_LOCATIONS.map((l) => ({
       chiave: l.id,
+      luogo: l,
       titolo: l.label || l.name,
       dettaglio: l.province,
       // Gli alias entrano nella ricerca ma non si vedono: "casteddu" e
@@ -162,7 +166,7 @@ const FlottaIndexPage: React.FC = () => {
               <input
                 type="text"
                 value={luogoQuery}
-                onChange={(e) => { setLuogoQuery(e.target.value); setLuoghiAperti(true); }}
+                onChange={(e) => { setLuogoQuery(e.target.value); setLuogoScelto(null); setLuoghiAperti(true); }}
                 onFocus={() => setLuoghiAperti(true)}
                 placeholder={lang === 'it' ? 'Cerca città, località o aeroporto' : 'Search city, location or airport'}
                 className="w-full bg-transparent text-base text-white placeholder:text-white/35 focus:outline-none"
@@ -181,7 +185,7 @@ const FlottaIndexPage: React.FC = () => {
                   luoghiTrovati.map((l) => (
                     <button
                       key={l.chiave}
-                      onClick={() => { setLuogoQuery(l.titolo); setLuoghiAperti(false); setPrenotaAperto(true); }}
+                      onClick={() => { setLuogoQuery(l.titolo); setLuogoScelto(l.luogo); setLuoghiAperti(false); setPrenotaAperto(true); }}
                       className="block w-full border-b border-white/[0.06] px-4 py-3 text-left transition-colors duration-300 last:border-b-0 hover:bg-white/[0.04]"
                     >
                       <span className="block truncate text-[14px] text-white/80">{l.titolo}</span>
@@ -301,7 +305,7 @@ const FlottaIndexPage: React.FC = () => {
               </button>
               <h3 className="mb-2 text-center font-serif text-[26px] font-normal tracking-[-0.01em] text-white">{hc('popup_title_it', 'popup_title_en')}</h3>
               <p className="mb-8 text-center text-[12px] text-white/35">{hc('popup_subtitle_it', 'popup_subtitle_en')}</p>
-              <BookingSearchBox variant="popup" onClose={() => setPrenotaAperto(false)} />
+              <BookingSearchBox variant="popup" initialPickupLocation={luogoScelto} onClose={() => setPrenotaAperto(false)} />
             </motion.div>
           </motion.div>
         )}

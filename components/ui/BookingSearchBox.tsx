@@ -57,9 +57,13 @@ function formatDateLabel(dateStr: string, lang: string): string {
 interface BookingSearchBoxProps {
   variant?: 'hero' | 'popup';
   onClose?: () => void;
+  /** Luogo di ritiro gia' scelto altrove (es. la ricerca della pagina Terra).
+   *  Senza questo la finestra ripartiva sempre dalla sede di Viale Marconi e
+   *  il cliente perdeva l'aeroporto appena selezionato. */
+  initialPickupLocation?: SardegnaLocation | null;
 }
 
-const BookingSearchBox: React.FC<BookingSearchBoxProps> = ({ variant = 'hero', onClose }) => {
+const BookingSearchBox: React.FC<BookingSearchBoxProps> = ({ variant = 'hero', onClose, initialPickupLocation = null }) => {
   const navigate = useNavigate();
   const { lang } = useTranslation();
   const [copy, setCopy] = useState<BookingSearchBoxCopy | null>(null);
@@ -74,7 +78,7 @@ const BookingSearchBox: React.FC<BookingSearchBoxProps> = ({ variant = 'hero', o
     if (!cur) return '';
     return cur[lang === 'it' ? it : en] as string;
   };
-  const [pickupLocation, setPickupLocation] = useState<SardegnaLocation>(DR7_OFFICE_LOCATION);
+  const [pickupLocation, setPickupLocation] = useState<SardegnaLocation>(initialPickupLocation || DR7_OFFICE_LOCATION);
   const [returnLocation, setReturnLocation] = useState<SardegnaLocation>(DR7_OFFICE_LOCATION);
   const [sameReturn, setSameReturn] = useState(true);
   const [pickupDate, setPickupDate] = useState('');
@@ -83,6 +87,13 @@ const BookingSearchBox: React.FC<BookingSearchBoxProps> = ({ variant = 'hero', o
   const [returnTime, setReturnTime] = useState('09:00');
   const [returnTimeManual, setReturnTimeManual] = useState(false);
   const [error, setError] = useState('');
+
+  // La finestra puo' restare montata mentre fuori si sceglie un altro luogo:
+  // in quel caso il ritiro segue la scelta nuova (la riconsegna no, resta
+  // quella spuntata dal cliente).
+  useEffect(() => {
+    if (initialPickupLocation) setPickupLocation(initialPickupLocation);
+  }, [initialPickupLocation?.id]);
 
   // Delivery fee calculation
   const [deliveryFee, setDeliveryFee] = useState<{ pickupFee: number; returnFee: number; pickupKm: number; returnKm: number; pricePerKm: number } | null>(null);

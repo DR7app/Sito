@@ -56,12 +56,29 @@ interface QuoteBody {
 /** Orario vuoto: la colonna e' `time`, e "" non e' un orario. */
 const ora = (v?: string) => (v && /^\d{2}:\d{2}/.test(v) ? v : null);
 
+/**
+ * La tipologia di aeromobile scelta dal cliente, in parole.
+ *
+ * Sta in UNA funzione perche' la usano sia il messaggio di riserva sia il
+ * segnaposto {aeromobile} del template: due elenchi separati avrebbero finito
+ * per dire cose diverse.
+ */
+function tipoAeromobile(q: QuoteBody, it = true): string {
+  if (q.aircraft_category === "helicopter") return it ? "Elicottero" : "Helicopter";
+  if (q.aircraft_category === "jet") return it ? "Jet privato" : "Private jet";
+  if (q.aircraft_category === "any") return it ? "Da valutare insieme al cliente" : "To be advised";
+  return "";
+}
+
 /** Il testo di riserva, se il template non c'e' o e' stato spento. */
 function messaggioDiRiserva(q: QuoteBody): string {
   const righe = [
     "*NUOVA RICHIESTA PREVENTIVO*",
     "",
     `*Servizio:* ${q.service || "Aviation"}`,
+    // Quello che ha chiesto il cliente nel modulo: puo' non coincidere con la
+    // pagina da cui e' arrivato.
+    tipoAeromobile(q) ? `*Tipologia aeromobile:* ${tipoAeromobile(q)}` : "",
     q.preferred_aircraft ? `*Mezzo:* ${q.preferred_aircraft}` : "",
     "",
     `*Cliente:* ${q.customer_name || "-"}`,
@@ -108,11 +125,7 @@ function applicaSegnaposto(tpl: string, q: QuoteBody): string {
     "{tappe}": q.has_stops ? (q.intermediate_stops || (it ? "Sì" : "Yes")) : "No",
     "{bagagli}": q.luggage_details || "",
     "{budget}": q.budget_indicative || "",
-    "{aeromobile}": q.aircraft_category === "helicopter"
-      ? (it ? "Elicottero" : "Helicopter")
-      : q.aircraft_category === "any"
-        ? (it ? "Da valutare" : "To be advised")
-        : (it ? "Jet privato" : "Private jet"),
+    "{aeromobile}": tipoAeromobile(q, it),
     "{return_line}": rigaRitorno,
     "{notes_line}": rigaNote,
   };
@@ -230,7 +243,7 @@ export const handler: Handler = async (event) => {
       q.departure_date ? `Data partenza: ${q.departure_date}${q.departure_time ? ` ${q.departure_time}` : ""}` : "",
       q.luggage_details ? `Bagagli: ${q.luggage_details}` : "",
       q.budget_indicative ? `Budget indicativo: ${q.budget_indicative}` : "",
-      q.aircraft_category ? `Tipologia aeromobile: ${q.aircraft_category}` : "",
+      tipoAeromobile(q) ? `Tipologia aeromobile: ${tipoAeromobile(q)}` : "",
     ].filter(Boolean);
     return r.length ? `\n${r.join("\n")}` : "";
   }

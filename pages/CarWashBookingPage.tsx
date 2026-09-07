@@ -9,7 +9,7 @@ import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import type { Service } from './CarWashServicesPage';
 import { useCarWashServices } from '../hooks/useCarWashServices';
 import { seatListLabel } from '../utils/seatPlan';
-import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate } from '../utils/lavaggioHours';
+import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate, orariLavaggioPronti } from '../utils/lavaggioHours';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 import { dataRoma } from '../utils/oraRoma';
@@ -45,6 +45,15 @@ const CarWashBookingPage: React.FC = () => {
 
   // Support both single serviceId (legacy) and cartItems (new multi-service)
   const locationState = location.state as any;
+  // Gli orari veri arrivano dal database poco dopo il primo disegno. Senza
+  // questo stato la pagina resterebbe sui default del codice (9-13 / 15-19)
+  // e mostrerebbe orari che in Centralina Pro non esistono piu'.
+  const [orariPronti, setOrariPronti] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    orariLavaggioPronti().then(() => { if (vivo) setOrariPronti(true); });
+    return () => { vivo = false; };
+  }, []);
   const cartItems: CartItem[] = locationState?.cartItems || [];
   const cartTotal: number = locationState?.total || 0;
   const customerVehicle = locationState?.customerVehicle || null;
@@ -688,6 +697,10 @@ const CarWashBookingPage: React.FC = () => {
     const [year, month, day] = formData.appointmentDate.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
     const isSaturday = dateObj.getDay() === 6;
+    // Letto solo per legare questo calcolo all'arrivo della configurazione:
+    // quando `orariPronti` passa a true la pagina si ridisegna e gli slot si
+    // rifanno con gli orari veri invece che con i default del codice.
+    void orariPronti;
     const allTimeSlots = generateLavaggioSlotsForDate(dateObj);
 
     // Check if selected date is today in Rome timezone

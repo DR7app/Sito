@@ -56,7 +56,19 @@ const DEFAULT_CONFIG: LavaggioHoursConfig = {
 
 let CONFIG: LavaggioHoursConfig = DEFAULT_CONFIG;
 
-;(async () => {
+/**
+ * La lettura della configurazione, come promessa.
+ *
+ * 07/09/2026 - questo modulo caricava gli orari in un'async senza handle:
+ * chi disegnava gli slot prima che la risposta arrivasse mostrava i DEFAULT
+ * del codice (9-13 / 15-19) e non si aggiornava mai piu', perche' cambiare
+ * una variabile di modulo non fa ridisegnare React. Sul sito si vedevano
+ * cosi' orari che in Centralina non esistono piu'.
+ *
+ * `orariLavaggioPronti()` e' il gemello di `orariPronti()` di
+ * noleggioHours: chi disegna una lista di orari lo aspetta.
+ */
+const CARICAMENTO: Promise<void> = (async () => {
   try {
     // 06/09/2026 — si legge PRIMA `business_lavaggio`, poi `main`.
     // La sezione Orari di Centralina Pro salva nella riga del business
@@ -88,6 +100,11 @@ let CONFIG: LavaggioHoursConfig = DEFAULT_CONFIG;
     // keep DEFAULT_CONFIG
   }
 })();
+
+/** Si risolve quando gli orari veri sono in memoria. */
+export function orariLavaggioPronti(): Promise<void> {
+  return CARICAMENTO;
+}
 
 function dayKeyFromDate(date: Date): DayKey {
   const d = date.getDay();

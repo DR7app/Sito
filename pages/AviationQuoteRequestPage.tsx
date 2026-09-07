@@ -56,7 +56,11 @@ const AviationQuoteRequestPage: React.FC = () => {
     passenger_count: 1,
     has_stops: false,
     intermediate_stops: '',
-    luggage_details: '',
+    // Bagagli: due tendine. Prima era un campo libero e il cliente doveva
+    // scrivere tutto a mano ("2 trolley + 2 valigie grandi"), con il
+    // risultato che meta' delle richieste arrivava senza peso.
+    luggage_count: 0,
+    luggage_weight: '',
     budget_indicative: '',
     aircraft_category: (isHelicopter ? 'helicopter' : 'jet') as 'jet' | 'helicopter' | 'any',
     notes: ''
@@ -75,6 +79,27 @@ const AviationQuoteRequestPage: React.FC = () => {
   const serviceType = copy
     ? (isHelicopter ? copy.service_label_helicopter : copy.service_label_jet)
     : (isHelicopter ? 'Elicottero' : 'Jet Privato');
+
+  /** Le voci del peso: una riga di Centralina, separata da virgole. */
+  function pesiBagaglio(): string[] {
+    return tx('field_luggage_weight_options_it', 'field_luggage_weight_options_en')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+
+  /** Bagagli in una riga sola, per il messaggio e per la scheda. */
+  function bagagliTesto(): string {
+    const n = Number(formData.luggage_count) || 0;
+    if (n <= 0) return lang === 'it' ? 'Nessun bagaglio' : 'No luggage';
+    const quanti = n > 10
+      ? tx('field_luggage_count_max_option_it', 'field_luggage_count_max_option_en')
+      : String(n);
+    const parola = lang === 'it' ? (n === 1 ? 'bagaglio' : 'bagagli') : (n === 1 ? 'bag' : 'bags');
+    return formData.luggage_weight
+      ? `${quanti} ${parola} · ${formData.luggage_weight}`
+      : `${quanti} ${parola}`;
+  }
 
   /** Il nome della tipologia scelta, con le parole della Centralina. */
   function tipoAeromobileLabel(): string {
@@ -112,7 +137,7 @@ const AviationQuoteRequestPage: React.FC = () => {
       '{orario_ritorno}': formData.return_time || '',
       '{flessibile}': formData.is_flexible ? si : no,
       '{tappe}': formData.has_stops ? (formData.intermediate_stops || si) : no,
-      '{bagagli}': formData.luggage_details || '',
+      '{bagagli}': bagagliTesto(),
       '{budget}': formData.budget_indicative || '',
       '{aeromobile}': tipoAeromobileLabel(),
       // Optional whole-line tokens (collapse to empty when field blank).
@@ -151,6 +176,9 @@ const AviationQuoteRequestPage: React.FC = () => {
           preferred_aircraft: mezzoScelto,
           lang,
           ...formData,
+          // La riga leggibile la costruisce il modulo, cosi' messaggio e
+          // scheda del gestionale dicono la stessa cosa.
+          luggage_details: bagagliTesto(),
         }),
       });
       if (!res.ok) throw new Error(`server ${res.status}`);
@@ -481,19 +509,41 @@ const AviationQuoteRequestPage: React.FC = () => {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {tx('field_luggage_label_it', 'field_luggage_label_en')}
-              </label>
-              <p className="-mt-1 mb-2 text-xs text-gray-500">
-                {tx('field_luggage_placeholder_it', 'field_luggage_placeholder_en')}
-              </p>
-              <input
-                type="text"
-                value={formData.luggage_details}
-                onChange={(e) => setFormData({ ...formData, luggage_details: e.target.value })}
-                className={campoCls}
-              />
+            {/* Bagagli: si scelgono, non si scrivono. Numero e peso sono due
+                tendine; il testo per il messaggio lo compone bagagliTesto(). */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {tx('field_luggage_count_label_it', 'field_luggage_count_label_en')}
+                </label>
+                <select
+                  value={formData.luggage_count}
+                  onChange={(e) => setFormData({ ...formData, luggage_count: parseInt(e.target.value, 10) })}
+                  className={campoCls}
+                >
+                  {Array.from({ length: 11 }, (_, i) => (
+                    <option key={i} value={i}>{i}</option>
+                  ))}
+                  <option value={11}>{tx('field_luggage_count_max_option_it', 'field_luggage_count_max_option_en')}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {tx('field_luggage_weight_label_it', 'field_luggage_weight_label_en')}
+                </label>
+                <select
+                  value={formData.luggage_weight}
+                  onChange={(e) => setFormData({ ...formData, luggage_weight: e.target.value })}
+                  disabled={Number(formData.luggage_count) <= 0}
+                  className={`${campoCls} disabled:opacity-40`}
+                >
+                  <option value="">{tx('field_luggage_weight_placeholder_it', 'field_luggage_weight_placeholder_en')}</option>
+                  {pesiBagaglio().map((peso) => (
+                    <option key={peso} value={peso}>{peso}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Budget: campo di testo, non numerico. Qui si scrive una

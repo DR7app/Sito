@@ -43,7 +43,9 @@ interface QuoteBody {
   passenger_count?: number;
   has_stops?: boolean;
   intermediate_stops?: string;
-  luggage_details?: string;      // "2 trolley + 2 valigie grandi"
+  luggage_details?: string;      // riga leggibile: "3 bagagli · 20-23 kg"
+  luggage_count?: number;        // quante valigie (tendina del modulo)
+  luggage_weight?: string;       // fascia di peso scelta, non un numero
   budget_indicative?: string;    // testo: quasi sempre una forbice
   aircraft_category?: "jet" | "helicopter" | "any";
   preferred_aircraft?: string;   // il mezzo scelto a catalogo, se arriva da li'
@@ -179,8 +181,10 @@ export const handler: Handler = async (event) => {
     needs_hostess: false,
     is_vip: false,
     vip_details: "",
-    luggage_count: 0,
-    luggage_weight: "",
+    // Numero e peso arrivano dalle tendine del modulo: prima erano finti
+    // (0 e stringa vuota) e la scheda del gestionale restava muta.
+    luggage_count: Number(q.luggage_count) || 0,
+    luggage_weight: q.luggage_weight || "",
     special_equipment: "",
     bulky_luggage: false,
     // Colonne aggiunte il 07/09/2026 insieme alle nuove domande del modulo.

@@ -9,7 +9,8 @@ import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import type { Service } from './CarWashServicesPage';
 import { useCarWashServices } from '../hooks/useCarWashServices';
 import { seatListLabel } from '../utils/seatPlan';
-import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate, orariLavaggioPronti } from '../utils/lavaggioHours';
+import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate, orariLavaggioPronti, riassuntoSettimana } from '../utils/lavaggioHours';
+import CalendarioLavaggio from '../components/ui/CalendarioLavaggio';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 import { dataRoma } from '../utils/oraRoma';
@@ -49,6 +50,7 @@ const CarWashBookingPage: React.FC = () => {
   // questo stato la pagina resterebbe sui default del codice (9-13 / 15-19)
   // e mostrerebbe orari che in Centralina Pro non esistono piu'.
   const [orariPronti, setOrariPronti] = useState(false);
+  const [calendarioAperto, setCalendarioAperto] = useState(false);
   useEffect(() => {
     let vivo = true;
     orariLavaggioPronti().then(() => { if (vivo) setOrariPronti(true); });
@@ -683,6 +685,11 @@ const CarWashBookingPage: React.FC = () => {
       setFormData(prev => ({ ...prev, appointmentDate: '' }));
     }
   };
+
+  /** Durata totale di quello che si sta prenotando, in minuti. */
+  const durataTotaleMinuti = Math.round(60 * (hasCartItems
+    ? cartItems.reduce((total, item) => total + getServiceDurationById(item.serviceId) * item.quantity, 0)
+    : getServiceDurationById(selectedService?.id || '')));
 
   const getAllTimeSlotsWithAvailability = () => {
     if ((!selectedService && !hasCartItems) || !formData.appointmentDate) return [];
@@ -1814,73 +1821,47 @@ const CarWashBookingPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-white mb-4">
                 {t({ it: 'Data e Ora Appuntamento', en: 'Appointment Date & Time' })}
               </h2>
+              {/* Gli orari erano scritti qui a mano ("Lun-Ven 9-13 / 15-19")
+                  e restavano quelli anche dopo averli cambiati in Centralina.
+                  Ora la riga si compone dalla configurazione. */}
               <div className="mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700">
                 <p className="text-sm text-gray-300">
                   <span className="font-semibold text-white">
                     {t({ it: 'Orari di apertura:', en: 'Opening hours:' })}
                   </span>
                   {' '}
-                  {t({ it: 'Lun-Ven 9:00-13:00 / 15:00-19:00 | Sabato 9:00-17:00', en: 'Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM | Saturday 9:00-5:00 PM' })}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {t({ it: 'Chiusi la domenica', en: 'Closed on Sundays' })}
+                  {orariPronti ? riassuntoSettimana(lang === 'it' ? 'it' : 'en') : '…'}
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Data', en: 'Date' })} *
-                  </label>
-                  <input
-                    type="date"
-                    name="appointmentDate"
-                    value={formData.appointmentDate}
-                    onChange={handleChange}
-                    onBlur={handleDateBlur}
-                    min={minDate}
-                    required
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    style={{ colorScheme: 'dark' }}
-                  />
-                  {errors.appointmentDate && <p className="text-xs text-red-400 mt-1 font-semibold">{errors.appointmentDate}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Ora', en: 'Time' })} *
-                  </label>
-                  {formData.appointmentDate && !bookingsLoading && getAvailableTimeSlots().length === 0 ? (
-                    <div className="w-full bg-red-900/30 border border-red-500/50 rounded-md p-3 text-center">
-                      <p className="text-red-400 font-bold text-sm">
-                        {t({ it: 'SOLD OUT — Nessun orario disponibile', en: 'SOLD OUT — No time slots available' })}
-                      </p>
-                      <p className="text-gray-400 text-xs mt-1">
-                        {t({ it: 'Prova un\'altra data', en: 'Try another date' })}
-                      </p>
-                    </div>
-                  ) : (
-                    <select
-                      name="appointmentTime"
-                      value={formData.appointmentTime}
-                      onChange={handleChange}
-                      required
-                      className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      <option value="">
-                        {t({ it: 'Seleziona un orario', en: 'Select a time' })}
-                      </option>
-                      {getAllTimeSlotsWithAvailability()
-                        .filter(slot => slot.available)
-                        .map(slot => (
-                          <option key={slot.time} value={slot.time}>
-                            {slot.time}
-                          </option>
-                        ))}
-                    </select>
-                  )}
-                  {errors.appointmentTime && <p className="text-xs text-red-400 mt-1 font-semibold">{errors.appointmentTime}</p>}
-                </div>
-              </div>
+              {/* Prima l'orario, poi il giorno: chi ha un orario in testa non
+                  deve aprire i giorni uno per uno per trovarlo. */}
+              <button
+                type="button"
+                onClick={() => setCalendarioAperto(true)}
+                className="w-full border border-gray-700 bg-gray-800 p-4 text-left transition-colors hover:border-white"
+              >
+                {formData.appointmentDate && formData.appointmentTime ? (
+                  <>
+                    <span className="block text-white capitalize">
+                      {new Date(`${formData.appointmentDate}T12:00:00`).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { weekday: 'long', day: '2-digit', month: 'long' })}
+                      {' · '}{formData.appointmentTime}
+                    </span>
+                    <span className="mt-1 block text-xs text-gray-400">
+                      {t({ it: 'Tocca per cambiare', en: 'Tap to change' })}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block text-white">{t({ it: 'Scegli orario e giorno *', en: 'Pick time and day *' })}</span>
+                    <span className="mt-1 block text-xs text-gray-400">
+                      {t({ it: "Prima l'orario, poi i giorni in cui è libero", en: 'Time first, then the days it is free' })}
+                    </span>
+                  </>
+                )}
+              </button>
+              {(errors.appointmentDate || errors.appointmentTime) && (
+                <p className="text-xs text-red-400 mt-2 font-semibold">{errors.appointmentDate || errors.appointmentTime}</p>
+              )}
             </div>
 
             {/* ─── Supercar / Icon Experience: vehicle picker ──────────
@@ -2358,6 +2339,19 @@ const CarWashBookingPage: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CalendarioLavaggio
+        aperto={calendarioAperto}
+        onClose={() => setCalendarioAperto(false)}
+        durataMinuti={durataTotaleMinuti}
+        minDate={minDate}
+        bloccato={(ymd) => !!blockedRangeFor(ymd)}
+        oraIniziale={formData.appointmentTime}
+        onConferma={(data, ora) => {
+          setFormData(prev => ({ ...prev, appointmentDate: data, appointmentTime: ora }));
+          setErrors(prev => ({ ...prev, appointmentDate: '', appointmentTime: '' }));
+        }}
+      />
     </div>
   );
 };

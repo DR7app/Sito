@@ -220,3 +220,43 @@ export function describeDayHours(date: Date, lang: 'it' | 'en' = 'it'): string {
   const fmt = day.windows.map((w) => `${w.start}-${w.end}`).join(' / ');
   return (lang === 'it' ? 'Aperto: ' : 'Open: ') + fmt;
 }
+
+
+/**
+ * Gli orari della settimana in una riga sola, raggruppando i giorni uguali:
+ * "Lun-Sab 08:30-19:00 · Domenica chiuso".
+ *
+ * Serve alla pagina di prenotazione, che prima aveva la frase scritta a mano
+ * ("Lun-Ven 9:00-13:00 / 15:00-19:00") e continuava a mostrarla anche dopo
+ * che in Centralina gli orari erano cambiati.
+ */
+export function riassuntoSettimana(lang: 'it' | 'en' = 'it'): string {
+  const ordine: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const nomi: Record<DayKey, { it: string; en: string }> = {
+    mon: { it: 'Lun', en: 'Mon' }, tue: { it: 'Mar', en: 'Tue' }, wed: { it: 'Mer', en: 'Wed' },
+    thu: { it: 'Gio', en: 'Thu' }, fri: { it: 'Ven', en: 'Fri' }, sat: { it: 'Sab', en: 'Sat' },
+    sun: { it: 'Dom', en: 'Sun' },
+  };
+  const chiuso = lang === 'it' ? 'chiuso' : 'closed';
+  const testoGiorno = (k: DayKey): string => {
+    const d = CONFIG.hours[k];
+    if (!d || !d.is_open || d.windows.length === 0) return chiuso;
+    return d.windows.map((w) => `${w.start}-${w.end}`).join(' / ');
+  };
+
+  const gruppi: { da: DayKey; a: DayKey; testo: string }[] = [];
+  for (const k of ordine) {
+    const testo = testoGiorno(k);
+    const ultimo = gruppi[gruppi.length - 1];
+    if (ultimo && ultimo.testo === testo) ultimo.a = k;
+    else gruppi.push({ da: k, a: k, testo });
+  }
+  return gruppi
+    .map((g) => {
+      const etichetta = g.da === g.a
+        ? nomi[g.da][lang]
+        : `${nomi[g.da][lang]}-${nomi[g.a][lang]}`;
+      return `${etichetta} ${g.testo}`;
+    })
+    .join(' · ');
+}

@@ -2294,16 +2294,32 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const daysForClamp = Math.max(1, billingDaysCalc);
     const maxTotal = maxDaily != null ? maxDaily * daysForClamp : null;
     const minTotal = minDaily != null ? minDaily * daysForClamp : null;
-    let afterCoeffNoExp = subtotalNoExperience * combinedCoeff;
-    if (maxTotal != null && afterCoeffNoExp > maxTotal + 0.5) {
-      afterCoeffNoExp = maxTotal;
+    // 07/09/2026 — il minimo e il massimo di Centralina Pro sono €/giorno
+    // DELLA VETTURA, quindi si applicano alla riga vettura, non al pacchetto.
+    //
+    // Prima si confrontava il minimo con vettura + assicurazione + lavaggio
+    // tutti insieme: con 600 euro di Kasko dentro, il pacchetto stava sempre
+    // sopra la soglia e il minimo non mordeva mai. Una Huracan con base 250 e
+    // minimo 350 e' uscita a 190 euro di noleggio al giorno (prenotazione
+    // Runchina del 06/09, coefficiente 0,762) senza che niente la fermasse.
+    //
+    // Ora: si applica il coefficiente alla vettura, si porta la vettura
+    // dentro i suoi limiti, e SOLO DOPO si aggiungono gli extra (anch'essi
+    // moltiplicati per il coefficiente, se gli interruttori di Centralina Pro
+    // dicono di includerli). Stessa regola in Preventivi e Prenotazioni del
+    // gestionale: i tre punti devono dare lo stesso numero.
+    const extrasInCoeffAmount = subtotalNoExperience - calculatedRentalCost;
+    let rentalAfterCoeff = calculatedRentalCost * combinedCoeff;
+    if (maxTotal != null && rentalAfterCoeff > maxTotal + 0.5) {
+      rentalAfterCoeff = maxTotal;
       clampHit = 'max';
       clampLimitDaily = maxDaily;
-    } else if (minTotal != null && afterCoeffNoExp < minTotal - 0.5) {
-      afterCoeffNoExp = minTotal;
+    } else if (minTotal != null && rentalAfterCoeff < minTotal - 0.5) {
+      rentalAfterCoeff = minTotal;
       clampHit = 'min';
       clampLimitDaily = minDaily;
     }
+    const afterCoeffNoExp = rentalAfterCoeff + extrasInCoeffAmount * combinedCoeff;
     // 2026-05-18: HARD FLOOR rimosso. Era pensato come rete di
     // sicurezza quando Centralina min_price era vuoto, ma scavalcava
     // anche quando l'admin aveva configurato un min_daily corretto

@@ -285,6 +285,32 @@ export const handler: Handler = async (event) => {
     });
     messaggioInviato = res.ok;
     if (!res.ok) console.error("[aviation-quote] WhatsApp non inviato:", res.status, await res.text().catch(() => ""));
+
+    // Lo stesso riepilogo va anche al CLIENTE: chi chiede un preventivo deve
+    // vedere sul suo WhatsApp cosa ha chiesto. Il numero e' quello della sua
+    // scheda (il numero con cui e' registrato); solo se non e' registrato si
+    // usa quello scritto nel modulo. L'email si cerca con ilike: con .eq una
+    // maiuscola di differenza faceva fallire il collegamento.
+    let telefonoCliente = (q.customer_phone || "").trim();
+    if (q.customer_email) {
+      const { data: scheda } = await supabase
+        .from("customers_extended")
+        .select("telefono")
+        .ilike("email", q.customer_email.trim())
+        .limit(1)
+        .maybeSingle();
+      if (scheda?.telefono) telefonoCliente = String(scheda.telefono);
+    }
+    if (telefonoCliente) {
+      const resCliente = await fetch(`${base}/.netlify/functions/send-whatsapp-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customPhone: telefonoCliente, customMessage: testo }),
+      });
+      if (!resCliente.ok) console.error("[aviation-quote] copia al cliente non inviata:", resCliente.status);
+    } else {
+      console.warn("[aviation-quote] nessun numero per il cliente: copia non inviata");
+    }
   } catch (e) {
     console.error("[aviation-quote] invio WhatsApp fallito:", e);
   }

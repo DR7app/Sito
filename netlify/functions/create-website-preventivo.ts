@@ -233,6 +233,21 @@ const handler: Handler = async (event) => {
         body: JSON.stringify({ customMessage: msg }),
       }).catch(() => {})
 
+      // Lo stesso riepilogo va al CLIENTE, sul numero della sua scheda
+      // (customers_extended.telefono, quello con cui e' registrato): chiedere
+      // un preventivo e non ricevere niente sembrava una richiesta persa.
+      // Via l'ultima riga, che parla del pannello admin.
+      // Sulle richieste "no cauzione" il cliente riceve gia' il messaggio
+      // dedicato qui sotto: non gliene mandiamo due.
+      if (preventivo.customer_phone && !isNoCauzione) {
+        const msgCliente = msg.replace(/\n+Gestisci dal pannello admin > Preventivi$/, '')
+        await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customPhone: preventivo.customer_phone, customMessage: msgCliente }),
+        }).catch(() => {})
+      }
+
       // For no-cauzioni requests, also notify boss directly
       if (isNoCauzione) {
         const bossMsg = `${title}\n\n`

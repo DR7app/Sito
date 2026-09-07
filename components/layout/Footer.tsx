@@ -137,7 +137,7 @@ const Footer: React.FC = () => {
                   <button
                     onClick={() => setLanguage('it')}
                     aria-label="Italiano"
-                    className={`transition-colors duration-500 ease-editorial ${lang === 'it' ? 'text-white' : 'hover:text-white'}`}
+                    className={`transition-colors duration-500 ease-editorial ${t({ it: 'text-white', en: 'hover:text-white' })}`}
                   >IT</button>
                   <span className="text-gray-700">/</span>
                   <button

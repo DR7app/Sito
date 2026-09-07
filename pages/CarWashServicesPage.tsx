@@ -173,7 +173,7 @@ const CarWashServicesPage: React.FC = () => {
   const handleTargaSearch = useCallback(async () => {
     const plate = normalizePlate(targaInput);
     if (!isValidItalianPlate(plate)) {
-      setTargaError(lang === 'it' ? 'Targa non valida. Inserisci una targa italiana (es. EX117YA).' : 'Invalid plate. Enter an Italian plate (e.g. EX117YA).');
+      setTargaError(t({ it: 'Targa non valida. Inserisci una targa italiana (es. EX117YA).', en: 'Invalid plate. Enter an Italian plate (e.g. EX117YA).' }));
       return;
     }
     setTargaLoading(true);
@@ -214,7 +214,7 @@ const CarWashServicesPage: React.FC = () => {
         setWashCategory(auto);
       }
     } catch (err: any) {
-      setTargaError(err.message || (lang === 'it' ? 'Errore nella ricerca.' : 'Search error.'));
+      setTargaError(err.message || (t({ it: 'Errore nella ricerca.', en: 'Search error.' })));
     } finally {
       setTargaLoading(false);
     }
@@ -486,8 +486,8 @@ const CarWashServicesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-black pt-32 pb-32">
       <SEOHead
-        title={lang === 'it' ? 'Autolavaggio Premium Sardegna | Detailing & Cura di Lusso | DR7 Lavaggio & Meccanica' : 'Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Car Wash & Mechanics'}
-        description={lang === 'it' ? 'Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Lavaggio & Meccanica.' : 'Professional car wash, premium detailing, ceramic coating and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Car Wash & Mechanics.'}
+        title={t({ it: 'Autolavaggio Premium Sardegna | Detailing & Cura di Lusso | DR7 Lavaggio & Meccanica', en: 'Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Car Wash & Mechanics' })}
+        description={t({ it: 'Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Lavaggio & Meccanica.', en: 'Professional car wash, premium detailing, ceramic coating and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Car Wash & Mechanics.' })}
         canonical="/prime-wash"
         jsonLd={{ '@type': 'AutoWash', name: 'DR7 Lavaggio & Meccanica', url: 'https://dr7.app/prime-wash', address: { '@type': 'PostalAddress', addressLocality: 'Cagliari', addressRegion: 'CA', addressCountry: 'IT' }, priceRange: '$$' }}
       />
@@ -721,7 +721,7 @@ const CarWashServicesPage: React.FC = () => {
                           }}
                           className="w-full bg-transparent border-2 border-white text-white px-3 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
                         >
-                          {lang === 'it' ? 'da' : 'from'} €{formatPrice(lowestPrice)}
+                          {t({ it: 'da', en: 'from' })} €{formatPrice(lowestPrice)}
                         </button>
                       )}
                     </div>
@@ -907,7 +907,7 @@ const CarWashServicesPage: React.FC = () => {
                             onClick={() => setSeatPicker({ service: item.service, index, initial: item.seats || [], fromUpsell: false })}
                             className="text-xs px-3 py-1.5 border border-gray-600 text-white hover:bg-gray-800 transition-colors"
                           >
-                            {lang === 'it' ? 'Modifica sedili' : 'Edit seats'}
+                            {t({ it: 'Modifica sedili', en: 'Edit seats' })}
                           </button>
                         ) : (
                           <div className="flex items-center gap-3">
@@ -1141,15 +1141,15 @@ const CarWashServicesPage: React.FC = () => {
                   className="w-full bg-white text-black py-4 font-bold text-lg hover:bg-gray-200 transition-colors"
                 >
                   {upsellStep === 1
-                    ? (lang === 'it' ? 'Continua' : 'Continue')
-                    : `${lang === 'it' ? 'Rivedi carrello' : 'Review Cart'} — €${getCartTotal().toFixed(2)}`
+                    ? (t({ it: 'Continua', en: 'Continue' }))
+                    : `${t({ it: 'Rivedi carrello', en: 'Review Cart' })} — €${getCartTotal().toFixed(2)}`
                   }
                 </button>
                 <button
                   onClick={handleSkipUpsell}
                   className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
                 >
-                  {lang === 'it' ? 'Salta' : 'Skip'}
+                  {t({ it: 'Salta', en: 'Skip' })}
                 </button>
               </div>
             </div>

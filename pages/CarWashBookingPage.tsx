@@ -783,35 +783,35 @@ const CarWashBookingPage: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     // Required: Nome e cognome, Telefono, Email
-    if (!formData.fullName) newErrors.fullName = lang === 'it' ? 'Il nome è obbligatorio' : 'Name is required';
-    if (!formData.email) newErrors.email = lang === 'it' ? 'L\'email è obbligatoria' : 'Email is required';
+    if (!formData.fullName) newErrors.fullName = t({ it: 'Il nome è obbligatorio', en: 'Name is required' });
+    if (!formData.email) newErrors.email = t({ it: 'L\'email è obbligatoria', en: 'Email is required' });
     if (!formData.phone) {
-      newErrors.phone = lang === 'it' ? 'Il telefono è obbligatorio' : 'Phone is required';
+      newErrors.phone = t({ it: 'Il telefono è obbligatorio', en: 'Phone is required' });
     } else if (!validateItalianPhone(formData.phone)) {
-      newErrors.phone = lang === 'it' ? 'Formato telefono non valido' : 'Invalid phone format';
+      newErrors.phone = t({ it: 'Formato telefono non valido', en: 'Invalid phone format' });
     }
     // Codice Fiscale + indirizzo OBBLIGATORI: servono per emettere la fattura
     // (il SDI rifiuta senza CF + indirizzo del cliente). Per i clienti loggati
     // questi campi sono già precompilati dal loro profilo (vedi prefill da
     // customers_extended) → non li reinseriscono una seconda volta.
     if (!formData.codiceFiscale.trim()) {
-      newErrors.codiceFiscale = lang === 'it' ? 'Il codice fiscale è obbligatorio per la fattura' : 'Codice Fiscale is required for the invoice';
+      newErrors.codiceFiscale = t({ it: 'Il codice fiscale è obbligatorio per la fattura', en: 'Codice Fiscale is required for the invoice' });
     } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
-      newErrors.codiceFiscale = lang === 'it' ? 'Codice fiscale non valido (16 caratteri)' : 'Invalid Codice Fiscale (16 characters)';
+      newErrors.codiceFiscale = t({ it: 'Codice fiscale non valido (16 caratteri)', en: 'Invalid Codice Fiscale (16 characters)' });
     }
-    if (!formData.indirizzo.trim()) newErrors.indirizzo = lang === 'it' ? 'L\'indirizzo è obbligatorio per la fattura' : 'Address is required for the invoice';
-    if (!formData.cittaResidenza.trim()) newErrors.cittaResidenza = lang === 'it' ? 'La città è obbligatoria per la fattura' : 'City is required for the invoice';
-    if (!formData.codicePostale.trim()) newErrors.codicePostale = lang === 'it' ? 'Il CAP è obbligatorio per la fattura' : 'Postal code is required for the invoice';
-    if (!formData.appointmentDate) newErrors.appointmentDate = lang === 'it' ? 'La data è obbligatoria' : 'Date is required';
-    if (!formData.appointmentTime) newErrors.appointmentTime = lang === 'it' ? 'L\'ora è obbligatoria' : 'Time is required';
+    if (!formData.indirizzo.trim()) newErrors.indirizzo = t({ it: 'L\'indirizzo è obbligatorio per la fattura', en: 'Address is required for the invoice' });
+    if (!formData.cittaResidenza.trim()) newErrors.cittaResidenza = t({ it: 'La città è obbligatoria per la fattura', en: 'City is required for the invoice' });
+    if (!formData.codicePostale.trim()) newErrors.codicePostale = t({ it: 'Il CAP è obbligatorio per la fattura', en: 'Postal code is required for the invoice' });
+    if (!formData.appointmentDate) newErrors.appointmentDate = t({ it: 'La data è obbligatoria', en: 'Date is required' });
+    if (!formData.appointmentTime) newErrors.appointmentTime = t({ it: 'L\'ora è obbligatoria', en: 'Time is required' });
 
     // Validate date is not in the past (strict comparison with today's date string)
     if (formData.appointmentDate) {
       if (formData.appointmentDate < minDate) {
-        newErrors.appointmentDate = lang === 'it' ? 'La data non può essere nel passato. Seleziona da oggi in poi.' : 'Date cannot be in the past. Select from today onwards.';
+        newErrors.appointmentDate = t({ it: 'La data non può essere nel passato. Seleziona da oggi in poi.', en: 'Date cannot be in the past. Select from today onwards.' });
       } else {
         const blk = blockedRangeFor(formData.appointmentDate);
-        if (blk) newErrors.appointmentDate = blk.message || (lang === 'it' ? 'Prenotazioni non disponibili in questa data.' : 'Bookings are not available on this date.');
+        if (blk) newErrors.appointmentDate = blk.message || (t({ it: 'Prenotazioni non disponibili in questa data.', en: 'Bookings are not available on this date.' }));
       }
     }
 
@@ -822,11 +822,11 @@ const CarWashBookingPage: React.FC = () => {
         const [year, month, day] = formData.appointmentDate.split('-').map(Number);
         const dayOfWeek = new Date(year, month - 1, day).getDay();
         if (dayOfWeek === 0) {
-          newErrors.appointmentDate = lang === 'it' ? 'Siamo chiusi la domenica' : 'We are closed on Sundays';
+          newErrors.appointmentDate = t({ it: 'Siamo chiusi la domenica', en: 'We are closed on Sundays' });
         } else if (isHoliday(formData.appointmentDate)) {
-          newErrors.appointmentDate = lang === 'it' ? 'Siamo chiusi nei giorni festivi' : 'We are closed on holidays';
+          newErrors.appointmentDate = t({ it: 'Siamo chiusi nei giorni festivi', en: 'We are closed on holidays' });
         } else {
-          newErrors.appointmentTime = lang === 'it' ? 'Orario disponibile: Lun-Ven 9:00-13:00 / 15:00-19:00, Sabato 9:00-17:00 (minimo 2 ore in anticipo)' : 'Available hours: Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM, Saturday 9:00-5:00 PM (minimum 2 hours in advance)';
+          newErrors.appointmentTime = t({ it: 'Orario disponibile: Lun-Ven 9:00-13:00 / 15:00-19:00, Sabato 9:00-17:00 (minimo 2 ore in anticipo)', en: 'Available hours: Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM, Saturday 9:00-5:00 PM (minimum 2 hours in advance)' });
         }
       }
     }
@@ -1247,7 +1247,7 @@ const CarWashBookingPage: React.FC = () => {
         const hasBalance = await hasSufficientBalance(user.id, totalAmount);
         if (!hasBalance) {
           clearTimeout(safetyTimer);
-          setPaymentError(lang === 'it' ? 'Credito insufficiente' : 'Insufficient credit');
+          setPaymentError(t({ it: 'Credito insufficiente', en: 'Insufficient credit' }));
           isSubmittingRef.current = false;
           setIsProcessing(false);
           return;
@@ -1543,7 +1543,7 @@ const CarWashBookingPage: React.FC = () => {
       <div className="min-h-screen bg-black pt-32 pb-16 px-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">{lang === 'it' ? 'Caricamento...' : 'Loading...'}</p>
+          <p className="text-white">{t({ it: 'Caricamento...', en: 'Loading...' })}</p>
         </div>
       </div>
     );
@@ -1556,7 +1556,7 @@ const CarWashBookingPage: React.FC = () => {
         <div className="container mx-auto max-w-4xl flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-dr7-gold mx-auto mb-4"></div>
-            <p className="text-white text-lg">{lang === 'it' ? 'Caricamento...' : 'Loading...'}</p>
+            <p className="text-white text-lg">{t({ it: 'Caricamento...', en: 'Loading...' })}</p>
           </div>
         </div>
       </div>
@@ -1575,7 +1575,7 @@ const CarWashBookingPage: React.FC = () => {
               </svg>
             </div>
             <h2 className="text-3xl font-bold text-white mb-4">
-              {lang === 'it' ? 'Accesso Richiesto' : 'Login Required'}
+              {t({ it: 'Accesso Richiesto', en: 'Login Required' })}
             </h2>
             <p className="text-gray-400 mb-8">
               {lang === 'it'
@@ -1587,13 +1587,13 @@ const CarWashBookingPage: React.FC = () => {
                 onClick={() => navigate('/signin', { state: { from: location.pathname } })}
                 className="px-8 py-3 bg-dr7-gold text-black font-bold hover:bg-dr7-gold/90 transition-colors"
               >
-                {lang === 'it' ? 'Accedi' : 'Login'}
+                {t({ it: 'Accedi', en: 'Login' })}
               </button>
               <button
                 onClick={() => navigate('/signup', { state: { from: location.pathname } })}
                 className="px-8 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors"
               >
-                {lang === 'it' ? 'Registrati' : 'Sign Up'}
+                {t({ it: 'Registrati', en: 'Sign Up' })}
               </button>
             </div>
           </div>
@@ -1620,12 +1620,12 @@ const CarWashBookingPage: React.FC = () => {
               </svg>
             </button>
             <h1 className="text-4xl font-bold text-white">
-              {lang === 'it' ? 'Prenota il Servizio' : 'Book Service'}
+              {t({ it: 'Prenota il Servizio', en: 'Book Service' })}
             </h1>
           </div>
           {hasCartItems ? (
             <div className="mb-8">
-              <p className="text-gray-400 mb-3">{lang === 'it' ? 'Il tuo carrello:' : 'Your cart:'}</p>
+              <p className="text-gray-400 mb-3">{t({ it: 'Il tuo carrello:', en: 'Your cart:' })}</p>
               <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 space-y-2">
                 {cartItems.map((item, index) => (
                   <div key={index} className="flex justify-between items-center text-white">
@@ -1643,7 +1643,7 @@ const CarWashBookingPage: React.FC = () => {
                   </div>
                 ))}
                 <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between items-center">
-                  <span className="text-white font-bold">{lang === 'it' ? 'Totale' : 'Total'}</span>
+                  <span className="text-white font-bold">{t({ it: 'Totale', en: 'Total' })}</span>
                   <span className="text-white font-bold text-xl">€{cartTotal.toFixed(2)}</span>
                 </div>
               </div>
@@ -1658,7 +1658,7 @@ const CarWashBookingPage: React.FC = () => {
             {/* Customer Info */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-6">
-                {lang === 'it' ? 'Informazioni Cliente' : 'Customer Information'}
+                {t({ it: 'Informazioni Cliente', en: 'Customer Information' })}
               </h2>
 
               {/* Client search removed - form auto-fills from logged-in user data */}
@@ -1666,7 +1666,7 @@ const CarWashBookingPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Nome Completo' : 'Full Name'} *
+                    {t({ it: 'Nome Completo', en: 'Full Name' })} *
                   </label>
                   <input
                     type="text"
@@ -1690,7 +1690,7 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Telefono' : 'Phone'} *
+                    {t({ it: 'Telefono', en: 'Phone' })} *
                   </label>
                   <input
                     type="tel"
@@ -1704,8 +1704,8 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Codice Fiscale *' : 'Tax Code *'}
-                    <span className="text-xs text-gray-500 font-normal ml-1">{lang === 'it' ? '(necessario per la fattura)' : '(required for the invoice)'}</span>
+                    {t({ it: 'Codice Fiscale *', en: 'Tax Code *' })}
+                    <span className="text-xs text-gray-500 font-normal ml-1">{t({ it: '(necessario per la fattura)', en: '(required for the invoice)' })}</span>
                   </label>
                   <input
                     type="text"
@@ -1720,21 +1720,21 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Indirizzo *' : 'Address *'}
+                    {t({ it: 'Indirizzo *', en: 'Address *' })}
                   </label>
                   <input
                     type="text"
                     name="indirizzo"
                     value={formData.indirizzo}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'Via Roma' : 'Main Street'}
+                    placeholder={t({ it: 'Via Roma', en: 'Main Street' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
                   />
                   {errors.indirizzo && <p className="text-xs text-red-400 mt-1">{errors.indirizzo}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Numero Civico' : 'Civic Number'}
+                    {t({ it: 'Numero Civico', en: 'Civic Number' })}
                   </label>
                   <input
                     type="text"
@@ -1747,21 +1747,21 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Città di Residenza *' : 'City *'}
+                    {t({ it: 'Città di Residenza *', en: 'City *' })}
                   </label>
                   <input
                     type="text"
                     name="cittaResidenza"
                     value={formData.cittaResidenza}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'Milano' : 'Milan'}
+                    placeholder={t({ it: 'Milano', en: 'Milan' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
                   />
                   {errors.cittaResidenza && <p className="text-xs text-red-400 mt-1">{errors.cittaResidenza}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'CAP *' : 'Postal Code *'}
+                    {t({ it: 'CAP *', en: 'Postal Code *' })}
                   </label>
                   <input
                     type="text"
@@ -1776,7 +1776,7 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Provincia' : 'Province'}
+                    {t({ it: 'Provincia', en: 'Province' })}
                   </label>
                   <input
                     type="text"
@@ -1795,24 +1795,24 @@ const CarWashBookingPage: React.FC = () => {
             {/* Appointment */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-4">
-                {lang === 'it' ? 'Data e Ora Appuntamento' : 'Appointment Date & Time'}
+                {t({ it: 'Data e Ora Appuntamento', en: 'Appointment Date & Time' })}
               </h2>
               <div className="mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700">
                 <p className="text-sm text-gray-300">
                   <span className="font-semibold text-white">
-                    {lang === 'it' ? 'Orari di apertura:' : 'Opening hours:'}
+                    {t({ it: 'Orari di apertura:', en: 'Opening hours:' })}
                   </span>
                   {' '}
-                  {lang === 'it' ? 'Lun-Ven 9:00-13:00 / 15:00-19:00 | Sabato 9:00-17:00' : 'Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM | Saturday 9:00-5:00 PM'}
+                  {t({ it: 'Lun-Ven 9:00-13:00 / 15:00-19:00 | Sabato 9:00-17:00', en: 'Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM | Saturday 9:00-5:00 PM' })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {lang === 'it' ? 'Chiusi la domenica' : 'Closed on Sundays'}
+                  {t({ it: 'Chiusi la domenica', en: 'Closed on Sundays' })}
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Data' : 'Date'} *
+                    {t({ it: 'Data', en: 'Date' })} *
                   </label>
                   <input
                     type="date"
@@ -1829,15 +1829,15 @@ const CarWashBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Ora' : 'Time'} *
+                    {t({ it: 'Ora', en: 'Time' })} *
                   </label>
                   {formData.appointmentDate && !bookingsLoading && getAvailableTimeSlots().length === 0 ? (
                     <div className="w-full bg-red-900/30 border border-red-500/50 rounded-md p-3 text-center">
                       <p className="text-red-400 font-bold text-sm">
-                        {lang === 'it' ? 'SOLD OUT — Nessun orario disponibile' : 'SOLD OUT — No time slots available'}
+                        {t({ it: 'SOLD OUT — Nessun orario disponibile', en: 'SOLD OUT — No time slots available' })}
                       </p>
                       <p className="text-gray-400 text-xs mt-1">
-                        {lang === 'it' ? 'Prova un\'altra data' : 'Try another date'}
+                        {t({ it: 'Prova un\'altra data', en: 'Try another date' })}
                       </p>
                     </div>
                   ) : (
@@ -1850,7 +1850,7 @@ const CarWashBookingPage: React.FC = () => {
                       style={{ colorScheme: 'dark' }}
                     >
                       <option value="">
-                        {lang === 'it' ? 'Seleziona un orario' : 'Select a time'}
+                        {t({ it: 'Seleziona un orario', en: 'Select a time' })}
                       </option>
                       {getAllTimeSlotsWithAvailability()
                         .filter(slot => slot.available)
@@ -1875,8 +1875,8 @@ const CarWashBookingPage: React.FC = () => {
               <div className="bg-gray-900/50 border border-yellow-500/40 rounded-lg p-8" data-supercar-picker>
                 <h2 className="text-2xl font-bold text-white mb-2">
                   {experienceTier === 'hypercar'
-                    ? (lang === 'it' ? 'Scegli la tua hypercar' : 'Choose your hypercar')
-                    : (lang === 'it' ? 'Scegli la tua supercar' : 'Choose your supercar')}
+                    ? (t({ it: 'Scegli la tua hypercar', en: 'Choose your hypercar' }))
+                    : (t({ it: 'Scegli la tua supercar', en: 'Choose your supercar' }))}
                 </h2>
                 <p className="text-sm text-gray-400 mb-6">
                   {lang === 'it'
@@ -1891,7 +1891,7 @@ const CarWashBookingPage: React.FC = () => {
                       : 'Pick a date and time above first to see available cars.'}
                   </div>
                 ) : fleetLoading ? (
-                  <div className="text-sm text-gray-400">{lang === 'it' ? 'Caricamento flotta...' : 'Loading fleet...'}</div>
+                  <div className="text-sm text-gray-400">{t({ it: 'Caricamento flotta...', en: 'Loading fleet...' })}</div>
                 ) : supercarFleet.length === 0 ? (
                   <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm text-amber-300 space-y-1">
                     <p>
@@ -1954,10 +1954,10 @@ const CarWashBookingPage: React.FC = () => {
                               }`}
                             >
                               {isSelected
-                                ? (lang === 'it' ? 'Selezionata' : 'Selected')
+                                ? (t({ it: 'Selezionata', en: 'Selected' }))
                                 : vehicle.available
-                                  ? (lang === 'it' ? 'Disponibile' : 'Available')
-                                  : (lang === 'it' ? 'Occupata' : 'Busy')}
+                                  ? (t({ it: 'Disponibile', en: 'Available' }))
+                                  : (t({ it: 'Occupata', en: 'Busy' }))}
                             </span>
                           </div>
                           {!vehicle.available && !isSelected && vehicle.reason && (
@@ -1985,14 +1985,14 @@ const CarWashBookingPage: React.FC = () => {
             {/* Notes */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-6">
-                {lang === 'it' ? 'Note Aggiuntive' : 'Additional Notes'}
+                {t({ it: 'Note Aggiuntive', en: 'Additional Notes' })}
               </h2>
               <textarea
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
                 rows={4}
-                placeholder={lang === 'it' ? 'Richieste speciali o note...' : 'Special requests or notes...'}
+                placeholder={t({ it: 'Richieste speciali o note...', en: 'Special requests or notes...' })}
                 className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
               />
             </div>
@@ -2026,7 +2026,7 @@ const CarWashBookingPage: React.FC = () => {
             {serviceId !== 'scooter-wash' && (
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-6">
-                {lang === 'it' ? 'Codice Sconto' : 'Discount Code'}
+                {t({ it: 'Codice Sconto', en: 'Discount Code' })}
               </h2>
               {appliedDiscount ? (
                 <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-500/50 rounded-lg">
@@ -2091,7 +2091,7 @@ const CarWashBookingPage: React.FC = () => {
               )}
               <div className="flex justify-between items-center mb-6">
                 <span className="text-2xl font-bold text-white">
-                  {lang === 'it' ? 'Totale' : 'Total'}
+                  {t({ it: 'Totale', en: 'Total' })}
                 </span>
                 <span className="text-4xl font-bold text-white">€{calculateTotal().toFixed(2)}</span>
               </div>
@@ -2107,7 +2107,7 @@ const CarWashBookingPage: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
-                {lang === 'it' ? 'PROCEDI AL PAGAMENTO' : 'PROCEED TO PAYMENT'}
+                {t({ it: 'PROCEDI AL PAGAMENTO', en: 'PROCEED TO PAYMENT' })}
               </button>
             </div>
           </form>
@@ -2133,7 +2133,7 @@ const CarWashBookingPage: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-white">
-                  {lang === 'it' ? 'Completa il Pagamento' : 'Complete Payment'}
+                  {t({ it: 'Completa il Pagamento', en: 'Complete Payment' })}
                 </h2>
                 <button
                   onClick={handleCloseModal}
@@ -2146,7 +2146,7 @@ const CarWashBookingPage: React.FC = () => {
               <div className="mb-6 p-4 bg-gray-800 rounded-lg">
                 {hasCartItems ? (
                   <>
-                    <div className="text-sm text-gray-300 mb-2">{lang === 'it' ? 'Servizi:' : 'Services:'}</div>
+                    <div className="text-sm text-gray-300 mb-2">{t({ it: 'Servizi:', en: 'Services:' })}</div>
                     <div className="space-y-1 mb-3">
                       {cartItems.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm">
@@ -2167,7 +2167,7 @@ const CarWashBookingPage: React.FC = () => {
                   </>
                 ) : (
                   <div className="flex justify-between text-sm text-gray-300 mb-2">
-                    <span>{lang === 'it' ? 'Servizio' : 'Service'}:</span>
+                    <span>{t({ it: 'Servizio', en: 'Service' })}:</span>
                     <span className="text-white font-semibold">
                       {lang === 'it' ? selectedService?.name : selectedService?.nameEn}
                     </span>
@@ -2191,7 +2191,7 @@ const CarWashBookingPage: React.FC = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold text-white">
-                  <span>{lang === 'it' ? 'Totale' : 'Total'}:</span>
+                  <span>{t({ it: 'Totale', en: 'Total' })}:</span>
                   <span>€{calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
@@ -2199,7 +2199,7 @@ const CarWashBookingPage: React.FC = () => {
               {/* Payment Method Selector */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-300 mb-3">
-                  {lang === 'it' ? 'Metodo di Pagamento' : 'Payment Method'}
+                  {t({ it: 'Metodo di Pagamento', en: 'Payment Method' })}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -2212,11 +2212,11 @@ const CarWashBookingPage: React.FC = () => {
                   >
                     <div className="text-center">
                       <div className="text-sm font-semibold text-white mb-1">
-                        {lang === 'it' ? 'Credit Wallet' : 'Credit Wallet'}
+                        {t({ it: 'Credit Wallet', en: 'Credit Wallet' })}
                       </div>
                       {!isLoadingBalance && (
                         <div className="text-xs text-gray-400">
-                          {lang === 'it' ? 'Saldo: ' : 'Balance: '}€{creditBalance.toFixed(2)}
+                          {t({ it: 'Saldo: ', en: 'Balance: ' })}€{creditBalance.toFixed(2)}
                         </div>
                       )}
                     </div>
@@ -2231,7 +2231,7 @@ const CarWashBookingPage: React.FC = () => {
                   >
                     <div className="text-center">
                       <div className="text-sm font-semibold text-white mb-1">
-                        {lang === 'it' ? 'Carta' : 'Card'}
+                        {t({ it: 'Carta', en: 'Card' })}
                       </div>
                       <div className="text-xs text-gray-400">Visa, Mastercard</div>
                     </div>
@@ -2248,7 +2248,7 @@ const CarWashBookingPage: React.FC = () => {
                       </svg>
                       <div>
                         <h3 className="text-white font-semibold mb-1">
-                          {lang === 'it' ? 'Pagamento Sicuro con Nexi' : 'Secure Payment with Nexi'}
+                          {t({ it: 'Pagamento Sicuro con Nexi', en: 'Secure Payment with Nexi' })}
                         </h3>
                         <p className="text-gray-400 text-sm">
                           {lang === 'it'
@@ -2272,7 +2272,7 @@ const CarWashBookingPage: React.FC = () => {
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing
-                      ? (lang === 'it' ? 'Reindirizzamento...' : 'Redirecting...')
+                      ? (t({ it: 'Reindirizzamento...', en: 'Redirecting...' }))
                       : (lang === 'it' ? `Procedi al Pagamento €${calculateTotal()}` : `Proceed to Payment €${calculateTotal()}`)}
                   </button>
 
@@ -2287,20 +2287,20 @@ const CarWashBookingPage: React.FC = () => {
                   <div className="mb-6 p-4 bg-gray-800 rounded-lg">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-gray-300">
-                        {lang === 'it' ? 'Saldo Disponibile' : 'Available Balance'}:
+                        {t({ it: 'Saldo Disponibile', en: 'Available Balance' })}:
                       </span>
                       <span className="text-lg font-bold text-white">€{creditBalance.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-300">
-                        {lang === 'it' ? 'Costo Servizio' : 'Service Cost'}:
+                        {t({ it: 'Costo Servizio', en: 'Service Cost' })}:
                       </span>
                       <span className="text-lg font-bold text-white">€{calculateTotal().toFixed(2)}</span>
                     </div>
                     <div className="border-t border-gray-700 my-3"></div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-white font-semibold">
-                        {lang === 'it' ? 'Saldo Dopo' : 'Balance After'}:
+                        {t({ it: 'Saldo Dopo', en: 'Balance After' })}:
                       </span>
                       <span className={`text-lg font-bold ${creditBalance >= calculateTotal() ? 'text-green-400' : 'text-red-400'
                         }`}>
@@ -2322,9 +2322,9 @@ const CarWashBookingPage: React.FC = () => {
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing
-                      ? (lang === 'it' ? 'Elaborazione...' : 'Processing...')
+                      ? (t({ it: 'Elaborazione...', en: 'Processing...' }))
                       : creditBalance < calculateTotal()
-                        ? (lang === 'it' ? 'Credito Insufficiente' : 'Insufficient Credit')
+                        ? (t({ it: 'Credito Insufficiente', en: 'Insufficient Credit' }))
                         : (lang === 'it' ? `Paga con Credit Wallet` : `Pay with Credit Wallet`)}
                   </button>
 

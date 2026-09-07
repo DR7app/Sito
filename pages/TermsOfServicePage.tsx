@@ -109,7 +109,7 @@ const TermsOfServicePage: React.FC = () => {
     }
 
     const pageTitle = lang === 'it' ? copy.title_it : copy.title_en;
-    const today = new Date().toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const today = new Date().toLocaleDateString(t({ it: 'it-IT', en: 'en-GB' }), { day: 'numeric', month: 'long', year: 'numeric' });
     const updatedLabel = lang === 'it' ? copy.last_updated_label_it : copy.last_updated_label_en;
 
     // Build indice from sections (auto-numbered 01, 02, ...).
@@ -135,7 +135,7 @@ const TermsOfServicePage: React.FC = () => {
                     transition={{ duration: 0.4 }}
                     className="text-sm tracking-widest uppercase text-gray-500 mb-4"
                 >
-                    {lang === 'it' ? 'Documentazione legale' : 'Legal documentation'}
+                    {t({ it: 'Documentazione legale', en: 'Legal documentation' })}
                 </motion.p>
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
@@ -163,7 +163,7 @@ const TermsOfServicePage: React.FC = () => {
                 <nav className="hidden lg:block w-64 shrink-0">
                     <div className="sticky top-28">
                         <p className="text-xs uppercase tracking-widest text-gray-500 mb-4 font-semibold">
-                            {lang === 'it' ? 'Indice' : 'Contents'}
+                            {t({ it: 'Indice', en: 'Contents' })}
                         </p>
                         <ul className="space-y-1">
                             {indice.map((s) => (

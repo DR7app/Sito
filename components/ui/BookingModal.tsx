@@ -99,7 +99,7 @@ const BookingModal: React.FC = () => {
     }).format(price || 0);
 
   const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-US', {
+    new Date(date).toLocaleDateString(t({ it: 'it-IT', en: 'en-US' }), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

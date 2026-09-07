@@ -34,7 +34,7 @@ const CareersPage: React.FC = () => {
     if (!copy) {
         return (
             <LegalPageLayout title={t('Careers')}>
-                <p>{lang === 'it' ? 'Caricamento…' : 'Loading…'}</p>
+                <p>{t({ it: 'Caricamento…', en: 'Loading…' })}</p>
             </LegalPageLayout>
         );
     }

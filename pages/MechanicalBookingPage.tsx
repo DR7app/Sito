@@ -305,31 +305,31 @@ const MechanicalBookingPage: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     // Required: Nome e cognome, Telefono, Email, Marca e Modello
-    if (!formData.fullName) newErrors.fullName = lang === 'it' ? 'Il nome è obbligatorio' : 'Name is required';
-    if (!formData.email) newErrors.email = lang === 'it' ? 'L\'email è obbligatoria' : 'Email is required';
+    if (!formData.fullName) newErrors.fullName = t({ it: 'Il nome è obbligatorio', en: 'Name is required' });
+    if (!formData.email) newErrors.email = t({ it: 'L\'email è obbligatoria', en: 'Email is required' });
     if (!formData.phone) {
-      newErrors.phone = lang === 'it' ? 'Il telefono è obbligatorio' : 'Phone is required';
+      newErrors.phone = t({ it: 'Il telefono è obbligatorio', en: 'Phone is required' });
     } else if (!validateItalianPhone(formData.phone)) {
-      newErrors.phone = lang === 'it' ? 'Formato telefono non valido' : 'Invalid phone format';
+      newErrors.phone = t({ it: 'Formato telefono non valido', en: 'Invalid phone format' });
     }
     // Codice Fiscale + indirizzo OBBLIGATORI: servono per emettere la fattura
     // (il SDI rifiuta senza CF + indirizzo). Per i clienti loggati questi campi
     // sono già precompilati dal profilo → non li reinseriscono una seconda volta.
     if (!formData.codiceFiscale || !formData.codiceFiscale.trim()) {
-      newErrors.codiceFiscale = lang === 'it' ? 'Il codice fiscale è obbligatorio per la fattura' : 'Codice Fiscale is required for the invoice';
+      newErrors.codiceFiscale = t({ it: 'Il codice fiscale è obbligatorio per la fattura', en: 'Codice Fiscale is required for the invoice' });
     } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
-      newErrors.codiceFiscale = lang === 'it' ? 'Codice fiscale non valido (16 caratteri)' : 'Invalid Codice Fiscale (16 characters)';
+      newErrors.codiceFiscale = t({ it: 'Codice fiscale non valido (16 caratteri)', en: 'Invalid Codice Fiscale (16 characters)' });
     }
-    if (!formData.indirizzo || !formData.indirizzo.trim()) newErrors.indirizzo = lang === 'it' ? 'L\'indirizzo è obbligatorio per la fattura' : 'Address is required for the invoice';
-    if (!formData.cittaResidenza || !formData.cittaResidenza.trim()) newErrors.cittaResidenza = lang === 'it' ? 'La città è obbligatoria per la fattura' : 'City is required for the invoice';
-    if (!formData.codicePostale || !formData.codicePostale.trim()) newErrors.codicePostale = lang === 'it' ? 'Il CAP è obbligatorio per la fattura' : 'Postal code is required for the invoice';
-    if (!formData.vehicleMake) newErrors.vehicleMake = lang === 'it' ? 'La marca è obbligatoria' : 'Make is required';
-    if (!formData.vehicleModel) newErrors.vehicleModel = lang === 'it' ? 'Il modello è obbligatorio' : 'Model is required';
-    if (!formData.appointmentDate) newErrors.appointmentDate = lang === 'it' ? 'La data è obbligatoria' : 'Date is required';
-    if (!formData.appointmentTime) newErrors.appointmentTime = lang === 'it' ? 'L\'ora è obbligatoria' : 'Time is required';
+    if (!formData.indirizzo || !formData.indirizzo.trim()) newErrors.indirizzo = t({ it: 'L\'indirizzo è obbligatorio per la fattura', en: 'Address is required for the invoice' });
+    if (!formData.cittaResidenza || !formData.cittaResidenza.trim()) newErrors.cittaResidenza = t({ it: 'La città è obbligatoria per la fattura', en: 'City is required for the invoice' });
+    if (!formData.codicePostale || !formData.codicePostale.trim()) newErrors.codicePostale = t({ it: 'Il CAP è obbligatorio per la fattura', en: 'Postal code is required for the invoice' });
+    if (!formData.vehicleMake) newErrors.vehicleMake = t({ it: 'La marca è obbligatoria', en: 'Make is required' });
+    if (!formData.vehicleModel) newErrors.vehicleModel = t({ it: 'Il modello è obbligatorio', en: 'Model is required' });
+    if (!formData.appointmentDate) newErrors.appointmentDate = t({ it: 'La data è obbligatoria', en: 'Date is required' });
+    if (!formData.appointmentTime) newErrors.appointmentTime = t({ it: 'L\'ora è obbligatoria', en: 'Time is required' });
 
     if (formData.appointmentDate && formData.appointmentDate < minDate) {
-      newErrors.appointmentDate = lang === 'it' ? 'La data non può essere nel passato' : 'Date cannot be in the past';
+      newErrors.appointmentDate = t({ it: 'La data non può essere nel passato', en: 'Date cannot be in the past' });
     }
 
     // Check if selected date is Sunday
@@ -337,7 +337,7 @@ const MechanicalBookingPage: React.FC = () => {
       const [year, month, day] = formData.appointmentDate.split('-').map(Number);
       const dayOfWeek = new Date(year, month - 1, day).getDay();
       if (dayOfWeek === 0) {
-        newErrors.appointmentDate = lang === 'it' ? 'Siamo chiusi la domenica' : 'We are closed on Sundays';
+        newErrors.appointmentDate = t({ it: 'Siamo chiusi la domenica', en: 'We are closed on Sundays' });
       }
     }
 
@@ -442,7 +442,7 @@ const MechanicalBookingPage: React.FC = () => {
         const hasBalance = await hasSufficientBalance(user.id, totalAmount);
         if (!hasBalance) {
           clearTimeout(safetyTimer);
-          setPaymentError(lang === 'it' ? 'Credito insufficiente' : 'Insufficient credit');
+          setPaymentError(t({ it: 'Credito insufficiente', en: 'Insufficient credit' }));
           isSubmittingRef.current = false;
           setIsProcessing(false);
           return;
@@ -685,7 +685,7 @@ const MechanicalBookingPage: React.FC = () => {
       <div className="min-h-screen bg-black pt-32 pb-16 px-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">{lang === 'it' ? 'Caricamento...' : 'Loading...'}</p>
+          <p className="text-white">{t({ it: 'Caricamento...', en: 'Loading...' })}</p>
         </div>
       </div>
     );
@@ -698,7 +698,7 @@ const MechanicalBookingPage: React.FC = () => {
         <div className="container mx-auto max-w-4xl flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-dr7-gold mx-auto mb-4"></div>
-            <p className="text-white text-lg">{lang === 'it' ? 'Caricamento...' : 'Loading...'}</p>
+            <p className="text-white text-lg">{t({ it: 'Caricamento...', en: 'Loading...' })}</p>
           </div>
         </div>
       </div>
@@ -717,7 +717,7 @@ const MechanicalBookingPage: React.FC = () => {
               </svg>
             </div>
             <h2 className="text-3xl font-bold text-white mb-4">
-              {lang === 'it' ? 'Accesso Richiesto' : 'Login Required'}
+              {t({ it: 'Accesso Richiesto', en: 'Login Required' })}
             </h2>
             <p className="text-gray-400 mb-8">
               {lang === 'it'
@@ -729,13 +729,13 @@ const MechanicalBookingPage: React.FC = () => {
                 onClick={() => navigate('/signin', { state: { from: location.pathname } })}
                 className="px-8 py-3 bg-dr7-gold text-black font-bold hover:bg-dr7-gold/90 transition-colors"
               >
-                {lang === 'it' ? 'Accedi' : 'Login'}
+                {t({ it: 'Accedi', en: 'Login' })}
               </button>
               <button
                 onClick={() => navigate('/signup', { state: { from: location.pathname } })}
                 className="px-8 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors"
               >
-                {lang === 'it' ? 'Registrati' : 'Sign Up'}
+                {t({ it: 'Registrati', en: 'Sign Up' })}
               </button>
             </div>
           </div>
@@ -753,7 +753,7 @@ const MechanicalBookingPage: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-4xl font-bold text-white mb-2">
-            {lang === 'it' ? 'Prenota il Servizio' : 'Book Service'}
+            {t({ it: 'Prenota il Servizio', en: 'Book Service' })}
           </h1>
           <p className="text-gray-400 mb-8">
             {lang === 'it' ? selectedService.name_it : selectedService.name_en} - €{discountedPrice}
@@ -763,12 +763,12 @@ const MechanicalBookingPage: React.FC = () => {
             {/* Customer Info */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-6">
-                {lang === 'it' ? 'Informazioni Cliente' : 'Customer Information'}
+                {t({ it: 'Informazioni Cliente', en: 'Customer Information' })}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Nome Completo' : 'Full Name'} *
+                    {t({ it: 'Nome Completo', en: 'Full Name' })} *
                   </label>
                   <input
                     type="text"
@@ -792,7 +792,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Telefono' : 'Phone'} *
+                    {t({ it: 'Telefono', en: 'Phone' })} *
                   </label>
                   <input
                     type="tel"
@@ -806,7 +806,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Codice Fiscale * (necessario per la fattura)' : 'Tax Code * (required for the invoice)'}
+                    {t({ it: 'Codice Fiscale * (necessario per la fattura)', en: 'Tax Code * (required for the invoice)' })}
                   </label>
                   <input
                     type="text"
@@ -821,21 +821,21 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Indirizzo *' : 'Address *'}
+                    {t({ it: 'Indirizzo *', en: 'Address *' })}
                   </label>
                   <input
                     type="text"
                     name="indirizzo"
                     value={formData.indirizzo}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'Via Roma' : 'Main Street'}
+                    placeholder={t({ it: 'Via Roma', en: 'Main Street' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
                   />
                   {errors.indirizzo && <p className="text-xs text-red-400 mt-1">{errors.indirizzo}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Numero Civico' : 'Civic Number'}
+                    {t({ it: 'Numero Civico', en: 'Civic Number' })}
                   </label>
                   <input
                     type="text"
@@ -848,21 +848,21 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Città di Residenza *' : 'City *'}
+                    {t({ it: 'Città di Residenza *', en: 'City *' })}
                   </label>
                   <input
                     type="text"
                     name="cittaResidenza"
                     value={formData.cittaResidenza}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'Milano' : 'Milan'}
+                    placeholder={t({ it: 'Milano', en: 'Milan' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
                   />
                   {errors.cittaResidenza && <p className="text-xs text-red-400 mt-1">{errors.cittaResidenza}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'CAP *' : 'Postal Code *'}
+                    {t({ it: 'CAP *', en: 'Postal Code *' })}
                   </label>
                   <input
                     type="text"
@@ -877,7 +877,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Provincia' : 'Province'}
+                    {t({ it: 'Provincia', en: 'Province' })}
                   </label>
                   <input
                     type="text"
@@ -896,40 +896,40 @@ const MechanicalBookingPage: React.FC = () => {
             {/* Vehicle Info */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-6">
-                {lang === 'it' ? 'Informazioni Veicolo' : 'Vehicle Information'}
+                {t({ it: 'Informazioni Veicolo', en: 'Vehicle Information' })}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Marca' : 'Make'} *
+                    {t({ it: 'Marca', en: 'Make' })} *
                   </label>
                   <input
                     type="text"
                     name="vehicleMake"
                     value={formData.vehicleMake}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'es. Fiat' : 'e.g. Fiat'}
+                    placeholder={t({ it: 'es. Fiat', en: 'e.g. Fiat' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
                   />
                   {errors.vehicleMake && <p className="text-xs text-red-400 mt-1">{errors.vehicleMake}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Modello' : 'Model'} *
+                    {t({ it: 'Modello', en: 'Model' })} *
                   </label>
                   <input
                     type="text"
                     name="vehicleModel"
                     value={formData.vehicleModel}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'es. Panda' : 'e.g. Panda'}
+                    placeholder={t({ it: 'es. Panda', en: 'e.g. Panda' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
                   />
                   {errors.vehicleModel && <p className="text-xs text-red-400 mt-1">{errors.vehicleModel}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Anno' : 'Year'}
+                    {t({ it: 'Anno', en: 'Year' })}
                   </label>
                   <input
                     type="text"
@@ -942,14 +942,14 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Targa' : 'License Plate'}
+                    {t({ it: 'Targa', en: 'License Plate' })}
                   </label>
                   <input
                     type="text"
                     name="vehiclePlate"
                     value={formData.vehiclePlate}
                     onChange={handleChange}
-                    placeholder={lang === 'it' ? 'es. AB123CD' : 'e.g. AB123CD'}
+                    placeholder={t({ it: 'es. AB123CD', en: 'e.g. AB123CD' })}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase"
                   />
                 </div>
@@ -959,24 +959,24 @@ const MechanicalBookingPage: React.FC = () => {
             {/* Appointment */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-4">
-                {lang === 'it' ? 'Data e Ora Appuntamento' : 'Appointment Date & Time'}
+                {t({ it: 'Data e Ora Appuntamento', en: 'Appointment Date & Time' })}
               </h2>
               <div className="mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700">
                 <p className="text-sm text-gray-300">
                   <span className="font-semibold text-white">
-                    {lang === 'it' ? 'Orari di apertura:' : 'Opening hours:'}
+                    {t({ it: 'Orari di apertura:', en: 'Opening hours:' })}
                   </span>
                   {' '}
-                  {lang === 'it' ? 'Lun-Ven 9:00-13:00 / 15:00-19:00 | Sabato 9:00-13:00 / 14:00-18:00' : 'Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM | Saturday 9:00-1:00 PM / 2:00-6:00 PM'}
+                  {t({ it: 'Lun-Ven 9:00-13:00 / 15:00-19:00 | Sabato 9:00-13:00 / 14:00-18:00', en: 'Mon-Fri 9:00-1:00 PM / 3:00-7:00 PM | Saturday 9:00-1:00 PM / 2:00-6:00 PM' })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {lang === 'it' ? 'Chiusi la domenica' : 'Closed on Sundays'}
+                  {t({ it: 'Chiusi la domenica', en: 'Closed on Sundays' })}
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Data' : 'Date'} *
+                    {t({ it: 'Data', en: 'Date' })} *
                   </label>
                   <input
                     type="date"
@@ -992,7 +992,7 @@ const MechanicalBookingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {lang === 'it' ? 'Ora' : 'Time'} *
+                    {t({ it: 'Ora', en: 'Time' })} *
                   </label>
                   <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto">
                     {getAllTimeSlotsWithAvailability().map(slot => (
@@ -1024,14 +1024,14 @@ const MechanicalBookingPage: React.FC = () => {
             {/* Notes */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <h2 className="text-2xl font-bold text-white mb-6">
-                {lang === 'it' ? 'Note Aggiuntive' : 'Additional Notes'}
+                {t({ it: 'Note Aggiuntive', en: 'Additional Notes' })}
               </h2>
               <textarea
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
                 rows={4}
-                placeholder={lang === 'it' ? 'Richieste speciali o note...' : 'Special requests or notes...'}
+                placeholder={t({ it: 'Richieste speciali o note...', en: 'Special requests or notes...' })}
                 className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
               />
             </div>
@@ -1087,7 +1087,7 @@ const MechanicalBookingPage: React.FC = () => {
               )}
               <div className="flex justify-between items-center mb-6">
                 <span className="text-2xl font-bold text-white">
-                  {lang === 'it' ? 'Totale' : 'Total'}
+                  {t({ it: 'Totale', en: 'Total' })}
                 </span>
                 <span className="text-4xl font-bold text-white">€{discountedPrice.toFixed(2)}</span>
               </div>
@@ -1097,7 +1097,7 @@ const MechanicalBookingPage: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
-                {lang === 'it' ? 'PROCEDI AL PAGAMENTO' : 'PROCEED TO PAYMENT'}
+                {t({ it: 'PROCEDI AL PAGAMENTO', en: 'PROCEED TO PAYMENT' })}
               </button>
             </div>
           </form>
@@ -1123,7 +1123,7 @@ const MechanicalBookingPage: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-white">
-                  {lang === 'it' ? 'Completa il Pagamento' : 'Complete Payment'}
+                  {t({ it: 'Completa il Pagamento', en: 'Complete Payment' })}
                 </h2>
                 <button
                   onClick={handleCloseModal}
@@ -1135,7 +1135,7 @@ const MechanicalBookingPage: React.FC = () => {
 
               <div className="mb-6 p-4 bg-gray-800 rounded-lg">
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
-                  <span>{lang === 'it' ? 'Servizio' : 'Service'}:</span>
+                  <span>{t({ it: 'Servizio', en: 'Service' })}:</span>
                   <span className="text-white font-semibold">
                     {lang === 'it' ? selectedService?.name : selectedService?.nameEn}
                   </span>
@@ -1150,7 +1150,7 @@ const MechanicalBookingPage: React.FC = () => {
                   <span>-€{onlineDiscountAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-white">
-                  <span>{lang === 'it' ? 'Totale' : 'Total'}:</span>
+                  <span>{t({ it: 'Totale', en: 'Total' })}:</span>
                   <span>€{discountedPrice.toFixed(2)}</span>
                 </div>
               </div>
@@ -1158,7 +1158,7 @@ const MechanicalBookingPage: React.FC = () => {
               {/* Payment Method Selector */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-300 mb-3">
-                  {lang === 'it' ? 'Metodo di Pagamento' : 'Payment Method'}
+                  {t({ it: 'Metodo di Pagamento', en: 'Payment Method' })}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -1171,11 +1171,11 @@ const MechanicalBookingPage: React.FC = () => {
                   >
                     <div className="text-center">
                       <div className="text-sm font-semibold text-white mb-1">
-                        {lang === 'it' ? 'Credit Wallet' : 'Credit Wallet'}
+                        {t({ it: 'Credit Wallet', en: 'Credit Wallet' })}
                       </div>
                       {!isLoadingBalance && (
                         <div className="text-xs text-gray-400">
-                          {lang === 'it' ? 'Saldo: ' : 'Balance: '}€{creditBalance.toFixed(2)}
+                          {t({ it: 'Saldo: ', en: 'Balance: ' })}€{creditBalance.toFixed(2)}
                         </div>
                       )}
                     </div>
@@ -1190,7 +1190,7 @@ const MechanicalBookingPage: React.FC = () => {
                   >
                     <div className="text-center">
                       <div className="text-sm font-semibold text-white mb-1">
-                        {lang === 'it' ? 'Carta di Credito' : 'Credit Card'}
+                        {t({ it: 'Carta di Credito', en: 'Credit Card' })}
                       </div>
                       <div className="text-xs text-gray-400">Visa, Mastercard</div>
                     </div>
@@ -1207,7 +1207,7 @@ const MechanicalBookingPage: React.FC = () => {
                       </svg>
                       <div>
                         <h3 className="text-white font-semibold mb-1">
-                          {lang === 'it' ? 'Pagamento Sicuro con Nexi' : 'Secure Payment with Nexi'}
+                          {t({ it: 'Pagamento Sicuro con Nexi', en: 'Secure Payment with Nexi' })}
                         </h3>
                         <p className="text-gray-400 text-sm">
                           {lang === 'it'
@@ -1231,7 +1231,7 @@ const MechanicalBookingPage: React.FC = () => {
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing
-                      ? (lang === 'it' ? 'Reindirizzamento...' : 'Redirecting...')
+                      ? (t({ it: 'Reindirizzamento...', en: 'Redirecting...' }))
                       : (lang === 'it' ? `Procedi al Pagamento €${discountedPrice.toFixed(2)}` : `Proceed to Payment €${discountedPrice.toFixed(2)}`)}
                   </button>
 
@@ -1246,20 +1246,20 @@ const MechanicalBookingPage: React.FC = () => {
                   <div className="mb-6 p-4 bg-gray-800 rounded-lg">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-gray-300">
-                        {lang === 'it' ? 'Saldo Disponibile' : 'Available Balance'}:
+                        {t({ it: 'Saldo Disponibile', en: 'Available Balance' })}:
                       </span>
                       <span className="text-lg font-bold text-white">€{creditBalance.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-300">
-                        {lang === 'it' ? 'Costo Servizio' : 'Service Cost'}:
+                        {t({ it: 'Costo Servizio', en: 'Service Cost' })}:
                       </span>
                       <span className="text-lg font-bold text-white">€{discountedPrice.toFixed(2)}</span>
                     </div>
                     <div className="border-t border-gray-700 my-3"></div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-white font-semibold">
-                        {lang === 'it' ? 'Saldo Dopo' : 'Balance After'}:
+                        {t({ it: 'Saldo Dopo', en: 'Balance After' })}:
                       </span>
                       <span className={`text-lg font-bold ${creditBalance >= discountedPrice ? 'text-green-400' : 'text-red-400'
                         }`}>
@@ -1281,9 +1281,9 @@ const MechanicalBookingPage: React.FC = () => {
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isProcessing
-                      ? (lang === 'it' ? 'Elaborazione...' : 'Processing...')
+                      ? (t({ it: 'Elaborazione...', en: 'Processing...' }))
                       : creditBalance < discountedPrice
-                        ? (lang === 'it' ? 'Credito Insufficiente' : 'Insufficient Credit')
+                        ? (t({ it: 'Credito Insufficiente', en: 'Insufficient Credit' }))
                         : (lang === 'it' ? `Paga con Credit Wallet` : `Pay with Credit Wallet`)}
                   </button>
 

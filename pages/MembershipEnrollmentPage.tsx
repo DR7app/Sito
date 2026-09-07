@@ -126,7 +126,7 @@ const MembershipEnrollmentPage: React.FC = () => {
             <div className="container mx-auto px-6 max-w-lg">
                 <h1 className="text-3xl font-bold text-white text-center mb-2">DR7 CLUB</h1>
                 <p className="text-gray-400 text-center mb-8">
-                    {lang === 'it' ? 'Conferma il tuo abbonamento' : 'Confirm your subscription'}
+                    {t({ it: 'Conferma il tuo abbonamento', en: 'Confirm your subscription' })}
                 </p>
 
                 <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 md:p-8">
@@ -140,7 +140,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                                     billingCycle === 'monthly' ? 'bg-white text-black' : 'text-gray-400'
                                 }`}
                             >
-                                {lang === 'it' ? 'Mensile' : 'Monthly'}
+                                {t({ it: 'Mensile', en: 'Monthly' })}
                             </button>
                             <button
                                 type="button"
@@ -149,7 +149,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                                     billingCycle === 'annually' ? 'bg-white text-black' : 'text-gray-400'
                                 }`}
                             >
-                                {lang === 'it' ? 'Annuale (-33%)' : 'Annual (-33%)'}
+                                {t({ it: 'Annuale (-33%)', en: 'Annual (-33%)' })}
                             </button>
                         </div>
                     </div>
@@ -157,18 +157,18 @@ const MembershipEnrollmentPage: React.FC = () => {
                     {/* Summary */}
                     <div className="space-y-3 text-sm mb-6">
                         <div className="flex justify-between">
-                            <span className="text-gray-400">{lang === 'it' ? 'Piano' : 'Plan'}</span>
+                            <span className="text-gray-400">{t({ it: 'Piano', en: 'Plan' })}</span>
                             <span className="text-white font-semibold">DR7 Club</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-400">{lang === 'it' ? 'Fatturazione' : 'Billing'}</span>
+                            <span className="text-gray-400">{t({ it: 'Fatturazione', en: 'Billing' })}</span>
                             <span className="text-white font-semibold">
-                                {billingCycle === 'monthly' ? (lang === 'it' ? 'Mensile' : 'Monthly') : (lang === 'it' ? 'Annuale' : 'Annual')}
+                                {billingCycle === 'monthly' ? (t({ it: 'Mensile', en: 'Monthly' })) : (t({ it: 'Annuale', en: 'Annual' }))}
                             </span>
                         </div>
                         <div className="border-t border-gray-700 my-2" />
                         <div className="flex justify-between text-lg">
-                            <span className="text-white font-bold">{lang === 'it' ? 'Totale' : 'Total'}</span>
+                            <span className="text-white font-bold">{t({ it: 'Totale', en: 'Total' })}</span>
                             <span className="text-white font-bold">{formatPrice(price)}</span>
                         </div>
                         {billingCycle === 'annually' && (
@@ -189,7 +189,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                                     : 'You will be redirected to Nexi secure payment page'}
                             </p>
                             <p className="text-gray-500 text-xs mt-1">
-                                {lang === 'it' ? 'Pagamento protetto e certificato' : 'Protected and certified payment'}
+                                {t({ it: 'Pagamento protetto e certificato', en: 'Protected and certified payment' })}
                             </p>
                         </div>
                         <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-4 mb-4">
@@ -208,8 +208,8 @@ const MembershipEnrollmentPage: React.FC = () => {
                             className="w-full py-3.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-60"
                         >
                             {isProcessing
-                                ? (lang === 'it' ? 'Elaborazione...' : 'Processing...')
-                                : (lang === 'it' ? 'Conferma e paga' : 'Confirm and pay')}
+                                ? (t({ it: 'Elaborazione...', en: 'Processing...' }))
+                                : (t({ it: 'Conferma e paga', en: 'Confirm and pay' }))}
                         </button>
                     </form>
                 </div>

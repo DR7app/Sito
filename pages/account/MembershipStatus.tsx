@@ -60,7 +60,7 @@ const MembershipStatus = () => {
                     <div>
                         <h2 className="text-xl font-bold text-white">{t('My_Membership')}</h2>
                         <p className="text-sm text-gray-400 mt-1">
-                            {lang === 'it' ? 'Scade il' : 'Expires on'} {renewalDate}
+                            {t({ it: 'Scade il', en: 'Expires on' })} {renewalDate}
                         </p>
                     </div>
                     <span className={`px-3 py-1 text-sm font-bold ${currentTier.isPopular ? 'bg-white text-black' : 'bg-gray-700 text-white'}`}>
@@ -93,7 +93,7 @@ const MembershipStatus = () => {
                     onClick={() => navigate(`/membership/enroll/${currentTier.id}?billing=${user.membership?.billingCycle}`)}
                     className="px-5 py-2.5 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors"
                 >
-                    {lang === 'it' ? 'Rinnova Membership' : 'Renew Membership'}
+                    {t({ it: 'Rinnova Membership', en: 'Renew Membership' })}
                 </button>
             </div>
         </div>

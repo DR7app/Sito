@@ -884,14 +884,14 @@ const MyBookings = () => {
           <h2 className="text-xl font-bold text-white">{t('My_Bookings')}</h2>
         </div>
         <p className="text-sm text-gray-400 mt-1">
-          {lang === 'it' ? 'Visualizza tutte le tue prenotazioni' : 'View all your bookings'}
+          {t({ it: 'Visualizza tutte le tue prenotazioni', en: 'View all your bookings' })}
         </p>
       </div>
 
       <div className="p-4 md:p-6">
         {loading ? (
           <div className="text-center text-gray-400 py-8">
-            {lang === 'it' ? 'Caricamento...' : 'Loading...'}
+            {t({ it: 'Caricamento...', en: 'Loading...' })}
           </div>
         ) : bookings.length > 0 ? (
           <div className="space-y-4">
@@ -921,7 +921,7 @@ const MyBookings = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-gray-400">
-                          {lang === 'it' ? 'ID Prenotazione' : 'Booking ID'}:
+                          {t({ it: 'ID Prenotazione', en: 'Booking ID' })}:
                         </p>
                         <p className="text-white font-mono">
                           DR7-{booking.id.substring(0, 8).toUpperCase()}
@@ -931,7 +931,7 @@ const MyBookings = () => {
                       {booking.service_type === 'car_wash' && booking.appointment_date && (
                         <div>
                           <p className="text-gray-400">
-                            {lang === 'it' ? 'Data Appuntamento' : 'Appointment'}:
+                            {t({ it: 'Data Appuntamento', en: 'Appointment' })}:
                           </p>
                           <p className="text-white">
                             {new Date(booking.appointment_date).toLocaleDateString(dateLocale(lang), {
@@ -940,7 +940,7 @@ const MyBookings = () => {
                               year: 'numeric',
                               timeZone: 'Europe/Rome'
                             })}
-                            {booking.appointment_time && ` ${lang === 'it' ? 'alle' : 'at'} ${booking.appointment_time}`}
+                            {booking.appointment_time && ` ${t({ it: 'alle', en: 'at' })} ${booking.appointment_time}`}
                           </p>
                         </div>
                       )}
@@ -949,13 +949,13 @@ const MyBookings = () => {
                         <>
                           <div>
                             <p className="text-gray-400">
-                              {lang === 'it' ? 'Ritiro' : 'Pick-up'}:
+                              {t({ it: 'Ritiro', en: 'Pick-up' })}:
                             </p>
                             <p className="text-white">{formatDate(booking.pickup_date)}</p>
                           </div>
                           <div>
                             <p className="text-gray-400">
-                              {lang === 'it' ? 'Riconsegna' : 'Drop-off'}:
+                              {t({ it: 'Riconsegna', en: 'Drop-off' })}:
                             </p>
                             <p className="text-white">
                               {booking.dropoff_date ? formatDate(booking.dropoff_date) : 'N/A'}
@@ -964,7 +964,7 @@ const MyBookings = () => {
                           {booking.pickup_location && (
                             <div className="md:col-span-2">
                               <p className="text-gray-400">
-                                {lang === 'it' ? 'Luogo Ritiro' : 'Pickup Location'}:
+                                {t({ it: 'Luogo Ritiro', en: 'Pickup Location' })}:
                               </p>
                               <p className="text-white">{booking.pickup_location}</p>
                             </div>
@@ -977,7 +977,7 @@ const MyBookings = () => {
                         <>
                           <div>
                             <p className="text-gray-400">
-                              {lang === 'it' ? 'Assicurazione' : 'Insurance'}:
+                              {t({ it: 'Assicurazione', en: 'Insurance' })}:
                             </p>
                             <p className="text-white">
                               {(() => {
@@ -1017,7 +1017,7 @@ const MyBookings = () => {
                           </div>
                           <div>
                             <p className="text-gray-400">
-                              {lang === 'it' ? 'Cauzione' : 'Deposit'}:
+                              {t({ it: 'Cauzione', en: 'Deposit' })}:
                             </p>
                             <p className="text-white">
                               {(() => {
@@ -1065,7 +1065,7 @@ const MyBookings = () => {
 
                       <div>
                         <p className="text-gray-400">
-                          {lang === 'it' ? 'Totale' : 'Total'}:
+                          {t({ it: 'Totale', en: 'Total' })}:
                         </p>
                         <p className="text-white font-bold text-lg">
                           {formatPrice(booking.price_total, booking.currency)}
@@ -1074,7 +1074,7 @@ const MyBookings = () => {
 
                       <div>
                         <p className="text-gray-400">
-                          {lang === 'it' ? 'Prenotato il' : 'Booked on'}:
+                          {t({ it: 'Prenotato il', en: 'Booked on' })}:
                         </p>
                         <p className="text-white">{formatDate(booking.booked_at)}</p>
                       </div>
@@ -1186,13 +1186,13 @@ const MyBookings = () => {
                 to="/car-rentals"
                 className="inline-block px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm"
               >
-                {lang === 'it' ? 'Noleggio Auto' : 'Rent a Car'}
+                {t({ it: 'Noleggio Auto', en: 'Rent a Car' })}
               </Link>
               <Link
                 to="/prime-wash"
                 className="inline-block px-5 py-2.5 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors text-sm"
               >
-                {lang === 'it' ? 'Autolavaggio' : 'Car Wash'}
+                {t({ it: 'Autolavaggio', en: 'Car Wash' })}
               </Link>
             </div>
           </div>

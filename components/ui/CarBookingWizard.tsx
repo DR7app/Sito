@@ -16,6 +16,7 @@ const LOYAL_CUSTOMER_THRESHOLD = 3;
 import { getPickupLocations, getReturnLocations } from '../../utils/getLocations';
 import type { Booking, RentalItem, DriverTier, TierClassification, PaymentMode } from '../../types';
 import { classifyDriverTier } from '../../utils/tierClassification';
+import { calcolaCodiceFiscale } from '../../utils/codiceFiscale';
 import DocumentUploader from './DocumentUploader';
 import CompilaButton from './CompilaButton';
 import AddressAutocomplete from './AddressAutocomplete';
@@ -416,8 +417,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         licenseIssueDate: '',
         licenseExpiryDate: '',
         countryOfIssue: '',
+        // Anche il secondo conducente ha codice fiscale: finisce sul
+        // contratto come il primo, e senza restava da scrivere a mano in
+        // ufficio.
+        codiceFiscale: '',
+        sesso: '' as 'M' | 'F' | '',
+        luogoNascita: '',
+        provinciaNascita: '',
         licenseImage: null as File | string | null,
+        // Il retro della patente porta la data REALE di conseguimento
+        // (colonna 10, categoria B): senza, l'anzianita' di guida si legge
+        // dalla data di rilascio del duplicato ed e' sbagliata.
+        licenseImageBack: null as File | string | null,
         idImage: null as File | string | null,
+        idImageBack: null as File | string | null,
+        cfImage: null as File | string | null,
+        cfImageBack: null as File | string | null,
       },
 
       // Step 3
@@ -2962,8 +2977,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           }
         }
         if (!sd.countryOfIssue) newErrors['secondDriver.countryOfIssue'] = "Il paese di rilascio è obbligatorio.";
-        if (!sd.licenseImage) newErrors['secondDriver.licenseImage'] = "Patente secondo conducente obbligatoria.";
-        if (!sd.idImage) newErrors['secondDriver.idImage'] = "Documento secondo conducente obbligatorio.";
+        if (!sd.licenseImage) newErrors['secondDriver.licenseImage'] = "Patente (fronte) obbligatoria.";
+        if (!sd.licenseImageBack) newErrors['secondDriver.licenseImageBack'] = "Patente (retro) obbligatoria.";
+        if (!sd.idImage) newErrors['secondDriver.idImage'] = "Documento (fronte) obbligatorio.";
+        if (!sd.idImageBack) newErrors['secondDriver.idImageBack'] = "Documento (retro) obbligatorio.";
+        if (!sd.cfImage) newErrors['secondDriver.cfImage'] = "Codice fiscale (fronte) obbligatorio.";
+        if (!sd.cfImageBack) newErrors['secondDriver.cfImageBack'] = "Codice fiscale (retro) obbligatorio.";
+        if (!String(sd.codiceFiscale || '').trim()) newErrors['secondDriver.codiceFiscale'] = "Codice fiscale obbligatorio.";
       }
     }
     if (step === 3) {
@@ -5121,6 +5141,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           </div>
         );
       case 2:
+        /**
+         * Scrive un campo nella scheda del conducente giusto: il primo sta
+         * alla radice del modulo, il secondo dentro `secondDriver`. Serve ai
+         * comandi che non passano da `handleChange` (calcolo del codice
+         * fiscale, compilazione automatica dai documenti).
+         */
+        const scriviCampo = (driverType: 'main' | 'second', campo: string, valore: string) => {
+          setFormData(prev => driverType === 'main'
+            ? { ...prev, [campo]: valore }
+            : { ...prev, secondDriver: { ...prev.secondDriver, [campo]: valore } });
+        };
+
         const renderDriverForm = (driverType: 'main' | 'second') => {
           const driverData = driverType === 'main' ? formData : formData.secondDriver;
           const prefix = driverType === 'main' ? '' : 'secondDriver.';
@@ -5131,43 +5163,45 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} autoComplete="family-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
               <div><label className="text-sm text-gray-400">Email *</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
-              {driverType === 'main' && (
-                <>
-                  <div>
-                    <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
-                    <div className="flex gap-2 mt-1">
-                      <input type="text" name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
-                      <CalcolaCFButton
-                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
-                        config={{
-                          getCognome: () => formData.lastName,
-                          getNome: () => formData.firstName,
-                          getDataNascita: () => formData.birthDate,
-                          getSesso: () => formData.sesso,
-                          getLuogoNascita: () => formData.luogoNascita,
-                          getCodiceFiscale: () => formData.codiceFiscale,
-                          setCodiceFiscale: (v) => setFormData(p => ({ ...p, codiceFiscale: v })),
-                          setSesso: (v) => setFormData(p => ({ ...p, sesso: v })),
-                          setDataNascita: (v) => setFormData(p => ({ ...p, birthDate: v })),
-                          setLuogoNascita: (v) => setFormData(p => ({ ...p, luogoNascita: v })),
-                          setProvinciaNascita: (v) => setFormData(p => ({ ...p, provinciaNascita: v })),
-                        }}
-                      />
-                    </div>
-                    {errors.codiceFiscale && <p className="text-xs text-red-400 mt-1">{errors.codiceFiscale}</p>}
+              {/* Codice fiscale, sesso e nascita: uguali per tutti e due i
+                  conducenti. Prima erano riservati al primo, e il codice
+                  fiscale del secondo lo ricopiava l'ufficio a mano sul
+                  contratto. `scriviCampo` scrive nella scheda giusta. */}
+              <>
+                <div>
+                  <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="text" name={`${prefix}codiceFiscale`} value={(driverData as any).codiceFiscale || ''} onChange={handleChange} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
+                    <CalcolaCFButton
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
+                      config={{
+                        getCognome: () => (driverData as any).lastName,
+                        getNome: () => (driverData as any).firstName,
+                        getDataNascita: () => (driverData as any).birthDate,
+                        getSesso: () => (driverData as any).sesso,
+                        getLuogoNascita: () => (driverData as any).luogoNascita,
+                        getCodiceFiscale: () => (driverData as any).codiceFiscale,
+                        setCodiceFiscale: (v) => scriviCampo(driverType, 'codiceFiscale', v),
+                        setSesso: (v) => scriviCampo(driverType, 'sesso', v),
+                        setDataNascita: (v) => scriviCampo(driverType, 'birthDate', v),
+                        setLuogoNascita: (v) => scriviCampo(driverType, 'luogoNascita', v),
+                        setProvinciaNascita: (v) => scriviCampo(driverType, 'provinciaNascita', v),
+                      }}
+                    />
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label>
-                    <select name="sesso" value={formData.sesso} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm">
-                      <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
-                      <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
-                      <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
-                    </select>
-                  </div>
-                  <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name="luogoNascita" value={formData.luogoNascita} onChange={handleChange} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm" /></div>
-                  <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" name="provinciaNascita" value={formData.provinciaNascita} onChange={(e) => setFormData(p => ({ ...p, provinciaNascita: e.target.value.toUpperCase() }))} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm uppercase" /></div>
-                </>
-              )}
+                  {errors[`${prefix}codiceFiscale`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}codiceFiscale`]}</p>}
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label>
+                  <select name={`${prefix}sesso`} value={(driverData as any).sesso || ''} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm">
+                    <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
+                    <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
+                    <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
+                  </select>
+                </div>
+                <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name={`${prefix}luogoNascita`} value={(driverData as any).luogoNascita || ''} onChange={handleChange} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm" /></div>
+                <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" value={(driverData as any).provinciaNascita || ''} onChange={(e) => scriviCampo(driverType, 'provinciaNascita', e.target.value.toUpperCase())} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm uppercase" /></div>
+              </>
               <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Data rilascio patente *", en: "Licence issue date *" })}</label><input type="date" name={`${prefix}licenseIssueDate`} value={(driverData as any).licenseIssueDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}</div>
@@ -5397,76 +5431,105 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 >
                 <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700 space-y-4">
                   <p className="text-sm text-amber-300">{t({ it: "Tutti i campi sono obbligatori per il secondo conducente.", en: "All fields are required for the second driver." })}</p>
-                  {renderDriverForm('second')}
 
-                  {/* Second Driver Document Upload */}
-                  <div className="mt-4">
+                  {/* Documenti del secondo conducente.
+                      07/09/2026 - stanno PRIMA dei campi: si caricano le
+                      foto, si preme "Compila automaticamente" e il resto si
+                      riempie da solo. Chiedere prima i dati a mano e poi le
+                      foto voleva dire farli scrivere due volte.
+                      Fronte E retro per tutti e tre: il retro della patente
+                      porta la data reale di conseguimento (colonna 10), e
+                      il retro della tessera sanitaria il codice a barre. */}
+                  <div>
                     <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                      Documenti secondo conducente
+                      {t({ it: "Documenti secondo conducente", en: "Second driver documents" })}
                       <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <DocumentUploader
-                          title={t({ it: "PATENTE SECONDO CONDUCENTE *", en: "SECOND DRIVER'S LICENCE *" })}
-                          details={["Solo fronte/retro", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
-                          onFileChange={(file) => setFormData(prev => ({
-                            ...prev,
-                            secondDriver: { ...prev.secondDriver, licenseImage: file }
-                          }))}
-                        />
-                        {errors['secondDriver.licenseImage'] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors['secondDriver.licenseImage']}</p>}
-                      </div>
-                      <div>
-                        <DocumentUploader
-                          title={t({ it: "DOCUMENTO SECONDO CONDUCENTE *", en: "SECOND DRIVER'S ID *" })}
-                          details={["Carta d'identità o passaporto", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
-                          onFileChange={(file) => setFormData(prev => ({
-                            ...prev,
-                            secondDriver: { ...prev.secondDriver, idImage: file }
-                          }))}
-                        />
-                        {errors['secondDriver.idImage'] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors['secondDriver.idImage']}</p>}
-                      </div>
+                      {([
+                        { campo: 'licenseImage', titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: ["Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'licenseImageBack', titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'idImage', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: ["Documento valido", "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'idImageBack', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                      ] as const).map(({ campo, titolo, righe }) => (
+                        <div key={campo}>
+                          <DocumentUploader
+                            title={titolo}
+                            details={[...righe, t({ it: "Campo obbligatorio", en: "Required" })]}
+                            onFileChange={(file) => setFormData(prev => ({
+                              ...prev,
+                              secondDriver: { ...prev.secondDriver, [campo]: file },
+                            }))}
+                          />
+                          {errors[`secondDriver.${campo}`] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors[`secondDriver.${campo}`]}</p>}
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Compila button — auto-fill second driver from uploaded documents */}
-                    {(formData.secondDriver.licenseImage instanceof File || formData.secondDriver.idImage instanceof File) && (
+                    {/* Compila automaticamente: legge tutte le foto caricate
+                        e riempie i campi ancora vuoti. */}
+                    {([formData.secondDriver.licenseImage, formData.secondDriver.licenseImageBack, formData.secondDriver.idImage, formData.secondDriver.idImageBack, formData.secondDriver.cfImage, formData.secondDriver.cfImageBack].some(f => f instanceof File)) && (
                       <div className="mt-4">
                         <CompilaButton
                           documents={[
-                            { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente' },
-                            { file: formData.secondDriver.idImage instanceof File ? formData.secondDriver.idImage : null, label: 'Documento Secondo Conducente' },
+                            { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente (fronte)' },
+                            { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: 'Patente Secondo Conducente (retro)' },
+                            { file: formData.secondDriver.idImage instanceof File ? formData.secondDriver.idImage : null, label: 'Documento Secondo Conducente (fronte)' },
+                            { file: formData.secondDriver.idImageBack instanceof File ? formData.secondDriver.idImageBack : null, label: 'Documento Secondo Conducente (retro)' },
+                            { file: formData.secondDriver.cfImage instanceof File ? formData.secondDriver.cfImage : null, label: 'Codice Fiscale Secondo Conducente (fronte)' },
+                            { file: formData.secondDriver.cfImageBack instanceof File ? formData.secondDriver.cfImageBack : null, label: 'Codice Fiscale Secondo Conducente (retro)' },
                           ]}
                           currentData={{
                             nome: formData.secondDriver.firstName,
                             cognome: formData.secondDriver.lastName,
                             data_nascita: formData.secondDriver.birthDate,
+                            codice_fiscale: formData.secondDriver.codiceFiscale,
                             patente_numero: formData.secondDriver.licenseNumber,
                             patente_rilascio: formData.secondDriver.licenseIssueDate,
                             patente_scadenza: formData.secondDriver.licenseExpiryDate,
                           }}
                           onDataExtracted={(data) => {
-                            setFormData(prev => ({
-                              ...prev,
-                              secondDriver: {
-                                ...prev.secondDriver,
-                                ...(data.nome && !prev.secondDriver.firstName && { firstName: data.nome }),
-                                ...(data.cognome && !prev.secondDriver.lastName && { lastName: data.cognome }),
-                                ...(data.data_nascita && !prev.secondDriver.birthDate && { birthDate: data.data_nascita }),
-                                ...(data.patente_numero && !prev.secondDriver.licenseNumber && { licenseNumber: data.patente_numero }),
-                                // 2° guidatore: anzianità patente dalla data REALE di conseguimento (retro, col.10 cat.B).
-                                ...((data.patente_conseguimento || data.patente_rilascio) && !prev.secondDriver.licenseIssueDate && { licenseIssueDate: data.patente_conseguimento || data.patente_rilascio }),
-                                ...(data.patente_scadenza && !prev.secondDriver.licenseExpiryDate && { licenseExpiryDate: data.patente_scadenza }),
-                                ...(data.patente_ente && !prev.secondDriver.countryOfIssue && { countryOfIssue: data.patente_ente }),
-                              },
-                            }))
+                            setFormData(prev => {
+                              const sd = { ...prev.secondDriver };
+                              if (data.nome && !sd.firstName) sd.firstName = data.nome;
+                              if (data.cognome && !sd.lastName) sd.lastName = data.cognome;
+                              if (data.data_nascita && !sd.birthDate) sd.birthDate = data.data_nascita;
+                              if (data.sesso && !sd.sesso) sd.sesso = data.sesso;
+                              if (data.luogo_nascita && !sd.luogoNascita) sd.luogoNascita = data.luogo_nascita;
+                              if (data.codice_fiscale && !sd.codiceFiscale) sd.codiceFiscale = data.codice_fiscale.toUpperCase();
+                              if (data.patente_numero && !sd.licenseNumber) sd.licenseNumber = data.patente_numero;
+                              // Anzianita' di guida dalla data REALE di
+                              // conseguimento (retro, col.10 cat.B), non da
+                              // quella del duplicato.
+                              const conseguimento = data.patente_conseguimento || data.patente_rilascio;
+                              if (conseguimento && !sd.licenseIssueDate) sd.licenseIssueDate = conseguimento;
+                              if (data.patente_scadenza && !sd.licenseExpiryDate) sd.licenseExpiryDate = data.patente_scadenza;
+                              if (data.patente_ente && !sd.countryOfIssue) sd.countryOfIssue = data.patente_ente;
+                              // Nessun codice fiscale sui documenti ma i dati
+                              // per calcolarlo si': lo si calcola invece di
+                              // lasciarlo vuoto.
+                              if (!sd.codiceFiscale && sd.lastName && sd.firstName && sd.birthDate && sd.sesso && sd.luogoNascita) {
+                                const calcolato = calcolaCodiceFiscale({
+                                  cognome: sd.lastName,
+                                  nome: sd.firstName,
+                                  data_nascita: sd.birthDate,
+                                  sesso: sd.sesso as 'M' | 'F',
+                                  luogo_nascita: sd.luogoNascita,
+                                });
+                                if (calcolato.codice_fiscale) sd.codiceFiscale = calcolato.codice_fiscale;
+                              }
+                              return { ...prev, secondDriver: sd };
+                            });
                           }}
                           onError={(err) => console.error('Compila second-driver error:', err)}
                         />
                       </div>
                     )}
                   </div>
+
+                  {renderDriverForm('second')}
                 </div>
                 </motion.div>
               )}

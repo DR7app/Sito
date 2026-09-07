@@ -188,7 +188,7 @@ export default function CompilaButton({
 
   const handleCompila = async () => {
     if (validDocs.length === 0) {
-      onError?.('Carica almeno un documento prima di cliccare Compila')
+      onError?.('Carica almeno un documento prima di premere Compila automaticamente')
       return
     }
 
@@ -342,7 +342,7 @@ export default function CompilaButton({
               : 'bg-white text-black hover:bg-gray-200 cursor-pointer'
         } ${className}`}
       >
-        {isExtracting ? 'Lettura in corso...' : 'Compila'}
+        {isExtracting ? 'Lettura in corso...' : 'Compila automaticamente'}
       </button>
 
       {/* Extraction notes */}

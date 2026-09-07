@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface CalendarPickerProps {
   value: string; // ISO format (YYYY-MM-DD)
@@ -22,14 +23,26 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
   name,
   error = false
 }) => {
+  const { t } = useTranslation();
   const [displayValue, setDisplayValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const MONTHS = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-    'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
-  const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  const MONTHS = [
+    t({ it: 'Gennaio', en: 'January' }), t({ it: 'Febbraio', en: 'February' }),
+    t({ it: 'Marzo', en: 'March' }), t({ it: 'Aprile', en: 'April' }),
+    t({ it: 'Maggio', en: 'May' }), t({ it: 'Giugno', en: 'June' }),
+    t({ it: 'Luglio', en: 'July' }), t({ it: 'Agosto', en: 'August' }),
+    t({ it: 'Settembre', en: 'September' }), t({ it: 'Ottobre', en: 'October' }),
+    t({ it: 'Novembre', en: 'November' }), t({ it: 'Dicembre', en: 'December' }),
+  ];
+  const DAYS = [
+    t({ it: 'Lun', en: 'Mon' }), t({ it: 'Mar', en: 'Tue' }),
+    t({ it: 'Mer', en: 'Wed' }), t({ it: 'Gio', en: 'Thu' }),
+    t({ it: 'Ven', en: 'Fri' }), t({ it: 'Sab', en: 'Sat' }),
+    t({ it: 'Dom', en: 'Sun' }),
+  ];
 
   // Convert ISO date to European format
   const isoToEuropean = (isoDate: string): string => {
@@ -189,7 +202,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
           value={displayValue}
           onChange={handleInputChange}
           onClick={() => setIsOpen(!isOpen)}
-          placeholder="GG/MM/AAAA"
+          placeholder={t({ it: 'GG/MM/AAAA', en: 'DD/MM/YYYY' })}
           required={required}
           maxLength={10}
           inputMode="numeric"

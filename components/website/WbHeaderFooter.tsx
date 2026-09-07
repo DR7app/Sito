@@ -51,7 +51,7 @@ export const WbHeader: React.FC<{
   config: WbHeaderConfig;
   tokens: WbThemeTokens | null;
 }> = ({ config, tokens }) => {
-  const { lang, setLanguage } = useTranslation();
+  const { t, lang, setLanguage } = useTranslation();
   const { user } = useAuth();
   const { pathname } = useLocation();
   const [aperto, setAperto] = React.useState(false);
@@ -89,7 +89,7 @@ export const WbHeader: React.FC<{
         className="max-w-7xl mx-auto px-4 flex items-center gap-6"
         style={{ height: altezza, justifyContent: s.align === 'center' ? 'center' : 'space-between' }}
       >
-        <Link to="/" className="flex items-center shrink-0" aria-label="Home">
+        <Link to="/" className="flex items-center shrink-0" aria-label={t({ it: 'Home', en: 'Home' })}>
           {logo
             ? <img src={logo} alt="DR7" style={{ height: s.logoHeight || 34, width: 'auto' }} className="hidden md:block" />
             : <span className="font-bold tracking-widest">DR7</span>}
@@ -97,7 +97,7 @@ export const WbHeader: React.FC<{
         </Link>
 
         {/* Menu su schermo grande */}
-        <nav className="hidden lg:flex items-center gap-6" aria-label="Menu principale">
+        <nav className="hidden lg:flex items-center gap-6" aria-label={t({ it: 'Menu principale', en: 'Main menu' })}>
           {voci.map((v) => {
             if (v.kind === 'group') {
               const figli = (v.children || []).filter((c) => c.visible !== false);
@@ -209,7 +209,7 @@ export const WbHeader: React.FC<{
             ['--wb-h' as string]: `${altezza}px`,
           }}
         >
-          <nav className="px-4 py-3 flex flex-col gap-1" aria-label="Menu">
+          <nav className="px-4 py-3 flex flex-col gap-1" aria-label={t({ it: 'Menu', en: 'Menu' })}>
             {voci.map((v) => (
               <div key={v.id}>
                 {v.kind === 'group' ? (

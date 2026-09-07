@@ -124,7 +124,7 @@ const MembershipEnrollmentPage: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-24 bg-black min-h-screen">
             <div className="container mx-auto px-6 max-w-lg">
-                <h1 className="text-3xl font-bold text-white text-center mb-2">DR7 CLUB</h1>
+                <h1 className="text-3xl font-bold text-white text-center mb-2">{t({ it: 'DR7 CLUB', en: 'DR7 CLUB' })}</h1>
                 <p className="text-gray-400 text-center mb-8">
                     {t({ it: 'Conferma il tuo abbonamento', en: 'Confirm your subscription' })}
                 </p>
@@ -158,7 +158,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                     <div className="space-y-3 text-sm mb-6">
                         <div className="flex justify-between">
                             <span className="text-gray-400">{t({ it: 'Piano', en: 'Plan' })}</span>
-                            <span className="text-white font-semibold">DR7 Club</span>
+                            <span className="text-white font-semibold">{t({ it: 'DR7 Club', en: 'DR7 Club' })}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-400">{t({ it: 'Fatturazione', en: 'Billing' })}</span>

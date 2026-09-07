@@ -454,7 +454,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                 className="form-input"
                 value={formData.nome}
                 onChange={handleChange}
-                placeholder="Mario"
+                placeholder={t({ it: "Mario", en: "Mario" })}
                 required
               />
             </div>
@@ -471,7 +471,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                 className="form-input"
                 value={formData.cognome}
                 onChange={handleChange}
-                placeholder="Rossi"
+                placeholder={t({ it: "Rossi", en: "Rossi" })}
                 required
               />
             </div>
@@ -489,7 +489,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.codiceFiscale}
                   onChange={(e) => setFormData(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))}
-                  placeholder="RSSMRA80A01H501U"
+                  placeholder={t({ it: "RSSMRA80A01H501U", en: "RSSMRA80A01H501U" })}
                   maxLength={16}
                   required
                   style={{ textTransform: 'uppercase' }}
@@ -605,7 +605,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.pec}
                   onChange={handleChange}
-                  placeholder="pec@pec.it"
+                  placeholder={t({ it: "pec@pec.it", en: "pec@pec.it" })}
                 />
               </div>
             </div>
@@ -630,7 +630,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.codiceUnivoco}
                   onChange={handleChange}
-                  placeholder="XXXXXX"
+                  placeholder={t({ it: "XXXXXX", en: "XXXXXX" })}
                   required
                 />
                 <button
@@ -708,7 +708,7 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                   className="form-input"
                   value={formData.citta}
                   onChange={handleChange}
-                  placeholder="Cagliari"
+                  placeholder={t({ it: "Cagliari", en: "Cagliari" })}
                   required
                 />
                 <button

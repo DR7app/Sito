@@ -1328,7 +1328,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                           <option value="Spagna">{t({ it: "Spagna", en: "Spain" })}</option>
                           <option value="Grecia">{t({ it: "Grecia", en: "Greece" })}</option>
                           <option value="Croazia">{t({ it: "Croazia", en: "Croatia" })}</option>
-                          <option value="Montenegro">Montenegro</option>
+                          <option value="Montenegro">{t({ it: "Montenegro", en: "Montenegro" })}</option>
                           <option value="Altro">{t({ it: "Altro", en: "Other" })}</option>
                         </select>
                       </div>
@@ -1345,9 +1345,9 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                           <option value="">{t({ it: "Seleziona", en: "Select" })}</option>
                           <option value="Barca a vela">{t({ it: "Barca a vela", en: "Sailing boat" })}</option>
                           <option value="Catamarano">{t({ it: "Catamarano", en: "Catamaran" })}</option>
-                          <option value="Motoryacht">Motoryacht</option>
+                          <option value="Motoryacht">{t({ it: "Motoryacht", en: "Motoryacht" })}</option>
                           <option value="Gommone">{t({ it: "Gommone", en: "RIB / dinghy" })}</option>
-                          <option value="Superyacht">Superyacht</option>
+                          <option value="Superyacht">{t({ it: "Superyacht", en: "Superyacht" })}</option>
                           <option value="Altro">{t({ it: "Altro", en: "Other" })}</option>
                         </select>
                       </div>

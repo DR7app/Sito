@@ -813,7 +813,7 @@ const MechanicalBookingPage: React.FC = () => {
                     name="codiceFiscale"
                     value={formData.codiceFiscale}
                     onChange={handleChange}
-                    placeholder="RSSMRA80A01H501U"
+                    placeholder={t({ it: "RSSMRA80A01H501U", en: "RSSMRA80A01H501U" })}
                     maxLength={16}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase"
                   />
@@ -1076,7 +1076,7 @@ const MechanicalBookingPage: React.FC = () => {
             {/* Total & Submit */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <div className="flex justify-between items-center mb-3 text-gray-400">
-                <span>Subtotale</span>
+                <span>{t({ it: 'Subtotale', en: 'Subtotal' })}</span>
                 <span>€{selectedService.price.toFixed(2)}</span>
               </div>
               {discountAmount > 0 && (
@@ -1192,7 +1192,7 @@ const MechanicalBookingPage: React.FC = () => {
                       <div className="text-sm font-semibold text-white mb-1">
                         {t({ it: 'Carta di Credito', en: 'Credit Card' })}
                       </div>
-                      <div className="text-xs text-gray-400">Visa, Mastercard</div>
+                      <div className="text-xs text-gray-400">{t({ it: 'Visa, Mastercard', en: 'Visa, Mastercard' })}</div>
                     </div>
                   </button>
                 </div>

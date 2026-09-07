@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface EuropeanDateInputProps {
   value: string; // ISO format (YYYY-MM-DD)
@@ -21,6 +22,7 @@ const EuropeanDateInput: React.FC<EuropeanDateInputProps> = ({
   name,
   error = false
 }) => {
+  const { t } = useTranslation();
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
@@ -114,7 +116,7 @@ const EuropeanDateInput: React.FC<EuropeanDateInputProps> = ({
       onChange={handleInputChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      placeholder="GG/MM/AAAA"
+      placeholder={t({ it: 'GG/MM/AAAA', en: 'DD/MM/YYYY' })}
       required={required}
       maxLength={10}
       inputMode="numeric"

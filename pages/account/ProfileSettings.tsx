@@ -413,7 +413,7 @@ const ProfileSettings = () => {
                                 <div className="space-y-2 w-full sm:w-auto">
                                     {/* Card-paid portion (earns 0,1%/giorno for DR7 CLUB PRIVILEGE) */}
                                     <div className="flex items-baseline gap-3">
-                                        <p className="text-sm text-gray-400 w-40">Credit Wallet</p>
+                                        <p className="text-sm text-gray-400 w-40">{t({ it: 'Credit Wallet', en: 'Credit Wallet' })}</p>
                                         <p className="text-xl font-semibold text-white">€{Math.max(0, creditBalance - bonusTotal).toFixed(2)}</p>
                                     </div>
                                     {/* Bonus — clickable to reveal where it came from */}
@@ -688,7 +688,7 @@ const ProfileSettings = () => {
                                         <div><label className="text-sm text-gray-400">{t({ it: "Partita IVA", en: "VAT number" })}</label><p className="text-white font-mono">{extendedProfile.partita_iva}</p></div>
                                         <div><label className="text-sm text-gray-400">{t({ it: "Codice Fiscale", en: "Tax Code" })}</label><p className="text-white font-mono">{extendedProfile.codice_fiscale}</p></div>
                                         <div><label className="text-sm text-gray-400">{t({ it: "Codice SDI", en: "SDI code" })}</label><p className="text-white font-mono">{extendedProfile.codice_destinatario}</p></div>
-                                        <div><label className="text-sm text-gray-400">PEC</label><p className="text-white">{extendedProfile.pec || '-'}</p></div>
+                                        <div><label className="text-sm text-gray-400">{t({ it: 'PEC', en: 'PEC' })}</label><p className="text-white">{extendedProfile.pec || '-'}</p></div>
                                     </div>
 
                                     <h3 className="text-lg font-semibold text-white mt-6 mb-4">{t({ it: "Sede Legale & Operativa", en: "Registered & Operating Office" })}</h3>

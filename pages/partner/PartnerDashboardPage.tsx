@@ -68,8 +68,8 @@ const PartnerDashboardPage: React.FC = () => {
                 <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-700">
 
                 </div>
-                <h3 className="text-lg font-bold text-white">{t(title as any)}</h3>
-                <p className="text-sm text-gray-400 mt-2">{t(description as any)}</p>
+                <h3 className="text-lg font-bold text-white">{title}</h3>
+                <p className="text-sm text-gray-400 mt-2">{description}</p>
                 <div className="mt-4">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2 py-1">{t('Coming_Soon')}</span>
                 </div>
@@ -190,18 +190,18 @@ const PartnerDashboardPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <FeatureCard
                             icon={CalendarIcon}
-                            title="View_Bookings"
-                            description="Track_upcoming_and_past_bookings"
+                            title={t('View_Bookings')}
+                            description={t('Track_upcoming_and_past_bookings')}
                         />
                         <FeatureCard
                             icon={ZapIcon}
-                            title="Analytics"
-                            description="Gain_insights_into_your_performance"
+                            title={t('Analytics')}
+                            description={t('Gain_insights_into_your_performance')}
                         />
                         <FeatureCard
                             icon={FileTextIcon}
-                            title="Manage_Listings"
-                            description="Add_edit_and_organize_your_assets"
+                            title={t('Manage_Listings')}
+                            description={t('Add_edit_and_organize_your_assets')}
                         />
                     </div>
                 </div>

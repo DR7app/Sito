@@ -204,7 +204,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
                 />
               </div>
               <div>
-                <h3 className="text-black font-bold text-lg">DR7 AI Assistant</h3>
+                <h3 className="text-black font-bold text-lg">{t({ it: "DR7 AI Assistant", en: "DR7 AI Assistant" })}</h3>
                 <p className="text-black/70 text-xs">{t({ it: "Sempre al tuo servizio", en: "Always at your service" })}</p>
               </div>
             </div>

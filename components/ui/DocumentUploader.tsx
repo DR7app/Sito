@@ -49,7 +49,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onFileChange, title
       {file ? (
         <div className="p-2 bg-gray-800 rounded-lg flex items-center space-x-3">
           {preview && (
-            <img src={preview} alt="Preview" className="h-12 w-12 object-cover rounded" />
+            <img src={preview} alt={t({ it: 'Anteprima', en: 'Preview' })} className="h-12 w-12 object-cover rounded" />
           )}
           <div className="flex-grow text-sm text-gray-300">
             <p className="truncate">{file.name}</p>

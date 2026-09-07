@@ -9,6 +9,7 @@
 import React from 'react';
 import type { WbButton, WbOverlay } from './wbSchema';
 import { wbText, wbSafeUrl } from './wbSchema';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Popup e striscioni ─────────────────────────────────────────────────────
 const chiaveVista = (id: string) => `dr7-wb-seen-${id}`;
@@ -55,6 +56,7 @@ const PulsanteOverlay: React.FC<{ btn: WbButton; lang: 'it' | 'en'; onClose: () 
 };
 
 export const Popup: React.FC<{ o: WbOverlay; lang: 'it' | 'en' }> = ({ o, lang }) => {
+  const { t } = useTranslation();
   const [aperto, setAperto] = React.useState(false);
   const chiudi = React.useCallback(() => { setAperto(false); segnaVisto(o); }, [o]);
 
@@ -126,7 +128,7 @@ export const Popup: React.FC<{ o: WbOverlay; lang: 'it' | 'en' }> = ({ o, lang }
           <button
             type="button"
             onClick={chiudi}
-            aria-label="Chiudi"
+            aria-label={t({ it: 'Chiudi', en: 'Close' })}
             className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
           >
             &times;
@@ -152,6 +154,7 @@ export const Popup: React.FC<{ o: WbOverlay; lang: 'it' | 'en' }> = ({ o, lang }
 };
 
 export const Striscione: React.FC<{ o: WbOverlay; lang: 'it' | 'en' }> = ({ o, lang }) => {
+  const { t } = useTranslation();
   const [chiuso, setChiuso] = React.useState(() => giaVisto(o));
   if (chiuso) return null;
   const c = o.config || {};
@@ -180,7 +183,7 @@ export const Striscione: React.FC<{ o: WbOverlay; lang: 'it' | 'en' }> = ({ o, l
           <button
             type="button"
             onClick={() => { setChiuso(true); segnaVisto(o); }}
-            aria-label="Chiudi"
+            aria-label={t({ it: 'Chiudi', en: 'Close' })}
             className="ml-2 w-7 h-7 rounded-full hover:bg-black/10"
           >
             &times;

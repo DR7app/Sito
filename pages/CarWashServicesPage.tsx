@@ -740,7 +740,7 @@ const CarWashServicesPage: React.FC = () => {
                 <RiquadroCatalogo
                   src={absoluteDetailImage}
                   fallback="/absolute-detail.jpeg"
-                  alt="Absolute Detail"
+                  alt={t({ it: 'Absolute Detail', en: 'Absolute Detail' })}
                 />
                 <div className="p-4">
                   {targaResult && washCategory ? (

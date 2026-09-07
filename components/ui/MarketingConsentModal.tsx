@@ -90,7 +90,7 @@ const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, o
                                     {t({ it: 'Acconsento a ricevere offerte e comunicazioni promozionali da partner selezionati da DR7 tramite email, telefono, SMS o WhatsApp.', en: 'I consent to receiving offers and promotional communications from partners selected by DR7 via email, phone, SMS or WhatsApp.' })}
                                 </p>
                                 <p className="text-gray-400 text-xs mt-2">
-                                    {t({ it: 'Consenso facoltativo e revocabile in qualsiasi momento.', en: 'Consent is optional and can be withdrawn at any time.' })} <a href="/privacy-policy" className="text-white underline hover:text-gray-300">Privacy Policy</a>
+                                    {t({ it: 'Consenso facoltativo e revocabile in qualsiasi momento.', en: 'Consent is optional and can be withdrawn at any time.' })} <a href="/privacy-policy" className="text-white underline hover:text-gray-300">{t({ it: 'Privacy Policy', en: 'Privacy Policy' })}</a>
                                 </p>
                             </div>
 

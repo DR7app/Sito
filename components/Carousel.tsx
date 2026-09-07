@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface CarouselProps {
   images: string[];
 }
 
 const Carousel: React.FC<CarouselProps> = ({ images }) => {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -21,7 +23,7 @@ const Carousel: React.FC<CarouselProps> = ({ images }) => {
         <motion.img
           key={index}
           src={images[index]}
-          alt="Immagine carosello"
+          alt={t({ it: 'Immagine carosello', en: 'Carousel image' })}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

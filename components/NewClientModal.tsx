@@ -499,7 +499,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value.toUpperCase() })}
                     maxLength={16}
                     className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white uppercase text-white"
-                    placeholder="RSSMRA80A01H501U"
+                    placeholder={t({ it: "RSSMRA80A01H501U", en: "RSSMRA80A01H501U" })}
                   />
                   <CalcolaCFButton
                     className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
@@ -544,7 +544,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     value={formData.citta_residenza}
                     onChange={(e) => setFormData({ ...formData, citta_residenza: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white"
-                    placeholder="Milano"
+                    placeholder={t({ it: "Milano", en: "Milano" })}
                   />
                 </div>
                 <div>
@@ -614,7 +614,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     value={formData.citta_nascita}
                     onChange={(e) => setFormData({ ...formData, citta_nascita: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white"
-                    placeholder="Roma"
+                    placeholder={t({ it: "Roma", en: "Roma" })}
                   />
                   {errors.citta_nascita && <p className="text-red-500 text-xs mt-1">{errors.citta_nascita}</p>}
                 </div>
@@ -760,7 +760,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                       value={formData.rappresentante_nome}
                       onChange={(e) => setFormData({ ...formData, rappresentante_nome: e.target.value })}
                       className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white"
-                      placeholder="Mario"
+                      placeholder={t({ it: "Mario", en: "Mario" })}
                     />
                   </div>
                   <div>
@@ -772,7 +772,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                       value={formData.rappresentante_cognome}
                       onChange={(e) => setFormData({ ...formData, rappresentante_cognome: e.target.value })}
                       className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white"
-                      placeholder="Rossi"
+                      placeholder={t({ it: "Rossi", en: "Rossi" })}
                     />
                   </div>
                 </div>
@@ -788,7 +788,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                       onChange={(e) => setFormData({ ...formData, rappresentante_cf: e.target.value.toUpperCase() })}
                       maxLength={16}
                       className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white uppercase text-white"
-                      placeholder="RSSMRA80A01H501U"
+                      placeholder={t({ it: "RSSMRA80A01H501U", en: "RSSMRA80A01H501U" })}
                     />
                   </div>
                   <div>
@@ -911,7 +911,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     onChange={(e) => setFormData({ ...formData, codice_univoco: e.target.value.toUpperCase() })}
                     maxLength={7}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white uppercase text-white"
-                    placeholder="ABC1234"
+                    placeholder={t({ it: "ABC1234", en: "ABC1234" })}
                   />
                   {errors.codice_univoco && <p className="text-red-500 text-xs mt-1">{errors.codice_univoco}</p>}
                 </div>
@@ -1008,7 +1008,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white"
-                  placeholder="cliente@example.com"
+                  placeholder={t({ it: "cliente@example.com", en: "cliente@example.com" })}
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>

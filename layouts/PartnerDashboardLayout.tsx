@@ -38,7 +38,7 @@ const PartnerDashboardLayout = () => {
                     <aside className="md:w-1/4 lg:w-1/5">
                         <div className="mb-6 p-3">
                             <h2 className="text-lg font-bold text-white truncate">{user?.companyName}</h2>
-                            <p className="text-sm text-gray-400">Partner Account</p>
+                            <p className="text-sm text-gray-400">{t({ it: 'Partner Account', en: 'Partner Account' })}</p>
                         </div>
                         <nav className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible -mx-4 px-4 md:mx-0 md:px-0 space-x-2 md:space-x-0 md:space-y-1">
                             {navItems.map(item => (

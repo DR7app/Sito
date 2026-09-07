@@ -1712,7 +1712,7 @@ const CarWashBookingPage: React.FC = () => {
                     name="codiceFiscale"
                     value={formData.codiceFiscale}
                     onChange={handleChange}
-                    placeholder="RSSMRA80A01H501U"
+                    placeholder={t({ it: "RSSMRA80A01H501U", en: "RSSMRA80A01H501U" })}
                     maxLength={16}
                     className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase"
                   />
@@ -2008,7 +2008,7 @@ const CarWashBookingPage: React.FC = () => {
                   <div className="flex items-start gap-3 min-w-0">
                     <input type="checkbox" checked={primeFlexSelected} onChange={() => {}} className="h-5 w-5 mt-0.5 flex-shrink-0" />
                     <div className="min-w-0">
-                      <span className="font-bold text-white">DR7 FLEX</span>
+                      <span className="font-bold text-white">{t({ it: 'DR7 FLEX', en: 'DR7 FLEX' })}</span>
                       <ul className="text-sm text-gray-400 mt-2 space-y-1 list-disc list-inside marker:text-yellow-400">
                         <li>{t({ it: "Cancellazione consentita fino al giorno stesso del servizio.", en: "Cancellation allowed up to the day of the service." })}</li>
                         <li>{t({ it: "Rimborso del 90% in credito DR7 Wallet per utilizzi futuri.", en: "90% refunded as DR7 Wallet credit for future use." })}</li>
@@ -2074,12 +2074,12 @@ const CarWashBookingPage: React.FC = () => {
             {/* Total & Submit */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
               <div className="flex justify-between items-center mb-3 text-gray-400">
-                <span>Subtotale</span>
+                <span>{t({ it: 'Subtotale', en: 'Subtotal' })}</span>
                 <span>€{getBasePrice().toFixed(2)}</span>
               </div>
               {primeFlexSelected && (
                 <div className="flex justify-between items-center mb-3 text-green-400">
-                  <span>DR7 Flex</span>
+                  <span>{t({ it: 'DR7 Flex', en: 'DR7 Flex' })}</span>
                   <span>+€{PRIME_FLEX_PRICE.toFixed(2)}</span>
                 </div>
               )}
@@ -2175,12 +2175,12 @@ const CarWashBookingPage: React.FC = () => {
                 )}
                 <div className="border-t border-gray-700 my-3"></div>
                 <div className="flex justify-between text-sm text-gray-300 mb-1">
-                  <span>Subtotale:</span>
+                  <span>{t({ it: 'Subtotale:', en: 'Subtotal:' })}</span>
                   <span>€{getBasePrice().toFixed(2)}</span>
                 </div>
                 {primeFlexSelected && (
                   <div className="flex justify-between text-sm text-green-400 mb-1">
-                    <span>DR7 Flex:</span>
+                    <span>{t({ it: 'DR7 Flex:', en: 'DR7 Flex:' })}</span>
                     <span>+€{PRIME_FLEX_PRICE.toFixed(2)}</span>
                   </div>
                 )}
@@ -2233,7 +2233,7 @@ const CarWashBookingPage: React.FC = () => {
                       <div className="text-sm font-semibold text-white mb-1">
                         {t({ it: 'Carta', en: 'Card' })}
                       </div>
-                      <div className="text-xs text-gray-400">Visa, Mastercard</div>
+                      <div className="text-xs text-gray-400">{t({ it: 'Visa, Mastercard', en: 'Visa, Mastercard' })}</div>
                     </div>
                   </button>
                 </div>

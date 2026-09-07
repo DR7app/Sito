@@ -5136,7 +5136,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div>
                     <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
                     <div className="flex gap-2 mt-1">
-                      <input type="text" name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} placeholder="es. RSSMRA85M01H501Z" className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
+                      <input type="text" name="codiceFiscale" value={formData.codiceFiscale} onChange={handleChange} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
                       <CalcolaCFButton
                         className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
                         config={{
@@ -5192,7 +5192,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     }}
                     onSelect={(d) => setResidenzaCountryCode((d.countryCode || '').toLowerCase())}
                     className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm"
-                    placeholder="Via Roma 10, 09100 Cagliari"
+                    placeholder={t({ it: "Via Roma 10, 09100 Cagliari", en: "Via Roma 10, 09100 Cagliari" })}
                   />
                   <p className="text-[11px] text-red-400 mt-1">
                     Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
@@ -6240,7 +6240,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
-                            <input type="text" value={vehicleDepositOwner.codiceFiscale} onChange={e => setVehicleDepositOwner(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} maxLength={16} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm uppercase" placeholder="RSSMRA85M01H501Z" />
+                            <input type="text" value={vehicleDepositOwner.codiceFiscale} onChange={e => setVehicleDepositOwner(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} maxLength={16} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm uppercase" placeholder={t({ it: "RSSMRA85M01H501Z", en: "RSSMRA85M01H501Z" })} />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -6249,17 +6249,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             </div>
                             <div>
                               <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Luogo di Nascita *", en: "Place of birth *" })}</label>
-                              <input type="text" value={vehicleDepositOwner.luogoNascita} onChange={e => setVehicleDepositOwner(p => ({ ...p, luogoNascita: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Cagliari" />
+                              <input type="text" value={vehicleDepositOwner.luogoNascita} onChange={e => setVehicleDepositOwner(p => ({ ...p, luogoNascita: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder={t({ it: "Cagliari", en: "Cagliari" })} />
                             </div>
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Indirizzo *", en: "Address *" })}</label>
-                            <input type="text" value={vehicleDepositOwner.indirizzo} onChange={e => setVehicleDepositOwner(p => ({ ...p, indirizzo: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Via Roma 1" />
+                            <input type="text" value={vehicleDepositOwner.indirizzo} onChange={e => setVehicleDepositOwner(p => ({ ...p, indirizzo: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder={t({ it: "Via Roma 1", en: "Via Roma 1" })} />
                           </div>
                           <div className="grid grid-cols-3 gap-3">
                             <div>
                               <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Città *", en: "City *" })}</label>
-                              <input type="text" value={vehicleDepositOwner.citta} onChange={e => setVehicleDepositOwner(p => ({ ...p, citta: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="Cagliari" />
+                              <input type="text" value={vehicleDepositOwner.citta} onChange={e => setVehicleDepositOwner(p => ({ ...p, citta: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder={t({ it: "Cagliari", en: "Cagliari" })} />
                             </div>
                             <div>
                               <label className="text-xs text-gray-400 mb-1 block">{t({ it: "CAP *", en: "Postcode *" })}</label>
@@ -6691,9 +6691,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <h4 className="text-base font-semibold text-white mb-3">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h4>
                     <div className="p-4 bg-gray-800 rounded-lg">
                       <div className="flex items-center justify-center gap-3 mb-3">
-                        <svg viewBox="0 0 131.39 86.9" className="h-6 opacity-70" aria-label="Mastercard"><rect width="131.39" height="86.9" rx="8" fill="#000"/><circle cx="48.37" cy="43.45" r="27.5" fill="#eb001b"/><circle cx="83.02" cy="43.45" r="27.5" fill="#f79e1b"/><path d="M65.7 20.8a27.4 27.4 0 0 0-10.2 21.4c0 8.6 3.9 16.3 10.2 21.4a27.4 27.4 0 0 0 10.2-21.4c0-8.6-3.9-16.3-10.2-21.4Z" fill="#ff5f00"/></svg>
-                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label="Visa"><path d="M293.2 348.7l33.4-195.8h53.4l-33.4 195.8zM541.4 157.6a131.8 131.8 0 0 0-48.4-8.8c-53.2 0-90.7 27-91 65.7-.3 28.6 26.8 44.6 47.2 54.1 21 9.7 28 16 27.9 24.7-.1 13.3-16.7 19.4-32.2 19.4-21.5 0-32.9-3-50.6-10.4l-6.9-3.2-7.5 44.5c12.6 5.5 35.8 10.3 59.9 10.6 56.6 0 93.3-26.7 93.7-68 .2-22.7-14.2-40-45.3-54.2-18.9-9.2-30.4-15.4-30.3-24.7 0-8.3 9.8-17.2 30.9-17.2 17.6-.3 30.4 3.6 40.4 7.6l4.8 2.3 7.3-42.4z" fill="#1434cb"/><path d="M630.6 152.9h-41.6c-12.9 0-22.5 3.5-28.2 16.5l-79.9 182.3h56.5s9.2-24.5 11.3-29.9h69.1c1.6 7 6.5 29.9 6.5 29.9h50l-43.6-198.8zm-66.4 128.3c4.5-11.5 21.5-55.8 21.5-55.8-.3.5 4.4-11.5 7.1-19l3.6 17.2s10.3 47.6 12.5 57.6h-44.7zM232.8 152.9l-52.8 133.5-5.6-27.5c-9.8-31.5-40.2-65.7-74.3-82.8l48.2 172.4 57 0 84.7-195.8h-57.2z" fill="#1434cb"/><path d="M131.9 152.9H46.5l-.7 3.8c67.6 16.5 112.3 56.3 130.9 104.2l-18.9-91.6c-3.2-12.5-12.8-16-25.9-16.4z" fill="#f7a600"/></svg>
-                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label="PayPal"><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l-2.6 16.7c-.4 2.7 1.6 5 4.3 5h30.1c3.5 0 6.5-2.5 7-6l.3-1.5 5.6-35.2.4-1.9c.5-3.4 3.5-6 7-6h4.4c28.5 0 50.8-11.6 57.3-45 2.7-14-1.3-25.6-9-33.4z" fill="#179bd7"/><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3-1-.5-1-.5 0 0 2.2-14.2-.0-23.8-12.2-27.1z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4 9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7-1-.5-1-.5-1.1-27.6z" fill="#179bd7"/></svg>
+                        <svg viewBox="0 0 131.39 86.9" className="h-6 opacity-70" aria-label={t({ it: 'Mastercard', en: 'Mastercard' })}><rect width="131.39" height="86.9" rx="8" fill="#000"/><circle cx="48.37" cy="43.45" r="27.5" fill="#eb001b"/><circle cx="83.02" cy="43.45" r="27.5" fill="#f79e1b"/><path d="M65.7 20.8a27.4 27.4 0 0 0-10.2 21.4c0 8.6 3.9 16.3 10.2 21.4a27.4 27.4 0 0 0 10.2-21.4c0-8.6-3.9-16.3-10.2-21.4Z" fill="#ff5f00"/></svg>
+                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label={t({ it: 'Visa', en: 'Visa' })}><path d="M293.2 348.7l33.4-195.8h53.4l-33.4 195.8zM541.4 157.6a131.8 131.8 0 0 0-48.4-8.8c-53.2 0-90.7 27-91 65.7-.3 28.6 26.8 44.6 47.2 54.1 21 9.7 28 16 27.9 24.7-.1 13.3-16.7 19.4-32.2 19.4-21.5 0-32.9-3-50.6-10.4l-6.9-3.2-7.5 44.5c12.6 5.5 35.8 10.3 59.9 10.6 56.6 0 93.3-26.7 93.7-68 .2-22.7-14.2-40-45.3-54.2-18.9-9.2-30.4-15.4-30.3-24.7 0-8.3 9.8-17.2 30.9-17.2 17.6-.3 30.4 3.6 40.4 7.6l4.8 2.3 7.3-42.4z" fill="#1434cb"/><path d="M630.6 152.9h-41.6c-12.9 0-22.5 3.5-28.2 16.5l-79.9 182.3h56.5s9.2-24.5 11.3-29.9h69.1c1.6 7 6.5 29.9 6.5 29.9h50l-43.6-198.8zm-66.4 128.3c4.5-11.5 21.5-55.8 21.5-55.8-.3.5 4.4-11.5 7.1-19l3.6 17.2s10.3 47.6 12.5 57.6h-44.7zM232.8 152.9l-52.8 133.5-5.6-27.5c-9.8-31.5-40.2-65.7-74.3-82.8l48.2 172.4 57 0 84.7-195.8h-57.2z" fill="#1434cb"/><path d="M131.9 152.9H46.5l-.7 3.8c67.6 16.5 112.3 56.3 130.9 104.2l-18.9-91.6c-3.2-12.5-12.8-16-25.9-16.4z" fill="#f7a600"/></svg>
+                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label={t({ it: 'PayPal', en: 'PayPal' })}><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l-2.6 16.7c-.4 2.7 1.6 5 4.3 5h30.1c3.5 0 6.5-2.5 7-6l.3-1.5 5.6-35.2.4-1.9c.5-3.4 3.5-6 7-6h4.4c28.5 0 50.8-11.6 57.3-45 2.7-14-1.3-25.6-9-33.4z" fill="#179bd7"/><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3-1-.5-1-.5 0 0 2.2-14.2-.0-23.8-12.2-27.1z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4 9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7-1-.5-1-.5-1.1-27.6z" fill="#179bd7"/></svg>
                       </div>
                       <p className="text-gray-400 text-sm text-center">
                         Sarai reindirizzato a una pagina di pagamento sicura per completare la transazione.
@@ -7572,12 +7572,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <div className="bg-gray-800/50 rounded-xl p-4 mb-5 text-sm">
                       <p className="text-white font-semibold mb-2">{t({ it: "Con DR7 Club ottieni:", en: "With DR7 Club you get:" })}</p>
                       <ul className="space-y-1.5 text-gray-300">
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> Fino a €{subscriptionWalletCredit.toFixed(2)} di credito wallet (4% del totale)</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Fino a", en: "Up to" })} €{subscriptionWalletCredit.toFixed(2)} {t({ it: "di credito wallet (4% del totale)", en: "of wallet credit (4% of the total)" })}</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Sconti esclusivi su noleggi e lavaggi", en: "Exclusive discounts on rentals and washes" })}</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Accesso prioritario alle nuove supercar", en: "Priority access to new supercars" })}</li>
                         <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Promozioni riservate ai membri", en: "Members-only promotions" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Bonus fino al 100%</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> DR7 Wallet Privilege fino al 36%</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "DR7 Wallet Bonus fino al 100%", en: "DR7 Wallet Bonus up to 100%" })}</li>
+                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "DR7 Wallet Privilege fino al 36%", en: "DR7 Wallet Privilege up to 36%" })}</li>
                       </ul>
                     </div>
 
@@ -7810,7 +7810,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       {formData.extras.some(e => e.startsWith('subscription_')) && (
                         <div className="mt-3 pt-3 border-t border-white/20 bg-white/5 rounded-lg p-3">
                           <div className="flex justify-between text-sm">
-                            <span className="text-white font-semibold">DR7 Club</span>
+                            <span className="text-white font-semibold">{t({ it: 'DR7 Club', en: 'DR7 Club' })}</span>
                             <span className="text-white font-bold">
                               {formData.extras.includes('subscription_annual') ? '€39/anno' : '€4,90/mese'}
                             </span>
@@ -8006,10 +8006,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               </div>
               <h3 className="text-[17px] font-semibold text-white mb-2">{t({ it: "Veicolo non disponibile", en: "Vehicle not available" })}</h3>
               <p className="text-[13px] text-gray-400 leading-relaxed">
-                I veicoli della categoria Urban & Utilitarie non sono disponibili oltre il <span className="text-white">25 marzo 2026</span>.
+                {t({ it: "I veicoli della categoria Urban & Utilitarie non sono disponibili oltre il", en: "Urban & Utility vehicles are not available beyond" })} <span className="text-white">{t({ it: "25 marzo 2026", en: "25 March 2026" })}</span>.
               </p>
               <p className="text-[13px] text-gray-400 leading-relaxed mt-2">
-                L'ultimo check-out disponibile è il <span className="text-white font-medium">25/03/2026</span>.
+                {t({ it: "L'ultimo check-out disponibile è il", en: "The last available check-out is" })} <span className="text-white font-medium">{t({ it: "25/03/2026", en: "25/03/2026" })}</span>.
               </p>
             </div>
             <div className="border-t border-white/10">

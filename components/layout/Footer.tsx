@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
               </svg>
             </button>
             <Link to="/" className="inline-block">
-              <img src={aspetto.logo_url} alt="DR7 Cagliari Logo" className="logo-bianco w-auto" style={{ height: aspetto.footer_logo_height }} />
+              <img src={aspetto.logo_url} alt={t({ it: 'DR7 Cagliari Logo', en: 'DR7 Cagliari Logo' })} className="logo-bianco w-auto" style={{ height: aspetto.footer_logo_height }} />
             </Link>
           </div>
 
@@ -136,13 +136,13 @@ const Footer: React.FC = () => {
                 <span className="ml-3 inline-flex items-center gap-2">
                   <button
                     onClick={() => setLanguage('it')}
-                    aria-label="Italiano"
-                    className={`transition-colors duration-500 ease-editorial ${t({ it: 'text-white', en: 'hover:text-white' })}`}
+                    aria-label={t({ it: 'Italiano', en: 'Italian' })}
+                    className={`transition-colors duration-500 ease-editorial ${lang === 'it' ? 'text-white' : 'hover:text-white'}`}
                   >IT</button>
                   <span className="text-gray-700">/</span>
                   <button
                     onClick={() => setLanguage('en')}
-                    aria-label="English"
+                    aria-label={t({ it: 'Inglese', en: 'English' })}
                     className={`transition-colors duration-500 ease-editorial ${lang === 'en' ? 'text-white' : 'hover:text-white'}`}
                   >EN</button>
                 </span>

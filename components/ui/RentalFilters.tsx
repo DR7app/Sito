@@ -93,12 +93,12 @@ export default function RentalFilters({
 
       {/* Budget max */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400">Budget max:</span>
+        <span className="text-xs text-gray-400">{t({ it: 'Budget max:', en: 'Max budget:' })}</span>
         <input
           type="number"
           value={maxBudget ?? ''}
           onChange={e => onBudgetChange(e.target.value ? Number(e.target.value) : null)}
-          placeholder="EUR"
+          placeholder={t({ it: 'EUR', en: 'EUR' })}
           className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-xs focus:ring-1 focus:ring-white placeholder-gray-500"
         />
       </div>

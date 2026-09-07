@@ -133,7 +133,10 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                 </div>
                 <div className="px-6 pt-6 pb-4 flex flex-col flex-1">
                   <div className="flex items-start gap-3">
-                    {item.price_per_day > 0 ? (
+                    {/* Aria non espone tariffe: il volo si quota, non si
+                        vende a giornata. Il prezzo a catalogo resta al
+                        gestionale, sul sito si legge sempre "su richiesta". */}
+                    {serviceType !== 'heli_rental' && item.price_per_day > 0 ? (
                       <div className="text-white font-semibold whitespace-nowrap">{eur(item.price_per_day)}<span className="text-xs text-gray-400">{t({ it: "/giorno", en: "/day" })}</span></div>
                     ) : (
                       <div className="text-gray-300 font-medium text-sm whitespace-nowrap">{t({ it: "Prezzo su richiesta", en: "Price on request" })}</div>

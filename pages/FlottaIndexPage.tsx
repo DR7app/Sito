@@ -16,6 +16,7 @@ import RentalCard from '../components/ui/RentalCard';
 import BookingSearchBox from '../components/ui/BookingSearchBox';
 import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
 import { getHeaderCopy, type HeaderCopy } from '../utils/siteCopy';
+import { SARDEGNA_LOCATIONS } from '../data/sardegnaLocations';
 import type { RentalItem } from '../types';
 // Alias storici categoria DB <-> id Centralina Pro: definiti una volta
 // sola in flottaConfig, insieme alla regola di visibilita'.
@@ -32,6 +33,42 @@ const FlottaIndexPage: React.FC = () => {
   // aprire la ricerca. Stessa finestra della barra in alto, stesse etichette
   // dal pannello: una sola cosa da cambiare se cambiano.
   const [prenotaAperto, setPrenotaAperto] = useState(false);
+
+  /**
+   * Ricerca per citta', localita' o aeroporto — SOLO Sardegna.
+   *
+   * L'elenco e' quello prestabilito di `data/sardegnaLocations.ts`: citta',
+   * paesi, porti, resort e i tre aeroporti dell'isola. Prima venivano fuori
+   * anche Fiumicino, Linate e Nizza dagli aeroporti di listino: chi cercava
+   * "Nizza" trovava un risultato e poi, in prenotazione, l'unico ritiro
+   * possibile restava Cagliari. Meglio un elenco piu' corto e vero.
+   *
+   * Scegliendo un posto si apre la finestra di prenotazione, la stessa del
+   * menu: il campo indica dove si parte, la prenotazione si fa li'.
+   */
+  const [luogoQuery, setLuogoQuery] = useState('');
+  const [luoghiAperti, setLuoghiAperti] = useState(false);
+
+  const normalizzaLuogo = (v: string) =>
+    v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+  const luoghi = useMemo(
+    () => SARDEGNA_LOCATIONS.map((l) => ({
+      chiave: l.id,
+      titolo: l.label || l.name,
+      dettaglio: l.province,
+      // Gli alias entrano nella ricerca ma non si vedono: "casteddu" e
+      // "elmas" devono trovare Cagliari senza comparire in elenco.
+      cercabile: normalizzaLuogo([l.name, l.label, l.province, ...(l.aliases || [])].join(' ')),
+    })),
+    [],
+  );
+
+  const luoghiTrovati = useMemo(() => {
+    const parole = normalizzaLuogo(luogoQuery).split(/\s+/).filter(Boolean);
+    if (parole.length === 0) return [];
+    return luoghi.filter((l) => parole.every((p) => l.cercabile.includes(p))).slice(0, 8);
+  }, [luogoQuery, luoghi]);
 
   // Calendario di UN veicolo: si apre cliccando la sua locandina. Tiene
   // anche il categoryContext della sezione da cui e' partito il click,
@@ -107,19 +144,65 @@ const FlottaIndexPage: React.FC = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 md:mb-24">
           <h1 className="t-display text-white">
-            {lang === 'it' ? 'La Nostra Flotta' : 'Our Fleet'}
+            {lang === 'it' ? "OLTRE L'ORDINARIO." : 'BEYOND THE ORDINARY.'}
           </h1>
           <span className="mx-auto mt-8 block h-px w-16 bg-white/25" />
           <p className="text-gray-500 mt-8 text-base max-w-xl mx-auto">
             {lang === 'it'
-              ? 'Scegli il tuo veicolo dalla nostra flotta esclusiva.'
-              : 'Pick your vehicle from our exclusive fleet.'}
+              ? 'Non è semplicemente una scelta. È l\'accesso a qualcosa che non trovi altrove.'
+              : "It isn't simply a choice. It's access to something you won't find elsewhere."}
           </p>
+          {/* Al posto del bottone "Prenota Ora": si parte dal luogo, e la
+              finestra di prenotazione si apre scegliendolo. */}
+          <div className="relative mx-auto mt-10 max-w-xl text-left">
+            <div className="flex items-center gap-3 border-b border-white/20 pb-3 transition-colors duration-500 ease-editorial focus-within:border-white/50">
+              <svg className="h-4 w-4 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+              </svg>
+              <input
+                type="text"
+                value={luogoQuery}
+                onChange={(e) => { setLuogoQuery(e.target.value); setLuoghiAperti(true); }}
+                onFocus={() => setLuoghiAperti(true)}
+                placeholder={lang === 'it' ? 'Cerca città, località o aeroporto' : 'Search city, location or airport'}
+                className="w-full bg-transparent text-base text-white placeholder:text-white/35 focus:outline-none"
+              />
+            </div>
+
+            {luoghiAperti && luogoQuery.trim() !== '' && (
+              <div className="absolute left-0 right-0 z-20 mt-2 max-h-72 overflow-y-auto border border-white/10 bg-[#0B0C0D]">
+                {luoghiTrovati.length === 0 ? (
+                  <p className="px-4 py-4 text-[13px] text-white/40">
+                    {lang === 'it'
+                      ? 'Nessun risultato: per ora copriamo solo la Sardegna.'
+                      : 'No match: for now we cover Sardinia only.'}
+                  </p>
+                ) : (
+                  luoghiTrovati.map((l) => (
+                    <button
+                      key={l.chiave}
+                      onClick={() => { setLuogoQuery(l.titolo); setLuoghiAperti(false); setPrenotaAperto(true); }}
+                      className="block w-full border-b border-white/[0.06] px-4 py-3 text-left transition-colors duration-300 last:border-b-0 hover:bg-white/[0.04]"
+                    >
+                      <span className="block truncate text-[14px] text-white/80">{l.titolo}</span>
+                      {l.dettaglio && <span className="mt-0.5 block text-[11px] text-white/35">{l.dettaglio}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* "Accedi alla collezione": porta ai veicoli piu' in basso. Non
+              apre la prenotazione — prima si guarda, poi si prenota. */}
           <button
-            onClick={() => setPrenotaAperto(true)}
+            onClick={() => {
+              const primo = document.querySelector('[data-collezione]');
+              if (primo) primo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             className="mt-10 inline-flex items-center justify-center border border-white bg-white px-8 py-3.5 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
           >
-            {hc('drawer_book_cta_it', 'drawer_book_cta_en') || (lang === 'it' ? 'Prenota Ora' : 'Book Now')}
+            {lang === 'it' ? 'ACCEDI ALLA COLLEZIONE' : 'ENTER THE COLLECTION'}
           </button>
         </div>
 
@@ -144,7 +227,7 @@ const FlottaIndexPage: React.FC = () => {
             {groups.map((group) => (
               // L'id serve alle CTA della homepage, che puntano al gruppo
               // della categoria del veicolo in evidenza (/flotta#exotic).
-              <section key={group.id} id={group.id} className="scroll-mt-32">
+              <section key={group.id} id={group.id} data-collezione className="scroll-mt-32">
                 <h2 className="font-serif text-3xl md:text-5xl font-normal tracking-[-0.015em] text-white mb-10 border-b border-white/10 pb-6">
                   {group.label}
                 </h2>

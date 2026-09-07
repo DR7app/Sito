@@ -1,8 +1,19 @@
 /**
- * CercaSedi — la ricerca delle sedi, dalla lente in alto a destra.
+ * CercaSedi — la ricerca del sito, dalla lente in alto a destra.
  *
- * Cerca dentro il catalogo del pannello (Sito > Locations): le SEDI DR7 —
- * punti di ritiro e riconsegna, marina, eliporti.
+ * 07/09/2026 — cercava SOLO le sedi: chi scriveva "Lamborghini", "Huracan" o
+ * "lavaggio" non trovava niente e la lente sembrava rotta. Ora cerca in tutto
+ * quello che il sito mostra: veicoli a noleggio (nome e categoria), catalogo
+ * Mare / Aria / Soggiorni, sedi e pagine dei servizi. Ogni risultato porta
+ * dove si prenota.
+ *
+ * Le fonti sono le stesse che riempiono le pagine — la tabella `vehicles`,
+ * `noleggio_catalog`, le Locations del pannello, i nomi di menu della
+ * Centralina: nessun elenco scritto a mano qui dentro, quindi un veicolo
+ * aggiunto dal gestionale si trova subito anche qui.
+ *
+ * Sedi: dal catalogo del pannello (Sito > Locations) — punti di ritiro e
+ * riconsegna, marina, eliporti.
  *
  * Gli AEROPORTI restano fuori di proposito. Sono scali di terzi che servono
  * ai voli, non posti dove DR7 sta: in elenco facevano sembrare che DR7 avesse
@@ -11,18 +22,83 @@
  *
  * Fuori anche la consegna a domicilio: e' un servizio, non un posto.
  *
- * Non e' un motore di ricerca del sito: e' l'elenco delle sedi DR7.
- * Ogni risultato porta alla pagina del servizio a cui appartiene — auto, mare
- * o aria — cosi' dalla ricerca si arriva alla prenotazione.
- *
- * L'elenco NON e' scritto qui dentro: se l'operatore aggiunge una sede nel
- * pannello, si trova da subito anche qui.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
-import { getLocationsCopy, type LocationsCopy } from '../../utils/siteCopy';
+import { getHeaderCopy, getLocationsCopy, type HeaderCopy, type LocationsCopy } from '../../utils/siteCopy';
+import { supabase } from '../../supabaseClient';
+
+/**
+ * Il catalogo cercabile: veicoli a noleggio e schede Mare / Aria / Soggiorni.
+ *
+ * Si legge UNA volta per apertura di pagina, e solo quando qualcuno apre
+ * davvero la ricerca: la lente non deve costare niente a chi non la usa.
+ */
+type VoceCatalogo = {
+  id: string;
+  nome: string;
+  categoria: string | null;
+  tipo: 'veicolo' | 'boat_rental' | 'heli_rental' | 'stay_rental';
+};
+
+let cacheCatalogo: VoceCatalogo[] | null = null;
+let attesaCatalogo: Promise<VoceCatalogo[]> | null = null;
+
+async function caricaCatalogo(): Promise<VoceCatalogo[]> {
+  if (cacheCatalogo) return cacheCatalogo;
+  if (attesaCatalogo) return attesaCatalogo;
+  attesaCatalogo = (async () => {
+    const out: VoceCatalogo[] = [];
+    try {
+      const { data } = await supabase
+        .from('vehicles')
+        .select('id, display_name, category, status')
+        .neq('status', 'retired');
+      // Lo stesso modello ha piu' targhe: in ricerca si mostra una volta.
+      const visti = new Set<string>();
+      for (const v of (data || []) as Array<{ id: string; display_name: string | null; category: string | null }>) {
+        const nome = (v.display_name || '').trim();
+        const chiave = nome.toLowerCase();
+        if (!nome || visti.has(chiave)) continue;
+        visti.add(chiave);
+        out.push({ id: v.id, nome, categoria: v.category, tipo: 'veicolo' });
+      }
+    } catch (err) {
+      console.warn('[CercaSedi] veicoli non letti:', err);
+    }
+    try {
+      const { data } = await supabase
+        .from('noleggio_catalog')
+        .select('id, name, service_type')
+        .eq('is_active', true);
+      for (const c of (data || []) as Array<{ id: string; name: string | null; service_type: VoceCatalogo['tipo'] }>) {
+        const nome = (c.name || '').trim();
+        if (!nome) continue;
+        out.push({ id: c.id, nome, categoria: null, tipo: c.service_type });
+      }
+    } catch (err) {
+      console.warn('[CercaSedi] catalogo Mare/Aria/Soggiorni non letto:', err);
+    }
+    cacheCatalogo = out;
+    attesaCatalogo = null;
+    return out;
+  })();
+  return attesaCatalogo;
+}
+
+/** Categoria del veicolo -> pagina della categoria (App.tsx crea /<id>). */
+function paginaVeicolo(categoria: string | null): string {
+  const c = (categoria || '').trim();
+  return c ? `/${c}` : '/flotta';
+}
+
+const PAGINA_PER_TIPO: Record<string, string> = {
+  boat_rental: '/noleggio-mare',
+  heli_rental: '/noleggio-aria',
+  stay_rental: '/soggiorni',
+};
 
 type Risultato = {
   chiave: string;
@@ -42,14 +118,26 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
   const { lang, t } = useTranslation();
   const navigate = useNavigate();
   const [locations, setLocations] = useState<LocationsCopy | null>(null);
+  const [headerCopy, setHeaderCopy] = useState<HeaderCopy | null>(null);
+  const [catalogo, setCatalogo] = useState<VoceCatalogo[]>([]);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let annullato = false;
     getLocationsCopy().then((l) => { if (!annullato) setLocations(l); });
+    getHeaderCopy().then((h) => { if (!annullato) setHeaderCopy(h); });
     return () => { annullato = true; };
   }, []);
+
+  // Veicoli e catalogo: si chiedono alla prima apertura della lente, non al
+  // caricamento del sito.
+  useEffect(() => {
+    if (!aperto) return;
+    let annullato = false;
+    caricaCatalogo().then((c) => { if (!annullato) setCatalogo(c); });
+    return () => { annullato = true; };
+  }, [aperto]);
 
   // Il cursore va nel campo appena la finestra si apre: chi preme la lente sta
   // gia' per scrivere.
@@ -98,11 +186,62 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
     return out;
   }, [locations, lang, t]);
 
+  /** Veicoli e schede Mare / Aria / Soggiorni. */
+  const mezzi = useMemo<Risultato[]>(() => {
+    const et = {
+      veicoli: t({ it: 'Veicoli', en: 'Vehicles' }),
+      boat_rental: t({ it: 'Mare', en: 'Sea' }),
+      heli_rental: t({ it: 'Aria', en: 'Air' }),
+      stay_rental: t({ it: 'Soggiorni', en: 'Stays' }),
+    };
+    return catalogo.map((v) => ({
+      chiave: `cat-${v.tipo}-${v.id}`,
+      titolo: v.nome,
+      // La categoria si vede E si cerca: "supercar" trova le supercar.
+      dettaglio: v.categoria ? v.categoria.replace(/_/g, ' ') : undefined,
+      gruppo: v.tipo === 'veicolo' ? et.veicoli : et[v.tipo],
+      to: v.tipo === 'veicolo' ? paginaVeicolo(v.categoria) : (PAGINA_PER_TIPO[v.tipo] || '/flotta'),
+    }));
+  }, [catalogo, t]);
+
+  /**
+   * Le pagine dei servizi, con gli stessi nomi del menu: chi cerca
+   * "lavaggio" o "club" deve arrivarci dalla lente come dal menu.
+   */
+  const pagine = useMemo<Risultato[]>(() => {
+    const isIt = lang === 'it';
+    const rec = (headerCopy || {}) as unknown as Record<string, string | undefined>;
+    const nome = (itKey: string, enKey: string, fbIt: string, fbEn: string) => {
+      const val = (isIt ? rec[itKey] : rec[enKey]) || '';
+      return val.trim() ? val : (isIt ? fbIt : fbEn);
+    };
+    const gruppo = t({ it: 'Servizi', en: 'Services' });
+    return [
+      { chiave: 'pg-terra', titolo: nome('menu_mobilita_title_it', 'menu_mobilita_title_en', 'Terra', 'Land'), gruppo, to: '/flotta' },
+      { chiave: 'pg-mare', titolo: nome('menu_mare_title_it', 'menu_mare_title_en', 'Mare', 'Sea'), gruppo, to: '/noleggio-mare' },
+      { chiave: 'pg-aria', titolo: nome('menu_aria_title_it', 'menu_aria_title_en', 'Aria', 'Air'), gruppo, to: '/noleggio-aria' },
+      { chiave: 'pg-soggiorni', titolo: nome('menu_property_title_it', 'menu_property_title_en', 'Soggiorni & Ospitalità', 'Stays & Hospitality'), gruppo, to: '/soggiorni' },
+      { chiave: 'pg-lavaggio', titolo: nome('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanics'), gruppo, to: '/prime-wash' },
+      { chiave: 'pg-wallet', titolo: nome('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'), gruppo, to: '/credit-wallet' },
+      { chiave: 'pg-club', titolo: nome('menu_club_title_it', 'menu_club_title_en', 'DR7 Club', 'DR7 Club'), gruppo, to: '/membership' },
+      { chiave: 'pg-contatti', titolo: t({ it: 'Contatti', en: 'Contact' }), gruppo, to: '/contact' },
+    ];
+  }, [headerCopy, lang, t]);
+
   const risultati = useMemo(() => {
-    const q = normalizza(query);
-    if (!q) return [];
-    return tutte.filter((r) => normalizza(`${r.titolo} ${r.dettaglio || ''}`).includes(q)).slice(0, 24);
-  }, [query, tutte]);
+    // Parole separate, tutte devono corrispondere: "huracan cagliari" non
+    // deve rispondere a mezza Sardegna.
+    const parole = normalizza(query).split(/\s+/).filter(Boolean);
+    if (parole.length === 0) return [];
+    // Prima i mezzi: chi scrive un nome di modello cerca quello, non la sede.
+    const tutteLeVoci = [...mezzi, ...tutte, ...pagine];
+    return tutteLeVoci
+      .filter((r) => {
+        const testo = normalizza(`${r.titolo} ${r.dettaglio || ''} ${r.gruppo}`);
+        return parole.every((p) => testo.includes(p));
+      })
+      .slice(0, 30);
+  }, [query, tutte, mezzi, pagine]);
 
   const vai = (to: string) => { onClose(); navigate(to); };
 
@@ -123,7 +262,7 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
             <div className="mx-auto max-w-2xl">
               <div className="flex items-center justify-between gap-6">
                 <span className="text-[11px] uppercase tracking-[0.28em] text-white/40">
-                  {t({ it: 'Cerca una sede', en: 'Find a location' })}
+                  {t({ it: 'Cerca nel sito', en: 'Search the site' })}
                 </span>
                 <button
                   onClick={onClose}
@@ -141,14 +280,14 @@ const CercaSedi: React.FC<{ aperto: boolean; onClose: () => void }> = ({ aperto,
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t({ it: 'Cagliari, Porto Cervo...', en: 'Cagliari, Porto Cervo...' })}
+                placeholder={t({ it: 'Lamborghini, Cagliari, lavaggio...', en: 'Lamborghini, Cagliari, car wash...' })}
                 className="mt-8 w-full border-b border-white/20 bg-transparent pb-5 font-serif text-3xl font-normal text-white placeholder:text-white/25 focus:border-white/50 focus:outline-none md:text-5xl"
               />
 
               <div className="mt-10 max-h-[52vh] overflow-y-auto pb-16">
                 {query && risultati.length === 0 && (
                   <p className="text-sm text-white/40">
-                    {t({ it: 'Nessuna sede con questo nome.', en: 'No location with that name.' })}
+                    {t({ it: 'Nessun risultato per questa ricerca.', en: 'Nothing matches this search.' })}
                   </p>
                 )}
                 {risultati.map((r) => (

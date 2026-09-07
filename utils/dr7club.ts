@@ -434,6 +434,31 @@ export async function getAnnualSpend(userId: string, email?: string | null): Pro
 }
 
 /** Get full club status for a user */
+/**
+ * Chi ha lasciato volontariamente il DR7 Club non puo' piu' rientrare: la
+ * regola vale sulla persona (email, codice fiscale, patente), non sull'account,
+ * quindi il controllo sta in una funzione SECURITY DEFINER lato database
+ * (`dr7_club_bloccato`, migrazione 20260907) che ricava l'identita'
+ * dall'utente collegato — dal sito non si puo' sondare l'identita' di altri.
+ *
+ * Se la funzione non c'e' ancora (migrazione non applicata) rispondiamo
+ * "non bloccato": un errore qui non deve chiudere l'iscrizione a chi non ha
+ * mai cancellato nulla.
+ */
+export async function isClubBloccato(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('dr7_club_bloccato')
+    if (error) {
+      console.error('Errore controllo blocco DR7 Club:', error.message)
+      return false
+    }
+    return data === true
+  } catch (err) {
+    console.error('Errore controllo blocco DR7 Club:', err)
+    return false
+  }
+}
+
 export async function getClubStatus(userId: string, email?: string | null): Promise<{
   subscription: ClubSubscription | null
   tierInfo: ClubTierInfo

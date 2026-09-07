@@ -8,6 +8,7 @@ import ClubTiersBoard from '../../components/ui/ClubTiersBoard'
 import { dateLocale } from '../../utils/i18nDate'
 import {
   getClubStatus,
+  isClubBloccato,
   getClubTiers,
   getClubPlans,
   CLUB_PLANS,
@@ -30,6 +31,13 @@ const DR7Club = () => {
   const [walletBalance, setWalletBalance] = useState(0)
   const [transactions, setTransactions] = useState<CreditTransaction[]>([])
   const [subscribing, setSubscribing] = useState(false)
+  // Uscita definitiva dal Club: chi conferma non puo' piu' rientrare, quindi
+  // il bottone passa sempre dal popup e lo stato "bloccato" arriva dal
+  // database, non dalla sessione.
+  const [bloccato, setBloccato] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
   const [interestAccruals, setInterestAccruals] = useState<{ accrual_date: string; principal_eur: number; accrual_eur: number; paid_out_at: string | null }[]>([])
   // Livelli e prezzi arrivano da Centralina Pro: qui dentro non c'e' piu'
   // nessuna soglia scritta a mano.
@@ -45,13 +53,15 @@ const DR7Club = () => {
     if (!user?.id) return
     setLoading(true)
     try {
-      const [clubStatus, balance, txns, clubTiers, clubPlans] = await Promise.all([
+      const [clubStatus, balance, txns, clubTiers, clubPlans, clubBloccato] = await Promise.all([
         getClubStatus(user.id, user.email),
         getUserCreditBalance(user.id),
         getCreditTransactions(user.id, 10),
         getClubTiers(),
         getClubPlans(),
+        isClubBloccato(),
       ])
+      setBloccato(clubBloccato)
       setTiers(clubTiers)
       setPlans(clubPlans)
       setSubscription(clubStatus.subscription)
@@ -84,6 +94,14 @@ const DR7Club = () => {
 
   const handleSubscribe = async (plan: 'monthly' | 'annual') => {
     if (!user?.id) return
+    // Ha gia' lasciato il Club: l'adesione e' personale e non si riattiva.
+    if (bloccato) {
+      setSubscribeError(t({
+        it: 'Hai già cancellato la tua adesione al DR7 Club. La cancellazione è definitiva e personale: non è possibile iscriversi di nuovo.',
+        en: 'You have already cancelled your DR7 Club membership. The cancellation is final and personal: you cannot join again.',
+      }))
+      return
+    }
     setSubscribing(true)
     setSubscribeError(null)
     try {
@@ -152,6 +170,37 @@ const DR7Club = () => {
     }
   }
 
+  const handleCancelClub = async () => {
+    if (!user?.id) return
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      // La chiusura passa dal server: oltre a chiudere l'abbonamento deve
+      // registrare il blocco (email + codice fiscale + patente), che dal
+      // browser non e' scrivibile.
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token || ''
+      if (!token) {
+        throw new Error(t({ it: 'Sessione scaduta. Esci e accedi di nuovo.', en: 'Session expired. Please log out and log in again.' }))
+      }
+      const res = await fetch('/.netlify/functions/cancel-dr7-club', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: user.id, token }),
+      })
+      const result = await res.json()
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || t({ it: 'Cancellazione non riuscita', en: 'Cancellation failed' }))
+      }
+      setShowCancelModal(false)
+      await loadClubData()
+    } catch (err: any) {
+      setCancelError(err.message || t({ it: 'Cancellazione non riuscita', en: 'Cancellation failed' }))
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8 text-center">
@@ -188,8 +237,22 @@ const DR7Club = () => {
         </p>
       </div>
 
+      {/* Chi ha lasciato il Club non vede piu' i piani: l'adesione e'
+          personale e non si riattiva. */}
+      {!isActive && bloccato && (
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <h3 className="text-lg font-bold text-white mb-2">{t({ it: 'Adesione cancellata', en: 'Membership cancelled' })}</h3>
+          <p className="text-gray-400 text-sm">
+            {t({
+              it: 'Hai cancellato la tua adesione al DR7 Club. La cancellazione è definitiva e personale: non è possibile riattivare l’adesione né effettuare una nuova iscrizione.',
+              en: 'You cancelled your DR7 Club membership. The cancellation is final and personal: the membership cannot be reactivated and a new enrolment is not possible.',
+            })}
+          </p>
+        </div>
+      )}
+
       {/* Subscription Plans (if not active) */}
-      {!isActive && (
+      {!isActive && !bloccato && (
         <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
           <h3 className="text-lg font-bold text-white mb-4">{t({ it: "Iscriviti al DR7 Club", en: "Join the DR7 Club" })}</h3>
           <p className="text-gray-400 text-sm mb-6">
@@ -264,6 +327,15 @@ const DR7Club = () => {
                 {new Date(subscription.expires_at).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric' })}
               </p>
             </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-800 flex justify-end">
+            <button
+              onClick={() => { setCancelError(null); setShowCancelModal(true) }}
+              className="px-5 py-2.5 border border-red-500/50 text-red-400 font-bold hover:bg-red-600 hover:text-white transition-colors text-sm"
+            >
+              {t({ it: 'Elimina DR7 Club', en: 'Delete DR7 Club' })}
+            </button>
           </div>
         </div>
       )}
@@ -443,28 +515,89 @@ const DR7Club = () => {
             <span className="text-green-400 mt-0.5">+</span>
             <span>{t({ it: 'Pagamento anticipato (100%): premio base fino al', en: 'Full upfront payment (100%): base reward up to' })} {tiers.length > 0 ? tiers[tiers.length - 1].rewardPercent : 0}%</span>
           </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: "Pagamento con acconto (30%): premio dimezzato (min 1%)", en: "Deposit payment (30%): reward halved (min 1%)" })}</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: "Servizi Lavaggio & Meccanica: premio 3%", en: "Car Wash & Mechanics services: 3% reward" })}</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-400 mt-0.5">+</span>
-            <span>{t({ it: "Servizi extra: premio 2%", en: "Extra services: 2% reward" })}</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#D4B896] mt-0.5">!</span>
-            <span>{t({ it: "Il credito viene accreditato solo a noleggio completato", en: "Credit is only awarded once the rental is completed" })}</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-red-400 mt-0.5">-</span>
-            <span>{t({ it: "Non utilizzabile per cauzioni, penali, danni o franchigie", en: "Cannot be used for deposits, penalties, damages or excesses" })}</span>
-          </li>
         </ul>
       </div>
+
+      {/* Variazione del prezzo e cancellazione.
+          Testo contrattuale: il prezzo dell'abbonamento si aggiorna nel tempo
+          e il rinnovo addebita il listino del momento, quindi la regola deve
+          stare scritta dove l'abbonato la legge, non solo nelle condizioni. */}
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+        <h3 className="text-lg font-bold text-white mb-3">
+          {t({ it: "Variazione del prezzo e cancellazione", en: "Price changes and cancellation" })}
+        </h3>
+        <div className="space-y-3 text-sm text-gray-400">
+          <p>
+            {t({
+              it: "Il prezzo dell'abbonamento DR7 Club potrà essere aggiornato nel tempo. Eventuali variazioni saranno comunicate preventivamente al Cliente e saranno applicate a partire dal rinnovo indicato nella comunicazione.",
+              en: "The price of the DR7 Club subscription may be updated over time. Any change will be communicated to the Customer in advance and will apply from the renewal indicated in that communication.",
+            })}
+          </p>
+          <p>
+            {t({
+              it: "Prima dell'entrata in vigore del nuovo prezzo, il Cliente potrà scegliere se proseguire l'abbonamento alle nuove condizioni oppure cancellarlo senza alcuna penale.",
+              en: "Before the new price takes effect, the Customer may choose either to continue the subscription under the new terms or to cancel it without any penalty.",
+            })}
+          </p>
+          <p>
+            {t({
+              it: "La cancellazione comporta la cessazione dell'adesione al DR7 Club e la conseguente perdita dei privilegi e dei benefici connessi allo status di membro, secondo quanto previsto dalle Condizioni del Club. Una volta cancellata, l'adesione non potrà essere riattivata.",
+              en: "Cancellation ends the DR7 Club membership and with it the privileges and benefits attached to member status, as set out in the Club Conditions. Once cancelled, the membership cannot be reactivated.",
+            })}
+          </p>
+        </div>
+      </div>
+
+      {/* Conferma di uscita dal Club. Il testo dice per intero cosa succede
+          — perdita dei benefici, cancellazione definitiva e personale — perche'
+          dopo la conferma non c'e' modo di tornare indietro. */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-lg w-full p-5 md:p-6 max-h-[90dvh] overflow-y-auto">
+            <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
+              {t({ it: 'Sei sicuro di voler lasciare DR7 Club?', en: 'Are you sure you want to leave DR7 Club?' })}
+            </h3>
+            <div className="space-y-3 text-sm text-gray-300 mb-6">
+              <p>
+                {t({
+                  it: 'Cancellando l’abbonamento, perderai tutti i privilegi e i benefici connessi al tuo status di membro DR7 Club.',
+                  en: 'By cancelling the subscription you will lose every privilege and benefit attached to your DR7 Club member status.',
+                })}
+              </p>
+              <p>
+                {t({
+                  it: 'La cancellazione è definitiva e personale. Una volta confermata, non sarà possibile riattivare l’adesione né effettuare una nuova iscrizione al DR7 Club, anche tramite un nuovo account o profilo associato ai medesimi dati personali e documenti.',
+                  en: 'The cancellation is final and personal. Once confirmed, the membership cannot be reactivated and no new DR7 Club enrolment will be possible, including through a new account or profile linked to the same personal data and documents.',
+                })}
+              </p>
+              <p className="text-white font-medium">
+                {t({ it: 'Vuoi procedere con la cancellazione?', en: 'Do you want to proceed with the cancellation?' })}
+              </p>
+            </div>
+            {cancelError && (
+              <p className="text-sm text-red-400 bg-red-900/20 p-3 rounded-md mb-4">{cancelError}</p>
+            )}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => { setShowCancelModal(false); setCancelError(null) }}
+                disabled={cancelling}
+                className="flex-1 px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm disabled:opacity-50"
+              >
+                {t({ it: 'Mantieni il mio DR7 Club', en: 'Keep my DR7 Club' })}
+              </button>
+              <button
+                onClick={handleCancelClub}
+                disabled={cancelling}
+                className="flex-1 px-5 py-2.5 bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+              >
+                {cancelling
+                  ? t({ it: 'Cancellazione in corso...', en: 'Cancelling...' })
+                  : t({ it: 'Conferma cancellazione definitiva', en: 'Confirm permanent cancellation' })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

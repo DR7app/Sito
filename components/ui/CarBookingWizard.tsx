@@ -832,6 +832,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   // Subscription upsell state
   const [showSubscriptionUpsell, setShowSubscriptionUpsell] = useState(false);
+  // Chi ha lasciato il DR7 Club non puo' piu' rientrare: l'offerta di
+  // iscrizione non gli va nemmeno proposta (il popup di uscita glielo ha
+  // promesso). Il controllo sta nel database, vedi isClubBloccato().
+  const [clubBloccato, setClubBloccato] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<'monthly' | 'annual' | null>(null);
 
   // Wash upsell targa state
@@ -1003,6 +1007,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // FIX 6: Anti-race ref for availability checks — only the latest request updates state
   const availabilityRequestIdRef = useRef(0);
 
+
+  useEffect(() => {
+    let annullato = false;
+    if (!user?.id) { setClubBloccato(false); return; }
+    import('../../utils/dr7club')
+      .then(m => m.isClubBloccato())
+      .then(b => { if (!annullato) setClubBloccato(b); })
+      .catch(() => { if (!annullato) setClubBloccato(false); });
+    return () => { annullato = true; };
+  }, [user?.id]);
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       e.preventDefault();
@@ -4588,6 +4602,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   const handleWashUpsellAccept = () => {
     setShowWashUpsell(false);
+    if (clubBloccato) { setStep(4); return; }
     setShowSubscriptionUpsell(true);
   };
 
@@ -4603,6 +4618,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     setUpsellTargaLoading(false);
     setUpsellTargaManualCategory(null);
     setShowWashUpsell(false);
+    if (clubBloccato) { setStep(4); return; }
     setShowSubscriptionUpsell(true);
   };
 

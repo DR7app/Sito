@@ -166,7 +166,7 @@ const SecuritySettings = () => {
 
             {showDeleteModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full p-4 md:p-6">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-lg w-full p-4 md:p-6 max-h-[90dvh] overflow-y-auto">
                         {deleteSuccess ? (
                             <>
                                 <h3 className="text-2xl font-bold text-green-400 mb-4">{t({ en: 'Account Deleted', it: 'Account Eliminato' })}</h3>
@@ -174,23 +174,30 @@ const SecuritySettings = () => {
                             </>
                         ) : (
                             <>
-                                <h3 className="text-2xl font-bold text-white mb-4">{t({ en: 'Delete Account?', it: 'Eliminare l\'account?' })}</h3>
-                                <p className="text-gray-300 mb-6">{t({ en: 'This will permanently delete your account and all data.', it: 'Questa azione eliminerà definitivamente il tuo account e tutti i dati.' })}</p>
+                                <h3 className="text-2xl font-bold text-white mb-4">{t({ en: 'Permanently delete your profile?', it: 'Eliminare definitivamente il tuo profilo?' })}</h3>
+                                {/* Il cliente deve leggere le conseguenze per intero prima di
+                                    confermare: accesso, storico e benefici spariscono e non
+                                    si recuperano. */}
+                                <div className="space-y-3 text-gray-300 mb-6 text-sm">
+                                    <p>{t({ en: 'You are about to permanently delete your DR7 profile.', it: 'Stai per eliminare definitivamente il tuo profilo DR7.' })}</p>
+                                    <p>{t({ en: 'Deleting it means losing access to your account, your history and every service, advantage and benefit linked to the profile.', it: 'Con l’eliminazione perderai l’accesso al tuo account, allo storico e a tutti i servizi, vantaggi e benefici associati al profilo.' })}</p>
+                                    <p>{t({ en: 'The operation is final and irreversible. A deleted profile cannot be recovered or reactivated.', it: 'L’operazione è definitiva e irreversibile. Non sarà possibile recuperare o riattivare il profilo eliminato.' })}</p>
+                                </div>
                                 {error && <p className="text-sm text-red-400 bg-red-900/20 p-3 rounded-md mb-4">{error}</p>}
-                                <div className="flex gap-3">
+                                <div className="flex flex-col sm:flex-row gap-3">
                                     <button
                                         onClick={() => { setShowDeleteModal(false); setError(''); }}
                                         disabled={isDeleting}
                                         className="flex-1 px-5 py-2.5 bg-gray-700 text-white font-bold hover:bg-gray-600 transition-colors text-sm disabled:opacity-50"
                                     >
-                                        {t({ en: 'Cancel', it: 'Annulla' })}
+                                        {t({ en: 'KEEP MY PROFILE', it: 'MANTIENI IL MIO PROFILO' })}
                                     </button>
                                     <button
                                         onClick={handleDeleteAccount}
                                         disabled={isDeleting}
                                         className="flex-1 px-5 py-2.5 bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                                     >
-                                        {isDeleting ? t({ en: 'Deleting...', it: 'Eliminazione...' }) : t({ en: 'Yes, Delete', it: 'Sì, elimina' })}
+                                        {isDeleting ? t({ en: 'Deleting...', it: 'Eliminazione...' }) : t({ en: 'DELETE PERMANENTLY', it: 'ELIMINA DEFINITIVAMENTE' })}
                                     </button>
                                 </div>
                             </>

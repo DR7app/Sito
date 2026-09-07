@@ -6,7 +6,7 @@
  * cosi' il design (aspect 9/16, hover, prezzo, bottone) e' lo
  * stesso della pagina /supercar-luxury.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFlottaCategories } from '../hooks/useFlottaCategories';
 import { useVehicles } from '../hooks/useVehicles';
@@ -46,6 +46,10 @@ const FlottaIndexPage: React.FC = () => {
    * Scegliendo un posto si apre la finestra di prenotazione, la stessa del
    * menu: il campo indica dove si parte, la prenotazione si fa li'.
    */
+  // Dove porta "Accedi alla collezione". Un ref e non un querySelector: il
+  // contenitore esiste da subito, le sezioni di categoria no.
+  const collezioneRef = useRef<HTMLDivElement>(null);
+
   const [luogoQuery, setLuogoQuery] = useState('');
   const [luoghiAperti, setLuoghiAperti] = useState(false);
   // Il luogo scelto, non solo il testo: la finestra di prenotazione deve
@@ -198,18 +202,22 @@ const FlottaIndexPage: React.FC = () => {
           </div>
 
           {/* "Accedi alla collezione": porta ai veicoli piu' in basso. Non
-              apre la prenotazione — prima si guarda, poi si prenota. */}
+              apre la prenotazione — prima si guarda, poi si prenota.
+
+              07/09/2026 — puntava alla prima sezione di categoria, che pero'
+              esiste solo a flotta CARICATA: chi premeva il bottone nei primi
+              istanti, o quando la lista era vuota o non disponibile, non
+              vedeva succedere niente. Ora punta al contenitore dei
+              risultati, che c'e' sempre. */}
           <button
-            onClick={() => {
-              const primo = document.querySelector('[data-collezione]');
-              if (primo) primo.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
+            onClick={() => collezioneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className="mt-10 inline-flex items-center justify-center border border-white bg-white px-8 py-3.5 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
           >
             {t({ it: 'ACCEDI ALLA COLLEZIONE', en: 'ENTER THE COLLECTION' })}
           </button>
         </div>
 
+        <div ref={collezioneRef} className="scroll-mt-28">
         {isLoading ? (
           <p className="text-center text-gray-400">…</p>
         ) : catsStatus === 'error' ? (
@@ -269,6 +277,7 @@ const FlottaIndexPage: React.FC = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       <CalendarioDisponibilitaPortale

@@ -309,8 +309,10 @@ const HomePage: React.FC = () => {
         <div className="relative z-[10] w-full py-24">
           <Shell>
             <div className="max-w-3xl">
+              {/* `whitespace-pre-line`: il titolo va a capo dove chi scrive
+                  il testo ha messo l'a capo, non dove finisce lo schermo. */}
               <Reveal variant="mask" className="overflow-hidden">
-                <h2 className="t-display-xl">{t(copy.access_title_it, copy.access_title_en)}</h2>
+                <h2 className="t-display-xl whitespace-pre-line">{t(copy.access_title_it, copy.access_title_en)}</h2>
               </Reveal>
               <Reveal delay={180}>
                 <p className="t-body-xl mt-8" style={{ color: 'var(--c-ivory)', opacity: 0.78 }}>

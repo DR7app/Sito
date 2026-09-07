@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { svuotaIstantaneaLavaggio } from './CarWashServicesPage';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
@@ -1508,6 +1509,9 @@ const CarWashBookingPage: React.FC = () => {
             sessionStorage.setItem('dr7_pending_order', nexiOrderId);
             sessionStorage.setItem('dr7_pending_type', 'booking');
           } catch (e) { /* sessionStorage may be unavailable */ }
+          // Prenotazione partita: il carrello tenuto da parte per la freccia
+          // "indietro" non serve piu' e non deve riapparire alla visita dopo.
+          svuotaIstantaneaLavaggio();
           window.location.href = nexiData.paymentUrl;
           return;
         } else {

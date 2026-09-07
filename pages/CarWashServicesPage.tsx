@@ -79,6 +79,42 @@ type MeccanicaCategory = 'tech';
 // the Prime Moto services. This is the value persisted on the booking.
 type WashOverrideCategory = 'urban' | 'maxi' | 'moto';
 
+/**
+ * Il carrello e la targa sopravvivono alla freccia "indietro".
+ *
+ * 07/09/2026 - dal carrello si andava alla pagina di prenotazione; tornando
+ * indietro con la freccia del browser questa pagina si ricostruiva da zero e
+ * il cliente ritrovava il carrello vuoto e la targa da riscrivere. Chi ha
+ * gia' scelto tre servizi e battuto la targa non lo rifa': se ne va.
+ *
+ * Si tiene in `sessionStorage`: dura quanto la scheda del browser, non
+ * inquina le visite successive e non esce dal dispositivo.
+ */
+const CHIAVE_SESSIONE = 'dr7:prime-wash:stato';
+/** Oltre questo tempo il carrello e' di un'altra visita: si riparte puliti. */
+const DURATA_ISTANTANEA_MS = 2 * 60 * 60 * 1000;
+
+function leggiIstantanea(): Record<string, any> {
+  try {
+    const grezzo = sessionStorage.getItem(CHIAVE_SESSIONE);
+    if (!grezzo) return {};
+    const dati = JSON.parse(grezzo);
+    if (!dati || typeof dati !== 'object') return {};
+    if (typeof dati.salvatoIl === 'number' && Date.now() - dati.salvatoIl > DURATA_ISTANTANEA_MS) {
+      sessionStorage.removeItem(CHIAVE_SESSIONE);
+      return {};
+    }
+    return dati;
+  } catch {
+    return {};
+  }
+}
+
+/** Da chiamare quando la prenotazione e' andata a buon fine. */
+export function svuotaIstantaneaLavaggio(): void {
+  try { sessionStorage.removeItem(CHIAVE_SESSIONE); } catch { /* ignora */ }
+}
+
 // Static Tailwind classes per override category (literals so JIT keeps them).
 const WASH_OVERRIDE_OPTIONS: { id: WashOverrideCategory; label: string; selected: string; idle: string }[] = [
   { id: 'urban', label: 'URBAN', selected: 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500', idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500' },
@@ -111,10 +147,12 @@ const CarWashServicesPage: React.FC = () => {
     const k = lang === 'it' ? it : en;
     return (copy as Record<string, string>)[k as string] || fallback;
   };
-  const [mainTab, setMainTab] = useState<MainTabType>('lavaggio');
-  const [lavaggioCategory, setLavaggioCategory] = useState<LavaggioCategory>('wash');
-  const [meccanicaCategory, setMeccanicaCategory] = useState<MeccanicaCategory>('tech');
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Quello che c'era prima della freccia "indietro" (vedi leggiIstantanea).
+  const [istantanea] = useState<Record<string, any>>(() => leggiIstantanea());
+  const [mainTab, setMainTab] = useState<MainTabType>(istantanea.mainTab || 'lavaggio');
+  const [lavaggioCategory, setLavaggioCategory] = useState<LavaggioCategory>(istantanea.lavaggioCategory || 'wash');
+  const [meccanicaCategory, setMeccanicaCategory] = useState<MeccanicaCategory>(istantanea.meccanicaCategory || 'tech');
+  const [cart, setCart] = useState<CartItem[]>(Array.isArray(istantanea.cart) ? istantanea.cart : []);
   const [showCart, setShowCart] = useState(false);
   // Pianta sedili aperta: `index` valorizzato = si sta modificando una riga
   // gia' nel carrello, altrimenti si sta aggiungendo.
@@ -125,8 +163,8 @@ const CarWashServicesPage: React.FC = () => {
   const [upsellStep, setUpsellStep] = useState<1 | 2>(1);
   const [upsellSelectedService, setUpsellSelectedService] = useState<WashService | null>(null);
   const [upsellAddedExtras, setUpsellAddedExtras] = useState<Set<string>>(new Set());
-  const [detectedCategory, setDetectedCategory] = useState<VehicleCategory | null>(null);
-  const [detectedModel, setDetectedModel] = useState<string | null>(null);
+  const [detectedCategory, setDetectedCategory] = useState<VehicleCategory | null>(istantanea.detectedCategory ?? null);
+  const [detectedModel, setDetectedModel] = useState<string | null>(istantanea.detectedModel ?? null);
 
   // Single source of truth: admin Catalogo Lavaggio (car_wash_services table).
   // useCarWashServices() fetches once per page load with module-level cache.
@@ -161,14 +199,26 @@ const CarWashServicesPage: React.FC = () => {
   const absoluteDetailImage = absoluteDetailService?.image;
 
   // Targa lookup state
-  const [targaInput, setTargaInput] = useState('');
+  const [targaInput, setTargaInput] = useState(istantanea.targaInput || '');
   const [targaLoading, setTargaLoading] = useState(false);
   const [targaError, setTargaError] = useState<string | null>(null);
-  const [targaResult, setTargaResult] = useState<TargaResult | null>(null);
-  const [targaManualCategory, setTargaManualCategory] = useState<VehicleCategory | null>(null);
+  const [targaResult, setTargaResult] = useState<TargaResult | null>(istantanea.targaResult ?? null);
+  const [targaManualCategory, setTargaManualCategory] = useState<VehicleCategory | null>(istantanea.targaManualCategory ?? null);
   // Source of truth for the chosen wash category (auto-detected, but always
   // user-overridable to Urban/Maxi/Moto). Drives price + what is saved.
-  const [washCategory, setWashCategory] = useState<WashOverrideCategory | null>(null);
+  const [washCategory, setWashCategory] = useState<WashOverrideCategory | null>(istantanea.washCategory ?? null);
+
+  // Ogni modifica si scrive: tornando indietro si ritrova tutto com'era.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CHIAVE_SESSIONE, JSON.stringify({
+        salvatoIl: Date.now(),
+        cart, targaInput, targaResult, targaManualCategory, washCategory,
+        detectedCategory, detectedModel, mainTab, lavaggioCategory, meccanicaCategory,
+      }));
+    } catch { /* scheda in incognito o spazio finito: si prosegue senza */ }
+  }, [cart, targaInput, targaResult, targaManualCategory, washCategory,
+      detectedCategory, detectedModel, mainTab, lavaggioCategory, meccanicaCategory]);
 
   const handleTargaSearch = useCallback(async () => {
     const plate = normalizePlate(targaInput);

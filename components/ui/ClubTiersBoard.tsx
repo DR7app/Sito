@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getClubTiers, type ClubTierDef } from '../../utils/dr7club';
+// `t` qui e' gia' il livello dentro il ciclo: la traduzione si chiama `tr`.
+import { useTranslation } from '../../hooks/useTranslation';
 import { Shell, Eyebrow, SeamRule } from '../editorial/primitives';
 import Reveal from '../editorial/Reveal';
 
@@ -32,6 +34,7 @@ type Props = {
  * ciascuno vorrebbe dire trenta colori: la gerarchia si legge se ne spicca uno.
  */
 const ClubTiersBoard: React.FC<Props> = ({ lang, eyebrow, title, note, currentTier, bare }) => {
+  const { t: tr } = useTranslation();
   const [tiers, setTiers] = useState<ClubTierDef[]>([]);
 
   useEffect(() => {
@@ -77,12 +80,12 @@ const ClubTiersBoard: React.FC<Props> = ({ lang, eyebrow, title, note, currentTi
             </span>
             <span className="t-meta mt-2 block text-[10px]" style={{ color: 'var(--fg-dim)', opacity: 0.75 }}>
               {t.max === Infinity
-                ? `${lang === 'it' ? 'da' : 'from'} €${nf.format(t.min)}`
+                ? `${tr({ it: 'da', en: 'from' })} €${nf.format(t.min)}`
                 : `€${nf.format(t.min)} – €${nf.format(t.max)}`}
             </span>
             {isMine && (
               <span className="t-eyebrow mt-3 block" style={{ color: 'var(--c-metal)' }}>
-                {lang === 'it' ? 'Il tuo livello' : 'Your tier'}
+                {tr({ it: 'Il tuo livello', en: 'Your tier' })}
               </span>
             )}
           </div>

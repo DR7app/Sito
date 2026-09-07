@@ -23,7 +23,7 @@ import type { RentalItem } from '../types';
 import { categoryAliases } from '../utils/flottaConfig';
 
 const FlottaIndexPage: React.FC = () => {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const { openCarWizard, setInitialSearchDates } = useBooking();
   const { categories: flottaCats, loading: catsLoading, status: catsStatus } = useFlottaCategories();
   const { vehicles: allVehicles, loading: vehLoading } = useVehicles(undefined);
@@ -168,7 +168,7 @@ const FlottaIndexPage: React.FC = () => {
                 value={luogoQuery}
                 onChange={(e) => { setLuogoQuery(e.target.value); setLuogoScelto(null); setLuoghiAperti(true); }}
                 onFocus={() => setLuoghiAperti(true)}
-                placeholder={lang === 'it' ? 'Cerca città, località o aeroporto' : 'Search city, location or airport'}
+                placeholder={t({ it: 'Cerca città, località o aeroporto', en: 'Search city, location or airport' })}
                 className="w-full bg-transparent text-base text-white placeholder:text-white/35 focus:outline-none"
               />
             </div>
@@ -206,7 +206,7 @@ const FlottaIndexPage: React.FC = () => {
             }}
             className="mt-10 inline-flex items-center justify-center border border-white bg-white px-8 py-3.5 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
           >
-            {lang === 'it' ? 'ACCEDI ALLA COLLEZIONE' : 'ENTER THE COLLECTION'}
+            {t({ it: 'ACCEDI ALLA COLLEZIONE', en: 'ENTER THE COLLECTION' })}
           </button>
         </div>
 
@@ -296,7 +296,7 @@ const FlottaIndexPage: React.FC = () => {
             >
               <button
                 onClick={() => setPrenotaAperto(false)}
-                aria-label={lang === 'it' ? 'Chiudi' : 'Close'}
+                aria-label={t({ it: 'Chiudi', en: 'Close' })}
                 className="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center border border-white/10 text-white/40 transition-colors duration-300 hover:border-white/30 hover:text-white"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

@@ -5,7 +5,7 @@ import BackButton from '../components/ui/BackButton';
 import { getFaqCopy, type FaqCopy } from '../utils/siteCopy';
 
 const FAQPage: React.FC = () => {
-    const { lang } = useTranslation();
+    const { lang, t } = useTranslation();
     const [copy, setCopy] = useState<FaqCopy | null>(null);
     const [openId, setOpenId] = useState<string | null>(null);
 
@@ -58,7 +58,7 @@ const FAQPage: React.FC = () => {
 
                     {entries !== null && entries.length === 0 && (
                         <div className="text-center text-gray-500 py-16 text-sm">
-                            {lang === 'it' ? 'Nessuna domanda configurata.' : 'No questions configured.'}
+                            {t({ it: 'Nessuna domanda configurata.', en: 'No questions configured.' })}
                         </div>
                     )}
 
@@ -89,7 +89,7 @@ const FAQPage: React.FC = () => {
                                                     {String(idx + 1).padStart(2, '0')}
                                                 </span>
                                                 <span className="text-base md:text-lg font-semibold text-white truncate">
-                                                    {e.question || (lang === 'it' ? '(senza titolo)' : '(no title)')}
+                                                    {e.question || t({ it: '(senza titolo)', en: '(no title)' })}
                                                 </span>
                                             </span>
                                             <motion.span

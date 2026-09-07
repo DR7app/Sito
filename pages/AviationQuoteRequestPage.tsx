@@ -9,7 +9,7 @@ const AviationQuoteRequestPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
   const [inviata, setInviata] = useState(false);
   const [copy, setCopy] = useState<AviationQuoteCopy | null>(null);
@@ -91,7 +91,7 @@ const AviationQuoteRequestPage: React.FC = () => {
   /** Bagagli in una riga sola, per il messaggio e per la scheda. */
   function bagagliTesto(): string {
     const n = Number(formData.luggage_count) || 0;
-    if (n <= 0) return lang === 'it' ? 'Nessun bagaglio' : 'No luggage';
+    if (n <= 0) return t({ it: 'Nessun bagaglio', en: 'No luggage' });
     const quanti = n > 10
       ? tx('field_luggage_count_max_option_it', 'field_luggage_count_max_option_en')
       : String(n);
@@ -258,7 +258,7 @@ const AviationQuoteRequestPage: React.FC = () => {
         >
           <div className="border border-gray-800 bg-gray-900 rounded-2xl p-10">
             <h1 className="text-3xl font-bold text-white mb-4">
-              {lang === 'it' ? 'Richiesta inviata' : 'Request sent'}
+              {t({ it: 'Richiesta inviata', en: 'Request sent' })}
             </h1>
             <p className="text-gray-400 mb-2">
               {lang === 'it' ? copy.alert_success_it : copy.alert_success_en}
@@ -272,7 +272,7 @@ const AviationQuoteRequestPage: React.FC = () => {
               onClick={() => navigate('/')}
               className="px-8 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
             >
-              {lang === 'it' ? 'Torna alla pagina iniziale' : 'Back to home'}
+              {t({ it: 'Torna alla pagina iniziale', en: 'Back to home' })}
             </button>
           </div>
         </motion.div>
@@ -296,7 +296,7 @@ const AviationQuoteRequestPage: React.FC = () => {
           </p>
           {mezzoScelto && (
             <p className="mt-4 inline-block border border-gray-700 px-4 py-2 text-sm text-white">
-              {lang === 'it' ? 'Mezzo scelto:' : 'Selected aircraft:'} <span className="font-semibold">{mezzoScelto}</span>
+              {t({ it: 'Mezzo scelto:', en: 'Selected aircraft:' })} <span className="font-semibold">{mezzoScelto}</span>
             </p>
           )}
         </div>

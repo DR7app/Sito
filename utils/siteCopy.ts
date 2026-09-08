@@ -2318,7 +2318,10 @@ export const DEFAULT_ASPETTO: Required<AspettoCopy> = {
   footer_logo_height: 48,
   chatbot_enabled: true,
   chatbot_avatar_url: '/Valerio.jpg',
-  auto_booking_popup_enabled: true,
+  // Spento di fabbrica: il riquadro "Prenota Ora" che si apriva da solo
+  // copriva la home ai visitatori. L'interruttore resta in Aspetto &
+  // Funzionalita' se un giorno lo si vuole riaccendere.
+  auto_booking_popup_enabled: false,
   heli_tour_popup_enabled: true,
   tema_bg: '#08090A',
   tema_surface: '#131416',

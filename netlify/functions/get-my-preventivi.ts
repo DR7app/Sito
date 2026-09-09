@@ -37,48 +37,51 @@ const handler: Handler = async (event) => {
     const userEmail = user.email?.toLowerCase().trim() || ''
     const phoneSuffix = userPhone.slice(-9)
 
-    // Also get the customer's phone from customers_extended
+    // La scheda cliente: il suo id lega i preventivi fatti dal sito.
     let dbPhone = ''
+    let customerId: string | null = null
     if (user.id) {
       const { data: custData } = await supabase
         .from('customers_extended')
-        .select('telefono')
+        .select('id, telefono')
         .eq('user_id', user.id)
         .maybeSingle()
       if (custData?.telefono) {
         dbPhone = custData.telefono.replace(/[\s\-\+()]/g, '')
       }
+      customerId = custData?.id || null
     }
 
     const searchPhone = dbPhone || phoneSuffix
 
-    if (!searchPhone && !userEmail) {
-      return { statusCode: 200, headers, body: JSON.stringify({ preventivi: [] }) }
+    // 09/09/2026 — un preventivo chiesto dal sito (anche "No Cauzione") non
+    // compariva nell'account: la ricerca partiva dal TELEFONO, e chi non ha
+    // il numero sulla scheda cliente non trovava niente. Le sue righe le
+    // riconosce prima di tutto `created_by` (l'utente che ha premuto il
+    // bottone) e `customer_id` (la sua scheda): sono esatti, il telefono e
+    // l'email restano come rete per i preventivi scritti in ufficio.
+    const righe: any[] = []
+    const visti = new Set<string>()
+    const aggiungi = (lista: any[] | null) => {
+      for (const r of lista || []) {
+        if (r?.id && !visti.has(r.id)) { visti.add(r.id); righe.push(r) }
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cerca = async (colonna: string, operatore: 'eq' | 'ilike', valore: string) => {
+      const q = supabase.from('preventivi').select('*')
+      const conFiltro = operatore === 'eq' ? q.eq(colonna, valore) : q.ilike(colonna, valore)
+      const { data: res } = await conFiltro.order('created_at', { ascending: false }).limit(20)
+      aggiungi(res)
     }
 
-    // Query: match by phone suffix (most reliable) or by customer_name containing email
-    let data: any[] = []
-    if (searchPhone) {
-      const { data: results, error } = await supabase
-        .from('preventivi')
-        .select('*')
-        .ilike('customer_phone', `%${searchPhone.slice(-9)}%`)
-        .order('created_at', { ascending: false })
-        .limit(20)
-      if (error) throw error
-      data = results || []
-    }
+    await cerca('created_by', 'eq', user.id)
+    if (customerId) await cerca('customer_id', 'eq', customerId)
+    if (searchPhone) await cerca('customer_phone', 'ilike', `%${searchPhone.slice(-9)}%`)
+    if (userEmail) await cerca('customer_name', 'ilike', `%${userEmail}%`)
 
-    // Fallback: if no phone match, try email in customer_name (some preventivi store email there)
-    if (data.length === 0 && userEmail) {
-      const { data: results } = await supabase
-        .from('preventivi')
-        .select('*')
-        .ilike('customer_name', `%${userEmail}%`)
-        .order('created_at', { ascending: false })
-        .limit(20)
-      data = results || []
-    }
+    righe.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+    let data: any[] = righe
 
     // Le richieste di volo hanno un preventivo gemello (`website_aviation`,
     // lo crea send-aviation-quote-notification per il gestionale): al cliente

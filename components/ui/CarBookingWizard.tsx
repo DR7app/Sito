@@ -401,7 +401,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       licenseNumber: '',
       licenseIssueDate: '',
       licenseImage: null, // File or dataURL
+      // 09/09/2026 — fronte E retro di tutti e tre i documenti, come per il
+      // secondo conducente e come nella sezione Documenti dell'account: il
+      // retro della patente porta la data reale di conseguimento (colonna
+      // 10, categoria B) e il retro della tessera sanitaria il codice a
+      // barre. Con il solo fronte l'anzianita' di guida usciva sbagliata.
+      licenseImageBack: null as File | string | null,
       idImage: null,
+      idImageBack: null as File | string | null,
+      cfImage: null as File | string | null,
+      cfImageBack: null as File | string | null,
       address: '',
       city: '',
       confirmsInformation: false,
@@ -1572,7 +1581,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     });
   };
 
-  const [hasStoredDocs, setHasStoredDocs] = useState<{ licensePath: string | null; idPath: string | null }>({ licensePath: null, idPath: null });
+  const [hasStoredDocs, setHasStoredDocs] = useState<{ licensePath: string | null; idPath: string | null; cfPath: string | null }>({ licensePath: null, idPath: null, cfPath: null });
   const [checkingDocs, setCheckingDocs] = useState(false);
 
   // Check for existing documents in storage
@@ -1592,8 +1601,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const validId = idFiles && idFiles.length > 0 ? idFiles.find(f => f.name !== '.emptyFolderPlaceholder') : null;
         const idPath = validId ? `${user.id}/${validId.name}` : null;
 
-        setHasStoredDocs({ licensePath, idPath });
-        console.log('Document check:', { licensePath, idPath });
+        // Il codice fiscale ha un bucket suo, come nella sezione Documenti
+        // dell'account: senza questo controllo veniva richiesto anche a chi
+        // l'aveva gia' caricato.
+        const { data: cfFiles } = await supabase.storage.from('codice-fiscale').list(user.id);
+        const validCf = cfFiles && cfFiles.length > 0 ? cfFiles.find(f => f.name !== '.emptyFolderPlaceholder') : null;
+        const cfPath = validCf ? `${user.id}/${validCf.name}` : null;
+
+        setHasStoredDocs({ licensePath, idPath, cfPath });
+        console.log('Document check:', { licensePath, idPath, cfPath });
       } catch (err) {
         console.error('Error checking documents:', err);
       } finally {
@@ -2736,6 +2752,36 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     }
   };
 
+  /**
+   * Retro della patente, codice fiscale (fronte e retro) e retro del
+   * documento: si caricano nei bucket loro, gli stessi della sezione
+   * Documenti dell'account. Una foto che non sale non ferma la
+   * prenotazione — resta null e l'ufficio la richiede.
+   */
+  const caricaDocumentiExtra = async (userId: string) => {
+    const percorsi = {
+      licenseBack: null as string | null,
+      idBack: null as string | null,
+      cf: null as string | null,
+      cfBack: null as string | null,
+    };
+    const da: Array<[keyof typeof percorsi, string, File | string | null, string]> = [
+      ['licenseBack', 'driver-licenses', formData.licenseImageBack, 'license_back'],
+      ['idBack', 'carta-identita', formData.idImageBack, 'id_back'],
+      ['cf', 'codice-fiscale', formData.cfImage, 'cf'],
+      ['cfBack', 'codice-fiscale', formData.cfImageBack, 'cf_back'],
+    ];
+    for (const [chiave, bucket, file, prefisso] of da) {
+      if (!file) continue;
+      try {
+        percorsi[chiave] = await uploadToBucket(bucket, userId, file, prefisso);
+      } catch (err) {
+        console.warn(`Caricamento ${prefisso} non riuscito:`, err);
+      }
+    }
+    return percorsi;
+  };
+
   const validateStep = () => {
     const newErrors: Record<string, string> = {};
     if (step === 1) {
@@ -2927,12 +2973,25 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!formData.licenseNumber) newErrors.licenseNumber = "Il numero di patente è obbligatorio.";
       if (!formData.licenseIssueDate) newErrors.licenseIssueDate = "La data di rilascio della patente è obbligatoria.";
 
-      // Validate images ONLY if not already stored
+      // Le foto servono solo a chi non le ha gia' in archivio. Fronte e
+      // retro di tutti e tre i documenti, come per il secondo conducente.
       if (!formData.licenseImage && !hasStoredDocs.licensePath) {
-        newErrors.licenseImage = "La foto della patente è obbligatoria.";
+        newErrors.licenseImage = "La foto della patente (fronte) è obbligatoria.";
+      }
+      if (!formData.licenseImageBack && !hasStoredDocs.licensePath) {
+        newErrors.licenseImageBack = "La foto della patente (retro) è obbligatoria.";
       }
       if (!formData.idImage && !hasStoredDocs.idPath) {
-        newErrors.idImage = "La foto del documento d'identità è obbligatoria.";
+        newErrors.idImage = "La foto del documento d'identità (fronte) è obbligatoria.";
+      }
+      if (!formData.idImageBack && !hasStoredDocs.idPath) {
+        newErrors.idImageBack = "La foto del documento d'identità (retro) è obbligatoria.";
+      }
+      if (!formData.cfImage && !hasStoredDocs.cfPath) {
+        newErrors.cfImage = "La foto del codice fiscale (fronte) è obbligatoria.";
+      }
+      if (!formData.cfImageBack && !hasStoredDocs.cfPath) {
+        newErrors.cfImageBack = "La foto del codice fiscale (retro) è obbligatoria.";
       }
 
       if (!formData.confirmsInformation) newErrors.confirmsInformation = "Devi confermare che le informazioni sono corrette.";
@@ -3109,6 +3168,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         idImageUrl = hasStoredDocs.idPath;
       }
 
+      // Retro patente, codice fiscale fronte/retro e retro documento.
+      const documentiExtra = await caricaDocumentiExtra(user.id);
+
       // Fallback? If null, backend might reject or just store null.
       // Validation ensures we have one or the other.
 
@@ -3247,6 +3309,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           vehicle_id: formData.selectedVehicleId,
           driverLicenseImage: licenseImageUrl,
           driverIdImage: idImageUrl,
+          driverLicenseImageBack: documentiExtra.licenseBack,
+          driverIdImageBack: documentiExtra.idBack,
+          driverCfImage: documentiExtra.cf,
+          driverCfImageBack: documentiExtra.cfBack,
           ...(selectedUpsellWash || selectedUpsellExtras.length > 0 ? { washUpsell: {
             ...(selectedUpsellWash ? {
               serviceId: selectedUpsellWash.id,
@@ -3886,6 +3952,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           idImageUrl = hasStoredDocs.idPath;
         }
 
+        const documentiExtra = await caricaDocumentiExtra(user.id);
+
         // 2. Prepare Payload (Replicating finalizeBooking logic)
         const pickupDateTime = createItalyDateTime(formData.pickupDate, formData.pickupTime);
         const dropoffDateTime = createItalyDateTime(formData.returnDate, formData.returnTime);
@@ -3970,6 +4038,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             dr7_flex: dr7FlexEffective,
             flex_cost: flexCost,
             driverLicenseImage: licenseImageUrl,
+            driverLicenseImageBack: documentiExtra.licenseBack,
+            driverIdImageBack: documentiExtra.idBack,
+            driverCfImage: documentiExtra.cf,
+            driverCfImageBack: documentiExtra.cfBack,
             driverIdImage: idImageUrl,
             ...(selectedUpsellWash || selectedUpsellExtras.length > 0 ? { washUpsell: {
               ...(selectedUpsellWash ? {
@@ -4290,6 +4362,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           idImageUrl = hasStoredDocs.idPath;
         }
 
+        const documentiExtra = await caricaDocumentiExtra(userId);
+
         const vehicleName = availableVehicleName || item.name;
 
         // 2. Generate Nexi Order ID BEFORE insert
@@ -4391,6 +4465,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             dr7_flex: dr7FlexEffective,
             flex_cost: flexCost,
             driverLicenseImage: licenseImageUrl,
+            driverLicenseImageBack: documentiExtra.licenseBack,
+            driverIdImageBack: documentiExtra.idBack,
+            driverCfImage: documentiExtra.cf,
+            driverCfImageBack: documentiExtra.cfBack,
             driverIdImage: idImageUrl,
             ...(selectedUpsellWash || selectedUpsellExtras.length > 0 ? { washUpsell: {
               ...(selectedUpsellWash ? {
@@ -5152,8 +5230,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
               </p>
 
-              {/* Check if documents are already on file */}
-              {(hasStoredDocs.licensePath && hasStoredDocs.idPath) ? (
+              {/* Documenti gia' in archivio: chi li ha caricati una volta non
+                  li ricarica a ogni prenotazione. Servono tutti e tre. */}
+              {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath) ? (
                 <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-4 flex items-center mb-4">
                   <div className="mr-3 bg-green-500/20 p-2 rounded-full">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -5166,48 +5245,55 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* License Uploader */}
-                  {hasStoredDocs.licensePath ? (
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
-                      <p className="text-green-400 text-sm font-medium mb-1">{t({ it: "✓ Patente di Guida presente", en: "✓ Driving licence on file" })}</p>
-                      <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <DocumentUploader
-                        title={t({ it: "1. PATENTE DI GUIDA *", en: "1. DRIVING LICENCE *" })}
-                        details={["Solo fronte/retro", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
-                        onFileChange={(file) => setFormData(prev => ({ ...prev, licenseImage: file }))}
-                      />
-                      {errors.licenseImage && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors.licenseImage}</p>}
-                    </div>
-                  )}
+                <>
+                  {/* 09/09/2026 — fronte E retro di patente, codice fiscale e
+                      carta d'identita', esattamente come si chiedono al
+                      secondo conducente e nella sezione Documenti
+                      dell'account. Il retro non e' un di piu': sulla patente
+                      porta la data reale di conseguimento (colonna 10,
+                      categoria B), sulla tessera sanitaria il codice a
+                      barre. */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {([
+                      { campo: 'licenseImage', archivio: hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "6. CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "6. ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
+                    ] as const).map(({ campo, archivio, titolo, righe }) => (
+                      archivio ? (
+                        <div key={campo} className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
+                          <p className="text-green-400 text-sm font-medium mb-1">✓ {titolo.replace(' *', '')}</p>
+                          <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
+                        </div>
+                      ) : (
+                        <div key={campo}>
+                          <DocumentUploader
+                            title={titolo}
+                            details={[...righe, t({ it: "Campo obbligatorio", en: "Required" })]}
+                            onFileChange={(file) => setFormData(prev => ({ ...prev, [campo]: file }))}
+                          />
+                          {errors[campo] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors[campo]}</p>}
+                        </div>
+                      )
+                    ))}
+                  </div>
 
-                  {/* ID Uploader */}
-                  {hasStoredDocs.idPath ? (
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
-                      <p className="text-green-400 text-sm font-medium mb-1">{t({ it: "✓ Carta d'Identità presente", en: "✓ ID card on file" })}</p>
-                      <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <DocumentUploader
-                        title={t({ it: "2. CARTA D'IDENTITÀ / PASSAPORTO *", en: "2. ID CARD / PASSPORT *" })}
-                        details={["Documento valido", "Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)", "Campo obbligatorio"]}
-                        onFileChange={(file) => setFormData(prev => ({ ...prev, idImage: file }))}
-                      />
-                      {errors.idImage && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors.idImage}</p>}
-                    </div>
-                  )}
-
-                  {/* Compila button — auto-fill from uploaded documents */}
-                  {(formData.licenseImage || formData.idImage) && (
+                  {/* La lettura parte DA SOLA appena una foto e' caricata: i
+                      campi qui sotto si riempiono senza premere niente. Il
+                      bottone resta per rileggere i documenti a mano. */}
+                  {[formData.licenseImage, formData.licenseImageBack, formData.cfImage, formData.cfImageBack, formData.idImage, formData.idImageBack].some(Boolean) && (
                     <div className="mt-4">
                       <CompilaButton
+                        auto
                         documents={[
-                          { file: formData.licenseImage, label: 'Patente' },
-                          { file: formData.idImage, label: 'Documento Identità' },
+                          { file: formData.licenseImage, label: 'Patente (fronte)' },
+                          { file: formData.licenseImageBack, label: 'Patente (retro)' },
+                          { file: formData.cfImage, label: 'Codice Fiscale (fronte)' },
+                          { file: formData.cfImageBack, label: 'Codice Fiscale (retro)' },
+                          { file: formData.idImage, label: 'Documento Identità (fronte)' },
+                          { file: formData.idImageBack, label: 'Documento Identità (retro)' },
                         ]}
                         currentData={{
                           nome: formData.firstName,
@@ -5218,24 +5304,46 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           patente_rilascio: formData.licenseIssueDate,
                         }}
                         onDataExtracted={(data) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            ...(data.nome && !prev.firstName && { firstName: data.nome }),
-                            ...(data.cognome && !prev.lastName && { lastName: data.cognome }),
-                            ...(data.data_nascita && !prev.birthDate && { birthDate: data.data_nascita }),
-                            ...(data.codice_fiscale && !prev.codiceFiscale && { codiceFiscale: data.codice_fiscale }),
-                            ...(data.indirizzo && !prev.residenza && { residenza: `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}, ${data.codice_postale || ''} ${data.citta_residenza || ''} ${data.provincia_residenza || ''}`.trim() }),
-                            ...(data.patente_numero && !prev.licenseNumber && { licenseNumber: data.patente_numero }),
-                            // Anzianità patente: usa la data REALE di conseguimento dal RETRO
-                            // (colonna 10 cat. B). Fallback alla 4a del fronte solo se manca.
-                            ...((data.patente_conseguimento || data.patente_rilascio) && !prev.licenseIssueDate && { licenseIssueDate: data.patente_conseguimento || data.patente_rilascio }),
-                          }))
+                          setFormData(prev => {
+                            const agg: Record<string, unknown> = {};
+                            if (data.nome && !prev.firstName) agg.firstName = data.nome;
+                            if (data.cognome && !prev.lastName) agg.lastName = data.cognome;
+                            if (data.data_nascita && !prev.birthDate) agg.birthDate = data.data_nascita;
+                            if (data.sesso && !prev.sesso) agg.sesso = data.sesso;
+                            if (data.luogo_nascita && !prev.luogoNascita) agg.luogoNascita = data.luogo_nascita;
+                            if (data.provincia_nascita && !prev.provinciaNascita) agg.provinciaNascita = data.provincia_nascita;
+                            if (data.codice_fiscale && !prev.codiceFiscale) agg.codiceFiscale = data.codice_fiscale.toUpperCase();
+                            if (data.indirizzo && !prev.residenza) {
+                              agg.residenza = `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}, ${data.codice_postale || ''} ${data.citta_residenza || ''} ${data.provincia_residenza || ''}`.trim();
+                            }
+                            if (data.patente_numero && !prev.licenseNumber) agg.licenseNumber = data.patente_numero;
+                            // Anzianità patente: la data REALE di conseguimento sta sul
+                            // RETRO (colonna 10, categoria B). La 4a del fronte e' solo
+                            // l'emissione della tessera: si usa se il retro non si legge.
+                            const conseguimento = data.patente_conseguimento || data.patente_rilascio;
+                            if (conseguimento && !prev.licenseIssueDate) agg.licenseIssueDate = conseguimento;
+                            // Nessun codice fiscale sui documenti ma i dati per
+                            // calcolarlo si': meglio calcolarlo che lasciarlo vuoto.
+                            const cognome = (agg.lastName as string) || prev.lastName;
+                            const nome = (agg.firstName as string) || prev.firstName;
+                            const nascita = (agg.birthDate as string) || prev.birthDate;
+                            const sesso = (agg.sesso as string) || prev.sesso;
+                            const luogo = (agg.luogoNascita as string) || prev.luogoNascita;
+                            if (!prev.codiceFiscale && !agg.codiceFiscale && cognome && nome && nascita && sesso && luogo) {
+                              const calcolato = calcolaCodiceFiscale({
+                                cognome, nome, data_nascita: nascita,
+                                sesso: sesso as 'M' | 'F', luogo_nascita: luogo,
+                              });
+                              if (calcolato.codice_fiscale) agg.codiceFiscale = calcolato.codice_fiscale;
+                            }
+                            return { ...prev, ...agg };
+                          });
                         }}
                         onError={(err) => console.error('Compila error:', err)}
                       />
                     </div>
                   )}
-                </div>
+                </>
               )}
             </section>
 

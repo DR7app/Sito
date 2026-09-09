@@ -12,7 +12,7 @@
  *   />
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from '../../hooks/useTranslation';
 
 export interface ExtractedData {
@@ -62,6 +62,14 @@ interface DocumentInput {
 
 interface CompilaButtonProps {
   documents: DocumentInput[]
+  /**
+   * Lettura automatica: appena una foto viene caricata, i suoi dati
+   * riempiono i campi ancora vuoti senza premere niente. Ogni file si legge
+   * una volta sola (una lettura costa una chiamata), e i valori gia'
+   * scritti dalla persona non vengono mai sovrascritti: in automatico non
+   * si apre nessuna finestra di conflitto.
+   */
+  auto?: boolean
   currentData?: Record<string, string | undefined | null>
   onDataExtracted: (data: ExtractedData, conflicts: DataConflict[]) => void
   onError?: (error: string) => void
@@ -171,6 +179,7 @@ const FIELD_LABELS: Record<string, string> = {
 
 export default function CompilaButton({
   documents,
+  auto = false,
   currentData = {},
   onDataExtracted,
   onError,
@@ -186,8 +195,9 @@ export default function CompilaButton({
 
   const validDocs = documents.filter(d => d.file)
 
-  const handleCompila = async () => {
-    if (validDocs.length === 0) {
+  const handleCompila = async (soloQuesti?: DocumentInput[], automatico = false) => {
+    const daLeggere = soloQuesti || validDocs
+    if (daLeggere.length === 0) {
       onError?.('Carica almeno un documento prima di premere Compila automaticamente')
       return
     }
@@ -201,7 +211,7 @@ export default function CompilaButton({
       const results: ExtractedData[] = []
       const notes: string[] = []
 
-      for (const doc of validDocs) {
+      for (const doc of daLeggere) {
         let base64: string
 
         if (doc.file instanceof File) {
@@ -276,7 +286,7 @@ export default function CompilaButton({
       // Find conflicts with existing data
       const foundConflicts = findConflicts(currentData, merged)
 
-      if (foundConflicts.length > 0) {
+      if (foundConflicts.length > 0 && !automatico) {
         setConflicts(foundConflicts)
         setPendingData(merged)
         setShowConflicts(true)
@@ -298,6 +308,40 @@ export default function CompilaButton({
       setIsExtracting(false)
     }
   }
+
+  /**
+   * Lettura automatica.
+   *
+   * Ogni foto si legge UNA volta sola, appena arriva: la chiave e' nome +
+   * dimensione + data del file, cosi' ricaricare la stessa foto non paga
+   * due volte la lettura. Se arriva un altro file mentre si sta leggendo,
+   * lo si prende al giro dopo (`giro`), invece di perderlo.
+   */
+  const letti = useRef<Set<string>>(new Set())
+  const letturaInCorso = useRef(false)
+  const [giro, setGiro] = useState(0)
+
+  useEffect(() => {
+    if (!auto || disabled) return
+    const chiave = (d: DocumentInput): string => {
+      const f = d.file
+      if (f instanceof File) return `f:${f.name}:${f.size}:${f.lastModified}`
+      if (typeof f === 'string') return `s:${f.length}:${f.slice(0, 64)}`
+      return ''
+    }
+    const nuovi = validDocs.filter((d) => {
+      const k = chiave(d)
+      return k !== '' && !letti.current.has(k)
+    })
+    if (nuovi.length === 0 || letturaInCorso.current) return
+    letturaInCorso.current = true
+    for (const d of nuovi) letti.current.add(chiave(d))
+    void handleCompila(nuovi, true).finally(() => {
+      letturaInCorso.current = false
+      setGiro((g) => g + 1)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, disabled, documents, giro])
 
   const handleApplyWithOverwrite = () => {
     if (!pendingData) return
@@ -332,7 +376,7 @@ export default function CompilaButton({
     <>
       <button
         type="button"
-        onClick={handleCompila}
+        onClick={() => handleCompila()}
         disabled={disabled || isExtracting || validDocs.length === 0}
         className={`px-4 py-2 font-semibold text-sm transition-all ${
           isExtracting
@@ -342,7 +386,9 @@ export default function CompilaButton({
               : 'bg-white text-black hover:bg-gray-200 cursor-pointer'
         } ${className}`}
       >
-        {isExtracting ? 'Lettura in corso...' : 'Compila automaticamente'}
+        {isExtracting
+          ? 'Lettura in corso...'
+          : auto ? 'Rileggi i documenti' : 'Compila automaticamente'}
       </button>
 
       {/* Extraction notes */}

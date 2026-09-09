@@ -1,7 +1,8 @@
 /**
  * NoleggioServicePage — pagina pubblica DINAMICA per Noleggio Mare (barche)
  * e Noleggio Aria (elicotteri). Legge `noleggio_catalog` (solo attivi) via
- * useNoleggioCatalog. Se il catalogo e' vuoto NON mostra nulla. Ogni scheda ha
+ * useNoleggioCatalog. Se il catalogo e' vuoto la pagina mostra un avviso
+ * "Prossimamente" al posto della griglia. Ogni scheda ha
  * "Richiedi Preventivo" che apre WhatsApp con l'operatore per concordare
  * disponibilita' e preventivo (no booking/pagamento online).
  */
@@ -91,7 +92,6 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     return () => { cancelled = true; };
   }, [serviceType]);
 
-  // Catalogo vuoto => la pagina non mostra nulla (richiesta esplicita).
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -99,7 +99,31 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
       </div>
     );
   }
-  if (items.length === 0) return null;
+  // Catalogo vuoto: la pagina non resta bianca. Mostra un avviso
+  // "Prossimamente" al posto della griglia (Mare e Soggiorni oggi sono
+  // senza schede a catalogo).
+  if (items.length === 0) {
+    return (
+      <div className="bg-black text-white min-h-screen">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 pb-20">
+          <header className="text-center">
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+          </header>
+          <div className="mt-12 border border-gray-800 rounded-lg bg-black/70 px-6 py-14 text-center">
+            <div className="inline-block px-4 py-1 border border-dr7-gold/60 text-dr7-gold text-xs tracking-[0.25em] uppercase">
+              {t({ it: "Prossimamente", en: "Coming soon" })}
+            </div>
+            <p className="mt-6 text-gray-300 max-w-xl mx-auto leading-relaxed">
+              {t({
+                it: "Questa sezione si sta evolvendo. Nuovi servizi ed esperienze DR7 saranno disponibili a breve.",
+                en: "This section is evolving. New DR7 services and experiences will be available soon.",
+              })}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black text-white min-h-screen">

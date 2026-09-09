@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
 import { getAviationQuoteCopy, getAviationQuoteTemplate, type AviationQuoteCopy } from '../utils/siteCopy';
+import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import CalendarioGiornoOrario from '../components/ui/CalendarioGiornoOrario';
 
 const AviationQuoteRequestPage: React.FC = () => {
@@ -66,6 +67,46 @@ const AviationQuoteRequestPage: React.FC = () => {
     aircraft_category: (isHelicopter ? 'helicopter' : 'jet') as 'jet' | 'helicopter' | 'any',
     notes: ''
   });
+
+  // 09/09/2026 — al preventivo si arriva solo da loggati: nome, email e
+  // telefono DR7 li ha gia'. Il modulo li scrive da solo, come fa il
+  // lavaggio, invece di chiederli una seconda volta a chi li ha appena dati
+  // in fase di iscrizione. Fonte unica utils/datiFatturaCliente.ts: la
+  // scheda cliente del gestionale e, in riserva, i metadati dell'iscrizione
+  // (la scheda a volte resta con la sola email).
+  //
+  // Si riempiono solo i campi ancora vuoti: la scheda arriva dopo una
+  // chiamata al server e non deve cancellare quello che il cliente ha
+  // intanto scritto a mano.
+  useEffect(() => {
+    if (!user) return;
+    let annullato = false;
+
+    const nomeAuth = user.fullName && user.fullName !== 'No Name' ? user.fullName : '';
+    setFormData(prev => ({
+      ...prev,
+      customer_name: prev.customer_name || nomeAuth,
+      customer_email: prev.customer_email || user.email || '',
+      customer_phone: prev.customer_phone || user.phone || '',
+    }));
+
+    (async () => {
+      try {
+        const dati = await caricaDatiFatturaCliente(user.id);
+        if (annullato) return;
+        setFormData(prev => ({
+          ...prev,
+          customer_name: prev.customer_name || dati.fullName,
+          customer_email: prev.customer_email || dati.email,
+          customer_phone: prev.customer_phone || dati.phone,
+        }));
+      } catch (err) {
+        console.error('[preventivo aria] dati cliente non caricati:', err);
+      }
+    })();
+
+    return () => { annullato = true; };
+  }, [user]);
 
   // Un solo aspetto per tutti i campi del modulo: scritto una volta, cosi'
   // aggiungere una domanda non vuol dire ricopiare dieci classi.

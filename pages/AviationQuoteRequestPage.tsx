@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -89,6 +89,20 @@ const AviationQuoteRequestPage: React.FC = () => {
   // La data era un `input required`: il browser fermava l'invio da solo. Con
   // il calendario il campo e' un bottone, e il controllo va fatto qui.
   const [erroreData, setErroreData] = useState('');
+
+  // 09/09/2026 — scelto l'elicottero a catalogo, la prima domanda e' QUANDO:
+  // il calendario si apre da solo appena la pagina e' pronta, come nel
+  // lavaggio. Il modulo con i dati resta sotto, per dopo. Si apre una volta
+  // sola: chi lo chiude senza scegliere non se lo ritrova a ogni ridisegno,
+  // e il campo lo riapre quando vuole.
+  const calendarioAutoApertoRef = useRef(false);
+  useEffect(() => {
+    if (calendarioAutoApertoRef.current) return;
+    if (authLoading || !copy || inviata) return;
+    if (formData.departure_date) return;
+    calendarioAutoApertoRef.current = true;
+    setCalendarioAperto('andata');
+  }, [authLoading, copy, inviata, formData.departure_date]);
 
   const oggiYmd = new Date().toISOString().split('T')[0];
   const mostraDataOra = (data: string, ora: string) => {

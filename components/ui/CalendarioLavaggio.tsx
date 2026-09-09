@@ -25,8 +25,14 @@ import {
 import { valutaSlot, type PrenotazioneLavaggio } from '../../utils/lavaggioSlotRules';
 import CalendarioGiornoOrario, { ymdLocale } from './CalendarioGiornoOrario';
 
-/** Quanti giorni avanti si puo' prenotare. */
-const GIORNI_ORIZZONTE = 60;
+/** Quanti giorni avanti si puo' prenotare: un anno. Con due mesi il
+ *  calendario si fermava a inizio novembre e chi voleva prenotare per le
+ *  feste non trovava il giorno. */
+const GIORNI_ORIZZONTE = 365;
+/** Quante righe alla volta: PostgREST ne dà al massimo 1000 per richiesta,
+ *  e un anno di lavaggi le supera. Senza pagine, le prenotazioni oltre la
+ *  millesima sparivano e quegli orari risultavano liberi. */
+const PAGINA = 1000;
 /** Preavviso minimo per prenotare nella giornata di oggi. */
 const PREAVVISO_MINUTI = 120;
 
@@ -69,14 +75,22 @@ const CalendarioLavaggio: React.FC<Props> = ({
         const oggi = new Date();
         const fine = new Date();
         fine.setDate(fine.getDate() + GIORNI_ORIZZONTE);
-        const { data } = await supabase
-          .from('bookings')
-          .select('appointment_date, appointment_time, price_total, status')
-          .eq('service_type', 'car_wash')
-          .gte('appointment_date', ymdLocale(oggi))
-          .lte('appointment_date', ymdLocale(fine));
+        const tutte: any[] = [];
+        for (let da = 0; ; da += PAGINA) {
+          const { data } = await supabase
+            .from('bookings')
+            .select('appointment_date, appointment_time, price_total, status')
+            .eq('service_type', 'car_wash')
+            .gte('appointment_date', ymdLocale(oggi))
+            .lte('appointment_date', ymdLocale(fine))
+            .order('appointment_date', { ascending: true })
+            .range(da, da + PAGINA - 1);
+          if (!data || data.length === 0) break;
+          tutte.push(...data);
+          if (data.length < PAGINA) break;
+        }
         const escluse = new Set(['cancelled', 'annullata']);
-        const righe = (data || [])
+        const righe = tutte
           .filter((b: any) => b.appointment_time && !escluse.has(String(b.status || '').toLowerCase()))
           .map((b: any) => ({
             data: String(b.appointment_date).slice(0, 10),

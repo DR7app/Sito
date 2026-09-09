@@ -41,6 +41,19 @@ interface Props {
   oraIniziale?: string;
   titolo?: Bilingue;
   sottotitolo?: Bilingue;
+  /**
+   * Una domanda in piu' da fare NEL calendario, sopra il mese. La usa il
+   * preventivo Aria per chiedere se il volo e' solo andata o andata e
+   * ritorno: e' la stessa scelta del "quando", e chiederla nel modulo dopo
+   * significava aprire il calendario due volte senza dirlo.
+   */
+  intestazione?: React.ReactNode;
+  /**
+   * Di norma scegliere l'orario chiude il calendario. Chi incatena piu'
+   * scelte in una sola apertura (andata e poi ritorno) passa `false` e
+   * chiude da se'.
+   */
+  chiudiDopoLaScelta?: boolean;
   onConferma: (data: string, ora: string) => void;
 }
 
@@ -50,7 +63,8 @@ export function ymdLocale(d: Date): string {
 
 const CalendarioGiornoOrario: React.FC<Props> = ({
   aperto, onClose, minDate, maxDate, orariDelGiorno, attendiOrari,
-  dataIniziale, oraIniziale, titolo, sottotitolo, onConferma,
+  dataIniziale, oraIniziale, titolo, sottotitolo, intestazione,
+  chiudiDopoLaScelta = true, onConferma,
 }) => {
   const { t, lang } = useTranslation();
   const it = lang === 'it';
@@ -159,6 +173,8 @@ const CalendarioGiornoOrario: React.FC<Props> = ({
                 : t({ it: 'Poi ti mostriamo gli orari liberi di quel giorno.', en: 'We then show the times free on that day.' })}
             </p>
 
+            {intestazione && <div className="mb-6">{intestazione}</div>}
+
             {!pronto ? (
               <p className="py-10 text-center text-sm text-white/40">…</p>
             ) : (
@@ -246,7 +262,7 @@ const CalendarioGiornoOrario: React.FC<Props> = ({
                                   <button
                                     key={ora}
                                     type="button"
-                                    onClick={() => { onConferma(giornoScelto, ora); onClose(); }}
+                                    onClick={() => { onConferma(giornoScelto, ora); if (chiudiDopoLaScelta) onClose(); }}
                                     className={`border px-2.5 py-1.5 text-[12px] tabular-nums transition-colors ${
                                       ora === oraIniziale && giornoScelto === dataIniziale
                                         ? 'border-white bg-white text-black'

@@ -105,6 +105,38 @@ const AviationQuoteRequestPage: React.FC = () => {
   }, [authLoading, copy, inviata, formData.departure_date]);
 
   const oggiYmd = new Date().toISOString().split('T')[0];
+  /** Solo andata o andata e ritorno: si sceglie nel calendario, non dopo. */
+  const sceltaViaggio = (
+    <div>
+      <p className="mb-2 text-[11px] uppercase tracking-wider text-white/30">
+        {t({ it: 'Il volo', en: 'The flight' })}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {([false, true] as const).map((conRitorno) => (
+          <button
+            key={String(conRitorno)}
+            type="button"
+            onClick={() => setFormData(prev => ({
+              ...prev,
+              wants_return: conRitorno,
+              return_date: conRitorno ? prev.return_date : '',
+              return_time: conRitorno ? prev.return_time : '',
+            }))}
+            className={`border px-3 py-1.5 text-[12px] transition-colors ${
+              formData.wants_return === conRitorno
+                ? 'border-white bg-white text-black'
+                : 'border-white/15 text-white/75 hover:border-white/50'
+            }`}
+          >
+            {conRitorno
+              ? t({ it: 'Andata e ritorno', en: 'Round trip' })
+              : t({ it: 'Solo andata', en: 'One way' })}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   const mostraDataOra = (data: string, ora: string) => {
     if (!data) return t({ it: 'Scegli giorno e orario', en: 'Choose day and time' });
     const giorno = new Date(`${data}T12:00:00`).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { weekday: 'short', day: '2-digit', month: 'long' });
@@ -663,15 +695,20 @@ const AviationQuoteRequestPage: React.FC = () => {
             it: "Poi l'orario di partenza. E' una richiesta: confermiamo noi in preventivo.",
             en: 'Then the departure time. It is a request: we confirm it in the quote.',
           }}
+          intestazione={sceltaViaggio}
+          chiudiDopoLaScelta={false}
           onConferma={(data, ora) => {
             setErroreData('');
             setFormData(prev => ({
-            ...prev,
-            departure_date: data,
-            departure_time: ora,
-            // Un ritorno prima dell'andata non ha senso: si sposta con lei.
-            return_date: prev.return_date && prev.return_date < data ? data : prev.return_date,
+              ...prev,
+              departure_date: data,
+              departure_time: ora,
+              // Un ritorno prima dell'andata non ha senso: si rifa'.
+              return_date: prev.return_date && prev.return_date < data ? '' : prev.return_date,
             }));
+            // Chi ha detto andata e ritorno non deve riaprire niente: il
+            // calendario resta aperto e passa al ritorno.
+            setCalendarioAperto(formData.wants_return ? 'ritorno' : null);
           }}
         />
 
@@ -688,8 +725,21 @@ const AviationQuoteRequestPage: React.FC = () => {
             it: "Poi l'orario di rientro. E' una richiesta: confermiamo noi in preventivo.",
             en: 'Then the return time. It is a request: we confirm it in the quote.',
           }}
+          intestazione={
+            <button
+              type="button"
+              onClick={() => setCalendarioAperto('andata')}
+              className="w-full border border-white/15 px-3 py-2 text-left text-[12px] text-white/60 transition-colors hover:border-white/50 hover:text-white"
+            >
+              <span className="capitalize">
+                {t({ it: 'Andata', en: 'Outbound' })}: {mostraDataOra(formData.departure_date, formData.departure_time)}
+              </span>
+              <span className="ml-2 text-white/30">{t({ it: '· cambia', en: '· change' })}</span>
+            </button>
+          }
           onConferma={(data, ora) => setFormData(prev => ({ ...prev, return_date: data, return_time: ora }))}
         />
+
       </motion.div>
     </div>
   );

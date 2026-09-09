@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
 import { getAviationQuoteCopy, getAviationQuoteTemplate, type AviationQuoteCopy } from '../utils/siteCopy';
+import CalendarioGiornoOrario from '../components/ui/CalendarioGiornoOrario';
 
 const AviationQuoteRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -69,6 +70,32 @@ const AviationQuoteRequestPage: React.FC = () => {
   // Un solo aspetto per tutti i campi del modulo: scritto una volta, cosi'
   // aggiungere una domanda non vuol dire ricopiare dieci classi.
   const campoCls = 'w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white';
+
+  // 09/09/2026 — data e ora del volo si scelgono nel calendario del sito, lo
+  // stesso di Terra, Mare, Casa e lavaggio: prima il giorno, poi l'orario.
+  // Un charter non ha turni d'ufficio: si vola dall'alba a sera, e l'orario
+  // e' comunque una richiesta da confermare in preventivo. Mezz'ora di passo,
+  // dalle 06:00 alle 22:00.
+  const orariVolo = useCallback((_ymd: string): string[] => {
+    const out: string[] = [];
+    for (let m = 6 * 60; m <= 22 * 60; m += 30) {
+      out.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+    }
+    return out;
+  }, []);
+  /** Il calendario dell'aviazione non aspetta gli orari del noleggio. */
+  const nienteDaAspettare = useCallback(() => Promise.resolve(), []);
+  const [calendarioAperto, setCalendarioAperto] = useState<null | 'andata' | 'ritorno'>(null);
+  // La data era un `input required`: il browser fermava l'invio da solo. Con
+  // il calendario il campo e' un bottone, e il controllo va fatto qui.
+  const [erroreData, setErroreData] = useState('');
+
+  const oggiYmd = new Date().toISOString().split('T')[0];
+  const mostraDataOra = (data: string, ora: string) => {
+    if (!data) return t({ it: 'Scegli giorno e orario', en: 'Choose day and time' });
+    const giorno = new Date(`${data}T12:00:00`).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { weekday: 'short', day: '2-digit', month: 'long' });
+    return `${giorno}${ora ? ` · ${ora}` : ''}`;
+  };
 
   const tx = (it: keyof AviationQuoteCopy, en: keyof AviationQuoteCopy, fallback = ''): string => {
     if (!copy) return fallback;
@@ -165,6 +192,11 @@ const AviationQuoteRequestPage: React.FC = () => {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!copy) return;
+    if (!formData.departure_date) {
+      setErroreData(t({ it: "Scegli il giorno dell'andata.", en: 'Choose the outbound day.' }));
+      setCalendarioAperto('andata');
+      return;
+    }
     const isIt = lang === 'it';
     setSubmitting(true);
     try {
@@ -385,32 +417,18 @@ const AviationQuoteRequestPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {tx('field_departure_date_label_it', 'field_departure_date_label_en')}
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.departure_date}
-                  onChange={(e) => setFormData({ ...formData, departure_date: e.target.value })}
-                  min={new Date().toISOString().split('T')[0]}
-                  className={campoCls}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {tx('field_departure_time_label_it', 'field_departure_time_label_en')}
-                </label>
-                <input
-                  type="time"
-                  value={formData.departure_time}
-                  onChange={(e) => setFormData({ ...formData, departure_time: e.target.value })}
-                  className={campoCls}
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {tx('field_departure_date_label_it', 'field_departure_date_label_en')}
+              </label>
+              <button
+                type="button"
+                onClick={() => setCalendarioAperto('andata')}
+                className={`${campoCls} text-left capitalize`}
+              >
+                {mostraDataOra(formData.departure_date, formData.departure_time)}
+              </button>
+              {erroreData && <p className="mt-2 text-xs text-red-400">{erroreData}</p>}
             </div>
 
             {/* Volo di ritorno: le due date si chiedono solo a chi risponde di si'. */}
@@ -434,31 +452,17 @@ const AviationQuoteRequestPage: React.FC = () => {
             </div>
 
             {formData.wants_return && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {tx('field_return_date_label_it', 'field_return_date_label_en')}
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.return_date}
-                    onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
-                    min={formData.departure_date || new Date().toISOString().split('T')[0]}
-                    className={campoCls}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {tx('field_return_time_label_it', 'field_return_time_label_en')}
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.return_time}
-                    onChange={(e) => setFormData({ ...formData, return_time: e.target.value })}
-                    className={campoCls}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {tx('field_return_date_label_it', 'field_return_date_label_en')}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setCalendarioAperto('ritorno')}
+                  className={`${campoCls} text-left capitalize`}
+                >
+                  {mostraDataOra(formData.return_date, formData.return_time)}
+                </button>
               </div>
             )}
 
@@ -631,6 +635,47 @@ const AviationQuoteRequestPage: React.FC = () => {
             {tx('disclaimer_it', 'disclaimer_en')}
           </p>
         </form>
+
+        <CalendarioGiornoOrario
+          aperto={calendarioAperto === 'andata'}
+          onClose={() => setCalendarioAperto(null)}
+          minDate={oggiYmd}
+          orariDelGiorno={orariVolo}
+          attendiOrari={nienteDaAspettare}
+          dataIniziale={formData.departure_date}
+          oraIniziale={formData.departure_time}
+          titolo={{ it: 'Andata: scegli il giorno', en: 'Outbound: choose the day' }}
+          sottotitolo={{
+            it: "Poi l'orario di partenza. E' una richiesta: confermiamo noi in preventivo.",
+            en: 'Then the departure time. It is a request: we confirm it in the quote.',
+          }}
+          onConferma={(data, ora) => {
+            setErroreData('');
+            setFormData(prev => ({
+            ...prev,
+            departure_date: data,
+            departure_time: ora,
+            // Un ritorno prima dell'andata non ha senso: si sposta con lei.
+            return_date: prev.return_date && prev.return_date < data ? data : prev.return_date,
+            }));
+          }}
+        />
+
+        <CalendarioGiornoOrario
+          aperto={calendarioAperto === 'ritorno'}
+          onClose={() => setCalendarioAperto(null)}
+          minDate={formData.departure_date || oggiYmd}
+          orariDelGiorno={orariVolo}
+          attendiOrari={nienteDaAspettare}
+          dataIniziale={formData.return_date}
+          oraIniziale={formData.return_time}
+          titolo={{ it: 'Ritorno: scegli il giorno', en: 'Return: choose the day' }}
+          sottotitolo={{
+            it: "Poi l'orario di rientro. E' una richiesta: confermiamo noi in preventivo.",
+            en: 'Then the return time. It is a request: we confirm it in the quote.',
+          }}
+          onConferma={(data, ora) => setFormData(prev => ({ ...prev, return_date: data, return_time: ora }))}
+        />
       </motion.div>
     </div>
   );

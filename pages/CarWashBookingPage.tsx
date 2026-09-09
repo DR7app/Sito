@@ -585,16 +585,20 @@ const CarWashBookingPage: React.FC = () => {
     fetchBalance();
   }, [user]);
 
-  // Clear selected time when date changes to ensure valid time selection
+  // Cambiando giorno, l'orario scelto prima puo' non esistere piu': si
+  // cancella. Ma non mentre le prenotazioni del giorno sono ancora in
+  // lettura, e non se la lista degli orari torna vuota: "non lo so ancora"
+  // non e' "e' occupato", e cancellare li' significava buttare via l'orario
+  // appena scelto nel calendario.
   useEffect(() => {
+    if (bookingsLoading) return;
     if (formData.appointmentDate && formData.appointmentTime) {
-      // Check if the currently selected time is still valid for the selected date
       const availableSlots = getAvailableTimeSlots();
-      if (!availableSlots.includes(formData.appointmentTime)) {
+      if (availableSlots.length > 0 && !availableSlots.includes(formData.appointmentTime)) {
         setFormData(prev => ({ ...prev, appointmentTime: '' }));
       }
     }
-  }, [formData.appointmentDate]);
+  }, [formData.appointmentDate, bookingsLoading]);
 
   // Removed Stripe payment intent and card element mounting - now using Nexi redirect
 
@@ -738,12 +742,21 @@ const CarWashBookingPage: React.FC = () => {
     // Only 1 booking per slot — no double bookings
     const MAX_CONCURRENT_WASHES = 1;
 
+    // 09/09/2026 — `existingBookings` sono le prenotazioni del giorno scelto,
+    // ma finche' la lettura del nuovo giorno non torna resta in mano la lista
+    // di prima: senza data, il hook le legge TUTTE. Confrontare quelle con gli
+    // orari di oggi faceva risultare occupato mezzo calendario e cancellava
+    // l'orario appena scelto. Si guarda solo il giorno che si sta prenotando.
+    const prenotazioniDelGiorno = existingBookings.filter(
+      b => String(b.appointment_date || '').slice(0, 10) === formData.appointmentDate,
+    );
+
     const hasOverlap = (startTime: string, durationHours: number) => {
       const startMinutes = timeToMinutes(startTime);
       const endMinutes = startMinutes + (durationHours * 60);
 
       let overlappingCount = 0;
-      for (const booking of existingBookings) {
+      for (const booking of prenotazioniDelGiorno) {
         if (!booking.appointment_time) continue;
         const bookingStart = timeToMinutes(booking.appointment_time);
         const bookingDuration = getServiceDurationByPrice(booking.price_total / 100);

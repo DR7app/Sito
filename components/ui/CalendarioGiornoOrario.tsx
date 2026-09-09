@@ -30,6 +30,13 @@ interface Props {
   maxDate?: string;
   /** Gli orari prenotabili di un giorno. Vuoto = giorno non scegliibile. */
   orariDelGiorno: (ymd: string) => string[];
+  /**
+   * La lettura degli orari da Centralina Pro. Di fabbrica sono quelli del
+   * noleggio; il lavaggio ha i suoi e passa la sua (`orariLavaggioPronti`),
+   * altrimenti il calendario si aprirebbe prima che siano arrivati e
+   * mostrerebbe i giorni sbagliati.
+   */
+  attendiOrari?: () => Promise<unknown>;
   dataIniziale?: string;
   oraIniziale?: string;
   titolo?: Bilingue;
@@ -42,7 +49,7 @@ export function ymdLocale(d: Date): string {
 }
 
 const CalendarioGiornoOrario: React.FC<Props> = ({
-  aperto, onClose, minDate, maxDate, orariDelGiorno,
+  aperto, onClose, minDate, maxDate, orariDelGiorno, attendiOrari,
   dataIniziale, oraIniziale, titolo, sottotitolo, onConferma,
 }) => {
   const { t, lang } = useTranslation();
@@ -53,7 +60,11 @@ const CalendarioGiornoOrario: React.FC<Props> = ({
   // non sono arrivati la griglia mostrerebbe quelli di fabbrica e non si
   // ridisegnerebbe piu'.
   const [pronto, setPronto] = useState(false);
-  useEffect(() => { let vivo = true; orariPronti().then(() => { if (vivo) setPronto(true); }); return () => { vivo = false; }; }, []);
+  useEffect(() => {
+    let vivo = true;
+    (attendiOrari || orariPronti)().then(() => { if (vivo) setPronto(true); });
+    return () => { vivo = false; };
+  }, [attendiOrari]);
 
   const [giornoScelto, setGiornoScelto] = useState<string>(dataIniziale || '');
   const [mese, setMese] = useState<Date>(() => {

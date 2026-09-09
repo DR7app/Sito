@@ -1848,8 +1848,8 @@ const CarWashBookingPage: React.FC = () => {
                   {orariPronti ? riassuntoSettimana(lang === 'it' ? 'it' : 'en') : '…'}
                 </p>
               </div>
-              {/* Prima l'orario, poi il giorno: chi ha un orario in testa non
-                  deve aprire i giorni uno per uno per trovarlo. */}
+              {/* Stesso calendario di Terra, Mare e Casa: prima il giorno,
+                  poi gli orari che in quel giorno sono davvero liberi. */}
               <button
                 type="button"
                 onClick={() => setCalendarioAperto(true)}
@@ -1867,9 +1867,9 @@ const CarWashBookingPage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <span className="block text-white">{t({ it: 'Scegli orario e giorno *', en: 'Pick time and day *' })}</span>
+                    <span className="block text-white">{t({ it: 'Scegli giorno e orario *', en: 'Pick day and time *' })}</span>
                     <span className="mt-1 block text-xs text-gray-400">
-                      {t({ it: "Prima l'orario, poi i giorni in cui è libero", en: 'Time first, then the days it is free' })}
+                      {t({ it: 'Prima il giorno, poi gli orari liberi di quel giorno', en: 'Day first, then the times free on that day' })}
                     </span>
                   </>
                 )}
@@ -2361,6 +2361,7 @@ const CarWashBookingPage: React.FC = () => {
         durataMinuti={durataTotaleMinuti}
         minDate={minDate}
         bloccato={(ymd) => !!blockedRangeFor(ymd)}
+        dataIniziale={formData.appointmentDate}
         oraIniziale={formData.appointmentTime}
         onConferma={(data, ora) => {
           setFormData(prev => ({ ...prev, appointmentDate: data, appointmentTime: ora }));

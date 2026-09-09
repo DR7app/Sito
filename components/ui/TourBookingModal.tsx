@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 import { getUserCreditBalance } from '../../utils/creditWallet';
 import type { NoleggioCatalogItem, TourDuration } from '../../hooks/useNoleggioCatalog';
 import { useTranslation } from '../../hooks/useTranslation';
 import { dateLocale } from '../../utils/i18nDate';
+import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -63,6 +64,11 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState<string>('');
   const [departureId, setDepartureId] = useState<string>('');
+  // 09/09/2026 — giorno e orario si scelgono nel calendario del sito, lo
+  // stesso di Terra: prima il giorno, poi gli orari di partenza di quel
+  // giorno. Prima erano due file di pulsanti, e con molte partenze la
+  // prima fila diventava un muro di date.
+  const [calendarioAperto, setCalendarioAperto] = useState(false);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [seatsLoading, setSeatsLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -146,7 +152,12 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
   }, [item.id]);
 
   const dates = useMemo(() => Array.from(new Set(departures.map(d => d.departure_date))), [departures]);
-  const timesForDate = useMemo(() => departures.filter(d => d.departure_date === date), [departures, date]);
+  /** Gli orari di partenza di un giorno: e' cosi' che il calendario sa
+   *  quali giorni accendere. */
+  const orariPartenza = useCallback(
+    (ymd: string) => departures.filter(d => d.departure_date === ymd).map(d => d.departure_time.slice(0, 5)).sort(),
+    [departures],
+  );
   const departure = useMemo(() => departures.find(d => d.id === departureId) || null, [departures, departureId]);
 
   // Carica i posti quando si sceglie la partenza
@@ -316,33 +327,37 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
           </div>
         ) : (
           <div className="space-y-5">
-            {/* 1. Data */}
+            {/* 1. Giorno e orario */}
             <div>
-              <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "1. Scegli la data", en: "1. Choose the date" })}</label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {dates.map(d => (
-                  <button key={d} onClick={() => { setDate(d); setDepartureId(''); }}
-                    className={`px-3 py-2 border text-sm capitalize ${date === d ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
-                    {fmtDate(d, lang)}
-                  </button>
-                ))}
-              </div>
+              <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "1. Scegli giorno e orario", en: "1. Choose day and time" })}</label>
+              <button
+                type="button"
+                onClick={() => setCalendarioAperto(true)}
+                className={`mt-2 w-full px-3 py-2.5 border text-sm text-left capitalize transition-colors ${departure ? 'border-white text-white' : 'border-gray-700 text-gray-300 hover:border-white'}`}
+              >
+                {departure
+                  ? `${fmtDate(departure.departure_date, lang)} · ${departure.departure_time.slice(0, 5)}`
+                  : t({ it: "Scegli giorno e orario", en: "Choose day and time" })}
+              </button>
             </div>
 
-            {/* 2. Orario */}
-            {date && (
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider">{t({ it: "2. Scegli l'orario", en: "2. Choose the time" })}</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {timesForDate.map(t => (
-                    <button key={t.id} onClick={() => setDepartureId(t.id)}
-                      className={`px-3 py-2 border text-sm tabular-nums ${departureId === t.id ? 'border-white bg-white text-black font-semibold' : 'border-gray-700 text-gray-300 hover:border-white'}`}>
-                      {t.departure_time.slice(0, 5)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <CalendarioGiornoOrario
+              aperto={calendarioAperto}
+              onClose={() => setCalendarioAperto(false)}
+              minDate={dates[0]}
+              maxDate={dates[dates.length - 1]}
+              orariDelGiorno={orariPartenza}
+              dataIniziale={date}
+              oraIniziale={departure?.departure_time.slice(0, 5)}
+              titolo={{ it: 'Scegli il giorno', en: 'Choose the day' }}
+              sottotitolo={{ it: 'Poi ti mostriamo le partenze di quel giorno.', en: 'We then show the departures on that day.' }}
+              onConferma={(giorno, ora) => {
+                const trovata = departures.find(d => d.departure_date === giorno && d.departure_time.slice(0, 5) === ora);
+                setDate(giorno);
+                setDepartureId(trovata ? trovata.id : '');
+                setSelected(new Set());
+              }}
+            />
 
             {/* 3. Posti */}
             {departureId && (

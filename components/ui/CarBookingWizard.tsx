@@ -20,7 +20,7 @@ import { calcolaCodiceFiscale } from '../../utils/codiceFiscale';
 import DocumentUploader from './DocumentUploader';
 import CompilaButton from './CompilaButton';
 import AddressAutocomplete from './AddressAutocomplete';
-import CalendarPicker from './CalendarPicker';
+import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 import {
   getUnlimitedKmOptions,
   calculateUnlimitedKmPrice,
@@ -1014,6 +1014,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   } | null>(null);
 
   // Camera
+  // 09/09/2026 — data e ora del noleggio si scelgono nel calendario del sito
+  // (stesso di Mare e Casa): prima il giorno, poi gli orari liberi di quel
+  // giorno. Prima erano un `input type=date` di sistema piu' una tendina.
+  const [calendarioAperto, setCalendarioAperto] = useState<null | 'ritiro' | 'riconsegna'>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -1469,6 +1473,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const fullDate = dateString; // YYYY-MM-DD
     return ITALIAN_HOLIDAYS.includes(formattedDate) || ITALIAN_HOLIDAYS.includes(fullDate);
   };
+
+  /** 'lun 15 settembre' — come si legge la data scelta sul pulsante. */
+  const etichettaGiorno = (ymd: string): string =>
+    new Date(`${ymd}T12:00:00`).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { weekday: 'short', day: '2-digit', month: 'long' });
 
   const getValidPickupTimes = (date: string): string[] => {
     if (isHoliday(date)) return []; // Block Holidays
@@ -4889,222 +4897,107 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">{t({ it: 'SELEZIONE DATA E ORA', en: 'DATE AND TIME SELECTION' })}</h3>
               <div className="space-y-4">
-                {/* Pickup Date & Time */}
+                {/* Ritiro: prima il giorno, poi gli orari liberi di quel giorno */}
                 <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/30">
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <span className="mr-2"></span> Ritiro del veicolo
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Data di ritiro *
-                        {formData.pickupDate && (
-                          <span className="ml-2 text-xs text-green-400">{t({ it: "Selezionata", en: "Selected" })}</span>
-                        )}
-                      </label>
-                      <input
-                        type="date"
-                        name="pickupDate"
-                        value={formData.pickupDate}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (!value) return;
-
-                          // Block Sundays & holidays — use local-time helper to avoid UTC-shift bugs
-                          if (getDayOfWeek(value) === 0 || isHoliday(value)) {
-                            setErrors(prev => ({ ...prev, pickupDate: 'Data non disponibile (domenica o festivo). Seleziona un altro giorno.' }));
-                            return;
-                          }
-                          setErrors(prev => { const next = { ...prev }; delete next.pickupDate; return next; });
-
-                          // Block urban/corporate vehicles after March 25
-                          if (isUtilitaria && value > UTILITARIE_MAX_DATE) {
-                            setShowMaxDatePopup(true);
-                            return;
-                          }
-
-                          // Auto-Clear Return Date if Pickup > Return or invalid
-                          // Reset return date if same day or before pickup (minimum 1 day rental)
-                          const newPickup = value;
-                          const currentReturn = formData.returnDate;
-
-                          if (currentReturn && newPickup >= currentReturn) {
-                            // Add 1 day via string math (avoids UTC-parse drift)
-                            const [yStr, mStr, dStr] = value.split('-').map(Number);
-                            const tmp = new Date(yStr, mStr - 1, dStr + 1);
-                            const nextDayStr = `${tmp.getFullYear()}-${String(tmp.getMonth() + 1).padStart(2, '0')}-${String(tmp.getDate()).padStart(2, '0')}`;
-                            setFormData(prev => ({ ...prev, pickupDate: value, returnDate: nextDayStr, returnTime: prev.returnTime || '09:00' }));
-                          } else {
-                            // Just update pickup
-                            handleChange(e);
-                          }
-                        }}
-                        // FIX: Ensure min date is never in the past, even if availability says so (which we fixed in logic, but safety first)
-                        min={earliestAvailability?.earliestAvailableDate && earliestAvailability.earliestAvailableDate > today
-                          ? earliestAvailability.earliestAvailableDate
-                          : today}
-                        max={isUtilitaria ? UTILITARIE_MAX_DATE : maxBookableDate}
-                        required
-                        style={{ colorScheme: 'dark' }}
-                        className={`w-full bg-gray-800 rounded-md px-3 py-2.5 text-white text-sm border-2 transition-colors cursor-pointer min-h-[44px] ${errors.pickupDate || (formData.pickupDate && availabilityError)
-                          ? 'border-red-500 focus:border-red-400'
-                          : formData.pickupDate
-                            ? 'border-green-500 focus:border-green-400'
-                            : 'border-gray-700 focus:border-white'
-                          }`}
-                      />
-                      {errors.pickupDate && (
-                        <p className="text-xs text-red-400 mt-1 flex items-center">
-                          <span className="mr-1"></span> {errors.pickupDate}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Ora di ritiro *
-                        {formData.pickupTime && (
-                          <span className="ml-2 text-xs text-green-400">{formData.pickupTime}</span>
-                        )}
-                      </label>
-                      <select
-                        name="pickupTime"
-                        value={formData.pickupTime}
-                        onChange={handleChange}
-                        required
-                        disabled={!formData.pickupDate || getValidPickupTimes(formData.pickupDate).length === 0}
-                        className={`w-full bg-gray-800 rounded-md px-3 py-2 text-white text-sm border-2 transition-colors ${!formData.pickupDate || getValidPickupTimes(formData.pickupDate).length === 0
-                          ? 'border-gray-700 opacity-50 cursor-not-allowed'
-                          : formData.pickupTime
-                            ? 'border-green-500 focus:border-green-400'
-                            : 'border-gray-700 focus:border-white'
-                          }`}
-                      >
-                        {getValidPickupTimes(formData.pickupDate).length > 0 ? (
-                          getValidPickupTimes(formData.pickupDate).map(time => <option key={time} value={time}>{time}</option>)
-                        ) : (
-                          <option value="">{t({ it: "Seleziona prima una data feriale", en: "Select a weekday first" })}</option>
-                        )}
-                      </select>
-                    </div>
-                  </div>
+                  <h4 className="text-white font-semibold mb-3">{t({ it: 'Ritiro del veicolo', en: 'Vehicle pick-up' })}</h4>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarioAperto('ritiro')}
+                    className={`w-full bg-gray-800 rounded-md px-3 py-2.5 text-left text-white text-sm border-2 transition-colors min-h-[44px] ${errors.pickupDate || (formData.pickupDate && availabilityError)
+                      ? 'border-red-500'
+                      : formData.pickupDate && formData.pickupTime
+                        ? 'border-green-500'
+                        : 'border-gray-700 hover:border-white'
+                      }`}
+                  >
+                    {formData.pickupDate
+                      ? `${etichettaGiorno(formData.pickupDate)}${formData.pickupTime ? ` · ${formData.pickupTime}` : ''}`
+                      : t({ it: 'Scegli giorno e ora di ritiro', en: 'Choose pick-up day and time' })}
+                  </button>
+                  {errors.pickupDate && (
+                    <p className="text-xs text-red-400 mt-1">{errors.pickupDate}</p>
+                  )}
                 </div>
 
-                {/* Return Date & Time */}
+                {/* Riconsegna */}
                 <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/30">
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <span className="mr-2"></span> Riconsegna del veicolo
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Data di riconsegna *
-                        {formData.returnDate && (
-                          <span className="ml-2 text-xs text-green-400">{t({ it: "Selezionata", en: "Selected" })}</span>
-                        )}
-                      </label>
-                      <input
-                        type="date"
-                        name="returnDate"
-                        value={formData.returnDate}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (!value) return;
+                  <h4 className="text-white font-semibold mb-3">{t({ it: 'Riconsegna del veicolo', en: 'Vehicle drop-off' })}</h4>
+                  <button
+                    type="button"
+                    disabled={!formData.pickupDate || !formData.pickupTime}
+                    onClick={() => setCalendarioAperto('riconsegna')}
+                    className={`w-full bg-gray-800 rounded-md px-3 py-2.5 text-left text-white text-sm border-2 transition-colors min-h-[44px] ${!formData.pickupDate || !formData.pickupTime
+                      ? 'border-gray-700 opacity-50 cursor-not-allowed'
+                      : errors.returnDate || errors.date || (formData.returnDate && availabilityError)
+                        ? 'border-red-500'
+                        : formData.returnDate && formData.returnTime
+                          ? 'border-green-500'
+                          : 'border-gray-700 hover:border-white'
+                      }`}
+                  >
+                    {formData.returnDate
+                      ? `${etichettaGiorno(formData.returnDate)}${formData.returnTime ? ` · ${formData.returnTime}` : ''}`
+                      : t({ it: 'Scegli giorno e ora di riconsegna', en: 'Choose drop-off day and time' })}
+                  </button>
+                  {(errors.returnDate || errors.date) && (
+                    <p className="text-xs text-red-400 mt-1">{errors.returnDate || errors.date}</p>
+                  )}
+                  {!formData.pickupDate && (
+                    <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima la data di ritiro", en: "Select the pick-up date first" })}</p>
+                  )}
+                  {formData.pickupDate && !formData.pickupTime && (
+                    <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima l'ora di ritiro", en: "Select the pick-up time first" })}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">{t({ it: "L'ora si propone da sola (ritiro - 1h30) e resta modificabile", en: "The time is proposed automatically (pick-up - 1h30) and stays editable" })}</p>
 
-                          // Block Sundays & holidays — use local-time helper to avoid UTC-shift bugs
-                          if (getDayOfWeek(value) === 0 || isHoliday(value)) {
-                            setErrors(prev => ({ ...prev, returnDate: 'Data non disponibile (domenica o festivo). Seleziona un altro giorno.' }));
-                            return;
-                          }
-                          setErrors(prev => { const next = { ...prev }; delete next.returnDate; return next; });
+                  <CalendarioGiornoOrario
+                    aperto={calendarioAperto === 'ritiro'}
+                    onClose={() => setCalendarioAperto(null)}
+                    minDate={earliestAvailability?.earliestAvailableDate && earliestAvailability.earliestAvailableDate > today
+                      ? earliestAvailability.earliestAvailableDate
+                      : today}
+                    maxDate={isUtilitaria ? UTILITARIE_MAX_DATE : maxBookableDate}
+                    orariDelGiorno={getValidPickupTimes}
+                    dataIniziale={formData.pickupDate}
+                    oraIniziale={formData.pickupTime}
+                    titolo={{ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' }}
+                    onConferma={(data, ora) => {
+                      // La riconsegna resta valida solo se e' almeno il giorno
+                      // dopo: altrimenti si sposta di un giorno da sola, come
+                      // faceva la vecchia tendina.
+                      const [y, m, g] = data.split('-').map(Number);
+                      const dopo = new Date(y, m - 1, g + 1);
+                      const giornoDopo = `${dopo.getFullYear()}-${String(dopo.getMonth() + 1).padStart(2, '0')}-${String(dopo.getDate()).padStart(2, '0')}`;
+                      const retMin = Math.max(0, Number(ora.split(':')[0]) * 60 + Number(ora.split(':')[1]) - 90);
+                      const oraRiconsegna = `${String(Math.floor(retMin / 60)).padStart(2, '0')}:${String(retMin % 60).padStart(2, '0')}`;
+                      setFormData(prev => ({
+                        ...prev,
+                        pickupDate: data,
+                        pickupTime: ora,
+                        returnDate: prev.returnDate && prev.returnDate > data ? prev.returnDate : giornoDopo,
+                        returnTime: oraRiconsegna,
+                      }));
+                      setErrors(prev => ({ ...prev, pickupDate: '', pickupTime: '', date: '' }));
+                    }}
+                  />
 
-                          // Block urban/corporate vehicles after March 25
-                          if (isUtilitaria && value > UTILITARIE_MAX_DATE) {
-                            setShowMaxDatePopup(true);
-                            return;
-                          }
+                  <CalendarioGiornoOrario
+                    aperto={calendarioAperto === 'riconsegna'}
+                    onClose={() => setCalendarioAperto(null)}
+                    minDate={formData.pickupDate
+                      ? (() => { const [y, m, g] = formData.pickupDate.split('-').map(Number); const d = new Date(y, m - 1, g + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()
+                      : today}
+                    maxDate={isUtilitaria ? UTILITARIE_MAX_DATE : maxReturnDate}
+                    orariDelGiorno={getValidReturnTimes}
+                    dataIniziale={formData.returnDate}
+                    oraIniziale={formData.returnTime}
+                    titolo={{ it: 'Riconsegna: scegli il giorno', en: 'Drop-off: choose the day' }}
+                    onConferma={(data, ora) => {
+                      setFormData(prev => ({ ...prev, returnDate: data, returnTime: ora }));
+                      setErrors(prev => ({ ...prev, returnDate: '', returnTime: '', date: '' }));
+                    }}
+                  />
 
-                          // STRICT VALIDATION: Return Date must be at least the day after Pickup Date
-                          if (formData.pickupDate && value <= formData.pickupDate) {
-                            setErrors(prev => ({ ...prev, returnDate: 'Il noleggio minimo è di 1 giorno. Seleziona almeno il giorno successivo al ritiro.' }));
-                            return;
-                          }
-
-                          // Check if return date is a Sunday or holiday
-                          const returnDayOfWeek = getDayOfWeek(value);
-                          if (returnDayOfWeek === 0) {
-                            setErrors(prev => ({ ...prev, returnDate: 'Siamo chiusi la domenica. Seleziona un altro giorno.' }));
-                            return;
-                          }
-                          if (isHoliday(value)) {
-                            setErrors(prev => ({ ...prev, returnDate: 'Siamo chiusi nei giorni festivi. Seleziona un altro giorno.' }));
-                            return;
-                          }
-
-                          // Clear return date errors if valid
-                          setErrors(prev => ({ ...prev, returnDate: undefined, date: undefined }));
-
-                          // CRITICAL: Check if this date has ANY valid return times
-                          const validTimesForDate = getValidReturnTimes(value);
-                          if (validTimesForDate.length === 0) {
-                            setErrors(prev => ({ ...prev, returnDate: 'Questa data non è disponibile. Seleziona una data compatibile.' }));
-                            return;
-                          }
-
-                          handleChange(e);
-                        }}
-                        min={formData.pickupDate ? (() => { const d = new Date(formData.pickupDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })() : today}
-                        max={isUtilitaria ? UTILITARIE_MAX_DATE : maxReturnDate}
-                        disabled={!formData.pickupDate || !formData.pickupTime}
-                        required
-                        style={{ colorScheme: 'dark' }}
-                        className={`w-full bg-gray-800 rounded-md px-3 py-2.5 text-white text-sm border-2 transition-colors min-h-[44px] ${!formData.pickupDate || !formData.pickupTime
-                          ? 'border-gray-700 opacity-50 cursor-not-allowed'
-                          : errors.returnDate || errors.date || (formData.returnDate && availabilityError)
-                            ? 'border-red-500 focus:border-red-400 cursor-pointer'
-                            : formData.returnDate
-                              ? 'border-green-500 focus:border-green-400 cursor-pointer'
-                              : 'border-gray-700 focus:border-white cursor-pointer'
-                          }`}
-                      />
-                      {(errors.returnDate || errors.date) && (
-                        <p className="text-xs text-red-400 mt-1 flex items-center">
-                          <span className="mr-1"></span> {errors.returnDate || errors.date}
-                        </p>
-                      )}
-                      {!formData.pickupDate && (
-                        <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima la data di ritiro", en: "Select the pick-up date first" })}</p>
-                      )}
-                      {formData.pickupDate && !formData.pickupTime && (
-                        <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima l'ora di ritiro", en: "Select the pick-up time first" })}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Ora di riconsegna *
-                        <span className="ml-2 text-xs text-gray-400">{t({ it: "(auto-calcolata, modificabile)", en: "(auto-calculated, editable)" })}</span>
-                      </label>
-                      <select
-                        name="returnTime"
-                        value={formData.returnTime}
-                        onChange={handleChange}
-                        required
-                        disabled={!formData.returnDate || getValidReturnTimes(formData.returnDate).length === 0}
-                        className={`w-full bg-gray-800 rounded-md px-3 py-2 text-white text-sm border-2 transition-colors ${!formData.returnDate || getValidReturnTimes(formData.returnDate).length === 0
-                          ? 'border-gray-700 opacity-50 cursor-not-allowed'
-                          : formData.returnTime
-                            ? 'border-green-500 focus:border-green-400'
-                            : 'border-gray-700 focus:border-white'
-                          }`}
-                      >
-                        {getValidReturnTimes(formData.returnDate).length > 0 ? (
-                          getValidReturnTimes(formData.returnDate).map(time => <option key={time} value={time}>{time}</option>)
-                        ) : (
-                          <option value="">{t({ it: "Seleziona prima una data", en: "Select a date first" })}</option>
-                        )}
-                      </select>
-                      <p className="text-xs text-gray-400 mt-1">{t({ it: "Ritiro - 1h30 (auto), adattato alla disponibilità", en: "Pick-up - 1h30 (automatic), adjusted to availability" })}</p>
-                    </div>
-                  </div>
                   {/* Vehicle Availability Check */}
                   {isCheckingAvailability && (
                     <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600 rounded-lg">

@@ -2,10 +2,15 @@
  * RentalSearchBar — Booking search box for rental pages
  * Shows pickup/return location, date, time with auto return time (-1h30)
  */
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { PICKUP_LOCATIONS as DEFAULT_PICKUP_LOCATIONS } from '../../constants'
 import { getPickupLocations } from '../../utils/getLocations'
 import { useTranslation } from '../../hooks/useTranslation'
+import CalendarioGiornoOrario from './CalendarioGiornoOrario'
+import {
+  getPickupTimesForDateString,
+  getReturnTimesForDateString,
+} from '../../utils/noleggioHours'
 
 export interface SearchParams {
   pickupLocation: string
@@ -21,33 +26,15 @@ interface Props {
   isSearching: boolean
 }
 
-// Business hours time slots (15-min intervals)
+// Gli orari sono quelli di Centralina Pro > Orari Noleggio: qui erano
+// scritti a mano e restavano fermi anche quando l'ufficio cambiava turni.
+// Domeniche e festivi tornano [] da soli (giorno chiuso).
 function getPickupTimes(dateStr: string): string[] {
-  const day = new Date(dateStr + 'T12:00:00').getDay()
-  if (day === 0) return [] // Sunday closed
-  const times: string[] = []
-  const add = (start: number, end: number) => {
-    for (let i = start; i <= end; i += 15) {
-      times.push(`${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}`)
-    }
-  }
-  if (day >= 1 && day <= 5) { add(10 * 60 + 30, 12 * 60 + 30); add(16 * 60 + 30, 18 * 60 + 30) }
-  else if (day === 6) { add(10 * 60 + 30, 12 * 60 + 30); add(15 * 60 + 30, 17 * 60 + 30) }
-  return times
+  return getPickupTimesForDateString(dateStr)
 }
 
 function getReturnTimes(dateStr: string): string[] {
-  const day = new Date(dateStr + 'T12:00:00').getDay()
-  if (day === 0) return []
-  const times: string[] = []
-  const add = (start: number, end: number) => {
-    for (let i = start; i <= end; i += 15) {
-      times.push(`${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}`)
-    }
-  }
-  if (day >= 1 && day <= 5) { add(9 * 60, 11 * 60); add(15 * 60, 17 * 60) }
-  else if (day === 6) { add(9 * 60, 11 * 60); add(14 * 60, 16 * 60) }
-  return times
+  return getReturnTimesForDateString(dateStr)
 }
 
 // Subtract 90 minutes from a time string, return nearest valid return time
@@ -69,7 +56,7 @@ function autoReturnTime(pickupTime: string, returnDate: string): string {
 }
 
 export default function RentalSearchBar({ onSearch, isSearching }: Props) {
-  const { t, getTranslated } = useTranslation()
+  const { t, getTranslated, lang } = useTranslation()
   const [pickupLocs, setPickupLocs] = useState(DEFAULT_PICKUP_LOCATIONS)
   useEffect(() => { let c = false; getPickupLocations().then(l => { if (!c) setPickupLocs(l) }); return () => { c = true } }, [])
   const today = new Date()
@@ -96,9 +83,6 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
   const [returnTime, setReturnTime] = useState('09:00')
   const [returnTimeManual, setReturnTimeManual] = useState(false)
 
-  const pickupTimes = useMemo(() => getPickupTimes(pickupDate), [pickupDate])
-  const returnTimes = useMemo(() => getReturnTimes(returnDate), [returnDate])
-
   // Auto-set return time when pickup time changes (unless manually modified)
   useEffect(() => {
     if (!returnTimeManual && pickupTime && returnDate) {
@@ -118,18 +102,18 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
     setReturnTimeManual(true) // user took control
   }, [])
 
-  const HOLIDAYS = [
-    '01-01', '06-01', '25-04', '01-05', '02-06', '15-08', '01-11', '08-12', '25-12', '26-12',
-    '2024-03-31', '2024-04-01', '2025-04-20', '2025-04-21', '2026-04-05', '2026-04-06',
-    '2027-03-28', '2027-03-29',
-  ]
-  const isSunday = (d: string) => new Date(d + 'T12:00:00').getDay() === 0
-  const isHoliday = (d: string) => {
-    if (!d) return false
-    const [, m, dd] = d.split('-')
-    return HOLIDAYS.includes(`${dd}-${m}`) || HOLIDAYS.includes(d)
+  // Un giorno e' chiuso quando Centralina non offre nessun orario: domeniche,
+  // festivi e chiusure straordinarie arrivano tutte da li'.
+  const isBlockedRitiro = (d: string) => !d || getPickupTimes(d).length === 0
+  const isBlockedRiconsegna = (d: string) => !d || getReturnTimes(d).length === 0
+
+  const [calendario, setCalendario] = useState<null | 'ritiro' | 'riconsegna'>(null)
+
+  const mostraDataOra = (d: string, o: string) => {
+    if (!d) return t({ it: 'Scegli giorno e ora', en: 'Pick day and time' })
+    const giorno = new Date(d + 'T12:00:00').toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { weekday: 'short', day: '2-digit', month: 'short' })
+    return `${giorno}${o ? ` · ${o}` : ''}`
   }
-  const isBlocked = (d: string) => isSunday(d) || isHoliday(d)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,7 +127,7 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
     })
   }
 
-  const isValid = pickupDate && pickupTime && returnDate && returnTime && !isBlocked(pickupDate) && !isBlocked(returnDate)
+  const isValid = pickupDate && pickupTime && returnDate && returnTime && !isBlockedRitiro(pickupDate) && !isBlockedRiconsegna(returnDate)
 
   return (
     <form onSubmit={handleSubmit} className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-2xl p-5 md:p-6 mb-8">
@@ -180,69 +164,30 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
           )}
         </div>
 
-        {/* Pickup Date */}
-        <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Data ritiro', en: 'Pick-up date' })}</label>
-          <input
-            type="date"
-            value={pickupDate}
-            min={fmt(today)}
-            onChange={e => {
-              if (isBlocked(e.target.value)) return
-              setPickupDate(e.target.value)
-              if (e.target.value > returnDate) setReturnDate(e.target.value)
-            }}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white"
-          />
-          {isBlocked(pickupDate) && <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiusi (domenica o festivo)', en: 'Closed (Sunday or public holiday)' })}</p>}
-        </div>
-
-        {/* Pickup Time */}
-        <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Ora ritiro', en: 'Pick-up time' })}</label>
-          <select
-            value={pickupTime}
-            onChange={e => handlePickupTimeChange(e.target.value)}
-            disabled={pickupTimes.length === 0}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white disabled:opacity-50"
+        {/* Ritiro: prima il giorno, poi l'orario (stesso calendario di Mare e Casa) */}
+        <div className="col-span-2 lg:col-span-2">
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Ritiro', en: 'Pick-up' })}</label>
+          <button
+            type="button"
+            onClick={() => setCalendario('ritiro')}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-left text-white text-sm hover:border-white transition-colors"
           >
-            {pickupTimes.length > 0
-              ? pickupTimes.map(t => <option key={t} value={t}>{t}</option>)
-              : <option>{t({ it: 'Non disponibile', en: 'Not available' })}</option>
-            }
-          </select>
+            {mostraDataOra(pickupDate, pickupTime)}
+          </button>
+          {isBlockedRitiro(pickupDate) && <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiusi in questa data', en: 'Closed on this date' })}</p>}
         </div>
 
-        {/* Return Date */}
-        <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Data restituzione', en: 'Drop-off date' })}</label>
-          <input
-            type="date"
-            value={returnDate}
-            min={pickupDate}
-            onChange={e => {
-              if (isBlocked(e.target.value)) return
-              setReturnDate(e.target.value)
-            }}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white"
-          />
-          {isBlocked(returnDate) && <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiusi (domenica o festivo)', en: 'Closed (Sunday or public holiday)' })}</p>}
-        </div>
-
-        {/* Return Time */}
-        <div>
-          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Ora restituzione', en: 'Drop-off time' })}</label>
-          <select
-            value={returnTime}
-            onChange={e => handleReturnTimeChange(e.target.value)}
-            disabled={returnTimes.length === 0}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-1 focus:ring-white focus:border-white disabled:opacity-50"
+        {/* Riconsegna */}
+        <div className="col-span-2 lg:col-span-2">
+          <label className="text-xs text-gray-400 font-medium mb-1 block">{t({ it: 'Riconsegna', en: 'Drop-off' })}</label>
+          <button
+            type="button"
+            onClick={() => setCalendario('riconsegna')}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-left text-white text-sm hover:border-white transition-colors"
           >
-            {returnTimes.length > 0
-              ? returnTimes.map(t => <option key={t} value={t}>{t}</option>)
-              : <option>{t({ it: 'Non disponibile', en: 'Not available' })}</option>
-            }
-          </select>
+            {mostraDataOra(returnDate, returnTime)}
+          </button>
+          {isBlockedRiconsegna(returnDate) && <p className="text-xs text-red-400 mt-1">{t({ it: 'Chiusi in questa data', en: 'Closed on this date' })}</p>}
         </div>
       </div>
 
@@ -257,6 +202,34 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
           {isSearching ? t({ it: 'Ricerca...', en: 'Searching...' }) : t({ it: 'Verifica Disponibilita', en: 'Check availability' })}
         </button>
       </div>
+      <CalendarioGiornoOrario
+        aperto={calendario === 'ritiro'}
+        onClose={() => setCalendario(null)}
+        minDate={fmt(today)}
+        orariDelGiorno={getPickupTimes}
+        dataIniziale={pickupDate}
+        oraIniziale={pickupTime}
+        titolo={{ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' }}
+        onConferma={(data, ora) => {
+          setPickupDate(data)
+          if (data > returnDate) setReturnDate(data)
+          handlePickupTimeChange(ora)
+        }}
+      />
+
+      <CalendarioGiornoOrario
+        aperto={calendario === 'riconsegna'}
+        onClose={() => setCalendario(null)}
+        minDate={pickupDate || fmt(today)}
+        orariDelGiorno={getReturnTimes}
+        dataIniziale={returnDate}
+        oraIniziale={returnTime}
+        titolo={{ it: 'Riconsegna: scegli il giorno', en: 'Drop-off: choose the day' }}
+        onConferma={(data, ora) => {
+          setReturnDate(data)
+          handleReturnTimeChange(ora)
+        }}
+      />
     </form>
   )
 }

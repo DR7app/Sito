@@ -444,6 +444,21 @@ const CarWashBookingPage: React.FC = () => {
     }
   }, [hasValidBooking, navigate]);
 
+  // 09/09/2026 — come nel noleggio Terra, dove scelta l'auto si apre subito il
+  // calendario delle date: qui, scelto il lavaggio, si apre da solo il
+  // calendario degli orari. Prima bisognava scorrere fino in fondo al modulo
+  // e accorgersi del bottone "Scegli orario e giorno".
+  // Si apre una volta sola (`calendarioAutoApertoRef`): se il cliente lo
+  // chiude senza scegliere non deve ricomparire a ogni ridisegno.
+  const calendarioAutoApertoRef = useRef(false);
+  useEffect(() => {
+    if (calendarioAutoApertoRef.current) return;
+    if (!hasValidBooking || !orariPronti) return;
+    if (formData.appointmentDate && formData.appointmentTime) return;
+    calendarioAutoApertoRef.current = true;
+    setCalendarioAperto(true);
+  }, [hasValidBooking, orariPronti, formData.appointmentDate, formData.appointmentTime]);
+
   useEffect(() => {
     if (!user) return;
 

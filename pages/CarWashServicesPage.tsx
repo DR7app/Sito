@@ -734,7 +734,7 @@ const CarWashServicesPage: React.FC = () => {
         {/* Combined Wash Cards */}
         {mainTab === 'lavaggio' && lavaggioCategory === 'wash' ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {liveCombined.map((combo) => {
                 const autoService = detectedCategory === 'urban' ? combo.urban : detectedCategory === 'maxi' ? combo.maxi : null;
                 const lowestPrice = Math.min(combo.urban.price, combo.maxi.price);
@@ -752,11 +752,11 @@ const CarWashServicesPage: React.FC = () => {
                       src={autoService?.image || combo.image}
                       alt={lang === 'it' ? (autoService?.name || combo.name) : (autoService?.nameEn || combo.nameEn)}
                     />
-                    <div className="p-4">
+                    <div className="p-2 sm:p-3">
                       {autoService ? (
                         <button
                           onClick={() => handleCombinedWashSelect(autoService)}
-                          className="w-full bg-white text-black px-3 py-2 font-semibold text-sm hover:bg-gray-200 transition-all duration-300"
+                          className="w-full bg-white text-black px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-gray-200 transition-all duration-300"
                         >
                           €{formatPrice(autoService.price)}
                         </button>
@@ -769,7 +769,7 @@ const CarWashServicesPage: React.FC = () => {
                               searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
                           }}
-                          className="w-full bg-transparent border-2 border-white text-white px-3 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                          className="w-full bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-white hover:text-black transition-all duration-300"
                         >
                           {t({ it: 'da', en: 'from' })} €{formatPrice(lowestPrice)}
                         </button>
@@ -792,7 +792,7 @@ const CarWashServicesPage: React.FC = () => {
                   fallback="/absolute-detail.jpeg"
                   alt={t({ it: 'Absolute Detail', en: 'Absolute Detail' })}
                 />
-                <div className="p-4">
+                <div className="p-2 sm:p-3">
                   {targaResult && washCategory ? (
                     <a
                       href={`${contact.whatsapp_url}?text=${encodeURIComponent(
@@ -800,7 +800,7 @@ const CarWashServicesPage: React.FC = () => {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center bg-white text-black px-3 py-2 font-semibold text-sm hover:bg-gray-200 transition-all duration-300"
+                      className="w-full inline-flex items-center justify-center bg-white text-black px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-gray-200 transition-all duration-300"
                     >
                       Su preventivo
                     </a>
@@ -813,7 +813,7 @@ const CarWashServicesPage: React.FC = () => {
                           searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                       }}
-                      className="w-full bg-transparent border-2 border-white text-white px-3 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                      className="w-full bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-white hover:text-black transition-all duration-300"
                     >
                       Su preventivo
                     </button>
@@ -824,7 +824,7 @@ const CarWashServicesPage: React.FC = () => {
           </>
         ) : (
           /* Standard single-service cards */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {currentServices.map((service, index) => (
               <motion.div
                 key={service.id}
@@ -843,10 +843,10 @@ const CarWashServicesPage: React.FC = () => {
                   />
                   {/* Single-price: overlay button at bottom */}
                   {!service.priceOptions && (
-                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/90 to-transparent">
                       <button
                         onClick={() => addToCart(service)}
-                        className="w-full bg-black/50 border-2 border-white text-white px-6 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                        className="w-full bg-black/50 border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
                       >
                         {cw('add_to_cart_it', 'add_to_cart_en', 'AGGIUNGI AL CARRELLO')}
                       </button>
@@ -855,12 +855,12 @@ const CarWashServicesPage: React.FC = () => {
                 </div>
                 {/* Multi-price options: below the image */}
                 {service.priceOptions && (
-                  <div className="p-4 space-y-2">
+                  <div className="p-2 sm:p-3 space-y-1.5">
                     {service.priceOptions.map((option) => (
                       <button
                         key={option.label}
                         onClick={() => addToCart(service, option)}
-                        className="w-full flex justify-between items-center bg-transparent border-2 border-white text-white px-6 py-2 font-semibold text-sm hover:bg-white hover:text-black transition-all duration-300"
+                        className="w-full flex justify-between items-center bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
                       >
                         <span>{option.label}</span>
                         <span>€{option.price.toFixed(2)}</span>

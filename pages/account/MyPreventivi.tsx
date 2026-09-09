@@ -37,6 +37,38 @@ interface Preventivo {
   events?: { event: string; ts: string; detail?: string }[];
 }
 
+/**
+ * Richiesta di volo (elicottero o jet) mandata dal modulo del sito: vive in
+ * `aviation_quotes`, non fra i preventivi di noleggio. Il cliente la deve
+ * ritrovare qui, dove cerca tutti i suoi preventivi.
+ */
+interface RichiestaVolo {
+  id: string;
+  customer_name: string;
+  departure_location: string;
+  arrival_location: string;
+  departure_date?: string | null;
+  departure_time?: string | null;
+  return_date?: string | null;
+  return_time?: string | null;
+  flight_type?: string;
+  passenger_count?: number;
+  luggage_details?: string;
+  budget_indicative?: string;
+  aircraft_category?: 'jet' | 'helicopter' | 'any' | null;
+  preferred_aircraft?: string;
+  quote_amount?: number;
+  status: 'pending' | 'quoted' | 'accepted' | 'rejected';
+  created_at: string;
+}
+
+const STATUS_VOLO: Record<string, { label: { it: string; en: string }; color: string }> = {
+  pending: { label: { it: 'In attesa', en: 'Pending' }, color: 'bg-yellow-500/15 text-yellow-400' },
+  quoted: { label: { it: 'Preventivato', en: 'Quoted' }, color: 'bg-blue-500/15 text-blue-400' },
+  accepted: { label: { it: 'Accettato', en: 'Accepted' }, color: 'bg-green-500/15 text-green-400' },
+  rejected: { label: { it: 'Rifiutato', en: 'Rejected' }, color: 'bg-red-500/15 text-red-400' },
+};
+
 const STATUS_LABELS: Record<string, { label: { it: string; en: string }; color: string }> = {
   bozza: { label: { it: 'In attesa', en: 'Pending' }, color: 'bg-yellow-500/15 text-yellow-400' },
   inviato: { label: { it: 'Inviato', en: 'Sent' }, color: 'bg-blue-500/15 text-blue-400' },
@@ -44,6 +76,19 @@ const STATUS_LABELS: Record<string, { label: { it: string; en: string }; color: 
   rifiutato: { label: { it: 'Rifiutato', en: 'Rejected' }, color: 'bg-red-500/15 text-red-400' },
   scaduto: { label: { it: 'Scaduto', en: 'Expired' }, color: 'bg-gray-500/15 text-gray-400' },
 };
+
+/**
+ * Giorno e ora di un volo, all'europea: "16/09/2026 · 07:30". Mai il formato
+ * americano, mai l'ISO del database.
+ */
+function giornoOraVolo(data?: string | null, ora?: string | null): string {
+  const s = String(data || '').trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (!m) return s;
+  const giorno = `${m[3]}/${m[2]}/${m[1]}`;
+  const orario = String(ora || '').slice(0, 5);
+  return orario ? `${giorno} · ${orario}` : giorno;
+}
 
 function formatDate(dateStr: string, lang: string): string {
   return new Date(dateStr).toLocaleDateString(dateLocale(lang), {
@@ -92,6 +137,7 @@ const MyPreventivi: React.FC = () => {
   const { user } = useAuth();
   const { overlay: proOverlay } = useCentralinaProOverlay();
   const [preventivi, setPreventivi] = useState<Preventivo[]>([]);
+  const [voli, setVoli] = useState<RichiestaVolo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -112,6 +158,7 @@ const MyPreventivi: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setPreventivi(data.preventivi || []);
+        setVoli(data.aviation || []);
       }
     } catch (err) {
       console.error('Error loading preventivi:', err);
@@ -153,12 +200,73 @@ const MyPreventivi: React.FC = () => {
     <div>
       <h2 className="text-2xl font-bold text-white mb-6">{t({ it: "I Miei Preventivi", en: "My Quotes" })}</h2>
 
-      {preventivi.length === 0 ? (
+      {/* Richieste di volo: elicottero e jet. Arrivano dal modulo del sito e
+          le lavora l'ufficio, quindi qui si LEGGONO — non c'e' un bottone
+          "prenota ora" finche' DR7 non ha risposto con un prezzo. */}
+      {voli.length > 0 && (
+        <div className="space-y-4 mb-8">
+          {voli.map((v) => {
+            const stato = STATUS_VOLO[v.status] || STATUS_VOLO.pending;
+            const mezzo = v.preferred_aircraft
+              || (v.aircraft_category === 'helicopter'
+                ? t({ it: 'Elicottero', en: 'Helicopter' })
+                : v.aircraft_category === 'jet'
+                  ? t({ it: 'Jet privato', en: 'Private jet' })
+                  : t({ it: 'Aeromobile da definire', en: 'Aircraft to be defined' }));
+            const righe: { label: string; value: string }[] = [
+              { label: t({ it: 'Partenza', en: 'Departure' }), value: giornoOraVolo(v.departure_date, v.departure_time) || '-' },
+              { label: t({ it: 'Passeggeri', en: 'Passengers' }), value: String(v.passenger_count || 1) },
+            ];
+            if (v.return_date) righe.push({ label: t({ it: 'Ritorno', en: 'Return' }), value: giornoOraVolo(v.return_date, v.return_time) });
+            if (v.luggage_details) righe.push({ label: t({ it: 'Bagagli', en: 'Luggage' }), value: v.luggage_details });
+            if (v.budget_indicative) righe.push({ label: t({ it: 'Budget indicativo', en: 'Indicative budget' }), value: v.budget_indicative });
+
+            return (
+              <div key={v.id} className="rounded-2xl border border-gray-700 bg-gray-900/30 p-5">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">
+                      {v.departure_location || '-'} → {v.arrival_location || '-'}
+                    </h3>
+                    <p className="text-sm text-gray-400 mt-0.5">{mezzo}</p>
+                  </div>
+                  <span className={`text-xs font-semibold px-3 py-1 ${stato.color}`}>{t(stato.label)}</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                  {righe.map(r => (
+                    <div key={r.label}>
+                      <p className="text-gray-500 text-xs">{r.label}</p>
+                      <p className="text-white font-medium">{r.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-800">
+                  <div>
+                    <p className="text-gray-500 text-xs">{t({ it: 'Preventivo', en: 'Quote' })}</p>
+                    <p className="text-xl font-bold text-white">
+                      {Number(v.quote_amount) > 0
+                        ? `€${Number(v.quote_amount).toFixed(2)}`
+                        : t({ it: 'In lavorazione', en: 'Being prepared' })}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 text-right">
+                    {t({ it: 'Richiesta del', en: 'Requested on' })} {giornoOraVolo(v.created_at)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {preventivi.length === 0 && voli.length === 0 ? (
         <div className="text-center py-16 bg-gray-900/50 rounded-2xl border border-gray-800">
           <p className="text-gray-400 text-lg mb-2">{t({ it: "Nessun preventivo salvato", en: "No saved quotes" })}</p>
           <p className="text-gray-500 text-sm">{t({ it: "Quando richiedi un preventivo dal configuratore, lo troverai qui.", en: "When you request a quote from the configurator, you will find it here." })}</p>
         </div>
-      ) : (
+      ) : preventivi.length === 0 ? null : (
         <div className="space-y-4">
           {preventivi.map((p) => {
             const statusInfo = STATUS_LABELS[p.status] || STATUS_LABELS.bozza;

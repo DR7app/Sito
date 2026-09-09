@@ -6,6 +6,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { getAviationQuoteCopy, getAviationQuoteTemplate, type AviationQuoteCopy } from '../utils/siteCopy';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import CalendarioGiornoOrario from '../components/ui/CalendarioGiornoOrario';
+import AddressAutocomplete from '../components/ui/AddressAutocomplete';
 
 const AviationQuoteRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -178,6 +179,15 @@ const AviationQuoteRequestPage: React.FC = () => {
     </div>
   );
 
+  /**
+   * Le date si scrivono all'europea: 16/09/2026, mai 2026-09-16. Nel modulo
+   * e nel database restano ISO, dove servono; qui si scrive per chi legge.
+   */
+  const dataEuropea = (ymd: string): string => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((ymd || '').trim());
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : (ymd || '');
+  };
+
   const mostraDataOra = (data: string, ora: string) => {
     if (!data) return t({ it: 'Scegli giorno e orario', en: 'Choose day and time' });
     const giorno = new Date(`${data}T12:00:00`).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { weekday: 'short', day: '2-digit', month: 'long' });
@@ -228,7 +238,7 @@ const AviationQuoteRequestPage: React.FC = () => {
   // lines in the message).
   function applyVars(s: string): string {
     const returnLine = formData.return_date
-      ? (lang === 'it' ? `Data ritorno: ${formData.return_date}\n` : `Return date: ${formData.return_date}\n`)
+      ? (lang === 'it' ? `Data ritorno: ${dataEuropea(formData.return_date)}\n` : `Return date: ${dataEuropea(formData.return_date)}\n`)
       : '';
     const notesLine = formData.notes
       ? (lang === 'it' ? `\nNote: ${formData.notes}\n` : `\nNotes: ${formData.notes}\n`)
@@ -243,8 +253,8 @@ const AviationQuoteRequestPage: React.FC = () => {
       '{telefono}': formData.customer_phone,
       '{partenza}': formData.departure_location,
       '{arrivo}': formData.arrival_location,
-      '{data_partenza}': formData.departure_date,
-      '{data_ritorno}': formData.return_date || '',
+      '{data_partenza}': dataEuropea(formData.departure_date),
+      '{data_ritorno}': dataEuropea(formData.return_date),
       '{passeggeri}': String(formData.passenger_count),
       '{note}': formData.notes || '',
       '{orario_partenza}': formData.departure_time || '',
@@ -479,12 +489,12 @@ const AviationQuoteRequestPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   {tx('field_departure_label_it', 'field_departure_label_en')}
                 </label>
-                <input
-                  type="text"
+                <AddressAutocomplete
                   required
+                  preferisciNome
                   value={formData.departure_location}
-                  onChange={(e) => setFormData({ ...formData, departure_location: e.target.value })}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
+                  onChange={(v) => setFormData(prev => ({ ...prev, departure_location: v }))}
+                  className={campoCls}
                   placeholder={tx('field_departure_placeholder_it', 'field_departure_placeholder_en')}
                 />
               </div>
@@ -493,12 +503,12 @@ const AviationQuoteRequestPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   {tx('field_arrival_label_it', 'field_arrival_label_en')}
                 </label>
-                <input
-                  type="text"
+                <AddressAutocomplete
                   required
+                  preferisciNome
                   value={formData.arrival_location}
-                  onChange={(e) => setFormData({ ...formData, arrival_location: e.target.value })}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
+                  onChange={(v) => setFormData(prev => ({ ...prev, arrival_location: v }))}
+                  className={campoCls}
                   placeholder={tx('field_arrival_placeholder_it', 'field_arrival_placeholder_en')}
                 />
               </div>

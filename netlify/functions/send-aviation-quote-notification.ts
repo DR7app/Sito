@@ -57,6 +57,49 @@ interface QuoteBody {
 const ora = (v?: string) => (v && /^\d{2}:\d{2}/.test(v) ? v : null);
 
 /**
+ * Le date nei messaggi si scrivono all'europea: 16/09/2026, mai 2026-09-16.
+ * Nel database restano ISO, dove devono stare; qui si legge, e chi legge e'
+ * una persona.
+ */
+const dataIt = (v?: string | null): string => {
+  const s = String(v || "").trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
+};
+
+/** Giorno e ora insieme: "16/09/2026 alle 07:30". */
+const dataOraIt = (d?: string | null, h?: string | null, it = true): string => {
+  const giorno = dataIt(d);
+  if (!giorno) return "";
+  const orario = (h || "").slice(0, 5);
+  return orario ? `${giorno} ${it ? "alle" : "at"} ${orario}` : giorno;
+};
+
+/**
+ * Giorno + orario del volo come istante scritto in `preventivi`.
+ *
+ * Le colonne sono `timestamptz`: senza fuso Postgres leggerebbe l'ora come
+ * UTC e il gestionale mostrerebbe il volo due ore prima. L'offset di Roma
+ * si chiede al calendario, cosi' vale anche d'inverno.
+ */
+function istanteRoma(ymd?: string | null, hm?: string | null): string | null {
+  const giorno = String(ymd || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(giorno)) return null;
+  const orario = hm && /^\d{2}:\d{2}/.test(hm) ? hm.slice(0, 5) : "09:00";
+  let offset = "+02:00";
+  try {
+    const parti = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Rome",
+      timeZoneName: "longOffset",
+    }).formatToParts(new Date(`${giorno}T${orario}:00Z`));
+    const nome = parti.find((p) => p.type === "timeZoneName")?.value || "";
+    const trovato = nome.replace("GMT", "").trim();
+    if (/^[+-]\d{2}:\d{2}$/.test(trovato)) offset = trovato;
+  } catch { /* resta +02:00 */ }
+  return `${giorno}T${orario}:00${offset}`;
+}
+
+/**
  * La tipologia di aeromobile scelta dal cliente, in parole.
  *
  * Sta in UNA funzione perche' la usano sia il messaggio di riserva sia il
@@ -87,8 +130,8 @@ function messaggioDiRiserva(q: QuoteBody): string {
     "",
     `*Da:* ${q.departure_location || "-"}`,
     `*A:* ${q.arrival_location || "-"}`,
-    q.departure_date ? `*Partenza:* ${q.departure_date}${q.departure_time ? ` ${q.departure_time}` : ""}` : "",
-    q.return_date ? `*Ritorno:* ${q.return_date}${q.return_time ? ` ${q.return_time}` : ""}` : "",
+    q.departure_date ? `*Partenza:* ${dataOraIt(q.departure_date, q.departure_time)}` : "",
+    q.return_date ? `*Ritorno:* ${dataOraIt(q.return_date, q.return_time)}` : "",
     `*Date flessibili:* ${q.is_flexible ? "Sì" : "No"}`,
     `*Passeggeri:* ${q.passenger_count ?? 1}`,
     q.has_stops ? `*Tappe:* ${q.intermediate_stops || "sì, da definire"}` : "",
@@ -103,7 +146,7 @@ function messaggioDiRiserva(q: QuoteBody): string {
 function applicaSegnaposto(tpl: string, q: QuoteBody): string {
   const it = (q.lang || "it") === "it";
   const rigaRitorno = q.return_date
-    ? (it ? `Data ritorno: ${q.return_date}\n` : `Return date: ${q.return_date}\n`)
+    ? (it ? `Data ritorno: ${dataIt(q.return_date)}\n` : `Return date: ${dataIt(q.return_date)}\n`)
     : "";
   const rigaNote = q.notes
     ? (it ? `\nNote: ${q.notes}\n` : `\nNotes: ${q.notes}\n`)
@@ -115,8 +158,8 @@ function applicaSegnaposto(tpl: string, q: QuoteBody): string {
     "{telefono}": q.customer_phone || "",
     "{partenza}": q.departure_location || "",
     "{arrivo}": q.arrival_location || "",
-    "{data_partenza}": q.departure_date || "",
-    "{data_ritorno}": q.return_date || "",
+    "{data_partenza}": dataIt(q.departure_date),
+    "{data_ritorno}": dataIt(q.return_date),
     "{passeggeri}": String(q.passenger_count ?? 1),
     "{note}": q.notes || "",
     "{orario_partenza}": q.departure_time || "",
@@ -163,8 +206,8 @@ export const handler: Handler = async (event) => {
   // (migration 20260907_aviation_quote_campi_richiesta.sql): finche' quella
   // non e' stata eseguita restano qui, vedi `righeDiRipiego`.
   const noteEstese = [
-    q.departure_date ? `Data partenza richiesta: ${q.departure_date}` : "",
-    q.return_date ? `Data ritorno richiesta: ${q.return_date}` : "",
+    q.departure_date ? `Data partenza richiesta: ${dataOraIt(q.departure_date, q.departure_time)}` : "",
+    q.return_date ? `Data ritorno richiesta: ${dataOraIt(q.return_date, q.return_time)}` : "",
     q.notes ? `\n${q.notes}` : "",
     "\n— Richiesta inviata dal sito dr7.app",
   ].filter(Boolean).join("\n");
@@ -240,7 +283,7 @@ export const handler: Handler = async (event) => {
 
   function righeDiRipiego(): string {
     const r = [
-      q.departure_date ? `Data partenza: ${q.departure_date}${q.departure_time ? ` ${q.departure_time}` : ""}` : "",
+      q.departure_date ? `Data partenza: ${dataOraIt(q.departure_date, q.departure_time)}` : "",
       q.luggage_details ? `Bagagli: ${q.luggage_details}` : "",
       q.budget_indicative ? `Budget indicativo: ${q.budget_indicative}` : "",
       tipoAeromobile(q) ? `Tipologia aeromobile: ${tipoAeromobile(q)}` : "",
@@ -275,6 +318,98 @@ export const handler: Handler = async (event) => {
         console.error("[aviation-quote] salvataggio fallito:", erroreSalvataggio);
       }
     }
+  }
+
+  // ── 1-bis. La richiesta entra anche fra i Preventivi del Noleggio Aria ──
+  // La scheda "Preventivi Aviation" del gestionale non e' collegata a nessuna
+  // sezione: chi lavora apre Noleggio Aria > Preventivi, filtro "Dal sito", e
+  // li' la richiesta non compariva. `aviation_quotes` resta il dettaglio del
+  // volo; qui nasce il preventivo vero, quello che l'ufficio prezza e manda.
+  //
+  // Regola dei business (src/utils/businessScope.ts del gestionale):
+  // `service_type = 'heli_rental'` e `vehicle_id` NULL — quella colonna
+  // punta alla flotta auto e su Aria va lasciata vuota.
+  try {
+    const partenza = istanteRoma(q.departure_date, q.departure_time);
+    const ritorno = istanteRoma(q.return_date, q.return_time);
+    if (partenza) {
+      // Il cliente: se e' registrato la sua scheda lega il preventivo al
+      // conto, e "I Miei Preventivi" del sito lo ritrova.
+      let customerId: string | null = null;
+      if (q.customer_email) {
+        const { data: scheda } = await supabase
+          .from("customers_extended")
+          .select("id")
+          .ilike("email", q.customer_email.trim())
+          .limit(1)
+          .maybeSingle();
+        customerId = scheda?.id ?? null;
+      }
+
+      const riepilogo = [
+        `Richiesta di volo dal sito — ${q.service || "Aviation"}`,
+        `Da: ${q.departure_location || "-"}`,
+        `A: ${q.arrival_location || "-"}`,
+        `Partenza: ${dataOraIt(q.departure_date, q.departure_time)}`,
+        q.return_date ? `Ritorno: ${dataOraIt(q.return_date, q.return_time)}` : "",
+        `Date flessibili: ${q.is_flexible ? "Si" : "No"}`,
+        `Passeggeri: ${q.passenger_count ?? 1}`,
+        q.has_stops ? `Tappe: ${q.intermediate_stops || "da definire"}` : "",
+        q.luggage_details ? `Bagagli: ${q.luggage_details}` : "",
+        q.budget_indicative ? `Budget indicativo: ${q.budget_indicative}` : "",
+        tipoAeromobile(q) ? `Tipologia aeromobile: ${tipoAeromobile(q)}` : "",
+        q.preferred_aircraft ? `Mezzo scelto: ${q.preferred_aircraft}` : "",
+        q.notes ? `\nNote del cliente: ${q.notes}` : "",
+      ].filter(Boolean).join("\n");
+
+      const preventivo = {
+        service_type: "heli_rental",
+        vehicle_id: null,
+        vehicle_name: q.preferred_aircraft || tipoAeromobile(q) || (q.service || "Volo"),
+        vehicle_plate: "",
+        vehicle_category: "",
+        pickup_date: partenza,
+        dropoff_date: ritorno || partenza,
+        rental_days: 1,
+        pickup_location: q.departure_location || "",
+        dropoff_location: q.arrival_location || "",
+        base_daily_rate: 0,
+        insurance_option: "",
+        insurance_total: 0,
+        km_limit: 0,
+        unlimited_km: false,
+        subtotal: 0,
+        // Il prezzo lo fa l'ufficio: nasce a zero, non a un numero inventato.
+        total_final: 0,
+        deposit_amount: 0,
+        customer_name: q.customer_name,
+        customer_phone: q.customer_phone || "",
+        customer_id: customerId,
+        notes: riepilogo,
+        extras_detail: {
+          aviation_quote_id: quoteId,
+          passeggeri: Number(q.passenger_count) || 1,
+          bagagli: q.luggage_details || "",
+          budget_indicativo: q.budget_indicative || "",
+          aeromobile: tipoAeromobile(q),
+          date_flessibili: !!q.is_flexible,
+          tappe: q.has_stops ? (q.intermediate_stops || "da definire") : "",
+        },
+        status: "bozza",
+        // Resta sotto il filtro "Dal sito" (`source LIKE 'website%'`) e si
+        // distingue dai preventivi del configuratore noleggio.
+        source: "website_aviation",
+        created_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("preventivi").insert([preventivo]);
+      if (error) throw error;
+      console.log("[aviation-quote] preventivo Aria creato per la richiesta", quoteId);
+    }
+  } catch (e: any) {
+    // Il preventivo e' comodita' d'ufficio: se non nasce, la richiesta resta
+    // comunque in `aviation_quotes` e su WhatsApp.
+    console.error("[aviation-quote] preventivo Aria non creato:", e?.message || e);
   }
 
   // ── 2. E si manda a DR7 su WhatsApp ────────────────────────────────────

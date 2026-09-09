@@ -17,6 +17,13 @@ interface AddressAutocompleteProps {
     lon?: number;
   }) => void;
   placeholder?: string;
+  /**
+   * Il campo cerca un POSTO, non un recapito: nella casella resta il nome
+   * del luogo con la citta' ("Aeroporto di Olbia Costa Smeralda, Olbia SS")
+   * invece della via. Serve dove si indica una destinazione — la partenza e
+   * l'arrivo di un volo — e non un indirizzo dove mandare qualcuno.
+   */
+  preferisciNome?: boolean;
   className?: string;
   id?: string;
   name?: string;
@@ -45,6 +52,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   onChange,
   onSelect,
   placeholder = 'Via, Numero Civico, CAP, Città',
+  preferisciNome = false,
   className = '',
   id,
   name,
@@ -181,10 +189,13 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     const p = completo.parti;
     const via = p?.via ? (p.civico ? `${p.via} ${p.civico}` : p.via) : '';
-    const formatted = via
-      ? [via, [p?.cap, p?.comune].filter(Boolean).join(' '), p?.provincia].filter(Boolean).join(', ')
-      : (completo.indirizzoCompleto
-        || (completo.indirizzo ? `${completo.nome}, ${completo.indirizzo}` : completo.nome));
+    const cittaEtc = [p?.comune, p?.provincia].filter(Boolean).join(' ');
+    const formatted = preferisciNome
+      ? [completo.nome, cittaEtc || completo.indirizzo].filter(Boolean).join(', ')
+      : via
+        ? [via, [p?.cap, p?.comune].filter(Boolean).join(' '), p?.provincia].filter(Boolean).join(', ')
+        : (completo.indirizzoCompleto
+          || (completo.indirizzo ? `${completo.nome}, ${completo.indirizzo}` : completo.nome));
 
     onChange(formatted);
     onSelect?.({

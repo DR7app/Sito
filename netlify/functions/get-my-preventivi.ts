@@ -80,6 +80,12 @@ const handler: Handler = async (event) => {
       data = results || []
     }
 
+    // Le richieste di volo hanno un preventivo gemello (`website_aviation`,
+    // lo crea send-aviation-quote-notification per il gestionale): al cliente
+    // si mostra la scheda del volo, non una scheda di noleggio con tariffa,
+    // km e assicurazione a zero.
+    data = data.filter(p => p.source !== 'website_aviation')
+
     // Auto-expire old preventivi
     const now = new Date()
     const updated = data.map(p => {
@@ -89,10 +95,44 @@ const handler: Handler = async (event) => {
       return p
     })
 
+    // 09/09/2026 — le richieste di preventivo Aria e Jet mancavano.
+    // Vivono in `aviation_quotes` (le scrive il modulo del sito, le lavora
+    // il gestionale) e "I Miei Preventivi" leggeva solo il noleggio: chi
+    // chiedeva un volo non ritrovava piu' la propria richiesta da nessuna
+    // parte. Si cercano per email e per telefono, le due cose che il
+    // modulo scrive sempre.
+    const aviation: any[] = []
+    const vistiAviation = new Set<string>()
+    const aggiungiAviation = (righe: any[] | null) => {
+      for (const r of righe || []) {
+        if (r?.id && !vistiAviation.has(r.id)) { vistiAviation.add(r.id); aviation.push(r) }
+      }
+    }
+
+    if (userEmail) {
+      const { data: perEmail } = await supabase
+        .from('aviation_quotes')
+        .select('*')
+        .ilike('customer_email', userEmail)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      aggiungiAviation(perEmail)
+    }
+    if (searchPhone) {
+      const { data: perTelefono } = await supabase
+        .from('aviation_quotes')
+        .select('*')
+        .ilike('customer_phone', `%${searchPhone.slice(-9)}%`)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      aggiungiAviation(perTelefono)
+    }
+    aviation.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ preventivi: updated }),
+      body: JSON.stringify({ preventivi: updated, aviation }),
     }
   } catch (err: any) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message || 'Errore' }) }

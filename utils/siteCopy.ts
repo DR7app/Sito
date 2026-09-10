@@ -1618,7 +1618,7 @@ export interface FooterCopy {
   corporate_links: FooterLink[];
   legal_links: FooterLink[];
   // Bottom band
-  bottom_brand_line: string;           // "DR7 Cagliari – Global Mobility..."
+  bottom_brand_line: string;           // "DR7 — Beyond Mobility"
   bottom_brand_line_it?: string;
   bottom_brand_line_en?: string;
   bottom_copyright: string;            // "© 2024 - 2026 DR7 Cagliari. All Rights Reserved."
@@ -3691,9 +3691,9 @@ const DEFAULT_FOOTER: FooterCopy = {
     { id: 'leg-3', label_it: 'Informativa Privacy',         label_en: 'Privacy Policy',             to: '/privacy' },
     { id: 'leg-4', label_it: 'Politica di Cancellazione',   label_en: 'Cancellation Policy',        to: '/cancellation-policy' },
   ],
-  bottom_brand_line: 'DR7 Cagliari – Global Mobility & Luxury Lifestyle Group',
-  bottom_brand_line_it: 'DR7 Cagliari – Gruppo di Mobilità Globale e Luxury Lifestyle',
-  bottom_brand_line_en: 'DR7 Cagliari – Global Mobility & Luxury Lifestyle Group',
+  bottom_brand_line: 'DR7 — Beyond Mobility',
+  bottom_brand_line_it: 'DR7 — Beyond Mobility',
+  bottom_brand_line_en: 'DR7 — Beyond Mobility',
   bottom_copyright: '© 2024 - 2026 DR7 Cagliari. All Rights Reserved.',
   bottom_copyright_it: '© 2024 - 2026 DR7 Cagliari. Tutti i diritti riservati.',
   bottom_copyright_en: '© 2024 - 2026 DR7 Cagliari. All Rights Reserved.',

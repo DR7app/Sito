@@ -177,7 +177,10 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
           </header>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 10/09/2026 — le schede degli alloggi stanno su due colonne invece
+            che tre: una casa si guarda, e in una colonna stretta la
+            fotografia non diceva niente. Mare e Aria restano su tre. */}
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 ${serviceType === 'stay_rental' ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
           {items.map(item => {
             const message =
               `Ciao DR7, vorrei richiedere un preventivo per ${asset.it}: ${item.name}. ` +
@@ -195,7 +198,12 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
                 <div className="relative overflow-hidden">
                   {/* Foto E video caricati dal gestionale, nell'ordine scelto
                       li'. Vedi components/ui/GalleriaCatalogo.tsx. */}
-                  <GalleriaCatalogo media={item.media || []} fallback={item.image_url} nome={item.name} />
+                  <GalleriaCatalogo
+                    media={item.media || []}
+                    fallback={item.image_url}
+                    nome={item.name}
+                    formato={serviceType === 'stay_rental' ? '4/5' : '9/16'}
+                  />
                 </div>
                 <div className="px-6 pt-6 pb-4 flex flex-col flex-1">
                   <div className="flex items-start gap-3">

@@ -250,6 +250,16 @@ body {
   background-repeat: no-repeat;
 }
 
+/* Il marmo del fondo pagina non entra di taglio. Sulle pagine col filmato
+   dietro (Terra, Lavaggio, Aria) il bordo alto del marmo tagliava la scena
+   in due con una riga netta: ora la prima fascia sfuma e il filmato ci muore
+   dentro. Sfuma SOLO lo sfondo: il testo del fondo pagina sta in un piano
+   sopra e resta pieno. */
+.marmo-sfuma-in-alto {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 220px);
+}
+
 
 /* Alias storici: restano perche' potrebbero comparire in classi composte a
    runtime o salvate dall'admin. Puntano alle famiglie nuove. */

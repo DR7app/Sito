@@ -75,14 +75,23 @@ const Footer: React.FC = () => {
 
   if (!copy) {
     // Render a quiet shell while config loads. Avoids a layout flash.
-    return <footer className="marmo-fondo" />;
+    return (
+      <footer className="relative">
+        <div aria-hidden className="marmo-fondo marmo-sfuma-in-alto pointer-events-none absolute inset-0" />
+      </footer>
+    );
   }
 
   // 10/09/2026 — il fondo pagina e' un momento istituzionale: marmo sotto
   // velo, non nero piatto. Vedi `.marmo-fondo` in styles/index.css.
   return (
-    <footer className="marmo-fondo text-gray-500">
-      <div className="container mx-auto px-6 py-20 md:py-28">
+    <footer className="relative text-gray-500">
+      {/* Il marmo sta in un piano suo perche' la sua fascia alta sfuma: cosi'
+          il filmato di sfondo (Terra, Lavaggio, Aria) entra nel fondo pagina
+          invece di essere tagliato da una riga netta. Il contenuto qui sotto
+          resta pieno. */}
+      <div aria-hidden className="marmo-fondo marmo-sfuma-in-alto pointer-events-none absolute inset-0" />
+      <div className="relative container mx-auto px-6 py-20 md:py-28">
         {/* Reviews Section */}
         <div className="mb-16 pb-16 border-b border-white/[0.07]">
           <div className="text-center mb-10">

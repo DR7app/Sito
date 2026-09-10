@@ -7,7 +7,6 @@ import { AuthProvider } from './contexts/AuthContext';
 // Nexi payment - no Stripe imports needed
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import TransizioneMarmo from './components/layout/TransizioneMarmo';
 import HomePage from './pages/HomePage';
 import StyleguidePage from './pages/StyleguidePage';
 import RentalPage from './pages/RentalPage';
@@ -459,8 +458,6 @@ const MainContent = () => {
           </main>
           <WbFooterOppure><Footer /></WbFooterOppure>
         </div>
-        {/* La lastra di marmo fra una pagina e l'altra. */}
-        <TransizioneMarmo />
         <BookingModal />
         <VerificationModal />
         <CookieBanner />

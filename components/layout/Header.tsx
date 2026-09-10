@@ -197,17 +197,18 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                vuoto. */
             exit={{ opacity: 0, transition: { duration: 0.62, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 bg-[#08090A]/[0.985] backdrop-blur-[3px] lg:bg-transparent lg:backdrop-blur-[2px]"
+            className="marmo absolute inset-0"
             onClick={onClose}
           >
-            {/* Da desktop in su il velo e' un gradiente: la pagina resta
-                intravedibile a destra, dove non c'e' testo. Sul telefono
-                sarebbe solo rumore dietro alle voci, quindi resta pieno. */}
+            {/* 10/09/2026 — il menu e' uno dei momenti istituzionali della
+                carta colori: il velo non e' piu' nero piatto, e' il marmo di
+                casa. Sopra, un gradiente da sinistra tiene il nero dove
+                stanno le voci e lascia respirare la venatura a destra. */}
             <span
-              className="absolute inset-0 hidden lg:block"
+              className="absolute inset-0"
               style={{
                 background:
-                  'linear-gradient(100deg, rgba(8,9,10,0.97) 0%, rgba(8,9,10,0.94) 40%, rgba(8,9,10,0.84) 66%, rgba(8,9,10,0.72) 100%)',
+                  'linear-gradient(100deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 40%, rgba(0,0,0,0.55) 68%, rgba(0,0,0,0.35) 100%)',
               }}
             />
           </motion.div>

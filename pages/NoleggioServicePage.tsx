@@ -108,11 +108,19 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   if (items.length === 0) {
     return (
       <div className="bg-black text-white min-h-screen">
-        {heroVideo && <div className="pt-24"><HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)} /></div>}
-        <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-4' : 'pt-28'}`}>
-          <header className="text-center">
-            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
-          </header>
+        {heroVideo && (
+          <HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+              <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+            </div>
+          </HeroVideo>
+        )}
+        <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-10' : 'pt-28'}`}>
+          {!heroVideo && (
+            <header className="text-center">
+              <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+            </header>
+          )}
           <div className="mt-12 border border-gray-800 rounded-lg bg-black/70 px-6 py-14 text-center">
             <div className="inline-block px-4 py-1 border border-dr7-gold/60 text-dr7-gold text-xs tracking-[0.25em] uppercase">
               {t({ it: "Prossimamente", en: "Coming soon" })}
@@ -131,12 +139,21 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
 
   return (
     <div className="bg-black text-white min-h-screen">
-      {heroVideo && <div className="pt-24"><HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)} /></div>}
-      <div className={`max-w-6xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-4' : 'pt-28'}`}>
-        <header className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
-          <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
-        </header>
+      {heroVideo && (
+        <HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+            <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
+          </div>
+        </HeroVideo>
+      )}
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-12' : 'pt-28'}`}>
+        {!heroVideo && (
+          <header className="text-center mb-12">
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+            <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
+          </header>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map(item => {

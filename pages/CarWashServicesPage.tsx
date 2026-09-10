@@ -535,7 +535,7 @@ const CarWashServicesPage: React.FC = () => {
   const activeCategory = mainTab === 'lavaggio' ? lavaggioCategory : meccanicaCategory;
 
   return (
-    <div className="min-h-screen bg-black pt-32 pb-32">
+    <div className="min-h-screen bg-black pb-32">
       <SEOHead
         title={t({ it: 'Autolavaggio Premium Sardegna | Detailing & Cura di Lusso | DR7 Lavaggio & Meccanica', en: 'Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Car Wash & Mechanics' })}
         description={t({ it: 'Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Lavaggio & Meccanica.', en: 'Professional car wash, premium detailing, ceramic coating and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Car Wash & Mechanics.' })}
@@ -551,9 +551,13 @@ const CarWashServicesPage: React.FC = () => {
       <HeroVideo
         src="/video-lavaggio.mp4"
         poster="/video-lavaggio-poster.jpg"
-        overline={t({ it: "Servizi", en: "Services" })}
-        title={t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}
-      />
+        ariaLabel={t({ it: "Il box di lavaggio DR7", en: "The DR7 wash bay" })}
+      >
+        <div className="container mx-auto px-4">
+          <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">{t({ it: "Servizi", en: "Services" })}</p>
+          <h1 className="mt-2 text-3xl md:text-5xl font-bold text-white">{t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}</h1>
+        </div>
+      </HeroVideo>
 
       {/* Mandatory Targa Entry — shown FIRST before any services */}
       <div className="container mx-auto px-4 mb-8">

@@ -6,43 +6,40 @@ interface HeroVideoProps {
   src: string;
   /** Fotogramma mostrato prima che il filmato parta (e se non parte). */
   poster?: string;
-  /** Occhiello sopra il titolo, gia' tradotto. */
-  overline?: string;
-  /** Titolo sul velo scuro, gia' tradotto. Se manca, nessuna scritta. */
-  title?: string;
-  /** Descrizione per i lettori di schermo quando il riquadro non ha titolo. */
+  /** Descrizione della scena per i lettori di schermo. */
   ariaLabel?: string;
+  /** Titolo, occhiello, sottotitolo, ricerca: cio' che sta SOPRA il filmato. */
+  children?: React.ReactNode;
 }
 
 /**
- * Bandeau video di apertura pagina (Terra, Aria, Lavaggio & Meccanica).
+ * Apertura di sezione col filmato come SFONDO (Terra, Aria, Lavaggio &
+ * Meccanica).
  *
- * I filmati sono girati col telefono, quindi verticali: sul telefono il
- * riquadro resta alto (4:5) e si vede quasi tutta la scena, su schermo largo
- * diventa una fascia 16:9 con il soggetto al centro. Il video parte da solo,
- * senza audio e in ciclo — MediaVideo lo monta solo quando il riquadro entra
- * in campo e lo ferma quando esce, e se il file non arriva resta il poster.
+ * Il filmato non e' un riquadro dentro la pagina: occupa tutta la larghezza
+ * dietro al titolo, e sfuma nel nero della pagina in basso, cosi' il passaggio
+ * al contenuto non ha una linea di taglio. I video sono girati col telefono,
+ * quindi verticali: l'altezza in `vh` tiene il soggetto al centro sia sul
+ * telefono che su schermo largo.
+ *
+ * Parte da solo, senza audio, in ciclo; MediaVideo lo ferma quando esce dal
+ * campo e, se il file non arriva, lascia il poster.
  */
-const HeroVideo: React.FC<HeroVideoProps> = ({ src, poster, overline, title, ariaLabel }) => (
-  <div className="container mx-auto px-4 mb-8">
-    <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden border border-white/10">
-      <MediaVideo
-        src={src}
-        poster={poster}
-        loading="eager"
-        className="relative block w-full aspect-[4/5] sm:aspect-[16/9] bg-black"
-        ariaLabel={ariaLabel || title}
-      />
-      {(overline || title) && (
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-5 md:p-7 pt-24">
-          <div>
-            {overline && <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">{overline}</p>}
-            {title && <h1 className="text-2xl md:text-3xl font-bold text-white">{title}</h1>}
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
+const HeroVideo: React.FC<HeroVideoProps> = ({ src, poster, ariaLabel, children }) => (
+  <section className="relative isolate flex min-h-[78vh] items-end overflow-hidden md:min-h-[88vh]">
+    <MediaVideo
+      src={src}
+      poster={poster}
+      loading="eager"
+      className="absolute inset-0 h-full w-full"
+      ariaLabel={ariaLabel}
+    />
+    {/* Il velo: scuro sotto per reggere il testo, quasi nullo al centro per
+        non spegnere la scena, nero pieno all'ultimo pixel per saldarsi al
+        fondo della pagina senza una riga di taglio. */}
+    <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/25 to-black" />
+    <div className="relative z-10 w-full pb-14 pt-40 md:pb-20">{children}</div>
+  </section>
 );
 
 export default HeroVideo;

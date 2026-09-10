@@ -75,8 +75,12 @@ export default {
       // toccare un solo componente. La scala `gray` diventa minerale calda
       // per non stonare con l'avorio.
       colors: {
-        black: '#08090A',
-        white: '#F6F3ED',
+        // 10/09/2026 — carta colori DR7: nero assoluto #000000, nero carbone
+        // #0A0A0A, avorio #F8F5EE, avorio scuro #E8E1D6. `black` e' il fondo
+        // di quasi tutto il markup, quindi vale il nero assoluto; il carbone
+        // sta nelle superfici sollevate (dr7.graphite).
+        black: '#000000',
+        white: '#F8F5EE',
         gray: {
           50: '#F7F5F1',
           100: '#EDEAE4',
@@ -91,10 +95,11 @@ export default {
           950: '#0D0D0C',
         },
         dr7: {
-          obsidian: '#08090A',
-          graphite: '#131416',
-          elevated: '#1C1E21',
-          ivory: '#F6F3ED',
+          obsidian: '#000000',
+          graphite: '#0A0A0A',
+          elevated: '#141414',
+          ivory: '#F8F5EE',
+          'ivory-dim': '#E8E1D6',
           mineral: '#A19C92',
           metal: '#C9BEA8',
           gold: '#C8A24A',

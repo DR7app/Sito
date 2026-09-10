@@ -137,17 +137,19 @@ const FlottaIndexPage: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="pt-24 pb-28 md:pt-28 md:pb-36 bg-black min-h-screen"
+      className="pb-28 md:pb-36 bg-black min-h-screen"
     >
-      {/* 10/09/2026 — Terra si apre con il filmato della collezione: parte
-          da solo, senza audio, in ciclo. Il titolo resta sotto, dove era. */}
+      {/* 10/09/2026 — Terra si apre col filmato della collezione DIETRO al
+          titolo: parte da solo, senza audio, in ciclo, e sfuma nel nero
+          della pagina. Titolo, filetto, frase e ricerca del luogo stanno
+          dove erano, sopra la scena. */}
       <HeroVideo
         src="/video-terra.mp4"
         poster="/video-terra-poster.jpg"
         ariaLabel={lang === 'it' ? 'La collezione DR7 Terra' : 'The DR7 Land collection'}
-      />
+      >
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16 md:mb-24">
+        <div className="text-center">
           <h1 className="t-display text-white">
             {lang === 'it' ? "OLTRE L'ORDINARIO." : 'BEYOND THE ORDINARY.'}
           </h1>
@@ -213,7 +215,10 @@ const FlottaIndexPage: React.FC = () => {
             {t({ it: 'ACCEDI ALLA COLLEZIONE', en: 'ENTER THE COLLECTION' })}
           </button>
         </div>
+      </div>
+      </HeroVideo>
 
+      <div className="container mx-auto px-6 pt-20 md:pt-28">
         <div ref={collezioneRef} className="scroll-mt-28">
         {isLoading ? (
           <p className="text-center text-gray-400">…</p>

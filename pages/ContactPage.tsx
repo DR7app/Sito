@@ -4,10 +4,14 @@ import SEOHead from '../components/seo/SEOHead';
 import { useTranslation } from '../hooks/useTranslation';
 import { getContactCopy, type ContactCopy } from '../utils/siteCopy';
 import { trackPhoneCall } from '../utils/analytics';
+import SfondoVideo from '../components/ui/SfondoVideo';
+import { useFilmato } from '../hooks/useFilmato';
 
 const ContactPage: React.FC = () => {
   const { lang } = useTranslation();
   const [copy, setCopy] = useState<ContactCopy | null>(null);
+  // Il filmato dell'apertura, scelto da Sito > Aspetto & Funzionalita'.
+  const filmato = useFilmato('contatti');
 
   useEffect(() => {
     let cancelled = false;
@@ -22,7 +26,7 @@ const ContactPage: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-black pt-28 pb-20"
+      className="min-h-screen pb-20"
     >
       <SEOHead
         title={lang === 'it' ? 'Contatti DR7 | Prenota Auto di Lusso e Servizi in Sardegna' : 'Contact DR7 | Book Luxury Cars & Services in Sardinia'}
@@ -80,15 +84,25 @@ const ContactPage: React.FC = () => {
           <p className="text-center text-gray-500 text-sm">{lang === 'it' ? 'Caricamento…' : 'Loading…'}</p>
         ) : (
           <>
-            {/* Page Title */}
-            <div className="text-center mb-16">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                {lang === 'it' ? copy.page_title_it : copy.page_title_en}
-              </h1>
-              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                {lang === 'it' ? copy.subtitle_it : copy.subtitle_en}
-              </p>
-            </div>
+            {/* Apertura: il filmato dietro al titolo, scelto da Sito >
+                Aspetto & Funzionalita'. Niente `bg-black` sul contenitore
+                della pagina: richiuderebbe il filmato. */}
+            <SfondoVideo
+              src={filmato.src}
+              poster={filmato.poster}
+              ariaLabel={lang === 'it' ? copy.page_title_it : copy.page_title_en}
+              compatta
+            >
+              <div className="text-center px-4">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                  {lang === 'it' ? copy.page_title_it : copy.page_title_en}
+                </h1>
+                <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+                  {lang === 'it' ? copy.subtitle_it : copy.subtitle_en}
+                </p>
+              </div>
+            </SfondoVideo>
+            <div className="mb-16" />
 
             {/* Contact Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">

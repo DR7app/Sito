@@ -120,7 +120,14 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
     <div className="w-full">
       <div className="max-w-3xl">
         <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] tracking-[-0.015em]">
-          <span className="block text-white">{conteggio} {testi.esperienze}</span>
+          {/* Il numero e' quello vero di Google. Se non e' ancora arrivato si
+              scrive solo la parola: meglio un titolo piu' corto per un
+              istante che una cifra inventata. */}
+          <span className="block text-white">
+            {conteggio > 0
+              ? `${conteggio} ${testi.esperienze}`
+              : testi.esperienze.charAt(0).toUpperCase() + testi.esperienze.slice(1)}
+          </span>
           <span className="block text-[#D8C9AE]">{titolo}</span>
         </h2>
         <p className="mt-6 text-base md:text-lg text-gray-400 leading-relaxed">{sottotitolo}</p>

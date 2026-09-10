@@ -298,9 +298,21 @@ const fallbackReviews = [
 export default function ReviewsSection({ titolo, sottotitolo }: { titolo: string; sottotitolo: string }) {
   const { lang } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>(fallbackReviews);
-  const [ratingSummary, setRatingSummary] = useState<RatingSummary>({
-    ratingValue: 5.0,
-    reviewCount: 300
+  // Il conteggio NON e' scritto qui: arriva da Google (Places, campo
+  // `user_ratings_total`) a ogni caricamento della pagina, quindi il numero
+  // grande in cima segue le recensioni vere. Finche' la risposta non arriva
+  // si riparte dall'ultimo numero conosciuto, tenuto sul browser di chi
+  // guarda: prima c'era un 300 scritto a mano che compariva un istante e poi
+  // saltava al numero giusto.
+  const [ratingSummary, setRatingSummary] = useState<RatingSummary>(() => {
+    try {
+      const salvato = localStorage.getItem('dr7_recensioni_google');
+      if (salvato) {
+        const v = JSON.parse(salvato) as RatingSummary;
+        if (v && typeof v.reviewCount === 'number' && v.reviewCount > 0) return v;
+      }
+    } catch { /* browser senza memoria locale: si mostra il titolo senza numero */ }
+    return { ratingValue: 5.0, reviewCount: 0 };
   });
 
   useEffect(() => {
@@ -311,6 +323,7 @@ export default function ReviewsSection({ titolo, sottotitolo }: { titolo: string
         // mostra tante quante ne servono per scorrere.
         setReviews([...data.reviews, ...fallbackReviews]);
         setRatingSummary(data.ratingSummary);
+        try { localStorage.setItem('dr7_recensioni_google', JSON.stringify(data.ratingSummary)); } catch { /* niente */ }
       } catch (error) {
         console.error("Failed to load Google reviews, using fallback:", error);
         // Restano le recensioni di scorta: la sezione non resta mai vuota.
@@ -367,12 +380,16 @@ export default function ReviewsSection({ titolo, sottotitolo }: { titolo: string
         lingua={lang}
         testi={{
           esperienze: it ? 'esperienze.' : 'experiences.',
-          verificateSuGoogle: (n) => it ? `${n} recensioni verificate su Google` : `${n} verified reviews on Google`,
+          verificateSuGoogle: (n) => n > 0
+            ? (it ? `${n} recensioni verificate su Google` : `${n} verified reviews on Google`)
+            : (it ? 'Recensioni verificate su Google' : 'Verified reviews on Google'),
           leggiTutte: it ? 'Leggi tutte le recensioni' : 'Read all reviews',
           recensioneVerificata: it ? 'Recensione verificata' : 'Verified review',
           statoPaesi: it ? 'Clienti' : 'Guests',
           statoPaesiNota: it ? 'da oltre 20 paesi' : 'from over 20 countries',
-          statoRecensioni: (n) => it ? `${n} recensioni` : `${n} reviews`,
+          statoRecensioni: (n) => n > 0
+            ? (it ? `${n} recensioni` : `${n} reviews`)
+            : (it ? 'Recensioni' : 'Reviews'),
           statoRecensioniNota: it ? 'verificate' : 'verified',
           statoVoto: `${ratingSummary.ratingValue.toFixed(1)}/5`,
           statoVotoNota: it ? 'valutazione media' : 'average rating',

@@ -101,6 +101,22 @@ const Footer: React.FC = () => {
             titolo={bilingual(copy, 'reviews_title', lang)}
             sottotitolo={lang === 'it' ? copy.reviews_text_it : copy.reviews_text_en}
           />
+
+          {/* La scena sotto le recensioni. Immagine sola, senza testo sopra:
+              chiude il racconto delle esperienze prima dei dati aziendali.
+              Si cambia (o si toglie, lasciando il campo vuoto) da
+              Sito > Fondo pagina. */}
+          {copy.reviews_image && (
+            <div className="mt-14 overflow-hidden">
+              <img
+                src={copy.reviews_image}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="w-full aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9] object-cover object-[center_35%]"
+              />
+            </div>
+          )}
         </div>
 
         {/* Chiusura della pagina, impaginata come il riferimento:

@@ -267,13 +267,13 @@ body {
   background-repeat: no-repeat;
 }
 
-/* Il marmo del fondo pagina non entra di taglio SULLE PAGINE COL FILMATO
-   DIETRO (Terra, Lavaggio, Aria, Soggiorni): li' il bordo alto del marmo
-   tagliava la scena in due con una riga netta, e ora la prima fascia sfuma
-   perche' il filmato ci muoia dentro. Altrove — la home per prima — il marmo
-   resta pieno: e' il fondo istituzionale della pagina, si deve vedere.
-   L'attributo lo mette `SfondoVideo` quando e' in pagina. Sfuma SOLO lo
-   sfondo: il testo del fondo pagina sta in un piano sopra e resta pieno. */
+/* Il marmo del fondo pagina non entra MAI di taglio: la sua prima fascia
+   sfuma sempre, cosi' fra la pagina e il fondo non c'e' una riga netta.
+   La sfumatura e' corta (110px) perche' il marmo si deve comunque vedere:
+   allungata mangiava il fondo pagina della home. Sulle pagine col filmato
+   dietro diventa piu' lunga (vedi sotto): li' deve morirci dentro una scena
+   luminosa. L'attributo lo mette `SfondoVideo` quando e' in pagina. Sfuma
+   SOLO lo sfondo: il testo del fondo pagina sta in un piano sopra. */
 /* Sotto un filmato la pagina non riparte di taglio: l'ultima fascia della
    scena scende nel nero del fondo. E' lo stesso principio del marmo che
    sfuma sulle pagine col filmato dietro (Terra), applicato ai filmati che
@@ -310,6 +310,14 @@ body {
   mask-image: radial-gradient(115% 105% at 72% 42%, #000 38%, rgba(0, 0, 0, 0.72) 62%, rgba(0, 0, 0, 0.25) 84%, transparent 100%);
 }
 
+.marmo-sfuma-in-alto {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 110px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 110px);
+}
+
+/* Dietro un filmato la sfumatura e' piu' lunga: li' non si tratta di
+   ammorbidire un attacco fra due fondi scuri, ma di far morire una scena
+   luminosa dentro la pagina. */
 :root[data-filmato-sfondo] .marmo-sfuma-in-alto {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 220px);

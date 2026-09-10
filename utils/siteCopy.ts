@@ -1949,12 +1949,34 @@ export async function getAboutCopy(): Promise<AboutCopy> {
  * Footer copy — falls back to legacy hardcoded text when admin hasn't
  * customized.
  */
+/** Le vecchie firme del fondo pagina, quelle che il pannello ha salvato una
+ *  volta e che nessuno ha piu' riscritto. */
+const FIRME_SUPERATE = [
+  'DR7 Cagliari – Gruppo di Mobilità Globale e Luxury Lifestyle',
+  'DR7 Cagliari – Global Mobility & Luxury Lifestyle Group',
+  'DR7 Cagliari - Gruppo di Mobilità Globale e Luxury Lifestyle',
+  'DR7 Cagliari - Global Mobility & Luxury Lifestyle Group',
+];
+
 export async function getFooterCopy(): Promise<FooterCopy> {
   const snap = await loadOnce();
   if (snap.footer && Array.isArray(snap.footer.social_links) && Array.isArray(snap.footer.division_links)) {
     // Merge over defaults so newly-added string fields (e.g. operative
     // address) still render even if the stored override predates them.
-    return { ...DEFAULT_FOOTER, ...snap.footer };
+    const unito = { ...DEFAULT_FOOTER, ...snap.footer };
+    // 10/09/2026 — la firma del fondo pagina e' "DR7 — Beyond Mobility". La
+    // riga salvata nel pannello e' ancora la vecchia, e quella salvata vince
+    // sempre sul valore di fabbrica: finche' nessuno riscrive quel campo dal
+    // gestionale, la vecchia firma va trattata come "non impostata".
+    // Vale SOLO per le stringhe elencate sopra: qualunque altro testo scritto
+    // dall'operatore resta esattamente quello che ha scritto.
+    for (const chiave of ['bottom_brand_line', 'bottom_brand_line_it', 'bottom_brand_line_en'] as const) {
+      const valore = unito[chiave];
+      if (typeof valore === 'string' && FIRME_SUPERATE.includes(valore.trim())) {
+        unito[chiave] = DEFAULT_FOOTER[chiave] as string;
+      }
+    }
+    return unito;
   }
   return DEFAULT_FOOTER;
 }

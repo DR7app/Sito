@@ -3,6 +3,7 @@ import LegalPageLayout from '../components/layout/LegalPageLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchGoogleReviews } from '../services/googleReviews';
 import { getFranchisingCopy, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
+import { useFilmato } from '../hooks/useFilmato';
 
 const ExpansionIcon: React.FC<{ icon: FranchisingExpansionIcon }> = ({ icon }) => {
     if (icon === 'square') return <div className="w-8 h-8 bg-white rounded-sm" />;
@@ -66,6 +67,9 @@ const FranchisingPage: React.FC = () => {
         );
     }
 
+    // Il filmato in cima alla pagina Business.
+    const filmato = useFilmato('business');
+
     const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 300 ? String(reviewCount) : '300');
 
     return (
@@ -78,8 +82,22 @@ const FranchisingPage: React.FC = () => {
                     striscia centrale. Via anche il velo scuro che la copriva
                     tutta: qui sopra non c'e' scritto niente, serviva solo a
                     spegnerla. */}
+                {/* 10/09/2026 — al posto della fotografia c'e' il filmato:
+                    parte da solo, senza audio, in ciclo. Il poster e' il primo
+                    fotogramma, per chi ha la rete lenta o l'autoplay negato.
+                    Si sceglie da Sito > Aspetto & Funzionalita'. */}
                 <div className="-mt-2 rounded-2xl overflow-hidden border border-gray-800">
-                    <img src="/franchising-hero.jpeg" alt="" loading="lazy" decoding="async" className="block h-auto w-full" />
+                    <video
+                        src={filmato.src}
+                        poster={filmato.poster}
+                        className="block aspect-[16/9] w-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="auto"
+                        aria-label={t('Franchising')}
+                    />
                 </div>
                 {/* Hero Statement */}
                 <div className="text-center py-6 md:py-8 border-b border-gray-800">

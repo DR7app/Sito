@@ -13,7 +13,7 @@ import { DEFAULT_ASPETTO, getAspettoCopy, type AspettoCopy } from '../utils/site
  * subito, e se il gestionale ne ha uno diverso arriva un istante dopo. Cosi'
  * una configurazione lenta o irraggiungibile non lascia mai la pagina nera.
  */
-export type ChiaveFilmato = 'terra' | 'mare' | 'aria' | 'soggiorni' | 'lavaggio';
+export type ChiaveFilmato = 'terra' | 'mare' | 'aria' | 'soggiorni' | 'lavaggio' | 'wallet' | 'business' | 'digitale' | 'club' | 'privilege' | 'account';
 
 export interface Filmato {
   src: string;

@@ -15,6 +15,8 @@ import {
 import { getMembershipTiers } from '../utils/getMembershipTiers';
 import ClubTiersBoard from '../components/ui/ClubTiersBoard';
 import type { MembershipTier } from '../types';
+import SfondoVideo from '../components/ui/SfondoVideo';
+import { useFilmato } from '../hooks/useFilmato';
 
 const MembershipPage: React.FC = () => {
     const { lang } = useTranslation();
@@ -23,6 +25,9 @@ const MembershipPage: React.FC = () => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
     const [copy, setCopy] = useState<MembershipCopy | null>(null);
     const [tiers, setTiers] = useState<MembershipTier[]>(DEFAULT_MEMBERSHIP_TIERS);
+    // I filmati della pagina, scelti da Sito > Aspetto & Funzionalita'.
+    const filmatoClub = useFilmato('club');
+    const filmatoPrivilege = useFilmato('privilege');
 
     useEffect(() => {
         let cancelled = false;
@@ -74,10 +79,16 @@ const MembershipPage: React.FC = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
         >
-            {/* Hero */}
-            <div className="pt-32 pb-20 bg-black relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
-                <div className="container mx-auto px-6 relative z-10">
+            {/* Hero. 10/09/2026 — dietro al titolo c'e' il filmato del Club,
+                scelto da Sito > Aspetto & Funzionalita'. Le sezioni sotto
+                restano nere e lo coprono: il filmato si vede solo qui. */}
+            <SfondoVideo
+                src={filmatoClub.src}
+                poster={filmatoClub.poster}
+                ariaLabel={copy.hero_title}
+                compatta
+            >
+                <div className="container mx-auto px-6">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -98,7 +109,7 @@ const MembershipPage: React.FC = () => {
                         </p>
                     </motion.div>
                 </div>
-            </div>
+            </SfondoVideo>
 
             {/* Pricing Section */}
             <div className="bg-black pb-20">
@@ -246,7 +257,22 @@ const MembershipPage: React.FC = () => {
                 Il motore vero sta nel gestionale (accrue-club-wallet-interest,
                 0,1% al giorno sul capitale, accredito mensile): qui c'e' solo
                 il racconto, editabile da admin > Sito > Membership. */}
-            <div id="privilege" className="scroll-mt-28 bg-black border-t border-gray-900">
+            <div id="privilege" className="relative isolate scroll-mt-28 overflow-hidden bg-black border-t border-gray-900">
+                {/* Il filmato del Privilege sta dentro a questo blocco, non
+                    dietro alla pagina: sotto e sopra ci sono altre sezioni
+                    nere. Velo scuro sopra, il testo qui e' lungo. */}
+                <video
+                    src={filmatoPrivilege.src}
+                    poster={filmatoPrivilege.poster}
+                    className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    aria-hidden="true"
+                />
+                <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/85 via-black/75 to-black/90" />
                 <div className="container mx-auto px-6 max-w-4xl py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

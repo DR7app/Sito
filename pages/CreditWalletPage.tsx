@@ -7,6 +7,8 @@ import { addCredits } from '../utils/creditWallet';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { useTranslation } from '../hooks/useTranslation';
 import { getCreditWalletCopy, type CreditWalletCopy, type CreditPackage } from '../utils/siteCopy';
+import SfondoVideo from '../components/ui/SfondoVideo';
+import { useFilmato } from '../hooks/useFilmato';
 
 // I pacchetti arrivano dal CMS (admin > Sito > Credit Wallet, salvati in
 // centralina_pro_config.site_copy.creditWallet.packages). getCreditWalletCopy
@@ -98,6 +100,8 @@ const CreditWalletPage: React.FC = () => {
     return cur[lang === 'it' ? it : en] as string;
   };
   const packages: CreditPackage[] = copy?.packages ?? [];
+  // Il filmato dietro alla pagina, scelto da Sito > Aspetto & Funzionalita'.
+  const filmato = useFilmato('wallet');
   // Nexi payment - no stripe needed
   // Nexi payment - no elements needed
   // Nexi payment - no card element needed
@@ -275,25 +279,29 @@ const CreditWalletPage: React.FC = () => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="pt-32 pb-24 bg-black min-h-screen">
+      {/* 10/09/2026 — il filmato sta dietro alla pagina, come su Terra e
+          Lavaggio: niente `bg-black` sul contenitore, altrimenti lo
+          richiuderebbe. Si sceglie da Sito > Aspetto & Funzionalita'. */}
+      <SfondoVideo
+        src={filmato.src}
+        poster={filmato.poster}
+        ariaLabel={w('hero_title_eyebrow_it', 'hero_title_eyebrow_en')}
+        compatta
+      >
+        <div className="container mx-auto px-6 text-center">
+          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-4">
+            {w('hero_title_eyebrow_it', 'hero_title_eyebrow_en')}
+          </h1>
+          <p className="text-2xl text-white font-semibold mb-6">
+            {w('hero_subtitle_it', 'hero_subtitle_en')}
+          </p>
+          <p className="text-gray-300 text-lg max-w-4xl mx-auto leading-relaxed whitespace-pre-line">
+            {w('hero_intro_it', 'hero_intro_en')}
+          </p>
+        </div>
+      </SfondoVideo>
+      <div className="pt-10 pb-24 min-h-screen">
         <div className="container mx-auto px-6">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h1 className="text-6xl md:text-7xl font-extrabold text-white mb-4">
-              {w('hero_title_eyebrow_it', 'hero_title_eyebrow_en')}
-            </h1>
-            <p className="text-2xl text-white font-semibold mb-6">
-              {w('hero_subtitle_it', 'hero_subtitle_en')}
-            </p>
-            <p className="text-gray-300 text-lg max-w-4xl mx-auto leading-relaxed whitespace-pre-line">
-              {w('hero_intro_it', 'hero_intro_en')}
-            </p>
-          </motion.div>
 
           {/* Benefits Grid */}
           <motion.div

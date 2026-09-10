@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../hooks/useTranslation';
 import { getTokenCopy, type TokenCopy } from '../utils/siteCopy';
+import SfondoVideo from '../components/ui/SfondoVideo';
+import { useFilmato } from '../hooks/useFilmato';
 
 const TokenPage: React.FC = () => {
   const { lang } = useTranslation();
@@ -17,9 +19,16 @@ const TokenPage: React.FC = () => {
   // La copia salvata prima di oggi non ha il campo: si ricade sul valore di
   // fabbrica invece di lasciare la pagina senza moneta.
   const immagine = (copy?.hero_image || '/dr7-token.jpeg').trim();
+  // Il filmato dietro alla pagina, scelto da Sito > Aspetto & Funzionalita'.
+  const filmato = useFilmato('digitale');
 
   return (
-    <div className="marmo min-h-screen text-white flex items-center justify-center px-4">
+    <SfondoVideo
+      src={filmato.src}
+      poster={filmato.poster}
+      ariaLabel={tk('hero_title_it', 'hero_title_en')}
+    >
+      <div className="text-white flex items-center justify-center px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -55,7 +64,8 @@ const TokenPage: React.FC = () => {
           {tk('cta_button_it', 'cta_button_en')}
         </Link>
       </motion.div>
-    </div>
+      </div>
+    </SfondoVideo>
   );
 };
 

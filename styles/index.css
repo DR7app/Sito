@@ -296,6 +296,16 @@ body {
   mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
 }
 
+/* La scena dietro una sezione: NESSUN bordo netto, da nessun lato. La
+   fotografia e' piena al centro e si spegne tutt'intorno, cosi' si posa sul
+   fondo (marmo, nero) invece di esserci appiccicata sopra come un ritaglio.
+   Una sfumatura radiale sola: due maschere sovrapposte si compongono in modo
+   diverso da un browser all'altro. */
+.foto-scena {
+  -webkit-mask-image: radial-gradient(115% 105% at 72% 42%, #000 38%, rgba(0, 0, 0, 0.72) 62%, rgba(0, 0, 0, 0.25) 84%, transparent 100%);
+  mask-image: radial-gradient(115% 105% at 72% 42%, #000 38%, rgba(0, 0, 0, 0.72) 62%, rgba(0, 0, 0, 0.25) 84%, transparent 100%);
+}
+
 :root[data-filmato-sfondo] .marmo-sfuma-in-alto {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 220px);

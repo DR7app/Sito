@@ -123,11 +123,13 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
   return (
     <div className="relative isolate w-full overflow-hidden px-6 py-16 sm:px-10 sm:py-20 -mx-6 sm:-mx-10">
       {/* La scena sta DIETRO tutta la sezione, appoggiata a destra, e si
-          spegne verso sinistra dove corre il testo. Riempie il riquadro,
-          inquadrata in alto: quello che deve restare e' il cielo, la villa e
-          la coda dell'auto, non il pavimento. I bordi si
-          dissolvono (`foto-sfumata`) cosi' il marmo del fondo pagina
-          continua sopra e sotto invece di essere tagliato da due righe. */}
+          spegne verso sinistra dove corre il testo. Sta a tutta altezza col
+          suo rapporto vero: riempirla di larghezza la ingrandiva tanto da
+          tagliare il tetto dell'auto e la villa, e restava una fetta.
+          Nessun bordo netto (`foto-scena`): si spegne tutt'intorno, cosi' si
+          posa sul marmo del fondo pagina invece di sembrare un ritaglio
+          appoggiato sopra. Il gradiente da sinistra tiene il buio dove
+          corrono titolo e testo. */}
       {immagine && (
         <>
           <img
@@ -135,10 +137,9 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
             alt=""
             loading="lazy"
             decoding="async"
-            className="foto-sfumata pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-[62%_18%]"
+            className="foto-scena pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-auto max-w-full object-cover"
           />
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/88 to-[#08090A]/25" />
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-[#08090A] via-transparent to-[#08090A]/60" />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/75 to-transparent" />
         </>
       )}
 

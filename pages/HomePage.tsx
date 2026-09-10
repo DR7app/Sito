@@ -207,8 +207,16 @@ const HomePage: React.FC = () => {
               </div>
             </Reveal>
           </Shell>
+        </Section>
+      )}
 
-          <Shell className="border-t border-[color:var(--line)] py-[var(--sp-lg)]">
+      {/* 10/09/2026 — il marmo finisce con la fotografia. La riga dell'invito
+          al catalogo torna sul nero: sotto una lastra, un bottone isolato
+          sembrava una coda della sezione invece del passaggio all'atto
+          successivo. */}
+      {copy.collection_image && (
+        <Section rhythm="none">
+          <Shell className="py-[var(--sp-lg)]">
             <Reveal>
               <Cta variant="secondary" size="lg" to={copy.collection_cta_to}>
                 {t(copy.collection_cta_label_it, copy.collection_cta_label_en)}

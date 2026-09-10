@@ -19,7 +19,7 @@ const TokenPage: React.FC = () => {
   const immagine = (copy?.hero_image || '/dr7-token.jpeg').trim();
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+    <div className="marmo min-h-screen text-white flex items-center justify-center px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}

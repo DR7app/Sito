@@ -156,7 +156,10 @@ const HomePage: React.FC = () => {
       <Hero copy={copy} lang={lang} />
 
       {/* ═══ ATTO 02 — SILENZIO ═════════════════════════════════════════ */}
-      <Section rhythm="xl">
+      {/* 10/09/2026 — la frase sta sul marmo, non sul nero piatto: e' la
+          dichiarazione della casa, uno dei momenti istituzionali della carta
+          colori. */}
+      <Section surface="marmo" rhythm="xl">
         <Shell>
           <Statement lines={stmtLines} />
           <Reveal delay={480}>

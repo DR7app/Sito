@@ -47,8 +47,15 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
       : serviceType === 'heli_rental' ? 'aria'
         : 'soggiorni';
   const filmato = useFilmato(chiaveFilmato);
+  // Soggiorni va senza velo: il filmato della villa e' gia' scuro di suo e
+  // il velo lo spegneva.
   const apertura = heroVideo
-    ? { src: filmato.src || heroVideo.src, poster: filmato.poster || heroVideo.poster, adatta: heroVideo.adatta }
+    ? {
+      src: filmato.src || heroVideo.src,
+      poster: filmato.poster || heroVideo.poster,
+      adatta: heroVideo.adatta,
+      senzaVelo: serviceType === 'stay_rental',
+    }
     : null;
 
   // Quali tour (catalog item) hanno almeno una partenza programmata futura:
@@ -124,7 +131,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     return (
       <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
         {apertura && (
-          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)} compatta>
+          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)} senzaVelo={apertura.senzaVelo} compatta>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
               <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             </div>
@@ -155,7 +162,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   return (
     <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
       {apertura && (
-        <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)}>
+        <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} senzaVelo={apertura.senzaVelo} ariaLabel={getTranslated(title)}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
             <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>

@@ -244,8 +244,12 @@ body {
 }
 
 .marmo {
+  /* 10/09/2026 — il velo torna fitto. Alleggerito per far vedere le venature,
+     la lastra si mangiava la pagina: venature bianche larghe quanto una
+     colonna, il titolo sopra che non si leggeva. Il marmo e' un fondo, deve
+     restare sotto il testo: si intuisce, non si guarda. */
   background-image:
-    linear-gradient(rgba(6, 6, 7, 0.68), rgba(6, 6, 7, 0.76)),
+    linear-gradient(rgba(6, 6, 7, 0.88), rgba(6, 6, 7, 0.92)),
     url('/marmo-oro.jpg');
   background-size: cover;
   background-position: center;

@@ -20,8 +20,12 @@ interface VetrinaRecensioniProps {
   sottotitolo: string;
   /** Dove porta il bottone: la scheda Google dell'attivita'. */
   googleReviewsUrl: string;
+  /** La scena dietro la sezione: sta a destra e si spegne verso sinistra,
+   *  dove va il testo. Vuota = solo il fondo della pagina. */
+  immagine?: string;
   /** Etichette, cosi' la sezione parla la lingua della pagina. */
   testi: {
+    occhiello: string;
     esperienze: string;
     verificateSuGoogle: (n: number) => string;
     leggiTutte: string;
@@ -86,7 +90,7 @@ function dataEstesa(iso: string, lingua: string): string {
 }
 
 const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> = ({
-  reviews, ratingSummary, titolo, sottotitolo, googleReviewsUrl, testi, lingua = 'it',
+  reviews, ratingSummary, titolo, sottotitolo, googleReviewsUrl, immagine, testi, lingua = 'it',
 }) => {
   const pista = useRef<HTMLDivElement>(null);
   const [pagina, setPagina] = useState(0);
@@ -117,9 +121,31 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
   const conteggio = ratingSummary.reviewCount;
 
   return (
-    <div className="w-full">
+    <div className="relative isolate w-full overflow-hidden px-6 py-16 sm:px-10 sm:py-20 -mx-6 sm:-mx-10">
+      {/* La scena sta DIETRO tutta la sezione, appoggiata a destra, e si
+          spegne verso sinistra dove corre il testo. I bordi si dissolvono
+          (`foto-sfumata`) cosi' il marmo del fondo pagina continua sopra e
+          sotto invece di essere tagliato da due righe nette. */}
+      {immagine && (
+        <>
+          <img
+            src={immagine}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="foto-sfumata pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-[75%_35%]"
+          />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/88 to-[#08090A]/25" />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-[#08090A] via-transparent to-[#08090A]/60" />
+        </>
+      )}
+
       <div className="max-w-3xl">
-        <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] tracking-[-0.015em]">
+        <p className="flex items-center gap-5 text-[11px] uppercase tracking-[0.3em] text-[#C9BEA8]">
+          {testi.occhiello}
+          <span aria-hidden="true" className="h-px w-24 bg-[#C9BEA8]/40" />
+        </p>
+        <h2 className="mt-8 font-serif text-4xl md:text-6xl leading-[1.05] tracking-[-0.015em]">
           {/* Il numero e' quello vero di Google. Se non e' ancora arrivato si
               scrive solo la parola: meglio un titolo piu' corto per un
               istante che una cifra inventata. */}
@@ -165,7 +191,7 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
           {reviews.map((r, i) => (
             <article
               key={`${r.author}-${i}`}
-              className="snap-start shrink-0 w-[85%] sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] border border-white/10 bg-black/55 p-6 flex flex-col"
+              className="snap-start shrink-0 w-[85%] sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm p-6 flex flex-col"
             >
               <header className="flex items-center gap-3">
                 <span className="h-11 w-11 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center text-lg font-semibold">

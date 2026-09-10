@@ -295,7 +295,7 @@ const fallbackReviews = [
   }
 ];
 
-export default function ReviewsSection({ titolo, sottotitolo }: { titolo: string; sottotitolo: string }) {
+export default function ReviewsSection({ titolo, sottotitolo, immagine }: { titolo: string; sottotitolo: string; immagine?: string }) {
   const { lang } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>(fallbackReviews);
   // Il conteggio NON e' scritto qui: arriva da Google (Places, campo
@@ -377,8 +377,10 @@ export default function ReviewsSection({ titolo, sottotitolo }: { titolo: string
         titolo={titolo}
         sottotitolo={sottotitolo}
         googleReviewsUrl="https://share.google/o5c8DO8nmk3XMn0hF"
+        immagine={immagine}
         lingua={lang}
         testi={{
+          occhiello: it ? 'Le nostre esperienze' : 'Our experiences',
           esperienze: it ? 'esperienze.' : 'experiences.',
           verificateSuGoogle: (n) => n > 0
             ? (it ? `${n} recensioni verificate su Google` : `${n} verified reviews on Google`)

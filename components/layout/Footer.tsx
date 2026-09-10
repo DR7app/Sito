@@ -97,26 +97,15 @@ const Footer: React.FC = () => {
             numero delle esperienze e al voto Google. Restano gli stessi due
             campi del gestionale. */}
         <div className="mb-16 pb-16 border-b border-white/[0.07]">
+          {/* La fotografia non sta SOTTO le recensioni: sta DIETRO, appoggiata
+              a destra, e si spegne verso sinistra dove corre il testo. Si
+              cambia (o si toglie, lasciando il campo vuoto) da
+              Sito > Fondo pagina. */}
           <ReviewsSection
             titolo={bilingual(copy, 'reviews_title', lang)}
             sottotitolo={lang === 'it' ? copy.reviews_text_it : copy.reviews_text_en}
+            immagine={copy.reviews_image}
           />
-
-          {/* La scena sotto le recensioni. Immagine sola, senza testo sopra:
-              chiude il racconto delle esperienze prima dei dati aziendali.
-              Si cambia (o si toglie, lasciando il campo vuoto) da
-              Sito > Fondo pagina. */}
-          {copy.reviews_image && (
-            <div className="mt-14 overflow-hidden">
-              <img
-                src={copy.reviews_image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="foto-sfumata w-full aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9] object-cover object-[center_35%]"
-              />
-            </div>
-          )}
         </div>
 
         {/* Chiusura della pagina, impaginata come il riferimento:

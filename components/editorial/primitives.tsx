@@ -20,18 +20,25 @@ export const Shell: React.FC<{
 
 /**
  * Sezione: superficie + ritmo verticale.
- * Le superfici sono tre (`dark`, `graphite`, `light`) e cambiano in blocco
- * testo, testo secondario e filetti — non si ritoccano i colori uno a uno.
+ * Le superfici cambiano in blocco testo, testo secondario e filetti — non si
+ * ritoccano i colori uno a uno.
+ *
+ * `marmo` e' il nero carbone con la lastra sotto velo: da quando il marmo non
+ * e' piu' il fondo fisso di tutte le pagine, e' cosi' che una sezione lo
+ * chiede (vedi `.marmo` in styles/index.css).
  */
 export const Section: React.FC<{
   children: React.ReactNode;
-  surface?: 'dark' | 'graphite' | 'light';
+  surface?: 'dark' | 'graphite' | 'light' | 'marmo';
   rhythm?: 'sm' | 'md' | 'lg' | 'xl' | 'none';
   id?: string;
   className?: string;
 }> = ({ children, surface = 'dark', rhythm = 'md', id, className = '' }) => {
   const surfaceClass =
-    surface === 'light' ? 'surface-light' : surface === 'graphite' ? 'surface-graphite' : 'surface-dark';
+    surface === 'light' ? 'surface-light'
+      : surface === 'graphite' ? 'surface-graphite'
+        : surface === 'marmo' ? 'surface-graphite marmo'
+          : 'surface-dark';
   const rhythmClass =
     rhythm === 'none' ? '' : rhythm === 'sm' ? 'rhythm-sm' : rhythm === 'lg' ? 'rhythm-lg' : rhythm === 'xl' ? 'rhythm-xl' : 'rhythm';
   return (

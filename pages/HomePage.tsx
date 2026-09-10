@@ -180,7 +180,7 @@ const HomePage: React.FC = () => {
           `alt` vuoto perche' non porta informazione che il titolo e
           l'introduzione qui accanto non diano gia'. */}
       {copy.collection_image && (
-        <Section surface="graphite" rhythm="none" id="collezione">
+        <Section surface="marmo" rhythm="none" id="collezione">
           <Shell className="pt-[var(--sp-2xl)] pb-[var(--sp-xl)]">
             <Reveal><Eyebrow>{t(copy.collection_eyebrow_it, copy.collection_eyebrow_en)}</Eyebrow></Reveal>
             <Reveal variant="mask" delay={100} className="mt-8 overflow-hidden">

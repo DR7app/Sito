@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import MediaVideo from '../editorial/MediaVideo';
 
 interface SfondoVideoProps {
@@ -37,7 +37,17 @@ interface SfondoVideoProps {
  * la pagina che lo usa NON deve dipingersi di nero: `bg-black` sul
  * contenitore radice richiuderebbe il filmato.
  */
-const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children, adatta = 'riempi', compatta = false, senzaVelo = false }) => (
+const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children, adatta = 'riempi', compatta = false, senzaVelo = false }) => {
+  // 10/09/2026 — segna la pagina come "col filmato dietro". Serve al fondo
+  // pagina: solo qui il marmo deve sfumare in cima, perche' altrimenti
+  // taglia il filmato con una riga netta. Sulle pagine senza filmato (la
+  // home per prima) il marmo resta pieno: e' un fondo, non un difetto.
+  useEffect(() => {
+    document.documentElement.dataset.filmatoSfondo = '1';
+    return () => { delete document.documentElement.dataset.filmatoSfondo; };
+  }, []);
+
+  return (
   <>
     <div className="pointer-events-none fixed inset-0 -z-10">
       <MediaVideo
@@ -59,6 +69,7 @@ const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, child
       <div className={compatta ? 'w-full pt-28 pb-8' : 'w-full pb-16 pt-40 md:pb-24'}>{children}</div>
     </section>
   </>
-);
+  );
+};
 
 export default SfondoVideo;

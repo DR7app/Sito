@@ -75,13 +75,13 @@ const Footer: React.FC = () => {
 
   if (!copy) {
     // Render a quiet shell while config loads. Avoids a layout flash.
-    return <footer className="marmo-fondo border-t border-white/10" />;
+    return <footer className="marmo-fondo" />;
   }
 
   // 10/09/2026 — il fondo pagina e' un momento istituzionale: marmo sotto
   // velo, non nero piatto. Vedi `.marmo-fondo` in styles/index.css.
   return (
-    <footer className="marmo-fondo border-t border-white/10 text-gray-500">
+    <footer className="marmo-fondo text-gray-500">
       <div className="container mx-auto px-6 py-20 md:py-28">
         {/* Reviews Section */}
         <div className="mb-16 pb-16 border-b border-white/[0.07]">

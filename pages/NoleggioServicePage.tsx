@@ -12,6 +12,7 @@ import { useNoleggioCatalog, type NoleggioServiceType, type NoleggioCatalogItem 
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import TourBookingModal from '../components/ui/TourBookingModal';
+import HeroVideo from '../components/ui/HeroVideo';
 import { useTranslation } from '../hooks/useTranslation';
 
 const WHATSAPP_NUMBER = '393457905205';
@@ -23,13 +24,15 @@ interface NoleggioServicePageProps {
   title: Bilingual;    // "Noleggio Mare" / "Sea Rentals"
   subtitle: Bilingual; // tagline
   asset: Bilingual;    // "la barca" / "the boat"
+  /** Filmato di apertura, se la sezione ne ha uno (file in /public). */
+  heroVideo?: { src: string; poster?: string };
 }
 
 function eur(cents: number): string {
   return (cents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 }
 
-export default function NoleggioServicePage({ serviceType, title, subtitle, asset }: NoleggioServicePageProps) {
+export default function NoleggioServicePage({ serviceType, title, subtitle, asset, heroVideo }: NoleggioServicePageProps) {
   const { t, getTranslated } = useTranslation();
   const { items, loading } = useNoleggioCatalog(serviceType);
 
@@ -105,7 +108,8 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   if (items.length === 0) {
     return (
       <div className="bg-black text-white min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 pb-20">
+        {heroVideo && <div className="pt-24"><HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)} /></div>}
+        <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-4' : 'pt-28'}`}>
           <header className="text-center">
             <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
           </header>
@@ -127,7 +131,8 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
 
   return (
     <div className="bg-black text-white min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-20">
+      {heroVideo && <div className="pt-24"><HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)} /></div>}
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-4' : 'pt-28'}`}>
         <header className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
           <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>

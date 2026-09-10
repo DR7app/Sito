@@ -1026,6 +1026,9 @@ export interface HeaderCopy {
   close_menu_aria_it: string; close_menu_aria_en: string;
   // Top-bar
   explore_label_it: string; explore_label_en: string;     // "EXPLORE"
+  // Voce a destra della lente: porta all'area cliente (o all'accesso se
+  // il visitatore non ha ancora fatto login). Fa coppia con MENU a sinistra.
+  account_label_it?: string; account_label_en?: string;   // "ACCOUNT"
   credit_wallet_label_it: string; credit_wallet_label_en: string;
   // Drawer
   drawer_book_cta_it: string; drawer_book_cta_en: string;       // "Prenota Ora"
@@ -2291,6 +2294,7 @@ const DEFAULT_HEADER: HeaderCopy = {
   open_menu_aria_it: 'Apri menu', open_menu_aria_en: 'Open menu',
   close_menu_aria_it: 'Chiudi menu', close_menu_aria_en: 'Close menu',
   explore_label_it: 'MENU', explore_label_en: 'MENU',
+  account_label_it: 'ACCOUNT', account_label_en: 'ACCOUNT',
   credit_wallet_label_it: 'Credit Wallet', credit_wallet_label_en: 'Credit Wallet',
   drawer_book_cta_it: 'Prenota Ora', drawer_book_cta_en: 'Book Now',
   flotta_label_it: 'La Nostra Flotta', flotta_label_en: 'Our Fleet',

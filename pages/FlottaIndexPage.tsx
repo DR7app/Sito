@@ -13,6 +13,7 @@ import { useVehicles } from '../hooks/useVehicles';
 import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
+import HeroVideo from '../components/ui/HeroVideo';
 import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
 import { SARDEGNA_LOCATIONS, type SardegnaLocation } from '../data/sardegnaLocations';
 import type { RentalItem } from '../types';
@@ -136,8 +137,15 @@ const FlottaIndexPage: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="pt-40 pb-28 md:pt-48 md:pb-36 bg-black min-h-screen"
+      className="pt-24 pb-28 md:pt-28 md:pb-36 bg-black min-h-screen"
     >
+      {/* 10/09/2026 — Terra si apre con il filmato della collezione: parte
+          da solo, senza audio, in ciclo. Il titolo resta sotto, dove era. */}
+      <HeroVideo
+        src="/video-terra.mp4"
+        poster="/video-terra-poster.jpg"
+        ariaLabel={lang === 'it' ? 'La collezione DR7 Terra' : 'The DR7 Land collection'}
+      />
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 md:mb-24">
           <h1 className="t-display text-white">

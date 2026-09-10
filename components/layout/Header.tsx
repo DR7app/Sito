@@ -402,11 +402,12 @@ const Header: React.FC = () => {
             </div>
           )}
 
-          {/* A destra resta solo l'accesso per chi non l'ha ancora fatto, e il
-              logo se e' allineato di qua. Lingua, Credit Wallet, uscita e
-              adesso anche l'ingresso all'area cliente sono usciti dalla barra:
-              stanno nel menu e nel fondo pagina. Chi ha gia' fatto l'accesso
-              non vede piu' nulla qui. */}
+          {/* A destra: la lente e la voce ACCOUNT, cosi' la barra si legge
+              MENU — DR7 — ACCOUNT. ACCOUNT porta all'area cliente per chi ha
+              gia' fatto l'accesso e alla pagina di accesso per gli altri:
+              prende il posto del pulsante bianco "Accedi", che portava allo
+              stesso indirizzo e su telefono non compariva. Lingua, Credit
+              Wallet e uscita restano nel menu e nel fondo pagina. */}
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setCercaAperto(true)}
@@ -419,16 +420,15 @@ const Header: React.FC = () => {
                 <path strokeLinecap="round" d="M20 20l-3.6-3.6" />
               </svg>
             </button>
-            <AnimatePresence mode="wait">
-              {user ? null : (
-                <Link
-                  to="/signin"
-                  className="hidden md:inline-flex items-center justify-center border border-white bg-white px-6 py-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
-                >
-                  {t('Sign_In')}
-                </Link>
-              )}
-            </AnimatePresence>
+            {/* ACCOUNT: fa coppia con MENU a sinistra, la barra si legge
+                MENU — DR7 — ACCOUNT. Chi ha gia' l'accesso entra nell'area
+                cliente, gli altri passano dalla pagina di accesso. */}
+            <Link
+              to={user ? '/account' : '/signin'}
+              className="link-reveal text-white/90 hover:text-white font-medium text-[11px] uppercase tracking-[0.28em] transition-colors duration-500 ease-editorial"
+            >
+              {h('account_label_it', 'account_label_en') || t({ it: 'ACCOUNT', en: 'ACCOUNT' })}
+            </Link>
             {aspetto.logo_alignment === 'right' && (
               <SiteLogo aspetto={aspetto} alt={copy?.logo_alt || 'DR7 Logo'} />
             )}

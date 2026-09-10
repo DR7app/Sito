@@ -135,8 +135,11 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
   // che in uscita. Aprire e chiudere devono essere lo stesso gesto — stessa
   // durata, stesso passo fra una voce e l'altra, stessa curva, stesso ordine
   // (la cascata parte sempre dal BASSO: l'ultima voce si muove per prima).
-  const VOCE_DURATA = 0.92;
-  const VOCE_PASSO = 0.135;
+  // 10/09/2026 — il menu si apriva e si chiudeva in quasi due secondi: un
+  // gesto giusto una volta, insopportabile alla decima. Stessi movimenti,
+  // dimezzati: la cascata si vede ancora, ma il menu e' li' subito.
+  const VOCE_DURATA = 0.42;
+  const VOCE_PASSO = 0.05;
   const VOCE_CURVA: [number, number, number, number] = [0.19, 1, 0.22, 1];
   const voceRitardo = (i: number) => (MENU_ITEMS.length - 1 - i) * VOCE_PASSO;
   // Velo e pannello se ne vanno quando le voci hanno quasi finito: prima
@@ -195,8 +198,8 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             /* Il velo se ne va per ultimo: prima escono le voci, poi torna
                fuori la pagina. Al contrario si vedrebbero le voci uscire nel
                vuoto. */
-            exit={{ opacity: 0, transition: { duration: 0.62, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
-            transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.3, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="marmo absolute inset-0"
             onClick={onClose}
           >
@@ -218,8 +221,8 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
             animate={{ opacity: 1 }}
             /* Anche il pannello aspetta: se sfumasse subito, la cascata di
                uscita delle voci non si vedrebbe proprio. */
-            exit={{ opacity: 0, transition: { duration: 0.55, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.28, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex h-full flex-col overflow-hidden"
           >
             {/* Barra alta: chiudi a sinistra, marchio al centro, lingua a destra.

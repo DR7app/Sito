@@ -9,7 +9,7 @@ import { useCarWashServices } from '../hooks/useCarWashServices';
 import SeatPlanPicker from '../components/ui/SeatPlanPicker';
 import { seatLabel, isSeatPricedService } from '../utils/seatPlan';
 import RiquadroCatalogo from '../components/ui/RiquadroCatalogo';
-import HeroVideo from '../components/ui/HeroVideo';
+import SfondoVideo from '../components/ui/SfondoVideo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
@@ -535,7 +535,7 @@ const CarWashServicesPage: React.FC = () => {
   const activeCategory = mainTab === 'lavaggio' ? lavaggioCategory : meccanicaCategory;
 
   return (
-    <div className="min-h-screen bg-black pb-32">
+    <div className="min-h-screen pb-32">
       <SEOHead
         title={t({ it: 'Autolavaggio Premium Sardegna | Detailing & Cura di Lusso | DR7 Lavaggio & Meccanica', en: 'Premium Car Wash Sardinia | Detailing & Luxury Care | DR7 Car Wash & Mechanics' })}
         description={t({ it: 'Autolavaggio professionale, detailing premium, trattamento ceramico e protezione vernice a Cagliari, Sardegna. Pacchetti lavaggio urban e maxi. DR7 Lavaggio & Meccanica.', en: 'Professional car wash, premium detailing, ceramic coating and paint protection in Cagliari, Sardinia. Urban and maxi wash packages. DR7 Car Wash & Mechanics.' })}
@@ -548,7 +548,7 @@ const CarWashServicesPage: React.FC = () => {
           lavaggio: parte da solo, senza audio, in ciclo. Il poster e' il
           primo fotogramma, cosi' chi ha la rete lenta o l'autoplay negato
           vede comunque la scena. */}
-      <HeroVideo
+      <SfondoVideo
         src="/video-lavaggio.mp4"
         poster="/video-lavaggio-poster.jpg"
         ariaLabel={t({ it: "Il box di lavaggio DR7", en: "The DR7 wash bay" })}
@@ -557,7 +557,7 @@ const CarWashServicesPage: React.FC = () => {
           <p className="text-[11px] tracking-[0.3em] uppercase text-[#C8A24A]">{t({ it: "Servizi", en: "Services" })}</p>
           <h1 className="mt-2 text-3xl md:text-5xl font-bold text-white">{t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}</h1>
         </div>
-      </HeroVideo>
+      </SfondoVideo>
 
       {/* Mandatory Targa Entry — shown FIRST before any services */}
       <div className="container mx-auto px-4 mb-8">

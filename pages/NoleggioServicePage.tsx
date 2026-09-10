@@ -12,7 +12,7 @@ import { useNoleggioCatalog, type NoleggioServiceType, type NoleggioCatalogItem 
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import TourBookingModal from '../components/ui/TourBookingModal';
-import HeroVideo from '../components/ui/HeroVideo';
+import SfondoVideo from '../components/ui/SfondoVideo';
 import GalleriaCatalogo from '../components/ui/GalleriaCatalogo';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -108,13 +108,13 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   // senza schede a catalogo).
   if (items.length === 0) {
     return (
-      <div className="bg-black text-white min-h-screen">
+      <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
         {heroVideo && (
-          <HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
+          <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
               <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             </div>
-          </HeroVideo>
+          </SfondoVideo>
         )}
         <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-10' : 'pt-28'}`}>
           {!heroVideo && (
@@ -139,14 +139,14 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   }
 
   return (
-    <div className="bg-black text-white min-h-screen">
+    <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
       {heroVideo && (
-        <HeroVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
+        <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
             <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
           </div>
-        </HeroVideo>
+        </SfondoVideo>
       )}
       <div className={`max-w-6xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-12' : 'pt-28'}`}>
         {!heroVideo && (

@@ -1,0 +1,49 @@
+import React from 'react';
+import MediaVideo from '../editorial/MediaVideo';
+
+interface SfondoVideoProps {
+  /** File in /public, es. "/video-aria.mp4". */
+  src: string;
+  /** Fotogramma mostrato prima che il filmato parta (e se non parte). */
+  poster?: string;
+  /** Descrizione della scena per i lettori di schermo. */
+  ariaLabel?: string;
+  /** Cio' che sta sulla prima schermata: occhiello, titolo, sottotitolo, ricerca. */
+  children?: React.ReactNode;
+}
+
+/**
+ * Il filmato come SFONDO DELLA PAGINA (Terra, Aria, Lavaggio & Meccanica).
+ *
+ * 10/09/2026 — prima era una fascia alta mezzo schermo, con la pagina nera
+ * che ripartiva subito sotto: sembrava un riquadro appiccicato in cima. Ora
+ * il filmato sta fisso dietro a TUTTA la pagina e il contenuto ci scorre
+ * sopra; un velo nero che si infittisce verso il basso tiene leggibile ogni
+ * testo senza spegnere la scena.
+ *
+ * Sta dietro al contenuto (`-z-10`) ma sopra il fondo del documento, quindi
+ * la pagina che lo usa NON deve dipingersi di nero: `bg-black` sul
+ * contenitore radice richiuderebbe il filmato.
+ */
+const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children }) => (
+  <>
+    <div className="pointer-events-none fixed inset-0 -z-10">
+      <MediaVideo
+        src={src}
+        poster={poster}
+        loading="eager"
+        className="absolute inset-0 h-full w-full"
+        ariaLabel={ariaLabel}
+      />
+      {/* Il velo: leggero in alto, dove sta la scena, fitto in basso, dove
+          arriva il contenuto. Scorrendo, il filmato resta una materia che si
+          muove dietro al testo invece di un video da guardare. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/70 to-black/90" />
+    </div>
+    <section className="relative flex min-h-[88vh] items-end">
+      <div className="w-full pb-16 pt-40 md:pb-24">{children}</div>
+    </section>
+  </>
+);
+
+export default SfondoVideo;

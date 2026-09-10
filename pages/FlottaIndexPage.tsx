@@ -13,7 +13,7 @@ import { useVehicles } from '../hooks/useVehicles';
 import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
-import HeroVideo from '../components/ui/HeroVideo';
+import SfondoVideo from '../components/ui/SfondoVideo';
 import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
 import { SARDEGNA_LOCATIONS, type SardegnaLocation } from '../data/sardegnaLocations';
 import type { RentalItem } from '../types';
@@ -137,13 +137,13 @@ const FlottaIndexPage: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="pb-28 md:pb-36 bg-black min-h-screen"
+      className="pb-28 md:pb-36 min-h-screen"
     >
       {/* 10/09/2026 — Terra si apre col filmato della collezione DIETRO al
           titolo: parte da solo, senza audio, in ciclo, e sfuma nel nero
           della pagina. Titolo, filetto, frase e ricerca del luogo stanno
           dove erano, sopra la scena. */}
-      <HeroVideo
+      <SfondoVideo
         src="/video-terra.mp4"
         poster="/video-terra-poster.jpg"
         ariaLabel={lang === 'it' ? 'La collezione DR7 Terra' : 'The DR7 Land collection'}
@@ -216,7 +216,7 @@ const FlottaIndexPage: React.FC = () => {
           </button>
         </div>
       </div>
-      </HeroVideo>
+      </SfondoVideo>
 
       <div className="container mx-auto px-6 pt-20 md:pt-28">
         <div ref={collezioneRef} className="scroll-mt-28">

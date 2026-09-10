@@ -13,6 +13,7 @@ import SfondoVideo from '../components/ui/SfondoVideo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
+import { useFilmato } from '../hooks/useFilmato';
 
 export interface WashService {
   id: string;
@@ -134,6 +135,8 @@ const MECCANICA_CATEGORIES = [
 
 const CarWashServicesPage: React.FC = () => {
   const { t, lang } = useTranslation();
+  // Il filmato dell'apertura arriva da Sito > Aspetto & Funzionalita'.
+  const filmato = useFilmato('lavaggio');
   const navigate = useNavigate();
   const contact = useContactInfo();
   const [copy, setCopy] = useState<CarWashCopy | null>(null);
@@ -549,8 +552,8 @@ const CarWashServicesPage: React.FC = () => {
           primo fotogramma, cosi' chi ha la rete lenta o l'autoplay negato
           vede comunque la scena. */}
       <SfondoVideo
-        src="/video-lavaggio.mp4"
-        poster="/video-lavaggio-poster.jpg"
+        src={filmato.src}
+        poster={filmato.poster}
         ariaLabel={t({ it: "Il box di lavaggio DR7", en: "The DR7 wash bay" })}
       >
         <div className="container mx-auto px-4">

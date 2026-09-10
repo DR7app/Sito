@@ -14,6 +14,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useBooking } from '../hooks/useBooking';
 import RentalCard from '../components/ui/RentalCard';
 import SfondoVideo from '../components/ui/SfondoVideo';
+import { useFilmato } from '../hooks/useFilmato';
 import { CalendarioDisponibilitaPortale } from '../components/ui/CalendarioDisponibilita';
 import { SARDEGNA_LOCATIONS, type SardegnaLocation } from '../data/sardegnaLocations';
 import type { RentalItem } from '../types';
@@ -122,6 +123,9 @@ const FlottaIndexPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Il filmato dell'apertura arriva da Sito > Aspetto & Funzionalita'.
+  const filmato = useFilmato('terra');
+
   const apriCalendario = (item: RentalItem, catId: string) => {
     // I veicoli con prenotazione disabilitata restano in vetrina ma non
     // aprono il calendario: non c'e' niente da prenotare.
@@ -143,8 +147,8 @@ const FlottaIndexPage: React.FC = () => {
           della pagina. Titolo, filetto, frase e ricerca del luogo stanno
           dove erano, sopra la scena. */}
       <SfondoVideo
-        src="/video-terra.mp4"
-        poster="/video-terra-poster.jpg"
+        src={filmato.src}
+        poster={filmato.poster}
         ariaLabel={lang === 'it' ? 'La collezione DR7 Terra' : 'The DR7 Land collection'}
       >
       <div className="container mx-auto px-6">

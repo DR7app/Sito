@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import TourBookingModal from '../components/ui/TourBookingModal';
 import SfondoVideo from '../components/ui/SfondoVideo';
+import { useFilmato, type ChiaveFilmato } from '../hooks/useFilmato';
 import GalleriaCatalogo from '../components/ui/GalleriaCatalogo';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -36,6 +37,19 @@ function eur(cents: number): string {
 export default function NoleggioServicePage({ serviceType, title, subtitle, asset, heroVideo }: NoleggioServicePageProps) {
   const { t, getTranslated } = useTranslation();
   const { items, loading } = useNoleggioCatalog(serviceType);
+
+  // 10/09/2026 — il filmato dell'apertura si sceglie da Sito > Aspetto &
+  // Funzionalita'. `heroVideo` resta la scelta di IMPAGINAZIONE (questa
+  // sezione si apre con un filmato, e come lo si adatta allo schermo);
+  // l'indirizzo del file lo decide il gestionale.
+  const chiaveFilmato: ChiaveFilmato =
+    serviceType === 'boat_rental' ? 'mare'
+      : serviceType === 'heli_rental' ? 'aria'
+        : 'soggiorni';
+  const filmato = useFilmato(chiaveFilmato);
+  const apertura = heroVideo
+    ? { src: filmato.src || heroVideo.src, poster: filmato.poster || heroVideo.poster, adatta: heroVideo.adatta }
+    : null;
 
   // Quali tour (catalog item) hanno almeno una partenza programmata futura:
   // per quelli mostriamo "Prenota il tour" (data->orario->posti->pagamento),
@@ -109,8 +123,8 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   if (items.length === 0) {
     return (
       <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
-        {heroVideo && (
-          <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} adatta={heroVideo.adatta} ariaLabel={getTranslated(title)}>
+        {apertura && (
+          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)}>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
               <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             </div>
@@ -140,8 +154,8 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
 
   return (
     <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
-      {heroVideo && (
-        <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} adatta={heroVideo.adatta} ariaLabel={getTranslated(title)}>
+      {apertura && (
+        <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
             <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>

@@ -5,36 +5,52 @@ import { fetchGoogleReviews } from '../services/googleReviews';
 import { getFranchisingCopy, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
 import { useFilmato } from '../hooks/useFilmato';
 
+/**
+ * Le icone della pagina Business.
+ *
+ * 10/09/2026 — erano quadrati bianchi pieni e simboli spessi dentro a scatole
+ * col fondo sfumato: pesavano piu' del testo che accompagnavano. Ora sono di
+ * filo sottile, color sabbia, senza scatola — le stesse della riga dei dati
+ * sotto le recensioni.
+ */
+const TRATTO = 'h-8 w-8 text-[#C9BEA8]';
+
 const ExpansionIcon: React.FC<{ icon: FranchisingExpansionIcon }> = ({ icon }) => {
-    if (icon === 'square') return <div className="w-8 h-8 bg-white rounded-sm" />;
-    if (icon === 'diamond') return <div className="w-8 h-8 border-2 border-white transform rotate-45" />;
+    if (icon === 'square') return (
+        <svg className={TRATTO} fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" />
+            <path d="M9 9h6v6H9z" />
+        </svg>
+    );
+    if (icon === 'diamond') return (
+        <svg className={TRATTO} fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 4h12l3 5-9 11L3 9l3-5z" />
+            <path d="M3 9h18M9 4l3 16 3-16" />
+        </svg>
+    );
     return (
-        <div className="space-y-1">
-            <div className="w-8 h-1 bg-white" />
-            <div className="w-8 h-1 bg-white" />
-            <div className="w-8 h-1 bg-white" />
-        </div>
+        <svg className={TRATTO} fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
     );
 };
 
 const BenefitIcon: React.FC<{ icon: FranchisingBenefitIcon }> = ({ icon }) => {
-    if (icon === 'shield') {
-        return (
-            <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-        );
-    }
-    if (icon === 'star') {
-        return (
-            <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <polygon points="12,2 15,9 22,9.3 17,14 18.5,21 12,17.5 5.5,21 7,14 2,9.3 9,9" />
-            </svg>
-        );
-    }
+    if (icon === 'shield') return (
+        <svg className={TRATTO} fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l7 3v6c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6l7-3z" />
+            <path d="M9 12l2 2 4-4" />
+        </svg>
+    );
+    if (icon === 'star') return (
+        <svg className={TRATTO} fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3.5l2.6 5.6 6 .7-4.5 4.2 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7L12 3.5z" />
+        </svg>
+    );
     return (
-        <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className={TRATTO} fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M8.5 12.2l2.4 2.4 4.6-4.8" />
         </svg>
     );
 };
@@ -73,149 +89,133 @@ const FranchisingPage: React.FC = () => {
     const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 300 ? String(reviewCount) : '300');
 
     return (
-        <LegalPageLayout title={t('Franchising')}>
-            <div className="space-y-8">
-                {/* Hero banner — Global Franchising */}
-                {/* 06/09/2026 — la fotografia si vede intera.
-                    Era schiacciata in una fascia alta 160px (224 da schermo
-                    grande) con `object-cover`: di un'immagine 3:2 restava una
-                    striscia centrale. Via anche il velo scuro che la copriva
-                    tutta: qui sopra non c'e' scritto niente, serviva solo a
-                    spegnerla. */}
-                {/* 10/09/2026 — al posto della fotografia c'e' il filmato:
-                    parte da solo, senza audio, in ciclo. Il poster e' il primo
-                    fotogramma, per chi ha la rete lenta o l'autoplay negato.
-                    Si sceglie da Sito > Aspetto & Funzionalita'. */}
-                <div className="-mt-2 rounded-2xl overflow-hidden border border-gray-800">
-                    <video
-                        src={filmato.src}
-                        poster={filmato.poster}
-                        className="block aspect-[16/9] w-full object-cover"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="auto"
-                        aria-label={t('Franchising')}
-                    />
+        <LegalPageLayout title={t('Franchising')} filmato={filmato}>
+            {/* 10/09/2026 — la pagina parlava un'altra lingua dal resto del
+                sito: schede con angoli molto tondi, fondi sfumati, icone
+                bianche dentro a riquadri grigi, e in cima una barra bianca
+                spessa sotto al titolo. Ora segue la stessa impaginazione
+                delle altre sezioni: filetti sottili invece di cornici,
+                occhiello e titolo in serif, icone di filo color sabbia,
+                bottoni con il contorno. I testi sono gli stessi, tutti dal
+                gestionale. */}
+            <div className="space-y-[var(--sp-xl)]">
+                {/* La fotografia d'apertura, intera nel suo rapporto. */}
+                <div className="overflow-hidden border border-white/10">
+                    <img src="/franchising-hero.jpeg" alt="" loading="lazy" decoding="async" className="block h-auto w-full" />
                 </div>
-                {/* Hero Statement */}
-                <div className="text-center py-6 md:py-8 border-b border-gray-800">
-                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 px-4">
+
+                {/* Dichiarazione d'apertura */}
+                <section className="border-b border-white/[0.07] pb-[var(--sp-lg)] text-center">
+                    <h2 className="font-serif text-3xl md:text-5xl font-normal leading-tight tracking-[-0.015em] text-white">
                         {bilingual(copy, 'hero_h2', lang)}
                     </h2>
-                    <p className="text-lg md:text-xl text-gray-300 px-4 mb-2">
+                    <p className="mt-6 text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
                         {bilingual(copy, 'hero_p1', lang)}
                     </p>
-                    <p className="text-base md:text-lg text-gray-400 px-4 whitespace-pre-line">
+                    <p className="mt-3 text-base text-gray-400 max-w-3xl mx-auto whitespace-pre-line">
                         {bilingual(copy, 'hero_p2', lang)}
                     </p>
-                </div>
+                </section>
 
-                {/* Stats */}
-                <div className="text-center mb-4">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{bilingual(copy, 'stats_heading', lang)}</h3>
-                </div>
-                <div className="space-y-3 text-gray-300 px-4">
-                    {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
-                        <p key={i}>{resolveReviewCount(line)}</p>
-                    ))}
-                </div>
+                {/* I numeri */}
+                <section className="text-center">
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-[#C9BEA8]">
+                        {bilingual(copy, 'stats_heading', lang)}
+                    </p>
+                    <div className="mt-8 space-y-3 text-gray-300">
+                        {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
+                            <p key={i}>{resolveReviewCount(line)}</p>
+                        ))}
+                    </div>
+                    <p className="mt-8 text-lg text-gray-300">{bilingual(copy, 'stats_footer_main', lang)}</p>
+                    <p className="mt-2 text-sm text-gray-500">{bilingual(copy, 'stats_footer_sub', lang)}</p>
+                </section>
 
-                <div className="text-center py-4">
-                    <p className="text-base md:text-lg text-gray-300">{bilingual(copy, 'stats_footer_main', lang)}</p>
-                    <p className="text-sm text-gray-400 mt-2">{bilingual(copy, 'stats_footer_sub', lang)}</p>
-                </div>
-
-                {/* Expansion Plan */}
-                <div className="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-2xl p-6 md:p-8">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center">{bilingual(copy, 'expansion_heading', lang)}</h3>
-                    {/* Whitelist for Tailwind JIT: md:grid-cols-1 md:grid-cols-2 md:grid-cols-3 md:grid-cols-4 */}
-                    <div className={`grid grid-cols-1 ${
+                {/* Piano di espansione */}
+                <section className="border-t border-white/[0.07] pt-[var(--sp-lg)]">
+                    <h3 className="text-center font-serif text-2xl md:text-3xl font-normal tracking-[-0.015em] text-white">
+                        {bilingual(copy, 'expansion_heading', lang)}
+                    </h3>
+                    {/* Whitelist per Tailwind JIT: md:grid-cols-1 md:grid-cols-2 md:grid-cols-3 md:grid-cols-4 */}
+                    <div className={`mt-10 grid grid-cols-2 gap-8 ${
                         copy.expansion_locations.length >= 4 ? 'md:grid-cols-4'
                         : copy.expansion_locations.length === 3 ? 'md:grid-cols-3'
                         : copy.expansion_locations.length === 2 ? 'md:grid-cols-2'
                         : 'md:grid-cols-1'
-                    } gap-6`}>
+                    }`}>
                         {copy.expansion_locations.map((loc) => (
-                            <div key={loc.id} className="text-center">
-                                <div className="w-16 h-16 bg-gradient-to-br from-white/20 to-white/10 border border-white/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                                    <ExpansionIcon icon={loc.icon} />
-                                </div>
-                                <h4 className="text-lg font-semibold text-white mb-2">{bilingual(loc, 'name', lang)}</h4>
-                                <p className="text-gray-400 text-sm">{bilingual(loc, 'description', lang)}</p>
+                            <div key={loc.id} className="flex flex-col items-center text-center">
+                                <ExpansionIcon icon={loc.icon} />
+                                <h4 className="mt-5 text-[13px] uppercase tracking-[0.2em] text-white">{bilingual(loc, 'name', lang)}</h4>
+                                <p className="mt-2 text-[13px] text-gray-500">{bilingual(loc, 'description', lang)}</p>
                             </div>
                         ))}
                     </div>
-                </div>
+                </section>
 
-                {/* About DR7 */}
-                <div className="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-2xl p-6 md:p-8">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6">{bilingual(copy, 'about_heading', lang)}</h3>
-                    <div className="space-y-4 text-gray-300">
+                {/* Chi siamo */}
+                <section className="border-t border-white/[0.07] pt-[var(--sp-lg)]">
+                    <h3 className="font-serif text-2xl md:text-3xl font-normal tracking-[-0.015em] text-white">
+                        {bilingual(copy, 'about_heading', lang)}
+                    </h3>
+                    <div className="mt-6 space-y-4 text-gray-400 leading-relaxed">
                         {bilingualList(copy, 'about_paragraphs', lang).map((p, i) => (
                             <p key={i}>{p}</p>
                         ))}
                     </div>
-                </div>
+                </section>
 
-                {/* Benefits */}
-                <div className="grid grid-cols-1 gap-4 md:gap-6">
+                {/* Cosa si riceve */}
+                <section className="border-t border-white/[0.07] pt-[var(--sp-lg)] grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
                     {copy.benefits.map((benefit) => (
-                        <div key={benefit.id} className="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-2xl p-4 md:p-6">
-                            <div className="flex items-start space-x-3 md:space-x-4">
-                                <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-white/20 to-white/10 border border-white/30 rounded-lg flex items-center justify-center">
-                                    <BenefitIcon icon={benefit.icon} />
-                                </div>
-                                <div>
-                                    <h4 className="text-lg md:text-xl font-bold text-white mb-2">{bilingual(benefit, 'title', lang)}</h4>
-                                    <p className="text-sm md:text-base text-gray-400">{bilingual(benefit, 'description', lang)}</p>
-                                </div>
+                        <div key={benefit.id} className="flex items-start gap-5">
+                            <div className="shrink-0"><BenefitIcon icon={benefit.icon} /></div>
+                            <div>
+                                <h4 className="text-lg text-white">{bilingual(benefit, 'title', lang)}</h4>
+                                <p className="mt-2 text-[15px] text-gray-400 leading-relaxed">{bilingual(benefit, 'description', lang)}</p>
                             </div>
                         </div>
                     ))}
-                </div>
+                </section>
 
-                {/* Call to Action */}
-                <div className="bg-gradient-to-br from-white/10 to-white/5 border-2 border-white/30 rounded-2xl p-6 md:p-8 text-center">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
+                {/* Invito */}
+                <section className="border-t border-white/[0.07] pt-[var(--sp-lg)] text-center">
+                    <h3 className="font-serif text-2xl md:text-3xl font-normal tracking-[-0.015em] text-white">
                         {bilingual(copy, 'cta_heading', lang)}
                     </h3>
-                    <p className="text-sm md:text-base text-gray-300 mb-6">
+                    <p className="mt-5 text-gray-400 max-w-2xl mx-auto">
                         {bilingual(copy, 'cta_intro', lang)}
                     </p>
-                    <div className="inline-block bg-white/10 border border-white/30 rounded-xl p-4 md:p-6 mb-6">
-                        <p className="text-sm md:text-base text-white font-semibold mb-2">
-                            {bilingual(copy, 'cta_box_main', lang)}
-                        </p>
-                        <p className="text-gray-400 text-xs md:text-sm">
-                            {bilingual(copy, 'cta_box_sub', lang)}
-                        </p>
+                    <div className="mt-8 inline-block border border-white/15 px-8 py-6">
+                        <p className="text-white">{bilingual(copy, 'cta_box_main', lang)}</p>
+                        <p className="mt-2 text-[13px] text-gray-500">{bilingual(copy, 'cta_box_sub', lang)}</p>
                     </div>
-                </div>
+                </section>
 
-                {/* Contact Section */}
-                <div className="bg-gradient-to-br from-gray-900/80 to-black/80 border-2 border-gray-800 rounded-2xl p-6 md:p-8 text-center">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-4">{bilingual(copy, 'contact_heading', lang)}</h3>
-                    <p className="text-sm md:text-base text-gray-300 mb-6">
+                {/* Contatto */}
+                <section className="border-t border-white/[0.07] pt-[var(--sp-lg)] text-center">
+                    <h3 className="font-serif text-2xl md:text-3xl font-normal tracking-[-0.015em] text-white">
+                        {bilingual(copy, 'contact_heading', lang)}
+                    </h3>
+                    <p className="mt-5 text-gray-400 max-w-2xl mx-auto">
                         {bilingual(copy, 'contact_intro', lang)}
                     </p>
-                    <div className="flex justify-center">
+                    <div className="mt-8 flex justify-center">
                         <a
                             href={`mailto:${copy.contact_email}`}
-                            className="inline-block bg-white text-black px-6 md:px-8 py-4 font-bold text-base md:text-lg hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 break-all max-w-full"
+                            className="inline-flex max-w-full items-center justify-center break-all border border-[#C9BEA8]/60 px-8 py-4 text-[12px] uppercase tracking-[0.24em] text-[#E8DFCC] transition-colors duration-300 hover:bg-[#C9BEA8] hover:text-black"
                         >
                             {copy.contact_email}
                         </a>
                     </div>
-                </div>
+                </section>
 
-                {/* Footer Statement */}
-                <div className="text-center py-8 border-t border-gray-800">
-                    <p className="text-sm text-gray-300 mb-4 whitespace-pre-line">
+                {/* Chiusura */}
+                <section className="border-t border-white/[0.07] pt-[var(--sp-lg)] text-center">
+                    <p className="text-sm text-gray-500 whitespace-pre-line">
                         {bilingual(copy, 'footer_statement', lang)}
                     </p>
-                </div>
+                </section>
             </div>
         </LegalPageLayout>
     );

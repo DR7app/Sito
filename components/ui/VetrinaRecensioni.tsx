@@ -123,9 +123,9 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
   return (
     <div className="relative isolate w-full overflow-hidden px-6 py-16 sm:px-10 sm:py-20 -mx-6 sm:-mx-10">
       {/* La scena sta DIETRO tutta la sezione, appoggiata a destra, e si
-          spegne verso sinistra dove corre il testo. Si vede INTERA
-          (`object-contain`): e' una fotografia composta, tagliarla per
-          riempire il riquadro le toglieva il cielo e il mare. I bordi si
+          spegne verso sinistra dove corre il testo. Riempie il riquadro,
+          inquadrata in alto: quello che deve restare e' il cielo, la villa e
+          la coda dell'auto, non il pavimento. I bordi si
           dissolvono (`foto-sfumata`) cosi' il marmo del fondo pagina
           continua sopra e sotto invece di essere tagliato da due righe. */}
       {immagine && (
@@ -135,7 +135,7 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
             alt=""
             loading="lazy"
             decoding="async"
-            className="foto-sfumata pointer-events-none absolute inset-0 -z-10 h-full w-full object-contain object-right"
+            className="foto-sfumata pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-[62%_18%]"
           />
           <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/88 to-[#08090A]/25" />
           <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-[#08090A] via-transparent to-[#08090A]/60" />

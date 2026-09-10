@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ReviewsMarquee } from "../components/ui/ReviewsMarquee";
+import VetrinaRecensioni from "../components/ui/VetrinaRecensioni";
+import { useTranslation } from "../hooks/useTranslation";
 import { fetchGoogleReviews, Review, RatingSummary } from "../services/googleReviews";
 
 // Fallback reviews in case API fails
@@ -294,57 +295,93 @@ const fallbackReviews = [
   }
 ];
 
-export default function ReviewsSection() {
+export default function ReviewsSection({ titolo, sottotitolo }: { titolo: string; sottotitolo: string }) {
+  const { lang } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>(fallbackReviews);
   const [ratingSummary, setRatingSummary] = useState<RatingSummary>({
     ratingValue: 5.0,
     reviewCount: 300
   });
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadReviews = async () => {
       try {
         const data = await fetchGoogleReviews();
-        // Combine Google reviews with fallback reviews for a larger carousel
-        const combinedReviews = [...data.reviews, ...fallbackReviews];
-        setReviews(combinedReviews);
+        // Le recensioni di Google davanti, le nostre dietro: la vetrina ne
+        // mostra tante quante ne servono per scorrere.
+        setReviews([...data.reviews, ...fallbackReviews]);
         setRatingSummary(data.ratingSummary);
       } catch (error) {
         console.error("Failed to load Google reviews, using fallback:", error);
-        // Keep using fallback reviews
-      } finally {
-        setIsLoading(false);
+        // Restano le recensioni di scorta: la sezione non resta mai vuota.
       }
     };
 
     loadReviews();
   }, []);
 
+  const it = lang === 'it';
+
+  // Dati strutturati: il voto medio e le recensioni per i motori di ricerca.
+  // Stavano nella fascia scorrevole; la fascia non c'e' piu', questi restano.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "DR7",
+    "image": "https://dr7.app/logo.png",
+    "@id": "https://dr7.app",
+    "url": "https://dr7.app",
+    "telephone": "+39 345 790 5205",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Viale Marconi, 229",
+      "addressLocality": "Cagliari",
+      "addressRegion": "CA",
+      "postalCode": "09131",
+      "addressCountry": "IT",
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": ratingSummary.ratingValue,
+      "reviewCount": ratingSummary.reviewCount,
+    },
+    "review": reviews.slice(0, 30).map(review => ({
+      "@type": "Review",
+      "reviewRating": { "@type": "Rating", "ratingValue": review.rating },
+      "author": { "@type": "Person", "name": review.author },
+      "reviewBody": review.body.replace(/\n\n/g, ' '),
+      "datePublished": review.date,
+      "publisher": { "@type": "Organization", "name": "Google" },
+    })),
+  };
+
   return (
-    <ReviewsMarquee
-      reviews={reviews}
-      business={{
-        name: "DR7",
-        url: "https://dr7.app",
-        image: "https://dr7.app/logo.png",
-        telephone: "+39 345 790 5205",
-        address: {
-          streetAddress: "Viale Marconi, 229",
-          addressLocality: "Cagliari",
-          addressRegion: "CA",
-          postalCode: "09131",
-          addressCountry: "IT",
-        },
-      }}
-      ratingSummary={ratingSummary}
-      googleReviewsUrl="https://share.google/vSxG17ifqlzJNSrSz"
-      speedSeconds={15}
-      speedSecondsMobile={8}
-      gapPx={20}
-      gapPxMobile={12}
-      dark
-      isLoading={isLoading}
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <VetrinaRecensioni
+        reviews={reviews}
+        ratingSummary={ratingSummary}
+        titolo={titolo}
+        sottotitolo={sottotitolo}
+        googleReviewsUrl="https://share.google/o5c8DO8nmk3XMn0hF"
+        lingua={lang}
+        testi={{
+          esperienze: it ? 'esperienze.' : 'experiences.',
+          verificateSuGoogle: (n) => it ? `${n} recensioni verificate su Google` : `${n} verified reviews on Google`,
+          leggiTutte: it ? 'Leggi tutte le recensioni' : 'Read all reviews',
+          recensioneVerificata: it ? 'Recensione verificata' : 'Verified review',
+          statoPaesi: it ? 'Clienti' : 'Guests',
+          statoPaesiNota: it ? 'da oltre 20 paesi' : 'from over 20 countries',
+          statoRecensioni: (n) => it ? `${n} recensioni` : `${n} reviews`,
+          statoRecensioniNota: it ? 'verificate' : 'verified',
+          statoVoto: `${ratingSummary.ratingValue.toFixed(1)}/5`,
+          statoVotoNota: it ? 'valutazione media' : 'average rating',
+          statoStandard: it ? 'Un solo' : 'One',
+          statoStandardNota: it ? 'standard' : 'standard',
+          precedente: it ? 'Precedente' : 'Previous',
+          successiva: it ? 'Successiva' : 'Next',
+        }}
+      />
+    </>
   );
 }

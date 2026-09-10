@@ -92,13 +92,15 @@ const Footer: React.FC = () => {
           resta pieno. */}
       <div aria-hidden className="marmo-fondo marmo-sfuma-in-alto pointer-events-none absolute inset-0" />
       <div className="relative container mx-auto px-6 py-20 md:py-28">
-        {/* Reviews Section */}
+        {/* Le recensioni. 10/09/2026 — titolo e frase non stanno piu' qui
+            sopra centrati: entrano nella vetrina, che li impagina insieme al
+            numero delle esperienze e al voto Google. Restano gli stessi due
+            campi del gestionale. */}
         <div className="mb-16 pb-16 border-b border-white/[0.07]">
-          <div className="text-center mb-10">
-            <h3 className="font-serif text-3xl md:text-4xl font-normal text-white mb-4 tracking-[-0.012em]">{bilingual(copy, 'reviews_title', lang)}</h3>
-            <p className="text-sm text-gray-500 max-w-xl mx-auto">{lang === 'it' ? copy.reviews_text_it : copy.reviews_text_en}</p>
-          </div>
-          <ReviewsSection />
+          <ReviewsSection
+            titolo={bilingual(copy, 'reviews_title', lang)}
+            sottotitolo={lang === 'it' ? copy.reviews_text_it : copy.reviews_text_en}
+          />
         </div>
 
         {/* Chiusura della pagina, impaginata come il riferimento:

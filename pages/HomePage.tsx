@@ -182,10 +182,10 @@ const HomePage: React.FC = () => {
           puo' quindi mostrare a piena larghezza nel suo rapporto nativo.
           `alt` vuoto perche' non porta informazione che il titolo e
           l'introduzione qui accanto non diano gia'. */}
+      {/* 10/09/2026 — la Collezione sta sul NERO PIENO. Il marmo dietro al
+          titolo faceva da secondo soggetto e rubava la scena alla
+          fotografia, che e' l'unica cosa che deve guardarsi qui. */}
       {copy.collection_image && (
-        {/* 10/09/2026 — la Collezione sta sul NERO PIENO. Il marmo dietro al
-            titolo faceva da secondo soggetto e rubava la scena alla
-            fotografia, che e' l'unica cosa che deve guardarsi qui. */}
         <Section rhythm="none" id="collezione">
           <Shell className="pt-[var(--sp-2xl)] pb-[var(--sp-xl)]">
             <Reveal><Eyebrow>{t(copy.collection_eyebrow_it, copy.collection_eyebrow_en)}</Eyebrow></Reveal>

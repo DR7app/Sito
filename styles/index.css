@@ -174,6 +174,19 @@
   color: var(--fg);
 }
 
+/* Filmato di sfondo che NON si ingrandisce.
+   10/09/2026 — i filmati sono verticali (9:16). Riempendo uno schermo largo,
+   il soggetto viene ingrandito moltissimo: l'aereo di Aria arrivava addosso.
+   Con questa classe, da tablet in su il filmato si vede INTERO al centro e il
+   nero intorno lo incornicia; sul telefono, dove il formato coincide, resta
+   pieno. */
+@media (min-width: 768px) {
+  .sfondo-intero > video,
+  .sfondo-intero > img {
+    object-fit: contain;
+  }
+}
+
 /* Fondo pieno dichiarato: resta perche' il markup la usa dietro ai filmati,
    dove non deve passare nulla. */
 .superficie-piena {

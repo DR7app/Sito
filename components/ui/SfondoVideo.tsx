@@ -10,6 +10,9 @@ interface SfondoVideoProps {
   ariaLabel?: string;
   /** Cio' che sta sulla prima schermata: occhiello, titolo, sottotitolo, ricerca. */
   children?: React.ReactNode;
+  /** 'intero': da tablet in su il filmato si vede tutto, senza ingrandire il
+   *  soggetto. Default: riempie lo schermo. */
+  adatta?: 'riempi' | 'intero';
 }
 
 /**
@@ -25,14 +28,14 @@ interface SfondoVideoProps {
  * la pagina che lo usa NON deve dipingersi di nero: `bg-black` sul
  * contenitore radice richiuderebbe il filmato.
  */
-const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children }) => (
+const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children, adatta = 'riempi' }) => (
   <>
     <div className="pointer-events-none fixed inset-0 -z-10">
       <MediaVideo
         src={src}
         poster={poster}
         loading="eager"
-        className="absolute inset-0 h-full w-full"
+        className={`absolute inset-0 h-full w-full ${adatta === 'intero' ? 'sfondo-intero' : ''}`}
         ariaLabel={ariaLabel}
       />
       {/* Il velo: leggero in alto, dove sta la scena, fitto in basso, dove

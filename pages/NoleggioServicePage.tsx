@@ -26,7 +26,7 @@ interface NoleggioServicePageProps {
   subtitle: Bilingual; // tagline
   asset: Bilingual;    // "la barca" / "the boat"
   /** Filmato di apertura, se la sezione ne ha uno (file in /public). */
-  heroVideo?: { src: string; poster?: string };
+  heroVideo?: { src: string; poster?: string; adatta?: 'riempi' | 'intero' };
 }
 
 function eur(cents: number): string {
@@ -110,7 +110,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     return (
       <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
         {heroVideo && (
-          <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
+          <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} adatta={heroVideo.adatta} ariaLabel={getTranslated(title)}>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
               <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             </div>
@@ -141,7 +141,7 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   return (
     <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
       {heroVideo && (
-        <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} ariaLabel={getTranslated(title)}>
+        <SfondoVideo src={heroVideo.src} poster={heroVideo.poster} adatta={heroVideo.adatta} ariaLabel={getTranslated(title)}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
             <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>

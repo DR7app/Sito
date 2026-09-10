@@ -75,6 +75,12 @@ const FranchisingPage: React.FC = () => {
         return () => { cancelled = true; };
     }, []);
 
+    // Il filmato dietro alla pagina. Sta PRIMA dell'uscita anticipata qui
+    // sotto: un hook chiamato solo quando i testi sono arrivati cambia il
+    // numero di hook fra un render e l'altro, e React si ferma (errore 310,
+    // pagina bianca). Costava la pagina Business intera.
+    const filmato = useFilmato('business');
+
     if (!copy) {
         return (
             <LegalPageLayout title={t('Franchising')}>
@@ -82,9 +88,6 @@ const FranchisingPage: React.FC = () => {
             </LegalPageLayout>
         );
     }
-
-    // Il filmato in cima alla pagina Business.
-    const filmato = useFilmato('business');
 
     const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 300 ? String(reviewCount) : '300');
 

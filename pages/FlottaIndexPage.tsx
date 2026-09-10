@@ -242,7 +242,7 @@ const FlottaIndexPage: React.FC = () => {
               // L'id serve alle CTA della homepage, che puntano al gruppo
               // della categoria del veicolo in evidenza (/flotta#exotic).
               <section key={group.id} id={group.id} data-collezione className="scroll-mt-32">
-                <h2 className="font-serif text-3xl md:text-5xl font-normal tracking-[-0.015em] text-white mb-10 border-b border-white/10 pb-6">
+                <h2 className="font-serif text-3xl md:text-5xl font-normal tracking-[-0.015em] text-white mb-10 pb-6">
                   {group.label}
                 </h2>
 

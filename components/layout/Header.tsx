@@ -373,14 +373,11 @@ const Header: React.FC = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        /* 10/09/2026 — in cima alla pagina la barra non ha piu' il filetto
-           sotto: senza fondo suo, quella riga chiara restava sospesa in
-           mezzo alla scena e sembrava un difetto di visualizzazione (si
-           vedeva su tutte le pagine). Il filetto torna quando la barra si
-           appoggia sul suo fondo scuro, cioe' appena si scorre. */
+        /* Il filetto sotto la barra c'e' sempre, anche in cima alla pagina:
+           e' quello che stacca il menu dalla scena. */
         className={`fixed top-0 left-0 right-0 z-40 border-b transition-all duration-500 ease-editorial ${scrolled
             ? 'bg-black/70 backdrop-blur-xl border-white/15'
-            : 'bg-transparent border-transparent'
+            : 'bg-transparent border-white/15'
           } ${isMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
         aria-hidden={isMenuOpen}
       >

@@ -124,19 +124,19 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     return (
       <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
         {apertura && (
-          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)}>
+          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)} compatta>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
               <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             </div>
           </SfondoVideo>
         )}
-        <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-10' : 'pt-28'}`}>
+        <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-2' : 'pt-28'}`}>
           {!heroVideo && (
             <header className="text-center">
               <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
             </header>
           )}
-          <div className="mt-12 border border-gray-800 rounded-lg bg-black/70 px-6 py-14 text-center">
+          <div className="mt-6 border border-gray-800 rounded-lg bg-black/70 px-6 py-14 text-center">
             <div className="inline-block px-4 py-1 border border-dr7-gold/60 text-dr7-gold text-xs tracking-[0.25em] uppercase">
               {t({ it: "Prossimamente", en: "Coming soon" })}
             </div>

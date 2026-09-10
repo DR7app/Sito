@@ -13,6 +13,11 @@ interface SfondoVideoProps {
   /** 'intero': da tablet in su il filmato si vede tutto, senza ingrandire il
    *  soggetto. Default: riempie lo schermo. */
   adatta?: 'riempi' | 'intero';
+  /** Apertura corta: il titolo sta in mezzo a mezzo schermo invece che in
+   *  fondo a tutto lo schermo. Serve alle sezioni che sotto hanno poco da
+   *  mostrare (oggi "Prossimamente"), dove l'apertura intera spingeva testo
+   *  e avviso sotto la piega. */
+  compatta?: boolean;
 }
 
 /**
@@ -28,7 +33,7 @@ interface SfondoVideoProps {
  * la pagina che lo usa NON deve dipingersi di nero: `bg-black` sul
  * contenitore radice richiuderebbe il filmato.
  */
-const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children, adatta = 'riempi' }) => (
+const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, children, adatta = 'riempi', compatta = false }) => (
   <>
     <div className="pointer-events-none fixed inset-0 -z-10">
       <MediaVideo
@@ -43,8 +48,8 @@ const SfondoVideo: React.FC<SfondoVideoProps> = ({ src, poster, ariaLabel, child
           muove dietro al testo invece di un video da guardare. */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/70 to-black/90" />
     </div>
-    <section className="relative flex min-h-[88vh] items-end">
-      <div className="w-full pb-16 pt-40 md:pb-24">{children}</div>
+    <section className={`relative flex ${compatta ? 'min-h-[54vh] items-center' : 'min-h-[88vh] items-end'}`}>
+      <div className={compatta ? 'w-full pt-28 pb-8' : 'w-full pb-16 pt-40 md:pb-24'}>{children}</div>
     </section>
   </>
 );

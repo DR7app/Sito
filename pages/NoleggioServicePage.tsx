@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import TourBookingModal from '../components/ui/TourBookingModal';
 import HeroVideo from '../components/ui/HeroVideo';
+import GalleriaCatalogo from '../components/ui/GalleriaCatalogo';
 import { useTranslation } from '../hooks/useTranslation';
 
 const WHATSAPP_NUMBER = '393457905205';
@@ -171,11 +172,9 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
             return (
               <div key={item.id} className="bg-black/70 border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col">
                 <div className="relative overflow-hidden">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="w-full aspect-[9/16] object-cover transition-transform duration-500 group-hover:scale-105" />
-                  ) : (
-                    <div className="w-full aspect-[9/16] bg-white/5 flex items-center justify-center text-gray-600 text-sm">DR7</div>
-                  )}
+                  {/* Foto E video caricati dal gestionale, nell'ordine scelto
+                      li'. Vedi components/ui/GalleriaCatalogo.tsx. */}
+                  <GalleriaCatalogo media={item.media || []} fallback={item.image_url} nome={item.name} />
                 </div>
                 <div className="px-6 pt-6 pb-4 flex flex-col flex-1">
                   <div className="flex items-start gap-3">

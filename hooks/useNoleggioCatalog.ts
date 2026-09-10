@@ -17,6 +17,12 @@ export interface TourDuration {
   best_value?: boolean;
 }
 
+/** Una voce della galleria: foto o filmato caricati dal gestionale. */
+export interface MediaCatalogo {
+  url: string;
+  tipo: 'image' | 'video';
+}
+
 export interface NoleggioCatalogItem {
   id: string;
   service_type: NoleggioServiceType;
@@ -27,6 +33,9 @@ export interface NoleggioCatalogItem {
   image_url: string | null;
   sort_order: number;
   tour_durations?: TourDuration[]; // opzioni durata (es. elicottero 20/40/60 min)
+  /** Galleria ordinata (colonna `media`): foto e video. La prima foto e'
+   *  anche `image_url`. Puo' mancare sulle schede vecchie. */
+  media?: MediaCatalogo[] | null;
 }
 
 interface UseNoleggioCatalogResult {
@@ -46,19 +55,31 @@ export function useNoleggioCatalog(serviceType?: NoleggioServiceType): UseNolegg
     (async () => {
       setLoading(true);
       try {
-        let q = supabase
-          .from('noleggio_catalog')
-          .select('id, service_type, name, description, price_per_day, capacity, image_url, sort_order, tour_durations')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-          .order('name', { ascending: true });
-        if (serviceType) q = q.eq('service_type', serviceType);
-        const { data, error } = await q;
+        // La galleria (`media`) esiste dalla migration del 10/09/2026. Se una
+        // base non l'avesse ancora, la richiesta con quella colonna fallisce:
+        // in quel caso si rilegge senza, altrimenti un catalogo intero
+        // sparirebbe dal sito per una colonna mancante.
+        const leggi = (conMedia: boolean) => {
+          const campi = 'id, service_type, name, description, price_per_day, capacity, image_url, sort_order, tour_durations'
+            + (conMedia ? ', media' : '');
+          let q = supabase
+            .from('noleggio_catalog')
+            .select(campi)
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true })
+            .order('name', { ascending: true });
+          if (serviceType) q = q.eq('service_type', serviceType);
+          return q;
+        };
+        let { data, error } = await leggi(true);
+        if (error && /media/i.test(error.message || '')) {
+          ({ data, error } = await leggi(false));
+        }
         if (cancelled) return;
         // Tabella assente / nessun accesso => trattiamo come catalogo vuoto:
         // niente pagina, niente link (comportamento voluto).
         if (error) { setItems([]); }
-        else setItems((data || []) as NoleggioCatalogItem[]);
+        else setItems((data || []) as unknown as NoleggioCatalogItem[]);
       } catch {
         if (!cancelled) setItems([]);
       } finally {

@@ -257,6 +257,32 @@ body {
    resta pieno: e' il fondo istituzionale della pagina, si deve vedere.
    L'attributo lo mette `SfondoVideo` quando e' in pagina. Sfuma SOLO lo
    sfondo: il testo del fondo pagina sta in un piano sopra e resta pieno. */
+/* Sotto un filmato la pagina non riparte di taglio: l'ultima fascia della
+   scena scende nel nero del fondo. E' lo stesso principio del marmo che
+   sfuma sulle pagine col filmato dietro (Terra), applicato ai filmati che
+   occupano una sezione sola: apertura della home, atto Accesso.
+   Va su un contenitore `relative` con `overflow-hidden`. */
+.sfuma-in-basso::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22vh;
+  min-height: 120px;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(to bottom, rgba(8, 9, 10, 0) 0%, rgba(8, 9, 10, 0.65) 55%, var(--c-obsidian) 100%);
+}
+
+/* Una fotografia a tutta larghezza dentro il fondo pagina: i bordi alto e
+   basso si dissolvono, cosi' la lastra di marmo continua sopra e sotto
+   invece di essere tagliata da due righe nette. */
+.foto-sfumata {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+
 :root[data-filmato-sfondo] .marmo-sfuma-in-alto {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 220px);

@@ -56,7 +56,7 @@ const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) =
 
   return (
     <section
-      className="relative flex h-screen min-h-[36rem] items-end overflow-hidden surface-dark superficie-piena"
+      className="relative flex h-screen min-h-[36rem] items-end overflow-hidden surface-dark superficie-piena sfuma-in-basso"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -297,7 +297,7 @@ const HomePage: React.FC = () => {
       </Section>
 
       {/* ═══ ATTO 06 — ACCESSO ══════════════════════════════════════════ */}
-      <section className="relative flex min-h-[85vh] items-center overflow-hidden surface-dark">
+      <section className="relative flex min-h-[85vh] items-center overflow-hidden surface-dark sfuma-in-basso">
         <div className="absolute inset-0">
           <MediaVideo
             src={copy.access_video_src}

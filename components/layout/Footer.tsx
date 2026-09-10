@@ -113,7 +113,7 @@ const Footer: React.FC = () => {
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="w-full aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9] object-cover object-[center_35%]"
+                className="foto-sfumata w-full aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9] object-cover object-[center_35%]"
               />
             </div>
           )}

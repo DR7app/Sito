@@ -230,6 +230,19 @@ body {
    Il velo scuro resta parte della superficie: la fotografia da sola e'
    troppo chiara e le venature d'oro si mangiano il testo.
    ========================================================================== */
+/* Il marmo del MENU: lastra nera e oro, piu' contrastata di quella del sito.
+   10/09/2026, scelta della direzione. Velo piu' leggero di `.marmo` perche'
+   qui sopra c'e' gia' il gradiente da sinistra che tiene il nero dove stanno
+   le voci: schiacciarlo due volte spegneva le venature d'oro. */
+.marmo-menu {
+  background-image:
+    linear-gradient(rgba(6, 6, 7, 0.5), rgba(6, 6, 7, 0.58)),
+    url('/marmo-menu.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .marmo {
   background-image:
     linear-gradient(rgba(6, 6, 7, 0.74), rgba(6, 6, 7, 0.82)),

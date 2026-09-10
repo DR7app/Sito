@@ -200,13 +200,14 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                vuoto. */
             exit={{ opacity: 0, transition: { duration: 0.3, delay: codaUscita, ease: [0.22, 1, 0.36, 1] } }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="marmo absolute inset-0"
+            className="marmo-menu absolute inset-0"
             onClick={onClose}
           >
             {/* 10/09/2026 — il menu e' uno dei momenti istituzionali della
-                carta colori: il velo non e' piu' nero piatto, e' il marmo di
-                casa. Sopra, un gradiente da sinistra tiene il nero dove
-                stanno le voci e lascia respirare la venatura a destra. */}
+                carta colori: il velo non e' nero piatto, e' la lastra nera e
+                oro (`.marmo-menu`, piu' contrastata di quella del sito).
+                Sopra, un gradiente da sinistra tiene il nero dove stanno le
+                voci e lascia respirare la venatura a destra. */}
             <span
               className="absolute inset-0"
               style={{

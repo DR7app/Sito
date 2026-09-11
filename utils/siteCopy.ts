@@ -326,6 +326,10 @@ export interface HomeCopy {
   collection_cta_to: string;
   /** Etichetta della CTA sotto ogni veicolo in evidenza. */
 
+  // ── Atto 02b — I numeri ──────────────────────────────────────────────────
+  metrics_eyebrow_it: string; metrics_eyebrow_en: string;
+  metrics: HomeMetric[];
+
   // ── Atto 04 — Esperienze ─────────────────────────────────────────────────
   experiences_eyebrow_it: string; experiences_eyebrow_en: string;
   experiences_title_it: string; experiences_title_en: string;
@@ -334,7 +338,6 @@ export interface HomeCopy {
   // ── Atto 05 — Marca ──────────────────────────────────────────────────────
   brand_lines_it: string[]; brand_lines_en: string[];
   brand_paragraphs: BilingualParagraph[];
-  metrics: HomeMetric[];
 
   // ── Atto 06 — Accesso ────────────────────────────────────────────────────
   access_title_it: string; access_title_en: string;
@@ -1980,10 +1983,13 @@ export async function getHomeCopy(): Promise<HomeCopy> {
     experiences_title_en: str(saved.experiences_title_en, D.experiences_title_en),
     experiences: arrAllowEmpty(saved.experiences, D.experiences),
 
+    metrics_eyebrow_it: str(saved.metrics_eyebrow_it, D.metrics_eyebrow_it),
+    metrics_eyebrow_en: str(saved.metrics_eyebrow_en, D.metrics_eyebrow_en),
+    metrics: arrAllowEmpty(saved.metrics, D.metrics),
+
     brand_lines_it: arr(saved.brand_lines_it, D.brand_lines_it),
     brand_lines_en: arr(saved.brand_lines_en, D.brand_lines_en),
     brand_paragraphs: arr(saved.brand_paragraphs, D.brand_paragraphs),
-    metrics: arrAllowEmpty(saved.metrics, D.metrics),
 
     access_title_it: str(saved.access_title_it, D.access_title_it),
     access_title_en: str(saved.access_title_en, D.access_title_en),
@@ -3950,6 +3956,24 @@ const DEFAULT_HOME: HomeCopy = {
   collection_cta_label_en: 'Explore the collection',
   collection_cta_to: '/flotta',
 
+  // ── Atto 02b — I numeri ────────────────────────────────────────────────
+  // I trenta mesi, detti in cifre. Sono gli stessi numeri della pagina
+  // Business: chi li cambia li cambia in due posti, perche' le due pagine
+  // hanno due schede diverse nel gestionale.
+  metrics_eyebrow_it: '30 mesi di crescita. Le fondamenta sono costruite.',
+  metrics_eyebrow_en: '30 months of growth. The foundations are built.',
+  metrics: [
+    { id: 'contratti',  value: '4.000+',  label_it: 'Contratti di noleggio firmati',    label_en: 'Signed rental contracts' },
+    { id: 'clienti',    value: '5.000+',  label_it: 'Clienti serviti nell\'ecosistema', label_en: 'Clients served in the ecosystem' },
+    { id: 'fatturato',  value: '€2,5M+',  label_it: 'Fatturato generato',               label_en: 'Revenue generated' },
+    { id: 'parco',      value: '€3M+',    label_it: 'Valore del parco auto',            label_en: 'Fleet value' },
+    { id: 'patrimonio', value: '€6M+',    label_it: 'Patrimonio netto',                 label_en: 'Net equity' },
+    { id: 'capitale',   value: '€1M',     label_it: 'Capitale sociale',                 label_en: 'Share capital' },
+    { id: 'recensioni', value: '317+',    label_it: 'Recensioni a 5 stelle',            label_en: '5-star reviews' },
+    { id: 'brand',      value: '€5M',     label_it: 'Valutazione del brand',            label_en: 'Brand valuation' },
+    { id: 'azienda',    value: '€15M',    label_it: 'Valutazione aziendale',            label_en: 'Company valuation' },
+  ],
+
   // ── Atto 04 — Esperienze ───────────────────────────────────────────────
   // Solo servizi realmente attivi sul sito, con le stesse destinazioni del menu.
   experiences_eyebrow_it: '02 \u2014 Esperienza',
@@ -3991,9 +4015,6 @@ const DEFAULT_HOME: HomeCopy = {
     { text_it: 'Dalla selezione alla consegna, ogni dettaglio segue un unico principio: offrire un servizio impeccabile, personale e riconoscibile. Perch\u00e9 il vero lusso non \u00e8 avere di pi\u00f9. \u00c8 non dover accettare compromessi.',
       text_en: 'From selection to delivery, every detail follows one principle: an impeccable, personal and recognisable service. Because true luxury is not having more. It is never having to compromise.' },
   ],
-  // Vuoto di proposito: un numero si pubblica solo se verificato nei dati.
-  metrics: [],
-
   // ── Atto 06 — Accesso ──────────────────────────────────────────────────
   // Il titolo va a capo dove ci sono gli \n: la pagina rispetta le
   // interruzioni scritte qui, cosi' la spezzatura la decide chi scrive il

@@ -72,6 +72,7 @@ type Props = {
   /** Lingua corrente: decide come si scrivono le migliaia e i decimali. */
   lang: string;
   className?: string;
+  style?: React.CSSProperties;
 };
 
 /**
@@ -89,7 +90,7 @@ type Props = {
  *
  * Se l'utente ha chiesto meno movimento, il numero c'e' e basta.
  */
-const CountUp: React.FC<Props> = ({ text, run, lang, className = '' }) => {
+const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style }) => {
   const match = text.match(PRIMO_NUMERO);
   const letto = match ? leggiNumero(match[0], lang) : null;
 
@@ -127,14 +128,14 @@ const CountUp: React.FC<Props> = ({ text, run, lang, className = '' }) => {
 
   // Prima della partenza e dopo l'arrivo si legge il testo cosi' com'e'.
   if (!match || !letto || valore === null) {
-    return <p className={className}>{text}</p>;
+    return <p className={className} style={style}>{text}</p>;
   }
 
   const scritto = scriviNumero(valore, letto, lang);
 
   const inizio = match.index ?? 0;
   return (
-    <p className={className}>
+    <p className={className} style={style}>
       {text.slice(0, inizio)}
       <span className="tabular-nums">{scritto}</span>
       {text.slice(inizio + match[0].length)}

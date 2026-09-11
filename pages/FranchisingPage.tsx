@@ -133,7 +133,8 @@ const FranchisingPage: React.FC = () => {
                     e' la superficie chiara del sito, quella che ribalta
                     anche i filetti; i colori del testo vanno comunque
                     riscritti a mano perche' qui erano fissati uno per uno. */}
-                <section className="surface-light px-6 py-[var(--sp-lg)] text-center md:px-12">
+                <section className="a-tutta-larghezza surface-light py-[var(--sp-lg)]">
+                  <div className="mx-auto max-w-5xl px-6 text-center">
                     <p className="whitespace-pre-line text-[11px] uppercase leading-[2] tracking-[0.28em] text-black/55">
                         {bilingual(copy, 'stats_heading', lang)}
                     </p>
@@ -144,6 +145,7 @@ const FranchisingPage: React.FC = () => {
                     </div>
                     <p className="mt-8 text-lg text-black">{bilingual(copy, 'stats_footer_main', lang)}</p>
                     <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-black/55">{bilingual(copy, 'stats_footer_sub', lang)}</p>
+                  </div>
                 </section>
 
                 {/* Piano di espansione */}

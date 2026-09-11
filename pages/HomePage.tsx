@@ -186,9 +186,15 @@ const HomePage: React.FC = () => {
           osservatore per tutta la griglia, cosi' partono insieme invece di
           accendersi uno per volta mentre si scorre.
           Compaiono solo se il gestionale ne pubblica: nessun numero di
-          riempimento. */}
+          riempimento.
+          11/09/2026 — la fascia e' CHIARA, come su Business: nero su avorio.
+          Erano cifre chiare su fondo nero in mezzo ad altre sezioni nere e
+          non si staccavano da niente; questi sono i dati di bilancio, e su
+          fondo bianco si leggono come su carta. `surface="light"` ribalta
+          testo, testo secondario e filetti in un colpo solo: nessun colore
+          scritto a mano qui dentro. */}
       {copy.metrics.length > 0 && (
-        <Section rhythm="lg">
+        <Section rhythm="lg" surface="light">
           <Shell>
             <div ref={numeriRef}>
               <Reveal><Eyebrow>{t(copy.metrics_eyebrow_it, copy.metrics_eyebrow_en)}</Eyebrow></Reveal>

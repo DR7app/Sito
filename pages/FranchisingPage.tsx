@@ -4,7 +4,7 @@ import { useInViewOnce } from '../hooks/useInViewOnce';
 import LegalPageLayout from '../components/layout/LegalPageLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchGoogleReviews } from '../services/googleReviews';
-import { getFranchisingCopy, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
+import { getFranchisingCopy, DEFAULT_FRANCHISING, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
 import { useFilmato } from '../hooks/useFilmato';
 
 /**
@@ -60,7 +60,12 @@ const BenefitIcon: React.FC<{ icon: FranchisingBenefitIcon }> = ({ icon }) => {
 const FranchisingPage: React.FC = () => {
     const { t, lang } = useTranslation();
     const [reviewCount, setReviewCount] = useState(300);
-    const [copy, setCopy] = useState<FranchisingCopy | null>(null);
+    // I testi partono da quelli di fabbrica e non aspettano il gestionale.
+    // Prima la pagina restava su "Caricamento" finche' non arrivava la riga
+    // di configurazione (275 kB per 6 kB di testi): i numeri comparivano
+    // dopo la rete, non dopo il disegno. Ora si vedono subito e la versione
+    // salvata prende il posto quando arriva -- come fa gia' il filmato.
+    const [copy, setCopy] = useState<FranchisingCopy>(DEFAULT_FRANCHISING);
 
     useEffect(() => {
         let cancelled = false;
@@ -77,24 +82,14 @@ const FranchisingPage: React.FC = () => {
         return () => { cancelled = true; };
     }, []);
 
-    // Il filmato dietro alla pagina. Sta PRIMA dell'uscita anticipata qui
-    // sotto: un hook chiamato solo quando i testi sono arrivati cambia il
-    // numero di hook fra un render e l'altro, e React si ferma (errore 310,
-    // pagina bianca). Costava la pagina Business intera.
+    // Il filmato dietro alla pagina, anch'esso di fabbrica finche' il
+    // gestionale non risponde. La pagina non ha piu' un'uscita anticipata:
+    // disegna sempre, quindi il numero di hook non cambia mai fra un render e
+    // l'altro (era l'errore 310 di React, pagina Business bianca).
     const filmato = useFilmato('business');
 
-    // I numeri salgono da zero quando la sezione entra in campo. L'hook sta
-    // qui sopra all'uscita anticipata per lo stesso motivo del filmato: il
-    // numero di hook non puo' cambiare fra un render e l'altro.
+    // I numeri salgono da zero quando la sezione entra in campo.
     const [numeriRef, numeriInCampo] = useInViewOnce<HTMLDivElement>();
-
-    if (!copy) {
-        return (
-            <LegalPageLayout title={t('Franchising')}>
-                <p className="text-gray-400 text-sm">{t('Loading')}</p>
-            </LegalPageLayout>
-        );
-    }
 
     const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 300 ? String(reviewCount) : '300');
 
@@ -146,12 +141,10 @@ const FranchisingPage: React.FC = () => {
                         pallini. Adesso la cifra e' grande quanto un titolo e
                         la parola che la spiega le sta sotto in maiuscoletto,
                         come si fa con un numero che deve fermare chi scorre.
-                        Tre colonne da schermo largo, due sotto — telefono
-                        compreso. 11/09/2026: sul telefono la colonna sola
-                        faceva una fascia alta quasi duemila punti, un numero
-                        per schermata. Adesso la cifra scende a 28px sotto il
-                        tablet e "€2,5M+" ci sta in mezza larghezza senza
-                        andare a capo. */}
+                        Tre colonne da schermo largo, due dal tablet, una sola
+                        sul telefono: "€2,5M+" nel corpo grande non ha uno
+                        spazio dove andare a capo e in mezza schermata
+                        uscirebbe dal bordo. */}
                     <div ref={numeriRef} className="mt-10 grid grid-cols-2 gap-x-6 gap-y-9 sm:mt-12 sm:gap-x-10 sm:gap-y-12 lg:grid-cols-3">
                         {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
                             <CountUp

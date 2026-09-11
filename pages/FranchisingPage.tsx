@@ -138,9 +138,25 @@ const FranchisingPage: React.FC = () => {
                     <p className="whitespace-pre-line text-[11px] uppercase leading-[2] tracking-[0.28em] text-black/55">
                         {bilingual(copy, 'stats_heading', lang)}
                     </p>
-                    <div ref={numeriRef} className="mt-8 space-y-3 text-black">
+                    {/* 11/09/2026 — i dati erano righe tutte della stessa
+                        misura: si leggevano come un elenco puntato senza
+                        pallini. Adesso la cifra e' grande quanto un titolo e
+                        la parola che la spiega le sta sotto in maiuscoletto,
+                        come si fa con un numero che deve fermare chi scorre.
+                        Tre colonne da schermo largo, due dal tablet, una sola
+                        sul telefono: "€2,5M+" nel corpo grande non ha uno
+                        spazio dove andare a capo e in mezza schermata
+                        uscirebbe dal bordo. */}
+                    <div ref={numeriRef} className="mt-12 grid grid-cols-1 gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                         {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
-                            <CountUp key={i} text={resolveReviewCount(line)} run={numeriInCampo} lang={lang} />
+                            <CountUp
+                                key={i}
+                                text={resolveReviewCount(line)}
+                                run={numeriInCampo}
+                                lang={lang}
+                                classeNumero="font-serif text-5xl md:text-6xl font-normal leading-none tracking-[-0.02em] text-black"
+                                classeTesto="mt-4 text-[10px] uppercase leading-relaxed tracking-[0.2em] text-black/55"
+                            />
                         ))}
                     </div>
                     <p className="mt-8 text-lg text-black">{bilingual(copy, 'stats_footer_main', lang)}</p>

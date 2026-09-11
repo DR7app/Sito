@@ -73,6 +73,13 @@ type Props = {
   lang: string;
   className?: string;
   style?: React.CSSProperties;
+  /**
+   * Se c'e', la riga si spezza in due: il primo pezzo — il numero con i suoi
+   * simboli, "€2,5M+" per intero e non solo "2,5" — prende questa classe, e
+   * le parole che seguono vanno a capo con `classeTesto`.
+   */
+  classeNumero?: string;
+  classeTesto?: string;
 };
 
 /**
@@ -90,7 +97,7 @@ type Props = {
  *
  * Se l'utente ha chiesto meno movimento, il numero c'e' e basta.
  */
-const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style }) => {
+const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style, classeNumero, classeTesto = '' }) => {
   const match = text.match(PRIMO_NUMERO);
   const letto = match ? leggiNumero(match[0], lang) : null;
 
@@ -126,21 +133,30 @@ const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style }) =>
     // via libera, il testo e la lingua.
   }, [run, text, lang]);
 
-  // Prima della partenza e dopo l'arrivo si legge il testo cosi' com'e'.
-  if (!match || !letto || valore === null) {
-    return <p className={className} style={style}>{text}</p>;
+  // La riga come si legge adesso: il testo del gestionale prima della
+  // partenza e dopo l'arrivo, il numero a meta' salita nel mezzo.
+  const inizio = match?.index ?? 0;
+  const corrente =
+    !match || !letto || valore === null
+      ? text
+      : text.slice(0, inizio) + scriviNumero(valore, letto, lang) + text.slice(inizio + match[0].length);
+
+  // Due pezzi: la cifra grande e le parole sotto. Il taglio e' il primo
+  // spazio, cosi' l'euro davanti e la "M" o il "+" dietro restano attaccati
+  // al numero invece di finire nel corpo piccolo.
+  if (classeNumero) {
+    const spazio = corrente.indexOf(' ');
+    const numero = spazio === -1 ? corrente : corrente.slice(0, spazio);
+    const resto = spazio === -1 ? '' : corrente.slice(spazio + 1);
+    return (
+      <p className={className} style={style}>
+        <span className={`block tabular-nums ${classeNumero}`}>{numero}</span>
+        {resto && <span className={`block ${classeTesto}`}>{resto}</span>}
+      </p>
+    );
   }
 
-  const scritto = scriviNumero(valore, letto, lang);
-
-  const inizio = match.index ?? 0;
-  return (
-    <p className={className} style={style}>
-      {text.slice(0, inizio)}
-      <span className="tabular-nums">{scritto}</span>
-      {text.slice(inizio + match[0].length)}
-    </p>
-  );
+  return <p className={className} style={style}>{corrente}</p>;
 };
 
 export default CountUp;

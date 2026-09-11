@@ -6,7 +6,6 @@ import { getHomeCopy, type HomeCopy, type HomeSlide } from '../utils/siteCopy';
 import { Shell, Section, Eyebrow, Statement, Cta, Metric, SeamRule } from '../components/editorial/primitives';
 import { Grid } from '../components/editorial/layout';
 import Reveal from '../components/editorial/Reveal';
-import { useInViewOnce } from '../hooks/useInViewOnce';
 import MediaVideo from '../components/editorial/MediaVideo';
 
 /**
@@ -141,12 +140,6 @@ const HomePage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // I numeri dell'atto 02b salgono da zero quando la fascia entra in campo.
-  // L'hook sta qui sopra all'uscita anticipata: un hook chiamato solo quando
-  // i testi sono arrivati cambia il numero di hook fra un render e l'altro, e
-  // React si ferma sulla pagina bianca.
-  const [numeriRef, numeriInCampo] = useInViewOnce<HTMLDivElement>();
-
   if (!copy) {
     // Guscio silenzioso mentre la configurazione arriva: nessun lampo bianco,
     // nessun salto di layout quando il contenuto entra.
@@ -177,47 +170,6 @@ const HomePage: React.FC = () => {
           </Reveal>
         </Shell>
       </Section>
-
-      {/* ═══ ATTO 02b — I NUMERI ════════════════════════════════════════ */}
-      {/* 11/09/2026 — fra lo statement e la Collezione c'era una fascia nera
-          senza niente dentro, alta quanto mezzo schermo. Adesso ci stanno i
-          trenta mesi detti in cifre: le stesse della pagina Business.
-          I numeri salgono da zero quando la fascia entra in campo — un solo
-          osservatore per tutta la griglia, cosi' partono insieme invece di
-          accendersi uno per volta mentre si scorre.
-          Compaiono solo se il gestionale ne pubblica: nessun numero di
-          riempimento. */}
-      {copy.metrics.length > 0 && (
-        <Section rhythm="lg">
-          <Shell>
-            <div ref={numeriRef}>
-              <Reveal><Eyebrow>{t(copy.metrics_eyebrow_it, copy.metrics_eyebrow_en)}</Eyebrow></Reveal>
-              <Reveal delay={60} className="mt-6">
-                <SeamRule className="max-w-[6rem]" />
-              </Reveal>
-              <div className="mt-[var(--sp-lg)]">
-                {/* Tre colonne quando i numeri sono un multiplo di tre: la
-                    griglia chiude piena invece di lasciare un dato spaiato in
-                    fondo. Sul telefono resta una colonna sola, e non e' pigrizia:
-                    "€2,5M+" scritto nel corpo monumentale non ha uno spazio dove
-                    andare a capo e in mezza schermata uscirebbe dal bordo. */}
-                <Grid cols={copy.metrics.length % 3 === 0 ? 3 : 4} gap="lg">
-                  {copy.metrics.map((m, i) => (
-                    <Metric
-                      key={m.id}
-                      value={m.value}
-                      label={t(m.label_it, m.label_en)}
-                      delay={i * 80}
-                      run={numeriInCampo}
-                      lang={lang}
-                    />
-                  ))}
-                </Grid>
-              </div>
-            </div>
-          </Shell>
-        </Section>
-      )}
 
       {/* ═══ ATTO 03 — LA COLLEZIONE ════════════════════════════════════ */}
       {/* 05/09/2026 — un'immagine sola al posto delle tre tavole.
@@ -344,6 +296,17 @@ const HomePage: React.FC = () => {
             </div>
           )}
 
+          {/* Le metriche compaiono solo se il gestionale ne pubblica.
+              Nessun numero di riempimento. */}
+          {copy.metrics.length > 0 && (
+            <div className="mt-24 border-t border-[color:var(--line)] pt-16">
+              <Grid cols={copy.metrics.length >= 4 ? 4 : 3} gap="lg">
+                {copy.metrics.map((m, i) => (
+                  <Metric key={m.id} value={m.value} label={t(m.label_it, m.label_en)} delay={i * 80} />
+                ))}
+              </Grid>
+            </div>
+          )}
         </Shell>
       </Section>
 

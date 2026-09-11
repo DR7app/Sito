@@ -391,6 +391,30 @@ html { scroll-behavior: smooth; }
    non il breakpoint, cosi' non ci sono salti fra 1279px e 1280px.
    ========================================================================== */
 @layer components {
+  /* Nessuna parola esce mai dal suo riquadro. I titoli grandi stanno dentro
+     a contenitori ritagliati (la rivelazione a sipario): una parola piu'
+     larga della colonna non sborderebbe soltanto, verrebbe TAGLIATA a meta'.
+     `break-word` interviene solo quando la parola non ci sta comunque. */
+  .t-display-xxl,
+  .t-display-xl,
+  .t-display,
+  .t-h1 {
+    overflow-wrap: break-word;
+  }
+
+  /* Un titolo che va a capo dove l'ha deciso chi scrive il testo NON va anche
+     bilanciato. 11/09/2026 — sulla chiusura della home ("La prossima /
+     esperienza / porta il tuo nome.") Safari, messi insieme gli a capo
+     manuali e il bilanciamento, sceglieva una misura piu' stretta delle
+     parole stesse e le tagliava a meta' contro il ritaglio del sipario.
+     Dove le interruzioni sono scritte a mano il bilanciamento si spegne. */
+  .whitespace-pre-line.t-display-xxl,
+  .whitespace-pre-line.t-display-xl,
+  .whitespace-pre-line.t-display,
+  .whitespace-pre-line.t-h1 {
+    text-wrap: wrap;
+  }
+
   .t-display-xxl {
     font-family: var(--f-display);
     font-size: clamp(3.5rem, 13vw, 12rem);

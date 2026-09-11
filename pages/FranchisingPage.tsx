@@ -127,18 +127,23 @@ const FranchisingPage: React.FC = () => {
                     </p>
                 </section>
 
-                {/* I numeri */}
-                <section className="text-center">
-                    <p className="whitespace-pre-line text-[11px] uppercase leading-[2] tracking-[0.28em] text-[#C9BEA8]">
+                {/* I numeri — 11/09/2026 l'unico blocco chiaro della pagina.
+                    Sono i dati di bilancio: nero su bianco si leggono come
+                    su carta e staccano dal racconto intorno. `surface-light`
+                    e' la superficie chiara del sito, quella che ribalta
+                    anche i filetti; i colori del testo vanno comunque
+                    riscritti a mano perche' qui erano fissati uno per uno. */}
+                <section className="surface-light px-6 py-[var(--sp-lg)] text-center md:px-12">
+                    <p className="whitespace-pre-line text-[11px] uppercase leading-[2] tracking-[0.28em] text-black/55">
                         {bilingual(copy, 'stats_heading', lang)}
                     </p>
-                    <div ref={numeriRef} className="mt-8 space-y-3 text-gray-300">
+                    <div ref={numeriRef} className="mt-8 space-y-3 text-black">
                         {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
                             <CountUp key={i} text={resolveReviewCount(line)} run={numeriInCampo} lang={lang} />
                         ))}
                     </div>
-                    <p className="mt-8 text-lg text-gray-300">{bilingual(copy, 'stats_footer_main', lang)}</p>
-                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-500">{bilingual(copy, 'stats_footer_sub', lang)}</p>
+                    <p className="mt-8 text-lg text-black">{bilingual(copy, 'stats_footer_main', lang)}</p>
+                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-black/55">{bilingual(copy, 'stats_footer_sub', lang)}</p>
                 </section>
 
                 {/* Piano di espansione */}

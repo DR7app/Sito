@@ -2453,7 +2453,12 @@ export const DEFAULT_ASPETTO: Required<AspettoCopy> = {
   logo_height_desktop: 96,
   logo_height_mobile: 80,
   footer_logo_height: 48,
-  chatbot_enabled: true,
+  // Spento di fabbrica come il popup qui sotto. Era acceso, e bastava che la
+  // riga salvata perdesse il campo — una migrazione, un salvataggio fatto da
+  // una versione piu' vecchia della scheda — perche' il bottone della chat
+  // tornasse in basso a destra su tutte le pagine, telefono compreso.
+  // L'interruttore resta in Aspetto & Funzionalita'.
+  chatbot_enabled: false,
   chatbot_avatar_url: '/Valerio.jpg',
   // Spento di fabbrica: il riquadro "Prenota Ora" che si apriva da solo
   // copriva la home ai visitatori. L'interruttore resta in Aspetto &

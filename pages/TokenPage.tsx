@@ -41,14 +41,18 @@ const TokenPage: React.FC = () => {
             vedeva il quadrato. `foto-fusa-tonda` lascia piena la moneta e
             spegne il resto verso il bordo: resta la moneta, sospesa, e
             dietro continua il filmato. Un po' piu' grande di prima perche'
-            la sfumatura le toglie la cornice attorno. */}
+            la sfumatura le toglie la cornice attorno.
+            11/09/2026 — la sfumatura ora finisce sul bordo della moneta, non
+            a mezza scena: il riquadro cresce per compensare quello che il
+            cerchio toglie, e il margine sotto cala perche' la sfumatura
+            lascia gia' il suo spazio vuoto. */}
         {immagine && (
           <img
             src={immagine}
             alt=""
             loading="eager"
             decoding="async"
-            className="foto-fusa-tonda mx-auto mb-6 block h-auto w-full max-w-[320px] md:max-w-[400px]"
+            className="foto-fusa-tonda mx-auto mb-2 block h-auto w-full max-w-[340px] md:max-w-[440px]"
           />
         )}
 

@@ -410,6 +410,16 @@ html { overflow-x: clip; }
   mask-composite: intersect;
 }
 
+/* Variante per un soggetto tondo e centrato (la moneta del Token). Qui le
+   sfumature per asse non bastavano: quel file e' un manifesto quadrato, con
+   il pavimento di marmo e le scritte microscopiche negli angoli, e il
+   quadrato si vedeva lo stesso. La sfumatura tonda lascia la moneta piena e
+   spegne tutto il resto, cosi' la moneta galleggia sulla pagina. */
+.foto-fusa-tonda {
+  -webkit-mask-image: radial-gradient(50% 50% at 50% 48%, #000 78%, rgba(0, 0, 0, 0.22) 86%, transparent 94%);
+  mask-image: radial-gradient(50% 50% at 50% 48%, #000 78%, rgba(0, 0, 0, 0.22) 86%, transparent 94%);
+}
+
 /* Chi ha chiesto meno movimento al sistema non deve subire rivelazioni,
    marquee o parallasse. */
 @media (prefers-reduced-motion: reduce) {

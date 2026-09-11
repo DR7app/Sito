@@ -36,15 +36,19 @@ const TokenPage: React.FC = () => {
         className="max-w-2xl text-center"
       >
         {/* La moneta. Sta sopra tutto: e' la cosa che si riconosce prima di
-            leggere. Fondo nero come quello della pagina, quindi niente
-            cornice — il ritaglio si vedrebbe. */}
+            leggere. Il file e' un manifesto quadrato — pavimento di marmo,
+            pannelli, scritte microscopiche negli angoli — e sulla pagina si
+            vedeva il quadrato. `foto-fusa-tonda` lascia piena la moneta e
+            spegne il resto verso il bordo: resta la moneta, sospesa, e
+            dietro continua il filmato. Un po' piu' grande di prima perche'
+            la sfumatura le toglie la cornice attorno. */}
         {immagine && (
           <img
             src={immagine}
             alt=""
             loading="eager"
             decoding="async"
-            className="mx-auto mb-10 block h-auto w-full max-w-[260px] md:max-w-[320px]"
+            className="foto-fusa-tonda mx-auto mb-6 block h-auto w-full max-w-[320px] md:max-w-[400px]"
           />
         )}
 

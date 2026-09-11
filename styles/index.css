@@ -322,11 +322,25 @@ body {
 /* La scena dietro una sezione: NESSUN bordo netto, da nessun lato. La
    fotografia e' piena al centro e si spegne tutt'intorno, cosi' si posa sul
    fondo (marmo, nero) invece di esserci appiccicata sopra come un ritaglio.
-   Una sfumatura radiale sola: due maschere sovrapposte si compongono in modo
-   diverso da un browser all'altro. */
+
+   11/09/2026 — c'era una sfumatura tonda sola, e sulla carta bastava. Sullo
+   schermo no: il cerchio aveva il centro al 72% della larghezza e un raggio
+   del 115%, cosi' il bordo destro della fotografia cadeva dentro la parte
+   ancora piena e restava tagliato di netto, e lo stesso il bordo alto. Si
+   spegneva solo il lato sinistro, quello che gia' spariva sotto al testo.
+   Adesso sono due sfumature per asse, incrociate, come in `foto-fusa`: ogni
+   lato arriva davvero a zero. A sinistra il tratto e' piu' lungo perche' li'
+   passa il testo, a destra e' corto perche' li' c'e' il soggetto e non va
+   spento, solo staccato dal bordo. */
 .foto-scena {
-  -webkit-mask-image: radial-gradient(115% 105% at 72% 42%, #000 38%, rgba(0, 0, 0, 0.72) 62%, rgba(0, 0, 0, 0.25) 84%, transparent 100%);
-  mask-image: radial-gradient(115% 105% at 72% 42%, #000 38%, rgba(0, 0, 0, 0.72) 62%, rgba(0, 0, 0, 0.25) 84%, transparent 100%);
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0, #000 11%, #000 88%, transparent 100%),
+    linear-gradient(to right, transparent 0, #000 20%, #000 91%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 0, #000 11%, #000 88%, transparent 100%),
+    linear-gradient(to right, transparent 0, #000 20%, #000 91%, transparent 100%);
+  mask-composite: intersect;
 }
 
 .marmo-sfuma-in-alto {

@@ -207,12 +207,16 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                 carta colori: il velo non e' nero piatto, e' la lastra nera e
                 oro (`.marmo-menu`, piu' contrastata di quella del sito).
                 Sopra, un gradiente da sinistra tiene il nero dove stanno le
-                voci e lascia respirare la venatura a destra. */}
+                voci e si spegne del tutto a destra: li' il marmo si vede per
+                quello che e', venature d'oro comprese. 11/09/2026 — prima
+                arrivava a destra ancora al 35% di nero e, sommato al velo
+                della lastra, la fascia libera accanto alle voci restava una
+                parete scura. */}
             <span
               className="absolute inset-0"
               style={{
                 background:
-                  'linear-gradient(100deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 40%, rgba(0,0,0,0.55) 68%, rgba(0,0,0,0.35) 100%)',
+                  'linear-gradient(100deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.88) 34%, rgba(0,0,0,0.5) 58%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0) 100%)',
               }}
             />
           </motion.div>

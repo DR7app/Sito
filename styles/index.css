@@ -234,9 +234,14 @@ body {
    un velo piu' leggero: qui sopra c'e' gia' il gradiente da sinistra che
    tiene il nero dove stanno le voci, e schiacciare due volte la fotografia
    spegneva le venature d'oro. */
+/* 11/09/2026 — il velo del menu si alleggerisce: aprendo, il marmo si deve
+   VEDERE, non intuire. Il nero che tiene leggibili le voci non e' piu' qui
+   dentro (era uniforme, e spegneva la lastra anche dove non c'e' testo): lo
+   mette il gradiente in Header.tsx, fitto a sinistra sotto le voci e
+   trasparente a destra, dove restano solo le venature. */
 .marmo-menu {
   background-image:
-    linear-gradient(rgba(6, 6, 7, 0.5), rgba(6, 6, 7, 0.58)),
+    linear-gradient(rgba(6, 6, 7, 0.34), rgba(6, 6, 7, 0.42)),
     url('/marmo-oro.jpg');
   background-size: cover;
   background-position: center;

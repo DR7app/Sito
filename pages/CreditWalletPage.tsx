@@ -3,78 +3,199 @@ import { motion, Variants, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
-import { addCredits } from '../utils/creditWallet';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { useTranslation } from '../hooks/useTranslation';
-import { getCreditWalletCopy, type CreditWalletCopy, type CreditPackage } from '../utils/siteCopy';
+import {
+  getCreditWalletCopy,
+  getMembershipCopy,
+  type CreditWalletCopy,
+  type CreditPackage,
+  type MembershipCopy,
+} from '../utils/siteCopy';
 import SfondoVideo from '../components/ui/SfondoVideo';
 import { useFilmato } from '../hooks/useFilmato';
 
 // I pacchetti arrivano dal CMS (admin > Sito > Credit Wallet, salvati in
 // centralina_pro_config.site_copy.creditWallet.packages). getCreditWalletCopy
 // ricade sul seed di siteCopy.ts finche' l'admin non ne salva di suoi.
+//
+// 11/09/2026 — impaginazione editoriale (fasce a tutta larghezza, oro solo
+// sul pacchetto in evidenza). Il racconto del Privilege Bonus NON e' scritto
+// qui: arriva da Sito > Membership, le stesse righe della pagina DR7 Club.
+// Una sola volta scritto, due pagine allineate.
 
 // Migliaia e decimali secondo la lingua della pagina: in italiano "10.000",
 // in inglese "10,000". Senza locale esplicita toLocaleString usava quella del
 // browser e un pacchetto da diecimila euro appariva "10,000" a un cliente
 // italiano, che legge dieci.
+//
+// `useGrouping` esplicito: in italiano la regola di fabbrica non separa i
+// numeri di quattro cifre, e sulla card "Premium 1.000" ricaricava "1000".
+// Due scritture diverse dello stesso importo nella stessa card.
 const formatAmount = (n: number, lang: 'it' | 'en'): string =>
-  n.toLocaleString(lang === 'it' ? 'it-IT' : 'en-GB', { maximumFractionDigits: 2 });
+  n.toLocaleString(lang === 'it' ? 'it-IT' : 'en-GB', { maximumFractionDigits: 2, useGrouping: true });
 
-const PackageCard: React.FC<{ pkg: CreditPackage; onSelect: () => void; copy: CreditWalletCopy; lang: 'it' | 'en' }> = ({ pkg, onSelect, copy, lang }) => {
+// Sfondi decorativi delle card: scenografia, non contenuto. Restano nel
+// codice perche' non c'e' nulla da scrivere in gestionale — sono i quattro
+// mondi DR7 (strada, dimora, mare, volo) che scorrono sotto ai numeri.
+//
+// Solo scatti PULITI: mezzo repertorio (supercar, urus, luxury, i listini)
+// ha titoli e prezzi stampati dentro al fotogramma, e sotto ai numeri di un
+// pacchetto uscivano due tariffe diverse nello stesso riquadro.
+const SFONDI_CARD = ['/collezione.jpeg', '/villa.jpeg', '/yacht1.jpeg', '/privatejet.jpeg'];
+
+// ─── Icone (tratto sottile, oro) ───────────────────────────────────────────
+// Inline come nel resto del sito: sono nove disegni, una libreria intera
+// peserebbe piu' di tutta la pagina.
+const Ico: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <svg
+    className={`w-7 h-7 ${className}`}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.25}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {children}
+  </svg>
+);
+
+const IcoMonete = () => (
+  <Ico>
+    <ellipse cx="12" cy="6" rx="7" ry="3" />
+    <path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6" />
+    <path d="M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5" />
+  </Ico>
+);
+const IcoInfinito = () => (
+  <Ico>
+    <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Z" />
+    <path d="M12 12c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z" />
+  </Ico>
+);
+const IcoScudo = () => (
+  <Ico>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+    <path d="m9 12 2 2 4-4" />
+  </Ico>
+);
+const IcoCorona = () => (
+  <Ico>
+    <path d="m2 7 4.5 3.5L12 3l5.5 7.5L22 7l-2 11H4L2 7Z" />
+    <path d="M5 21h14" />
+  </Ico>
+);
+const IcoGrafico = () => (
+  <Ico>
+    <path d="M3 3v18h18" />
+    <path d="M7 16v-4M12 16V9M17 16v-7" />
+  </Ico>
+);
+const IcoClessidra = () => (
+  <Ico>
+    <path d="M5 2h14M5 22h14" />
+    <path d="M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22" />
+    <path d="M7 2v4.2c0 .5.2 1 .6 1.4L12 12l4.4-4.4c.4-.4.6-.9.6-1.4V2" />
+  </Ico>
+);
+const IcoFulmine = () => (
+  <Ico>
+    <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />
+  </Ico>
+);
+const IcoDiamante = () => (
+  <Ico>
+    <path d="M6 3h12l4 6-10 12L2 9l4-6Z" />
+    <path d="M11 3 8 9l4 12 4-12-3-6M2 9h20" />
+  </Ico>
+);
+const IcoOrologio = () => (
+  <Ico>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Ico>
+);
+
+const PackageCard: React.FC<{
+  pkg: CreditPackage;
+  indice: number;
+  onSelect: () => void;
+  copy: CreditWalletCopy;
+  lang: 'it' | 'en';
+}> = ({ pkg, indice, onSelect, copy, lang }) => {
   const c = (it: keyof CreditWalletCopy, en: keyof CreditWalletCopy): string =>
     (copy as Record<string, string>)[(lang === 'it' ? it : en) as string];
   const cardVariants: Variants = {
-    hidden: { opacity: 0, y: 50 },
+    hidden: { opacity: 0, y: 40 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
+  const oro = !!pkg.popular;
 
   return (
     <motion.div
       variants={cardVariants}
-      className={`relative bg-gray-900/50 backdrop-blur-sm border ${pkg.popular ? 'border-white' : 'border-gray-800'
-        } rounded-lg p-6 flex flex-col transition-all duration-300 hover:border-white hover:shadow-xl hover:shadow-white/20`}
+      className={`group relative isolate overflow-hidden border transition-colors duration-standard ${
+        oro ? 'border-dr7-gold bg-dr7-gold/5' : 'border-white/12 bg-black/55 hover:border-white/30'
+      }`}
     >
-      {pkg.popular && (
-        <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 text-sm font-semibold">
-          {c('card_popular_badge_it', 'card_popular_badge_en')}
+      {/* La scena scorre sotto ai numeri: si intuisce, non si guarda. */}
+      <img
+        src={SFONDI_CARD[indice % SFONDI_CARD.length]}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-2/3 object-cover opacity-45 transition-opacity duration-editorial group-hover:opacity-65"
+      />
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/80 to-black/25"
+        aria-hidden="true"
+      />
+
+      <div className="flex h-full flex-col p-6">
+        {pkg.popular && (
+          <div className="mb-4 inline-flex self-start bg-dr7-gold px-3 py-1 text-[10px] font-medium uppercase tracking-label text-black">
+            {c('card_popular_badge_it', 'card_popular_badge_en')}
+          </div>
+        )}
+
+        {/* La serie e' un'etichetta di sezione: sempre in maiuscolo, qualunque
+            cosa sia finita in configurazione (una salvata prima che il
+            gestionale normalizzasse restava "dr7 maxi" sulla card). */}
+        <div className="t-eyebrow uppercase">{pkg.series}</div>
+        <h3 className={`mt-3 font-serif text-2xl leading-tight ${oro ? 'text-dr7-gold' : 'text-white'}`}>
+          {pkg.name}
+        </h3>
+
+        <div className="mt-6 text-sm text-gray-400">{c('card_recharge_label_it', 'card_recharge_label_en')}</div>
+        <div className={`text-2xl font-light ${oro ? 'text-dr7-gold' : 'text-white'}`}>
+          {formatAmount(pkg.rechargeAmount, lang)}
         </div>
-      )}
 
-      {/* La serie e' un'etichetta di sezione: sempre in maiuscolo, qualunque
-          cosa sia finita in configurazione (una salvata prima che il
-          gestionale normalizzasse restava "dr7 maxi" sulla card). */}
-      <div className="text-xs text-gray-400 font-semibold mb-2 uppercase">{pkg.series}</div>
-      <h3 className="text-2xl font-bold text-white mb-4">{pkg.name}</h3>
+        <div className="my-4 text-lg font-light text-gray-500" aria-hidden="true">+</div>
 
-      <div className="mb-4">
-        <div className="text-xs text-gray-500 mb-1">{c('card_recharge_label_it', 'card_recharge_label_en')}</div>
-        <div className="text-xl font-semibold text-gray-300">{formatAmount(pkg.rechargeAmount, lang)}</div>
-      </div>
-
-      <div className="flex items-center justify-center py-2">
-        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-        </svg>
-      </div>
-
-      <div className="mb-4 pb-4 border-b border-gray-700">
-        <div className="text-sm text-gray-400 mb-1">{c('card_receive_label_it', 'card_receive_label_en')}</div>
-        <div className="text-5xl font-extrabold text-white">{formatAmount(pkg.receivedAmount, lang)}</div>
-        <div className="text-lg text-white mt-3 font-bold">
+        <div className="text-sm text-gray-400">{c('card_receive_label_it', 'card_receive_label_en')}</div>
+        <div className={`font-serif text-4xl leading-none ${oro ? 'text-dr7-gold' : 'text-white'}`}>
+          {formatAmount(pkg.receivedAmount, lang)}
+        </div>
+        <div className="mt-3 text-sm text-gray-300">
           +{pkg.bonusPercentage}% {c('card_bonus_suffix_it', 'card_bonus_suffix_en')} ({formatAmount(pkg.bonus, lang)})
         </div>
-      </div>
 
-      <button
-        onClick={onSelect}
-        className={`w-full mt-auto py-3 px-6 font-bold transition-all duration-300 transform hover:scale-105 ${pkg.popular
-          ? 'bg-white text-black hover:bg-gray-200'
-          : 'bg-gray-700 text-white hover:bg-gray-600'
+        <div className={`mt-6 mb-5 h-px w-full ${oro ? 'bg-dr7-gold/40' : 'bg-white/12'}`} />
+
+        <button
+          onClick={onSelect}
+          className={`mt-auto w-full px-6 py-3 text-[11px] font-medium uppercase tracking-label transition-colors duration-standard ${
+            oro
+              ? 'bg-dr7-gold text-black hover:bg-dr7-gold/85'
+              : 'border border-white/15 bg-white/5 text-white hover:bg-white/12'
           }`}
-      >
-        {c('card_cta_it', 'card_cta_en')}
-      </button>
+        >
+          {c('card_cta_it', 'card_cta_en')}
+        </button>
+      </div>
     </motion.div>
   );
 };
@@ -100,13 +221,23 @@ const CreditWalletPage: React.FC = () => {
     return cur[lang === 'it' ? it : en] as string;
   };
   const packages: CreditPackage[] = copy?.packages ?? [];
+
+  // Il Privilege Bonus si racconta una volta sola: le righe sono quelle di
+  // Sito > Membership, gia' usate dalla pagina DR7 Club. Cambiarle li' le
+  // cambia in tutt'e due i posti.
+  const [club, setClub] = useState<MembershipCopy | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getMembershipCopy().then(m => { if (!cancelled) setClub(m); }).catch(() => { /* la fascia resta nascosta */ });
+    return () => { cancelled = true; };
+  }, []);
+  const p = (it?: string, en?: string): string => ((lang === 'it' ? it : en) || '');
+
   // Il filmato dietro alla pagina, scelto da Sito > Aspetto & Funzionalita'.
   const filmato = useFilmato('wallet');
+  // La fascia del Privilege ha il suo filmato, lo stesso della pagina Club.
+  const filmatoPrivilege = useFilmato('privilege');
   // Nexi payment - no stripe needed
-  // Nexi payment - no elements needed
-  // Nexi payment - no card element needed
-  // Nexi payment - no client secret needed
-  // Nexi payment - no loading state needed
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -272,6 +403,13 @@ const CreditWalletPage: React.FC = () => {
     ? packages
     : packages.filter(pkg => pkg.series === selectedSeries);
 
+  const vantaggi = [
+    { icona: <IcoFulmine />, titolo: w('advantage_1_title_it', 'advantage_1_title_en'), testo: w('advantage_1_body_it', 'advantage_1_body_en') },
+    { icona: <IcoDiamante />, titolo: w('advantage_3_title_it', 'advantage_3_title_en'), testo: w('advantage_3_body_it', 'advantage_3_body_en') },
+    { icona: <IcoMonete />, titolo: w('advantage_2_title_it', 'advantage_2_title_en'), testo: w('advantage_2_body_it', 'advantage_2_body_en') },
+    { icona: <IcoOrologio />, titolo: w('advantage_4_title_it', 'advantage_4_title_en'), testo: w('advantage_4_body_it', 'advantage_4_body_en') },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -289,77 +427,205 @@ const CreditWalletPage: React.FC = () => {
         compatta
       >
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-4">
-            {w('hero_title_eyebrow_it', 'hero_title_eyebrow_en')}
-          </h1>
-          <p className="text-2xl text-white font-semibold mb-6">
+          <p className="t-eyebrow">{w('hero_title_eyebrow_it', 'hero_title_eyebrow_en')}</p>
+          <h1 className="mt-7 font-serif text-4xl uppercase leading-[1.05] tracking-[-0.01em] text-white md:text-6xl">
             {w('hero_subtitle_it', 'hero_subtitle_en')}
-          </p>
-          <p className="text-gray-300 text-lg max-w-4xl mx-auto leading-relaxed whitespace-pre-line">
+          </h1>
+          <p className="mx-auto mt-8 max-w-2xl whitespace-pre-line text-base leading-relaxed text-gray-300 md:text-lg">
             {w('hero_intro_it', 'hero_intro_en')}
           </p>
         </div>
       </SfondoVideo>
-      <div className="pt-10 pb-24 min-h-screen">
-        <div className="container mx-auto px-6">
 
-          {/* Benefits Grid */}
+      {/* ─── Tre promesse, la fascia sotto all'apertura ─────────────────── */}
+      <div className="border-y border-white/10 bg-black/55 backdrop-blur-sm">
+        <div className="container mx-auto grid grid-cols-1 gap-px px-6 md:grid-cols-3">
+          {[
+            { icona: <IcoMonete />, titolo: w('benefit_extra_title_it', 'benefit_extra_title_en'), testo: w('benefit_extra_body_it', 'benefit_extra_body_en') },
+            { icona: <IcoInfinito />, titolo: w('benefit_no_expiry_title_it', 'benefit_no_expiry_title_en'), testo: w('benefit_no_expiry_body_it', 'benefit_no_expiry_body_en') },
+            { icona: <IcoScudo />, titolo: w('benefit_secure_title_it', 'benefit_secure_title_en'), testo: w('benefit_secure_body_it', 'benefit_secure_body_en') },
+          ].map((b, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              className="flex flex-col items-center px-6 py-10 text-center md:border-l md:border-white/10 md:first:border-l-0"
+            >
+              <span className="text-dr7-gold">{b.icona}</span>
+              <h3 className="mt-5 text-[11px] font-medium uppercase tracking-label text-white">{b.titolo}</h3>
+              <p className="mt-3 max-w-xs text-sm font-light leading-relaxed text-gray-400">{b.testo}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Dove si spende: la fascia sul mare ─────────────────────────── */}
+      <section className="relative isolate overflow-hidden">
+        <img
+          src="/yacht.jpeg"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/80 to-black/30" aria-hidden="true" />
+        <div className="container mx-auto px-6 py-16 md:py-20">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 gap-10 md:grid-cols-[1.5fr_1fr] md:gap-16"
           >
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6 text-center">
-              <h3 className="text-xl font-bold text-white mb-2">{w('benefit_extra_title_it', 'benefit_extra_title_en')}</h3>
-              <p className="text-gray-400">{w('benefit_extra_body_it', 'benefit_extra_body_en')}</p>
+            <div>
+              <h2 className="font-serif text-xl uppercase leading-snug tracking-[0.02em] text-white md:text-2xl">
+                {w('services_heading_it', 'services_heading_en')}
+              </h2>
+              <p className="mt-6 max-w-xl text-base font-light leading-relaxed text-gray-300">
+                {w('services_body_it', 'services_body_en')}
+              </p>
+              <p className="mt-3 text-base font-medium text-white">
+                {w('services_no_expiry_it', 'services_no_expiry_en')}
+              </p>
             </div>
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6 text-center">
-              <h3 className="text-xl font-bold text-white mb-2">{w('benefit_no_expiry_title_it', 'benefit_no_expiry_title_en')}</h3>
-              <p className="text-gray-400">{w('benefit_no_expiry_body_it', 'benefit_no_expiry_body_en')}</p>
-            </div>
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6 text-center">
-              <h3 className="text-xl font-bold text-white mb-2">{w('benefit_secure_title_it', 'benefit_secure_title_en')}</h3>
-              <p className="text-gray-400">{w('benefit_secure_body_it', 'benefit_secure_body_en')}</p>
+            <div className="md:border-l md:border-white/15 md:pl-10">
+              <p className="whitespace-pre-line text-sm uppercase leading-[2.2] tracking-eyebrow text-gray-200 md:text-base">
+                {w('services_tagline_it', 'services_tagline_en')}
+              </p>
             </div>
           </motion.div>
+        </div>
+      </section>
 
-          {/* Services Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="bg-gradient-to-r from-white/10 to-transparent border border-white/30 rounded-lg p-8 mb-16"
-          >
-            <h2 className="text-2xl font-bold text-white mb-4">
-              {w('services_heading_it', 'services_heading_en')}
-            </h2>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              {w('services_body_it', 'services_body_en')}
-              <br />
-              <span className="text-white font-semibold">{w('services_no_expiry_it', 'services_no_expiry_en')}</span>
-            </p>
-          </motion.div>
+      {/* ─── DR7 Club Privilege: il Wallet che matura ────────────────────
+          Il motore vero sta nel gestionale (accrue-club-wallet-interest,
+          0,1% al giorno sul capitale, accredito mensile). Qui c'e' solo il
+          racconto, e arriva da Sito > Membership: la pagina DR7 Club usa le
+          stesse righe. */}
+      {club && (
+        <section className="relative isolate overflow-hidden border-t border-white/10">
+          <video
+            src={filmatoPrivilege.src}
+            poster={filmatoPrivilege.poster}
+            className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+          />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/85 to-black/45" aria-hidden="true" />
+          <div className="container mx-auto px-6 py-16 md:py-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-1 gap-12 lg:grid-cols-[1.35fr_1fr] lg:gap-16"
+            >
+              <div>
+                <p className="t-eyebrow">{p(club.privilege_eyebrow_it, club.privilege_eyebrow_en)}</p>
+                <h2 className="mt-7 max-w-xl font-serif text-3xl leading-[1.15] tracking-[-0.015em] text-white md:text-5xl">
+                  {p(club.privilege_title_it, club.privilege_title_en)}
+                </h2>
+                <p className="mt-8 max-w-2xl text-base font-light leading-relaxed text-gray-300">
+                  {p(club.privilege_intro_it, club.privilege_intro_en)}
+                </p>
+                <div className="mt-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-12">
+                  <span className="flex items-center gap-3 text-sm text-gray-200">
+                    <span className="text-dr7-gold"><IcoCorona /></span>
+                    {p(club.privilege_claim_1_it, club.privilege_claim_1_en)}
+                  </span>
+                  <span className="flex items-center gap-3 text-sm text-gray-200">
+                    <span className="text-dr7-gold"><IcoGrafico /></span>
+                    {p(club.privilege_claim_2_it, club.privilege_claim_2_en)}
+                  </span>
+                </div>
+              </div>
 
-          {/* Series Filter */}
+              {/* La chiusa, messa a citazione: e' la frase che resta. */}
+              <figure className="self-center border border-white/12 bg-black/45 p-8 backdrop-blur-sm md:p-10">
+                <blockquote className="font-serif text-xl italic leading-relaxed text-white md:text-2xl">
+                  “{p(club.privilege_closing_it, club.privilege_closing_en)}”
+                </blockquote>
+                <figcaption className="t-eyebrow mt-6">DR7</figcaption>
+              </figure>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── L'esempio: quattro numeri esatti, quindi una tabella ───────── */}
+      {club && (
+        <section className="border-t border-white/10 bg-black/85">
+          <div className="container mx-auto px-6 py-16 md:py-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <p className="max-w-3xl text-sm font-light leading-relaxed text-gray-400">
+                {p(club.privilege_calc_it, club.privilege_calc_en)}
+              </p>
+
+              <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-16">
+                <div className="border border-white/12">
+                  <p className="border-b border-white/12 px-6 py-4 text-sm text-white">
+                    {p(club.privilege_example_label_it, club.privilege_example_label_en)}
+                  </p>
+                  {(club.privilege_rows || []).map((row, i) => (
+                    <div
+                      key={i}
+                      className="flex items-baseline justify-between gap-5 border-b border-white/8 px-6 py-3.5 last:border-b-0"
+                    >
+                      <span className="text-sm text-gray-400">{p(row.label_it, row.label_en)}</span>
+                      <span className="text-right text-sm tabular-nums text-white">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <aside className="flex flex-col gap-5 border border-white/12 bg-white/[0.03] p-8">
+                  <span className="text-dr7-gold"><IcoClessidra /></span>
+                  <p className="text-sm font-light leading-relaxed text-gray-200">
+                    {p(club.privilege_principle_it, club.privilege_principle_en)}
+                  </p>
+                  <p className="text-sm font-light leading-relaxed text-gray-400">
+                    {p(club.privilege_usage_it, club.privilege_usage_en)}
+                  </p>
+                </aside>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── I pacchetti ─────────────────────────────────────────────────── */}
+      <section className="border-t border-white/10 bg-black/85">
+        <div className="container mx-auto px-6 py-16 md:py-20">
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-12"
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-12 text-center"
           >
-            <h2 className="text-3xl font-bold text-white text-center mb-6">
+            <h2 className="font-serif text-3xl uppercase tracking-[0.01em] text-white md:text-4xl">
               {w('packages_section_label_it', 'packages_section_label_en')}
             </h2>
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
               {series.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSeries(s)}
-                  className={`px-6 py-2 font-semibold transition-all duration-300 ${selectedSeries === s
-                    ? 'bg-white text-black'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
+                  className={`px-5 py-2 text-[11px] font-medium uppercase tracking-label transition-colors duration-standard ${
+                    selectedSeries === s
+                      ? 'bg-dr7-gold text-black'
+                      : 'border border-white/12 bg-white/5 text-gray-300 hover:bg-white/12 hover:text-white'
+                  }`}
                 >
                   {s === 'all' ? w('packages_filter_all_it', 'packages_filter_all_en') : <span className="uppercase">{s}</span>}
                 </button>
@@ -367,110 +633,47 @@ const CreditWalletPage: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Packages Grid */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
           >
-            {copy && filteredPackages.map((pkg) => (
+            {copy && filteredPackages.map((pkg, i) => (
               <PackageCard
                 key={pkg.id}
                 pkg={pkg}
+                indice={i}
                 onSelect={() => handleSelectPackage(pkg.id)}
                 copy={copy}
                 lang={lang}
               />
             ))}
           </motion.div>
-
-          {/* Promotional Footer */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="text-center mb-16"
-          >
-            <p className="text-2xl md:text-3xl font-extrabold text-white mb-3">
-              {w('promo_line1_it', 'promo_line1_en')}
-            </p>
-            <p className="text-2xl md:text-3xl font-extrabold text-white">
-              {w('promo_line2_it', 'promo_line2_en')}
-            </p>
-          </motion.div>
-
-          {/* Advantages Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-8 mb-16"
-          >
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
-              {w('advantages_heading_it', 'advantages_heading_en')}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-2">{w('advantage_1_title_it', 'advantage_1_title_en')}</h3>
-                <p className="text-gray-400">{w('advantage_1_body_it', 'advantage_1_body_en')}</p>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white mb-2">{w('advantage_2_title_it', 'advantage_2_title_en')}</h3>
-                <p className="text-gray-400">{w('advantage_2_body_it', 'advantage_2_body_en')}</p>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white mb-2">{w('advantage_3_title_it', 'advantage_3_title_en')}</h3>
-                <p className="text-gray-400">{w('advantage_3_body_it', 'advantage_3_body_en')}</p>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white mb-2">{w('advantage_4_title_it', 'advantage_4_title_en')}</h3>
-                <p className="text-gray-400">{w('advantage_4_body_it', 'advantage_4_body_en')}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Transparency Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg p-8 mb-12"
-          >
-            <h2 className="text-3xl font-bold text-white mb-6 text-center">
-              {w('transparency_heading_it', 'transparency_heading_en')}
-            </h2>
-            <div className="space-y-4 text-gray-300 max-w-3xl mx-auto">
-              <p>• {w('transparency_bullet_1_it', 'transparency_bullet_1_en')}</p>
-              <p>• {w('transparency_bullet_2_it', 'transparency_bullet_2_en')}</p>
-              <p>• {w('transparency_bullet_3_it', 'transparency_bullet_3_en')}</p>
-            </div>
-          </motion.div>
-
-          {/* CTA Section */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="text-center"
-          >
-            <h2 className="text-4xl font-extrabold text-white mb-6">
-              {w('cta_title_it', 'cta_title_en')}
-            </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              {w('cta_subtitle_it', 'cta_subtitle_en')}
-            </p>
-            <button
-              onClick={() => {
-                window.scrollTo({ top: 400, behavior: 'smooth' });
-              }}
-              className="bg-white text-black px-12 py-4 text-xl font-bold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-white/50"
-            >
-              {w('cta_button_it', 'cta_button_en')}
-            </button>
-          </motion.div>
         </div>
-      </div>
+      </section>
+
+      {/* ─── Quattro vantaggi, la riga di chiusura ──────────────────────── */}
+      <section className="border-t border-white/10 bg-black/90">
+        <div className="container mx-auto grid grid-cols-1 gap-10 px-6 py-14 sm:grid-cols-2 xl:grid-cols-4">
+          {vantaggi.map((v, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              className="flex gap-4"
+            >
+              <span className="mt-0.5 shrink-0 text-dr7-gold">{v.icona}</span>
+              <div>
+                <h3 className="text-sm font-medium text-white">{v.titolo}</h3>
+                <p className="mt-2 text-sm font-light leading-relaxed text-gray-400">{v.testo}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
       {/* Payment Modal */}
       <AnimatePresence>
@@ -485,25 +688,26 @@ const CreditWalletPage: React.FC = () => {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="bg-gray-900 border border-gray-800 rounded-lg max-w-2xl w-full my-8"
+              className="bg-dr7-graphite border border-white/12 max-w-2xl w-full my-8"
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-800">
+              <div className="p-6 border-b border-white/12">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 className="font-serif text-2xl text-white">
                       {w('modal_title_it', 'modal_title_en')}
                     </h2>
-                    <p className="text-gray-400">
-                      {selectedPackage.name} - {selectedPackage.series}
+                    <p className="t-eyebrow mt-3">
+                      {selectedPackage.name} — {selectedPackage.series}
                     </p>
                   </div>
                   <button
                     onClick={() => setShowPaymentModal(false)}
                     className="text-gray-400 hover:text-white transition-colors"
+                    aria-label={w('modal_cancel_it', 'modal_cancel_en')}
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
@@ -512,28 +716,28 @@ const CreditWalletPage: React.FC = () => {
               {/* Modal Body */}
               <form onSubmit={handlePayment} className="p-6 space-y-6">
                 {/* Package Summary */}
-                <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                <div className="border border-white/12 bg-white/[0.03] p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-400 text-xs">{w('modal_recharge_label_it', 'modal_recharge_label_en')}</span>
-                    <span className="text-gray-300 font-semibold">{formatAmount(selectedPackage.rechargeAmount, lang)}</span>
+                    <span className="text-gray-400 text-sm">{w('modal_recharge_label_it', 'modal_recharge_label_en')}</span>
+                    <span className="text-gray-200">{formatAmount(selectedPackage.rechargeAmount, lang)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-400">{w('modal_bonus_label_it', 'modal_bonus_label_en')} (+{selectedPackage.bonusPercentage}%)</span>
-                    <span className="text-white font-bold text-xl">{formatAmount(selectedPackage.bonus, lang)}</span>
+                    <span className="text-gray-400 text-sm">{w('modal_bonus_label_it', 'modal_bonus_label_en')} (+{selectedPackage.bonusPercentage}%)</span>
+                    <span className="text-dr7-gold text-xl">{formatAmount(selectedPackage.bonus, lang)}</span>
                   </div>
-                  <div className="border-t border-gray-700 my-2"></div>
+                  <div className="border-t border-white/12 my-3"></div>
                   <div className="flex justify-between items-center">
-                    <span className="text-white font-semibold text-lg">{w('modal_receive_label_it', 'modal_receive_label_en')}</span>
-                    <span className="text-white font-bold text-3xl">{formatAmount(selectedPackage.receivedAmount, lang)}</span>
+                    <span className="text-white text-sm">{w('modal_receive_label_it', 'modal_receive_label_en')}</span>
+                    <span className="font-serif text-3xl text-white">{formatAmount(selectedPackage.receivedAmount, lang)}</span>
                   </div>
                 </div>
 
                 {/* Payment Information */}
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-4">{w('modal_payment_heading_it', 'modal_payment_heading_en')}</h3>
-                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-center">
+                  <h3 className="text-[11px] font-medium uppercase tracking-label text-white mb-4">{w('modal_payment_heading_it', 'modal_payment_heading_en')}</h3>
+                  <div className="border border-white/12 bg-white/[0.03] p-6 text-center">
                     <p className="text-gray-300 mb-2">{w('modal_payment_info_it', 'modal_payment_info_en')}</p>
-                    <p className="text-gray-400 text-sm">{w('modal_payment_secure_it', 'modal_payment_secure_en')}</p>
+                    <p className="text-gray-500 text-sm">{w('modal_payment_secure_it', 'modal_payment_secure_en')}</p>
                     {paymentError && <p className="text-xs text-red-400 mt-2">{paymentError}</p>}
                   </div>
                 </div>
@@ -543,14 +747,14 @@ const CreditWalletPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPaymentModal(false)}
-                    className="flex-1 px-6 py-3 bg-gray-800 text-white font-bold hover:bg-gray-700 transition-colors"
+                    className="flex-1 border border-white/15 bg-white/5 px-6 py-3 text-[11px] font-medium uppercase tracking-label text-white transition-colors hover:bg-white/12"
                   >
                     {w('modal_cancel_it', 'modal_cancel_en')}
                   </button>
                   <button
                     type="submit"
                     disabled={isProcessing}
-                    className="flex-1 px-6 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-dr7-gold px-6 py-3 text-[11px] font-medium uppercase tracking-label text-black transition-colors hover:bg-dr7-gold/85 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing
                       ? w('modal_processing_it', 'modal_processing_en')

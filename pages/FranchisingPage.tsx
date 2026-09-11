@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import CountUp from '../components/editorial/CountUp';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import LegalPageLayout from '../components/layout/LegalPageLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchGoogleReviews } from '../services/googleReviews';
@@ -81,6 +83,11 @@ const FranchisingPage: React.FC = () => {
     // pagina bianca). Costava la pagina Business intera.
     const filmato = useFilmato('business');
 
+    // I numeri salgono da zero quando la sezione entra in campo. L'hook sta
+    // qui sopra all'uscita anticipata per lo stesso motivo del filmato: il
+    // numero di hook non puo' cambiare fra un render e l'altro.
+    const [numeriRef, numeriInCampo] = useInViewOnce<HTMLDivElement>();
+
     if (!copy) {
         return (
             <LegalPageLayout title={t('Franchising')}>
@@ -122,16 +129,16 @@ const FranchisingPage: React.FC = () => {
 
                 {/* I numeri */}
                 <section className="text-center">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-[#C9BEA8]">
+                    <p className="whitespace-pre-line text-[11px] uppercase leading-[2] tracking-[0.28em] text-[#C9BEA8]">
                         {bilingual(copy, 'stats_heading', lang)}
                     </p>
-                    <div className="mt-8 space-y-3 text-gray-300">
+                    <div ref={numeriRef} className="mt-8 space-y-3 text-gray-300">
                         {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
-                            <p key={i}>{resolveReviewCount(line)}</p>
+                            <CountUp key={i} text={resolveReviewCount(line)} run={numeriInCampo} lang={lang} />
                         ))}
                     </div>
                     <p className="mt-8 text-lg text-gray-300">{bilingual(copy, 'stats_footer_main', lang)}</p>
-                    <p className="mt-2 text-sm text-gray-500">{bilingual(copy, 'stats_footer_sub', lang)}</p>
+                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-500">{bilingual(copy, 'stats_footer_sub', lang)}</p>
                 </section>
 
                 {/* Piano di espansione */}

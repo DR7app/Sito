@@ -1,10 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-/** Quanto dura la salita del numero. */
-const DURATA = 1200;
+/**
+ * Quanto dura la salita del numero: cinque secondi, richiesti dalla
+ * direzione. Sono i dati di bilancio, e devono vedersi salire.
+ */
+const DURATA = 5000;
 
-/** Fuori piano morbido: parte svelto e si posa, non frena di colpo. */
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+/**
+ * Cinque secondi con un fuori piano soltanto non funzionano: la cifra
+ * arriverebbe quasi a destinazione nel primo secondo e passerebbe gli altri
+ * quattro ferma. Questa curva parte piano, corre in mezzo e si posa: il
+ * numero e' in movimento per tutta la durata.
+ */
+const easeInOutCubic = (t: number) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 /** Il primo numero della riga: "4.000+ contratti", "€2,5M+ fatturato". */
 const PRIMO_NUMERO = /\d[\d.,]*/;
@@ -53,6 +62,21 @@ function leggiNumero(
  * numero finirebbe la salita in una forma diversa da quella del gestionale.
  * Il separatore si mette solo se c'era anche nell'originale.
  */
+/**
+ * Quante cifre dopo la virgola mostrare MENTRE il numero sale.
+ *
+ * "€1M" e "€15M" scritti come li scrive un umano non hanno decimali: una
+ * salita da zero a uno e' due fotogrammi utili, e il dato sembra fermo
+ * mentre tutti gli altri si muovono. Durante la corsa si aggiungono le cifre
+ * che servono perche' anche quelli si vedano salire; l'ultimo fotogramma
+ * torna comunque al testo del gestionale, quindi a riposo la forma e' la sua.
+ */
+function decimaliInSalita(valore: number, decimali: number): number {
+  if (valore >= 100) return decimali;
+  if (valore >= 10) return Math.max(decimali, 1);
+  return Math.max(decimali, 2);
+}
+
 function scriviNumero(
   valore: number,
   { decimali, raggruppato }: { decimali: number; raggruppato: boolean },
@@ -123,7 +147,7 @@ const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style, clas
         setValore(null); // ultimo fotogramma: torna al testo originale
         return;
       }
-      setValore(meta * easeOutCubic(avanzamento));
+      setValore(meta * easeInOutCubic(avanzamento));
       frame = requestAnimationFrame(passo);
     };
 
@@ -139,7 +163,13 @@ const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style, clas
   const corrente =
     !match || !letto || valore === null
       ? text
-      : text.slice(0, inizio) + scriviNumero(valore, letto, lang) + text.slice(inizio + match[0].length);
+      : text.slice(0, inizio) +
+        scriviNumero(
+          valore,
+          { ...letto, decimali: decimaliInSalita(letto.valore, letto.decimali) },
+          lang
+        ) +
+        text.slice(inizio + match[0].length);
 
   // Due pezzi: la cifra grande e le parole sotto. Il taglio e' il primo
   // spazio, cosi' l'euro davanti e la "M" o il "+" dietro restano attaccati

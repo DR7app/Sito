@@ -109,9 +109,12 @@ const FranchisingPage: React.FC = () => {
                 bottoni con il contorno. I testi sono gli stessi, tutti dal
                 gestionale. */}
             <div className="space-y-[var(--sp-xl)]">
-                {/* La fotografia d'apertura, intera nel suo rapporto. */}
-                <div className="overflow-hidden border border-white/10">
-                    <img src="/franchising-hero.jpeg" alt="" loading="lazy" decoding="async" className="block h-auto w-full" />
+                {/* La fotografia d'apertura, intera nel suo rapporto. Niente
+                    cornice e bordi sfumati (`foto-fusa`): il mappamondo
+                    galleggia nella pagina invece di stare dentro a un
+                    riquadro appoggiato sopra al filmato. */}
+                <div>
+                    <img src="/franchising-hero.jpeg" alt="" loading="lazy" decoding="async" className="foto-fusa block h-auto w-full" />
                 </div>
 
                 {/* Dichiarazione d'apertura */}

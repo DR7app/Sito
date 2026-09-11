@@ -139,7 +139,7 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
             decoding="async"
             className="foto-scena pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-auto max-w-full object-cover"
           />
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/75 to-transparent" />
+          <div className="velo-scena pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/75 to-transparent" />
         </>
       )}
 

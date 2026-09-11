@@ -300,6 +300,25 @@ body {
   mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
 }
 
+/* Il velo scuro che tiene leggibile il testo sopra a una scena. La scena
+   sotto e' gia' senza bordi (`foto-scena`), ma il velo restava un rettangolo
+   pieno: si vedeva il suo lato in alto, in basso e a sinistra, e la sezione
+   sembrava una lastra scura appoggiata sul marmo. Ora si spegne anche lui su
+   tutti e quattro i lati: due sfumature per asse, incrociate, come in
+   `foto-fusa`. Una sfumatura tonda sola qui non bastava — la fascia e' molto
+   piu' larga che alta, e un cerchio che arriva a spegnersi in alto resta
+   quasi pieno ai due lati. */
+.velo-scena {
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%),
+    linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%),
+    linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%);
+  mask-composite: intersect;
+}
+
 /* La scena dietro una sezione: NESSUN bordo netto, da nessun lato. La
    fotografia e' piena al centro e si spegne tutt'intorno, cosi' si posa sul
    fondo (marmo, nero) invece di esserci appiccicata sopra come un ritaglio.

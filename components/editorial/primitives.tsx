@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Reveal from './Reveal';
+import CountUp from './CountUp';
 
 /* ==========================================================================
    Primitive editoriali DR7
@@ -155,14 +156,33 @@ export const Cta: React.FC<CtaProps> = ({
   );
 };
 
-/** Numero monumentale + etichetta. Solo per valori realmente presenti nei dati. */
-export const Metric: React.FC<{ value: string; label: string; delay?: number }> = ({
-  value,
-  label,
-  delay = 0,
-}) => (
+/**
+ * Numero monumentale + etichetta. Solo per valori realmente presenti nei dati.
+ *
+ * Con `run` il numero non compare gia' scritto: sale da zero al dato in poco
+ * piu' di un secondo. Il via libera arriva da chi ospita la griglia — tutti i
+ * numeri devono partire insieme quando la sezione entra in campo, non uno per
+ * volta quando entra la singola colonna.
+ */
+export const Metric: React.FC<{
+  value: string;
+  label: string;
+  delay?: number;
+  run?: boolean;
+  lang?: string;
+}> = ({ value, label, delay = 0, run, lang = 'it' }) => (
   <Reveal delay={delay} className="text-center md:text-left">
-    <div className="t-display" style={{ lineHeight: 1 }}>{value}</div>
+    {run === undefined ? (
+      <div className="t-display" style={{ lineHeight: 1 }}>{value}</div>
+    ) : (
+      <CountUp
+        text={value}
+        run={run}
+        lang={lang}
+        className="t-display"
+        style={{ lineHeight: 1 }}
+      />
+    )}
     <div className="t-eyebrow mt-4">{label}</div>
   </Reveal>
 );

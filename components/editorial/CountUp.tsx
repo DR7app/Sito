@@ -7,6 +7,15 @@ import React, { useEffect, useRef, useState } from 'react';
 const DURATA = 5000;
 
 /**
+ * Ogni quanto si riscrive la cifra. Non a ogni fotogramma: cinque secondi a
+ * 60 al secondo sono trecento riscritture per numero, nove numeri insieme,
+ * ognuna in corpo da titolo. Il browser passava il tempo a rimpaginare e si
+ * vedeva: la fascia intera scattava. A 25 al secondo un contatore si legge
+ * identico e il lavoro e' meno di meta'.
+ */
+const PASSO_MS = 40;
+
+/**
  * Cinque secondi con un fuori piano soltanto non funzionano: la cifra
  * arriverebbe quasi a destinazione nel primo secondo e passerebbe gli altri
  * quattro ferma. Questa curva parte piano, corre in mezzo e si posa: il
@@ -123,31 +132,56 @@ type Props = {
  */
 const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style, classeNumero, classeTesto = '' }) => {
   const match = text.match(PRIMO_NUMERO);
-  const letto = match ? leggiNumero(match[0], lang) : null;
+  const letto = match && match.index !== undefined ? leggiNumero(match[0], lang) : null;
+  const anima = Boolean(letto) && animazionePossibile();
 
-  // `null` vuol dire "la riga cosi' com'e'": prima della partenza si mostra
-  // zero, dopo l'arrivo si torna al testo del gestionale. Chi ha chiesto meno
-  // movimento, o non ha un numero da animare, sta sempre sul testo finale.
-  const [valore, setValore] = useState<number | null>(() =>
-    letto && animazionePossibile() ? 0 : null
-  );
+  // `true` quando la riga va mostrata com'e': prima ancora di sapere se si
+  // anima, e di nuovo appena la salita e' finita.
+  const [fermo, setFermo] = useState(!anima);
+  const cifraRef = useRef<HTMLSpanElement>(null);
   const partito = useRef(false);
 
+  const meta = letto ? letto.valore : 0;
+  const forma = letto
+    ? { decimali: decimaliInSalita(letto.valore, letto.decimali), raggruppato: letto.raggruppato }
+    : { decimali: 0, raggruppato: false };
+
+  // Il pezzo che si muove e' il NUMERO CON I SUOI SIMBOLI, non le sole
+  // cifre: "€0,61M+" per intero. Tenendo fermi l'euro e la "M" e muovendo
+  // solo le cifre in mezzo, a meta' salita si apriva un buco fra il numero e
+  // la sua unita' ("971    +"), perche' il posto era tenuto dalla scrittura
+  // piu' lunga. Cosi' invece il gruppo resta scritto stretto e a crescere e'
+  // il suo bordo destro.
+  const spazio = text.indexOf(' ');
+  const gruppo = spazio === -1 ? text : text.slice(0, spazio);
+  const parole = spazio === -1 ? '' : text.slice(spazio + 1);
+  const primaDelNumero = match && match.index !== undefined ? gruppo.slice(0, match.index) : '';
+  const dopoIlNumero = match && match.index !== undefined ? gruppo.slice(match.index + match[0].length) : '';
+  const scrivi = (v: number) =>
+    primaDelNumero + scriviNumero(v, forma, lang) + dopoIlNumero;
+
   useEffect(() => {
-    if (!run || !letto || partito.current || !animazionePossibile()) return;
+    if (!run || !letto || fermo || partito.current) return;
 
     partito.current = true;
-    const meta = letto.valore;
+    const avvio = performance.now();
     let frame = 0;
-    const inizio = performance.now();
+    let ultimo = 0;
 
     const passo = (ora: number) => {
-      const avanzamento = Math.min(1, (ora - inizio) / DURATA);
+      const avanzamento = Math.min(1, (ora - avvio) / DURATA);
       if (avanzamento >= 1) {
-        setValore(null); // ultimo fotogramma: torna al testo originale
+        setFermo(true); // la riga torna al testo del gestionale
         return;
       }
-      setValore(meta * easeInOutCubic(avanzamento));
+      if (ora - ultimo >= PASSO_MS) {
+        ultimo = ora;
+        // Si scrive DIRETTAMENTE nel nodo: un `setState` per fotogramma
+        // rifaceva l'albero di React venticinque volte al secondo per ogni
+        // numero, e in corpo da titolo si vedeva.
+        const el = cifraRef.current;
+        if (el) el.textContent = scrivi(meta * easeInOutCubic(avanzamento));
+      }
       frame = requestAnimationFrame(passo);
     };
 
@@ -155,38 +189,49 @@ const CountUp: React.FC<Props> = ({ text, run, lang, className = '', style, clas
     return () => cancelAnimationFrame(frame);
     // `letto` si ricalcola a ogni render: le dipendenze che contano sono il
     // via libera, il testo e la lingua.
-  }, [run, text, lang]);
+  }, [run, text, lang, fermo]);
 
-  // La riga come si legge adesso: il testo del gestionale prima della
-  // partenza e dopo l'arrivo, il numero a meta' salita nel mezzo.
-  const inizio = match?.index ?? 0;
-  const corrente =
-    !match || !letto || valore === null
-      ? text
-      : text.slice(0, inizio) +
-        scriviNumero(
-          valore,
-          { ...letto, decimali: decimaliInSalita(letto.valore, letto.decimali) },
-          lang
-        ) +
-        text.slice(inizio + match[0].length);
+  // Il posto della cifra e' FISSO per tutta la salita.
+  //
+  // Le cifre cambiano larghezza a ogni passo ("€0,00M" non e' largo quanto
+  // "€15M"): scritte in linea spostavano le parole accanto, la riga, e con
+  // nove numeri in griglia tutta la fascia ballava a ogni passo. Qui la
+  // sagoma — la scrittura piu' lunga fra quella d'arrivo e quelle della
+  // salita — tiene il posto da ferma e invisibile, e la cifra che sale ci
+  // sta sopra senza toccare l'impaginazione. `tabular-nums` fa il resto:
+  // tutte le cifre della stessa larghezza, nessun tremolio interno.
+  const gabbia = (sagoma: string) => (
+    <span className="relative inline-block whitespace-nowrap tabular-nums align-baseline">
+      <span className="invisible" aria-hidden="true">{sagoma}</span>
+      <span ref={cifraRef} className="absolute left-0 top-0 w-full">{scrivi(0)}</span>
+    </span>
+  );
+
+  const piuLunga = (a: string, b: string) => (b.length > a.length ? b : a);
+  const sagoma = piuLunga(gruppo, scrivi(meta));
 
   // Due pezzi: la cifra grande e le parole sotto. Il taglio e' il primo
   // spazio, cosi' l'euro davanti e la "M" o il "+" dietro restano attaccati
   // al numero invece di finire nel corpo piccolo.
-  if (classeNumero) {
-    const spazio = corrente.indexOf(' ');
-    const numero = spazio === -1 ? corrente : corrente.slice(0, spazio);
-    const resto = spazio === -1 ? '' : corrente.slice(spazio + 1);
-    return (
-      <p className={className} style={style}>
-        <span className={`block tabular-nums ${classeNumero}`}>{numero}</span>
-        {resto && <span className={`block ${classeTesto}`}>{resto}</span>}
-      </p>
-    );
+  const spezzata = (contenuto: React.ReactNode, resto: string) => (
+    <p className={className} style={style} aria-label={fermo ? undefined : text}>
+      <span className={`block tabular-nums ${classeNumero}`}>{contenuto}</span>
+      {resto && <span className={`block ${classeTesto}`}>{resto}</span>}
+    </p>
+  );
+
+  if (fermo || !match || match.index === undefined || !letto) {
+    if (classeNumero) return spezzata(gruppo, parole);
+    return <p className={className} style={style}>{text}</p>;
   }
 
-  return <p className={className} style={style}>{corrente}</p>;
+  if (classeNumero) return spezzata(gabbia(sagoma), parole);
+
+  return (
+    <p className={className} style={style} aria-label={text}>
+      {gabbia(sagoma)}{parole && ` ${parole}`}
+    </p>
+  );
 };
 
 export default CountUp;

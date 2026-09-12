@@ -123,6 +123,10 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
   const [ritiroOra, setRitiroOra] = useState<string>('');
   const [riconsegnaYmd, setRiconsegnaYmd] = useState<string>('');
   const [riconsegnaOra, setRiconsegnaOra] = useState<string>('');
+  // Vero finche' la riconsegna e' quella proposta dal sistema (il giorno
+  // dopo il ritiro) e non una scelta del cliente. Finche' e' proposta, un
+  // click su un altro giorno la SPOSTA invece di far ripartire il periodo.
+  const [riconsegnaProposta, setRiconsegnaProposta] = useState(false);
 
   const [prezzo, setPrezzo] = useState<PrezzoDinamico | null>(null);
   const [prezzoInCorso, setPrezzoInCorso] = useState(false);
@@ -255,25 +259,31 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     // Fuori dalla scelta della riconsegna — e anche sui giorni PRIMA del
     // ritiro, dove il click deve poter far ripartire il periodo invece di
     // costringere al bottone "Ricomincia" — vale lo stato di ritiro.
-    if (!ritiroYmd || riconsegnaYmd || ymd <= ritiroYmd) {
+    if (!ritiroYmd || (riconsegnaYmd && !riconsegnaProposta) || ymd <= ritiroYmd) {
       return statoGiornoRitiro(ymd, oggiYmd, getPickupTimesForDateString(ymd), occupati);
     }
     if (ymd > limiteRiconsegna) return 'occupato';
     return statoGiornoRiconsegna(
       ymd, ritiroYmd, ritiroOra, getReturnTimesForDateString(ymd), occupati,
     );
-  }, [ritiroYmd, ritiroOra, riconsegnaYmd, oggiYmd, occupati, limiteRiconsegna]);
+  }, [ritiroYmd, ritiroOra, riconsegnaYmd, riconsegnaProposta, oggiYmd, occupati, limiteRiconsegna]);
 
   const scegliGiorno = (ymd: string) => {
-    // Terza selezione (periodo gia' completo) o click su un giorno
-    // precedente al ritiro: si ricomincia da questo giorno.
-    if (!ritiroYmd || riconsegnaYmd || ymd <= ritiroYmd) {
+    // Terza selezione (riconsegna gia' scelta dal cliente) o click su un
+    // giorno precedente al ritiro: si ricomincia da questo giorno.
+    if (!ritiroYmd || (riconsegnaYmd && !riconsegnaProposta) || ymd <= ritiroYmd) {
       const slot = slotRitiroUtili(ymd, getPickupTimesForDateString(ymd), occupati);
       if (slot.length === 0) return;
+      const ora = slot[0];
       setRitiroYmd(ymd);
-      setRitiroOra(slot[0]);
-      setRiconsegnaYmd('');
-      setRiconsegnaOra('');
+      setRitiroOra(ora);
+      // La riconsegna non resta "da scegliere": si propone subito il
+      // noleggio minimo di un giorno, cosi' il periodo e' gia' completo e
+      // il cliente lo allunga solo se vuole.
+      const proposta = riconsegnaPredefinita(ymd, ora);
+      setRiconsegnaYmd(proposta?.ymd || '');
+      setRiconsegnaOra(proposta?.ora || '');
+      setRiconsegnaProposta(!!proposta);
       return;
     }
     const slot = slotRiconsegnaValidi(ymd);
@@ -282,11 +292,42 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     // Non il primo orario del giorno: quello che tiene il periodo che il
     // cliente ha in mente, cioe' 1h30 prima dell'ora di ritiro.
     setRiconsegnaOra(oraRiconsegnaAutomatica(ritiroOra, slot, ymd === ritiroYmd) || slot[0]);
+    setRiconsegnaProposta(false);
   };
 
   const azzera = () => {
     setRitiroYmd(''); setRitiroOra(''); setRiconsegnaYmd(''); setRiconsegnaOra('');
+    setRiconsegnaProposta(false);
   };
+
+  /** Il giorno di calendario successivo a `ymd`. */
+  function giornoDopo(ymd: string): string {
+    const [a, m, g] = ymd.split('-').map(Number);
+    return ymdLocale(new Date(a, m - 1, g + 1));
+  }
+
+  /**
+   * Riconsegna proposta per un dato ritiro: il giorno dopo, cioe' il
+   * noleggio minimo di un giorno. Se quel giorno e' chiuso (domenica,
+   * festivo) o gia' impegnato si passa al primo utile successivo. Se non
+   * ce n'e' nessuno entro il limite, non si propone niente e il cliente
+   * sceglie a mano come prima.
+   */
+  function riconsegnaPredefinita(rYmd: string, rOra: string): { ymd: string; ora: string } | null {
+    const limite = ultimaRiconsegnaPossibile(rYmd, rOra, occupati, orizzonteYmd);
+    let ymd = giornoDopo(rYmd);
+    while (ymd <= limite) {
+      const slot = slotRiconsegnaValidiPer(ymd, rYmd, rOra);
+      const stato = statoGiornoRiconsegna(
+        ymd, rYmd, rOra, getReturnTimesForDateString(ymd), occupati,
+      );
+      if (slot.length > 0 && stato === 'libero') {
+        return { ymd, ora: oraRiconsegnaAutomatica(rOra, slot, false) || slot[0] };
+      }
+      ymd = giornoDopo(ymd);
+    }
+    return null;
+  }
 
   // Solo gli orari che lasciano davanti almeno un giorno intero: proporre
   // le 10:00 quando l'auto esce alle 10:30 manderebbe il cliente in un
@@ -301,9 +342,16 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
    * finito per proporre orari diversi.
    */
   function slotRiconsegnaValidi(ymd: string): string[] {
-    if (!ritiroYmd) return [];
+    return slotRiconsegnaValidiPer(ymd, ritiroYmd, ritiroOra);
+  }
+
+  // Stessa regola calcolata su un ritiro passato per parametro: serve
+  // subito dopo il click, quando lo stato del ritiro non e' ancora
+  // aggiornato e la proposta di riconsegna va gia' calcolata.
+  function slotRiconsegnaValidiPer(ymd: string, rYmd: string, rOra: string): string[] {
+    if (!rYmd) return [];
     return slotLiberi(ymd, getReturnTimesForDateString(ymd), occupati).filter((s) => {
-      const prossimo = primoOccupatoDopo(msDaYmdOra(ritiroYmd, ritiroOra), occupati);
+      const prossimo = primoOccupatoDopo(msDaYmdOra(rYmd, rOra), occupati);
       return !prossimo || msDaYmdOra(ymd, s) <= prossimo.start;
     });
   }
@@ -458,7 +506,11 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
             ? (it ? 'Scegli il giorno di ritiro.' : 'Pick your collection day.')
             : !riconsegnaYmd
               ? (it ? 'Ora scegli il giorno di riconsegna.' : 'Now pick your return day.')
-              : (it ? 'Periodo selezionato.' : 'Period selected.')}
+              : riconsegnaProposta
+                ? (it
+                    ? 'Riconsegna proposta il giorno dopo: clicca un altro giorno per allungare il noleggio.'
+                    : 'Return set to the next day: click another day to extend the rental.')
+                : (it ? 'Periodo selezionato.' : 'Period selected.')}
         </p>
 
         <span className="seam-line my-6 block" />

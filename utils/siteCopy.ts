@@ -3393,7 +3393,7 @@ export const DEFAULT_FRANCHISING: FranchisingCopy = {
   stats_heading_en: '30 months of growth.\nThe foundations are built.',
   stats_lines: [
     '4.000+ contratti di noleggio firmati',
-    '5.000+ clienti serviti nell\'ecosistema DR7',
+    '3.000+ clienti serviti nell\'ecosistema DR7',
     '€2,5M+ fatturato generato',
     '€3M+ valore del parco auto',
     '€6M+ patrimonio netto',
@@ -3404,7 +3404,7 @@ export const DEFAULT_FRANCHISING: FranchisingCopy = {
   ],
   stats_lines_it: [
     '4.000+ contratti di noleggio firmati',
-    '5.000+ clienti serviti nell\'ecosistema DR7',
+    '3.000+ clienti serviti nell\'ecosistema DR7',
     '€2,5M+ fatturato generato',
     '€3M+ valore del parco auto',
     '€6M+ patrimonio netto',
@@ -3415,7 +3415,7 @@ export const DEFAULT_FRANCHISING: FranchisingCopy = {
   ],
   stats_lines_en: [
     '4,000+ signed rental contracts',
-    '5,000+ clients served across the DR7 ecosystem',
+    '3,000+ clients served across the DR7 ecosystem',
     '€2.5M+ revenue generated',
     '€3M+ fleet value',
     '€6M+ net equity',
@@ -4032,7 +4032,7 @@ const DEFAULT_HOME: HomeCopy = {
   metrics_eyebrow_en: '30 months of growth. The foundations are built.',
   metrics: [
     { id: 'contratti',  value: '4.000+',  label_it: 'Contratti di noleggio firmati',    label_en: 'Signed rental contracts' },
-    { id: 'clienti',    value: '5.000+',  label_it: 'Clienti serviti nell\'ecosistema', label_en: 'Clients served in the ecosystem' },
+    { id: 'clienti',    value: '3.000+',  label_it: 'Clienti serviti nell\'ecosistema', label_en: 'Clients served in the ecosystem' },
     { id: 'fatturato',  value: '\u20ac2,5M+',  label_it: 'Fatturato generato',               label_en: 'Revenue generated' },
     { id: 'parco',      value: '\u20ac3M+',    label_it: 'Valore del parco auto',            label_en: 'Fleet value' },
     { id: 'patrimonio', value: '\u20ac6M+',    label_it: 'Patrimonio netto',                 label_en: 'Net equity' },

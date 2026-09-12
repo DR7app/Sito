@@ -33,6 +33,8 @@ import {
 import { checkVehicleAvailability, checkVehiclePartialUnavailability, checkGroupedVehicleAvailability, safeDate, getLateReturnGraceMinutes } from '../../utils/bookingValidation';
 import { getUserCreditBalance, deductCredits, hasSufficientBalance } from '../../utils/creditWallet';
 import { calculateDiscountedPrice, getMembershipTierName } from '../../utils/membershipDiscounts';
+import { CLUB_PLANS, getClubPlans, getClubTiers } from '../../utils/dr7club';
+import { getDr7ClubPlanCopy } from '../../utils/siteCopy';
 import { roundToTwoDecimals, eurosToCents } from '../../utils/pricing';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { useCarWashServices } from '../../hooks/useCarWashServices';
@@ -872,6 +874,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // iscrizione non gli va nemmeno proposta (il popup di uscita glielo ha
   // promesso). Il controllo sta nel database, vedi isClubBloccato().
   const [clubBloccato, setClubBloccato] = useState(false);
+  // Prezzi, vantaggi e percentuale del DR7 Club: si leggono da Centralina Pro,
+  // gli stessi che la pagina /membership mostra al pubblico. Prima erano
+  // scritti dentro questo popup e vendevano l'abbonamento a un prezzo diverso
+  // da quello esposto sul sito.
+  const [clubPlans, setClubPlans] = useState<{ monthly: number; annual: number }>({
+    monthly: CLUB_PLANS.monthly.price,
+    annual: CLUB_PLANS.annual.price,
+  });
+  const [clubFeatures, setClubFeatures] = useState<{ it: string[]; en: string[] }>({ it: [], en: [] });
+  const [clubBaseRate, setClubBaseRate] = useState(2);
+  // La percentuale piu' alta dei livelli attivi: serve per dire al cliente
+  // fin dove arriva il cashback, invece di promettergli il massimo subito.
+  const [clubMaxRate, setClubMaxRate] = useState(2);
   const [selectedSubscription, setSelectedSubscription] = useState<'monthly' | 'annual' | null>(null);
 
   // Wash upsell targa state
@@ -1057,6 +1072,34 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       .catch(() => { if (!annullato) setClubBloccato(false); });
     return () => { annullato = true; };
   }, [user?.id]);
+  useEffect(() => {
+    let annullato = false;
+    (async () => {
+      try {
+        const [piani, copia, livelli] = await Promise.all([
+          getClubPlans(),
+          getDr7ClubPlanCopy(),
+          getClubTiers(),
+        ]);
+        if (annullato) return;
+        setClubPlans({ monthly: piani.monthly.price, annual: piani.annual.price });
+        setClubFeatures({ it: copia.features_it || [], en: copia.features_en || [] });
+        // La percentuale di partenza e' quella del livello piu' basso attivo:
+        // e' quella che un nuovo iscritto incassa davvero.
+        const ordinati = [...livelli].sort((a, b) => a.min - b.min);
+        const base = ordinati[0];
+        if (base && Number.isFinite(base.rewardPercent)) setClubBaseRate(base.rewardPercent);
+        const massimo = ordinati.reduce(
+          (piu, l) => (Number.isFinite(l.rewardPercent) && l.rewardPercent > piu ? l.rewardPercent : piu),
+          base && Number.isFinite(base.rewardPercent) ? base.rewardPercent : 0,
+        );
+        if (massimo > 0) setClubMaxRate(massimo);
+      } catch (err) {
+        console.error('[DR7 Club] lettura piano/vantaggi fallita, uso i default:', err);
+      }
+    })();
+    return () => { annullato = true; };
+  }, []);
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       e.preventDefault();
@@ -2496,8 +2539,26 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // Based on ~8-12% of booking total, rounded to look natural (not generic)
   const subscriptionWalletCredit = useMemo(() => {
     const base = grandTotal || finalTotal || 0;
-    return Math.round(base * 0.04 * 100) / 100; // 4% of total
-  }, [finalTotal, grandTotal]);
+    return Math.round(base * (clubBaseRate / 100) * 100) / 100;
+  }, [finalTotal, grandTotal, clubBaseRate]);
+
+  // Etichette prezzo del Club: una sola formattazione per popup, avviso
+  // pagamento e riepilogo, cosi' non possono piu' divergere fra loro.
+  const fmtClubPrice = (n: number) =>
+    n.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US', {
+      minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
+  const clubMonthlyLabel = `€${fmtClubPrice(clubPlans.monthly)}`;
+  const clubAnnualLabel = `€${fmtClubPrice(clubPlans.annual)}`;
+  const clubAnnualFullLabel = `€${fmtClubPrice(roundToTwoDecimals(clubPlans.monthly * 12))}`;
+  const clubMesiGratis = clubPlans.monthly > 0
+    ? Math.max(0, Math.round(12 - clubPlans.annual / clubPlans.monthly))
+    : 0;
+  const clubPianoAnnuale = formData.extras.includes('subscription_annual');
+  const clubPrezzoScelto = clubPianoAnnuale
+    ? `${clubAnnualLabel}${t({ it: '/anno', en: '/year' })}`
+    : `${clubMonthlyLabel}${t({ it: '/mese', en: '/month' })}`;
 
   // Forcer horaires valides et pas de dimanche
   useEffect(() => {
@@ -3517,7 +3578,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       const hasClubSubNexi = formData.extras.some(e => e.startsWith('subscription_'));
       if (hasClubSubNexi && user?.id) {
         const isAnnual = formData.extras.includes('subscription_annual');
-        const clubPrice = isAnnual ? 39 : 4.90;
+        const clubPrice = isAnnual ? clubPlans.annual : clubPlans.monthly;
         const expiresAt = new Date();
         if (isAnnual) expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         else expiresAt.setMonth(expiresAt.getMonth() + 1);
@@ -4252,7 +4313,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           const hasClubSub = formData.extras.some(e => e.startsWith('subscription_'));
           if (hasClubSub && user?.id) {
             const isAnnual = formData.extras.includes('subscription_annual');
-            const clubPrice = isAnnual ? 39 : 4.90;
+            const clubPrice = isAnnual ? clubPlans.annual : clubPlans.monthly;
             const clubLabel = isAnnual ? 'DR7 Club Annuale' : 'DR7 Club Mensile';
             const expiresAt = new Date();
             if (isAnnual) expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -6853,8 +6914,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <p className="text-white font-semibold">{t({ it: "DR7 Club — Pagamento separato", en: "DR7 Club — Separate payment" })}</p>
                   <p className="text-white/70 text-xs mt-1">
                     {formData.paymentMethod === 'credit'
-                      ? 'Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club (€39/anno) con carta.'
-                      : 'Il noleggio e DR7 Club (€39/anno) saranno pagati insieme con carta.'}
+                      ? `Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club (${clubPrezzoScelto}) con carta.`
+                      : `Il noleggio e DR7 Club (${clubPrezzoScelto}) saranno pagati insieme con carta.`}
                   </p>
                 </div>
               )}
@@ -7708,11 +7769,27 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         transition={{ delay: 0.3 }}
                         className="text-xl sm:text-2xl font-bold text-white"
                       >
-                        Ricevi fino a <span className="text-green-400">+€{subscriptionWalletCredit.toFixed(2)}</span> di credito wallet
+                        {t({ it: 'Ricevi', en: 'Get' })} <span className="text-green-400">+€{subscriptionWalletCredit.toFixed(2)}</span> {t({ it: 'di credito wallet', en: 'of wallet credit' })}
                       </motion.h3>
                       <div className="w-12 h-0.5 bg-white/30 mx-auto my-3"></div>
                       <p className="text-gray-400 text-sm">
-                        Attiva DR7 Club e ricevi fino a <strong className="text-white">€{subscriptionWalletCredit.toFixed(2)}</strong> di credito wallet (4% del totale), utilizzabile per il prossimo noleggio o servizio lavaggio.
+                        {/* Il cashback di un nuovo iscritto e' quello del primo
+                            livello: si dice quello, e si dice fin dove sale.
+                            "Fino al 31%" da solo prometteva la cifra piu' alta
+                            a chi incassa la piu' bassa. */}
+                        {lang === 'it' ? (
+                          <>
+                            Attiva DR7 Club e ricevi <strong className="text-white">€{subscriptionWalletCredit.toFixed(2)}</strong> di credito wallet
+                            {' '}({clubBaseRate}% del totale{clubMaxRate > clubBaseRate ? `, fino al ${clubMaxRate}% con la spesa annua` : ''}),
+                            {' '}utilizzabile per il prossimo noleggio o servizio lavaggio.
+                          </>
+                        ) : (
+                          <>
+                            Activate DR7 Club and get <strong className="text-white">€{subscriptionWalletCredit.toFixed(2)}</strong> of wallet credit
+                            {' '}({clubBaseRate}% of the total{clubMaxRate > clubBaseRate ? `, up to ${clubMaxRate}% as your yearly spend grows` : ''}),
+                            {' '}to use on your next rental or wash service.
+                          </>
+                        )}
                       </p>
                     </div>
 
@@ -7734,7 +7811,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <p className="text-gray-400 text-xs mt-0.5">{t({ it: "Cancella quando vuoi, senza vincoli", en: "Cancel whenever you like, no commitment" })}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white font-bold text-lg">€4,90<span className="text-gray-400 text-xs font-normal">{t({ it: "/mese", en: "/month" })}</span></p>
+                            <p className="text-white font-bold text-lg">{clubMonthlyLabel}<span className="text-gray-400 text-xs font-normal">{t({ it: "/mese", en: "/month" })}</span></p>
                           </div>
                         </div>
                       </button>
@@ -7749,17 +7826,23 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             : 'border-gray-700 hover:border-gray-500'
                         }`}
                       >
-                        <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-2 py-0.5">
-                          6 MESI GRATIS
-                        </div>
+                        {clubMesiGratis > 0 && (
+                          <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-2 py-0.5">
+                            {t({ it: `${clubMesiGratis} MESI GRATIS`, en: `${clubMesiGratis} MONTHS FREE` })}
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-white font-bold text-base">{t({ it: "Annuale", en: "Annual" })}</p>
-                            <p className="text-gray-400 text-xs mt-0.5">{t({ it: "Paga 6 mesi, ricevi 12 — il piano migliore", en: "Pay 6 months, get 12 — the best plan" })}</p>
+                            <p className="text-gray-400 text-xs mt-0.5">{clubMesiGratis > 0
+                              ? t({ it: `Paga ${12 - clubMesiGratis} mesi, ricevi 12 — il piano migliore`, en: `Pay ${12 - clubMesiGratis} months, get 12 — the best plan` })
+                              : t({ it: "Il piano migliore", en: "The best plan" })}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white font-bold text-lg">€39<span className="text-gray-400 text-xs font-normal">{t({ it: "/anno", en: "/year" })}</span></p>
-                            <p className="text-gray-500 line-through text-xs">{t({ it: "€58,80/anno", en: "€58.80/year" })}</p>
+                            <p className="text-white font-bold text-lg">{clubAnnualLabel}<span className="text-gray-400 text-xs font-normal">{t({ it: "/anno", en: "/year" })}</span></p>
+                            {clubMesiGratis > 0 && (
+                              <p className="text-gray-500 line-through text-xs">{clubAnnualFullLabel}{t({ it: "/anno", en: "/year" })}</p>
+                            )}
                           </div>
                         </div>
                       </button>
@@ -7768,13 +7851,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {/* What you get */}
                     <div className="bg-gray-800/50 rounded-xl p-4 mb-5 text-sm">
                       <p className="text-white font-semibold mb-2">{t({ it: "Con DR7 Club ottieni:", en: "With DR7 Club you get:" })}</p>
+                      {/* I vantaggi sono quelli di Centralina Pro, gli stessi
+                          della pagina /membership: qui non si riscrivono. */}
                       <ul className="space-y-1.5 text-gray-300">
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Fino a", en: "Up to" })} €{subscriptionWalletCredit.toFixed(2)} {t({ it: "di credito wallet (4% del totale)", en: "of wallet credit (4% of the total)" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Sconti esclusivi su noleggi e lavaggi", en: "Exclusive discounts on rentals and washes" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Accesso prioritario alle nuove supercar", en: "Priority access to new supercars" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "Promozioni riservate ai membri", en: "Members-only promotions" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "DR7 Wallet Bonus fino al 100%", en: "DR7 Wallet Bonus up to 100%" })}</li>
-                        <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {t({ it: "DR7 Wallet Privilege fino al 36%", en: "DR7 Wallet Privilege up to 36%" })}</li>
+                        {clubFeatures[lang].map((vantaggio, i) => (
+                          <li key={i} className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✓</span> {vantaggio}</li>
+                        ))}
                       </ul>
                     </div>
 
@@ -7791,15 +7873,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         }`}
                       >
                         {selectedSubscription
-                          ? `Attiva DR7 Club — €${selectedSubscription === 'monthly' ? '4,90/mese' : '39/anno'}`
-                          : 'Seleziona un piano'}
+                          ? `${t({ it: 'Attiva DR7 Club', en: 'Activate DR7 Club' })} — ${selectedSubscription === 'monthly' ? `${clubMonthlyLabel}${t({ it: '/mese', en: '/month' })}` : `${clubAnnualLabel}${t({ it: '/anno', en: '/year' })}`}`
+                          : t({ it: 'Seleziona un piano', en: 'Select a plan' })}
                       </button>
                       <button
                         type="button"
                         onClick={handleSubscriptionDecline}
                         className="w-full py-3 text-gray-400 hover:text-white text-sm transition-colors"
                       >
-                        No, grazie
+                        {t({ it: 'No, grazie', en: 'No, thanks' })}
                       </button>
                     </div>
                   </motion.div>
@@ -8009,7 +8091,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <div className="flex justify-between text-sm">
                             <span className="text-white font-semibold">{t({ it: 'DR7 Club', en: 'DR7 Club' })}</span>
                             <span className="text-white font-bold">
-                              {formData.extras.includes('subscription_annual') ? '€39/anno' : '€4,90/mese'}
+                              {clubPrezzoScelto}
                             </span>
                           </div>
                           <p className="text-xs text-white/70 mt-1">

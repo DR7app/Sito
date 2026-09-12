@@ -148,6 +148,11 @@ const DocumentsVerification = () => {
                 // Clear file
                 setFiles(prev => ({ ...prev, [stepIndex]: null }));
 
+                // Il documento appena caricato riempie i campi ancora vuoti
+                // della scheda: prima si caricavano le foto e "Dettagli
+                // Profilo" restava comunque a meta'.
+                void completaSchedaDalDocumento(pronto);
+
                 alert(`${step.label} — ${t({ it: 'caricato con successo!', en: 'uploaded successfully!' })}`);
             } else {
                 throw new Error(t({ it: "Caricamento non riuscito", en: "Upload failed" }));
@@ -157,6 +162,83 @@ const DocumentsVerification = () => {
             alert(`${t({ it: 'Errore nel caricamento:', en: 'Upload error:' })} ${error.message || t({ it: 'Caricamento non riuscito', en: 'Upload failed' })}`);
         } finally {
             setUploading(false);
+        }
+    };
+
+    /**
+     * Legge il documento appena caricato e scrive nella scheda cliente solo
+     * i campi ancora vuoti. Niente sovrascritture: quello che la persona ha
+     * gia' messo resta.
+     */
+    const completaSchedaDalDocumento = async (file: File) => {
+        if (!user?.id) return;
+        try {
+            const base64 = await new Promise<string>((risolvi, rifiuta) => {
+                const lettore = new FileReader();
+                lettore.onload = () => {
+                    const testo = String(lettore.result || '');
+                    risolvi(testo.includes(',') ? testo.split(',')[1] : testo);
+                };
+                lettore.onerror = () => rifiuta(new Error('lettura file non riuscita'));
+                lettore.readAsDataURL(file);
+            });
+
+            const res = await fetch('/.netlify/functions/extract-document-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: base64 }),
+            });
+            if (!res.ok) return;
+            const json = await res.json();
+            const dati = json.data || json.extractedData;
+            if (!dati) return;
+
+            const { data: scheda } = await supabase
+                .from('customers_extended')
+                .select('*')
+                .eq('user_id', user.id)
+                .maybeSingle();
+            if (!scheda) return;
+
+            const aggiornamento: Record<string, any> = {};
+            const scriviSeVuoto = (colonna: string, valore?: string) => {
+                if (valore && !String(scheda[colonna] ?? '').trim()) aggiornamento[colonna] = valore;
+            };
+            scriviSeVuoto('nome', dati.nome);
+            scriviSeVuoto('cognome', dati.cognome);
+            scriviSeVuoto('sesso', dati.sesso);
+            scriviSeVuoto('data_nascita', dati.data_nascita);
+            scriviSeVuoto('citta_nascita', dati.luogo_nascita);
+            scriviSeVuoto('provincia_nascita', dati.provincia_nascita?.toUpperCase());
+            scriviSeVuoto('codice_fiscale', dati.codice_fiscale?.toUpperCase());
+            scriviSeVuoto('indirizzo', dati.indirizzo);
+            scriviSeVuoto('numero_civico', dati.numero_civico);
+            scriviSeVuoto('codice_postale', dati.codice_postale);
+            scriviSeVuoto('citta_residenza', dati.citta_residenza);
+            scriviSeVuoto('provincia_residenza', dati.provincia_residenza?.toUpperCase());
+
+            const meta = { ...(scheda.metadata || {}) };
+            const metaSeVuoto = (chiave: string, valore?: string) => {
+                if (valore && !String(meta[chiave] ?? '').trim()) meta[chiave] = valore;
+            };
+            metaSeVuoto('tipo_patente', dati.patente_tipo);
+            metaSeVuoto('numero_patente', dati.patente_numero);
+            metaSeVuoto('patente_emessa_da', dati.patente_ente);
+            // La data vera di conseguimento sta sul retro (categoria B).
+            metaSeVuoto('patente_data_rilascio', dati.patente_conseguimento || dati.patente_rilascio);
+            metaSeVuoto('patente_scadenza', dati.patente_scadenza);
+            if (JSON.stringify(meta) !== JSON.stringify(scheda.metadata || {})) {
+                aggiornamento.metadata = meta;
+            }
+
+            if (Object.keys(aggiornamento).length === 0) return;
+            const { error } = await supabase
+                .from('customers_extended')
+                .update(aggiornamento)
+                .eq('id', scheda.id);
+            if (error) console.error('Scheda non aggiornata dal documento:', error);
+        } catch (err) {
+            console.warn('Lettura documento per la scheda non riuscita:', err);
         }
     };
 

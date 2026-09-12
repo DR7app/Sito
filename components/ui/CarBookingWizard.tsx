@@ -1653,7 +1653,52 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     computeValidReturnTimes(date, formData.pickupDate, formData.pickupTime);
 
   const [hasStoredDocs, setHasStoredDocs] = useState<{ licensePath: string | null; idPath: string | null; cfPath: string | null }>({ licensePath: null, idPath: null, cfPath: null });
+  const [percorsiPatente, setPercorsiPatente] = useState<string[]>([]);
+  const letturaArchivioFatta = useRef(false);
   const [checkingDocs, setCheckingDocs] = useState(false);
+
+  /**
+   * La patente e' gia' in archivio ma la data di conseguimento (categoria B)
+   * non e' mai stata salvata: senza quella data la prenotazione richiedeva
+   * di nuovo tutte le foto. Qui si rilegge il file gia' caricato con un link
+   * firmato, cosi' il cliente non ricarica niente.
+   */
+  useEffect(() => {
+    if (letturaArchivioFatta.current) return;
+    if (!percorsiPatente.length) return;
+    if (formData.licenseIssueDate) return;
+    letturaArchivioFatta.current = true;
+    (async () => {
+      for (const percorso of percorsiPatente) {
+        try {
+          const { data: firmato } = await supabase.storage
+            .from('driver-licenses')
+            .createSignedUrl(percorso, 300);
+          if (!firmato?.signedUrl) continue;
+          const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/extract-document-data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl: firmato.signedUrl }),
+          });
+          if (!res.ok) continue;
+          const json = await res.json();
+          const dati = json.data || json.extractedData;
+          if (!dati) continue;
+          const conseguimento = dati.patente_conseguimento || dati.patente_rilascio;
+          if (conseguimento) {
+            setFormData(prev => ({
+              ...prev,
+              licenseIssueDate: prev.licenseIssueDate || conseguimento,
+              licenseNumber: prev.licenseNumber || dati.patente_numero || '',
+            }));
+            return;
+          }
+        } catch (err) {
+          console.warn('Rilettura patente in archivio non riuscita:', err);
+        }
+      }
+    })();
+  }, [percorsiPatente, formData.licenseIssueDate]);
 
   // Indirizzo di residenza in una riga sola, dalla scheda cliente.
   const indirizzoCompleto = (c: Record<string, any>): string => {
@@ -1700,6 +1745,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const { data: licenseFiles } = await supabase.storage.from('driver-licenses').list(user.id);
         const validLicense = licenseFiles && licenseFiles.length > 0 ? licenseFiles.find(f => f.name !== '.emptyFolderPlaceholder') : null;
         const licensePath = validLicense ? `${user.id}/${validLicense.name}` : null;
+        // Tutti i file della patente: servono per rileggere la data di
+        // conseguimento senza richiedere di nuovo la foto.
+        setPercorsiPatente((licenseFiles || [])
+          .filter(f => f.name !== '.emptyFolderPlaceholder')
+          .map(f => `${user.id}/${f.name}`));
 
         // Check ID bucket: carta-identita
         const { data: idFiles } = await supabase.storage.from('carta-identita').list(user.id);
@@ -5524,6 +5574,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
               ) : (
                 <>
+                  {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath && !formData.licenseIssueDate) && (
+                    <div className="bg-gray-800/60 border border-white/30 rounded-lg p-4 mb-4">
+                      <p className="text-white font-semibold">{t({ it: 'I tuoi documenti sono già in archivio', en: 'Your documents are already on file' })}</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {t({
+                          it: 'Stiamo rileggendo la patente per la data di conseguimento. Se resta vuota, carica solo il RETRO della patente.',
+                          en: 'We are re-reading your licence for the date obtained. If it stays empty, upload just the BACK of the licence.',
+                        })}
+                      </p>
+                    </div>
+                  )}
                   {/* 09/09/2026 — fronte E retro di patente, codice fiscale e
                       carta d'identita', esattamente come si chiedono al
                       secondo conducente e nella sezione Documenti
@@ -5533,7 +5594,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       barre. */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {([
-                      { campo: 'licenseImage', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },

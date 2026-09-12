@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { getMechanicalServices, type MechanicalServiceItem } from '../utils/siteCopy';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
+import { useCarrello } from '../hooks/useCarrello';
 
 
 const MechanicalBookingPage: React.FC = () => {
@@ -401,6 +402,35 @@ const MechanicalBookingPage: React.FC = () => {
 
     setPendingBookingData(bookingData);
     setShowPaymentModal(true);
+  };
+
+  // Carrello: lo stesso intervento si puo' mettere da parte e pagare insieme
+  // al resto. I dati della prenotazione sono gia' pronti qui.
+  const { aggiungi: aggiungiArticolo } = useCarrello();
+  const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
+
+  const aggiungiAlCarrello = async () => {
+    if (!pendingBookingData || aggiungendoAlCarrello) return;
+    setAggiungendoAlCarrello(true);
+    setPaymentError(null);
+    try {
+      const quando = formData.appointmentDate && formData.appointmentTime
+        ? `${formData.appointmentDate.split('-').reverse().join('/')} ${formData.appointmentTime}`
+        : '';
+      await aggiungiArticolo({
+        tipo: 'meccanica',
+        titolo: pendingBookingData.service_name || (lang === 'it' ? 'Servizio meccanico' : 'Mechanical service'),
+        sottotitolo: [quando, pendingBookingData.vehicle_name].filter(Boolean).join(' · '),
+        prezzoCents: pendingBookingData.price_total,
+        dati: { booking: pendingBookingData },
+      });
+      setShowPaymentModal(false);
+      navigate('/mechanical-services');
+    } catch (e: any) {
+      setPaymentError(e?.message || t({ it: 'Non riesco ad aggiungere al carrello.', en: 'Could not add to the cart.' }));
+    } finally {
+      setAggiungendoAlCarrello(false);
+    }
   };
 
   const handlePayment = async () => {
@@ -1300,6 +1330,17 @@ const MechanicalBookingPage: React.FC = () => {
                   {paymentError}
                 </div>
               ) : null}
+
+              {/* Stesso servizio, pagato dopo insieme agli altri. */}
+              <button
+                onClick={aggiungiAlCarrello}
+                disabled={isProcessing || aggiungendoAlCarrello}
+                className="w-full mt-4 border border-gray-600 text-white font-bold py-3 px-6 text-sm uppercase tracking-[0.18em] hover:bg-gray-800 transition-colors disabled:opacity-60"
+              >
+                {aggiungendoAlCarrello
+                  ? t({ it: 'Aggiungo…', en: 'Adding…' })
+                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+              </button>
             </motion.div>
           </motion.div>
         )}

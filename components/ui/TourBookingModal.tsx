@@ -6,6 +6,7 @@ import type { NoleggioCatalogItem, TourDuration } from '../../hooks/useNoleggioC
 import { useTranslation } from '../../hooks/useTranslation';
 import { dateLocale } from '../../utils/i18nDate';
 import CalendarioGiornoOrario from './CalendarioGiornoOrario';
+import { useCarrello } from '../../hooks/useCarrello';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -202,6 +203,11 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
     [seats, selected, departure, durationSeatCents],
   );
 
+  // Carrello: i posti scelti si possono mettere da parte e pagare insieme
+  // al resto dell'ordine. I posti NON restano bloccati: come nel flusso a
+  // carta di oggi, si prendono davvero solo al pagamento.
+  const { aggiungi: aggiungiArticolo } = useCarrello();
+
   // Validazione comune ai due flussi (carta / wallet). Ritorna il nome
   // effettivo se ok, altrimenti imposta l'errore e ritorna null.
   function validate(): string | null {
@@ -240,6 +246,36 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
       if (typeof data.newBalance === 'number') setWalletBalanceCents(Math.round(data.newBalance * 100));
       setSuccess(true);
       setSubmitting(false);
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
+  }
+
+  async function aggiungiAlCarrello() {
+    const effName = validate();
+    if (effName === null) return;
+    setSubmitting(true);
+    try {
+      const posti = seats.filter(s => selected.has(s.id)).map(s => s.seat_label).join(', ');
+      await aggiungiArticolo({
+        tipo: 'tour',
+        titolo: item.name,
+        sottotitolo: [
+          departure ? `${departure.departure_date.split('-').reverse().join('/')} ${String(departure.departure_time).slice(0, 5)}` : '',
+          `${selected.size} ${t({ it: 'posto/i', en: 'seat(s)' })}: ${posti}`,
+          selectedDuration?.label || '',
+        ].filter(Boolean).join(' · '),
+        prezzoCents: totalCents,
+        dati: {
+          departureId,
+          seatIds: Array.from(selected),
+          ...(durationSeatCents != null ? { durationPriceCents: durationSeatCents, durationLabel: selectedDuration?.label } : {}),
+          customer: { name: effName, email: cust.email.trim(), phone: cust.phone.trim() },
+        },
+      });
+      setSubmitting(false);
+      onClose();
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);
@@ -448,6 +484,12 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                       {submitting ? t({ it: "Attendi…", en: "Please wait…" }) : t({ it: "Prenota e paga", en: "Book and pay" })}
                     </button>
                   </div>
+
+                  {/* Stessi posti, pagati dopo insieme al resto del carrello. */}
+                  <button onClick={aggiungiAlCarrello} disabled={submitting || totalCents <= 0}
+                    className="w-full px-6 py-3 border border-gray-600 text-white text-sm font-semibold uppercase tracking-[0.18em] hover:bg-white/10 transition-colors disabled:opacity-50">
+                    {t({ it: "Aggiungi al carrello", en: "Add to cart" })}
+                  </button>
 
                   {/* Pagamento con Credit Wallet (cliente loggato) */}
                   {walletLoaded && (

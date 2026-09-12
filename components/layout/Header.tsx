@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useCarrello } from '../../hooks/useCarrello';
 import { useAuth } from '../../hooks/useAuth';
 import {
   UserCircleIcon,
@@ -347,6 +348,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
 const Header: React.FC = () => {
   const { t, lang } = useTranslation();
   const { user } = useAuth();
+  const { numero: numeroCarrello, apri: apriCarrello } = useCarrello();
   const [scrolled, setScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // La lente in alto a destra: cerca fra le sedi del pannello. Oggi c'e'
@@ -440,6 +442,27 @@ const Header: React.FC = () => {
             >
               {h('account_label_it', 'account_label_en') || t({ it: 'ACCOUNT', en: 'ACCOUNT' })}
             </Link>
+            {/* CARRELLO: il chariot accanto ad ACCOUNT. Un servizio si mette
+                da parte e si paga insieme agli altri, anche di reparti
+                diversi. Il numero compare solo quando c'e' qualcosa dentro,
+                cosi' la barra resta pulita per chi sta solo guardando. */}
+            <button
+              onClick={apriCarrello}
+              aria-label={t({ it: 'Apri il carrello', en: 'Open the cart' })}
+              title={t({ it: 'Carrello', en: 'Cart' })}
+              className="relative flex items-center justify-center text-white/90 transition-colors duration-500 ease-editorial hover:text-white"
+            >
+              <svg className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.75 3.5h1.85a1 1 0 01.98.8L6 7m0 0l1.6 6.85A1.4 1.4 0 009 14.95h7.3a1.4 1.4 0 001.36-1.07L19.4 7H6z" />
+                <circle cx="9.6" cy="18.6" r="1.45" />
+                <circle cx="16.6" cy="18.6" r="1.45" />
+              </svg>
+              {numeroCarrello > 0 && (
+                <span className="absolute -top-1.5 -right-2 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold leading-none text-black">
+                  {numeroCarrello}
+                </span>
+              )}
+            </button>
             {aspetto.logo_alignment === 'right' && (
               <SiteLogo aspetto={aspetto} alt={copy?.logo_alt || 'DR7 Logo'} />
             )}

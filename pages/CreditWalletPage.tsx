@@ -3,6 +3,7 @@ import { motion, Variants, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
+import { useCarrello } from '../hooks/useCarrello';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { useTranslation } from '../hooks/useTranslation';
 import {
@@ -295,8 +296,54 @@ const CreditWalletPage: React.FC = () => {
     }
   };
 
+  // Carrello: la ricarica si puo' mettere da parte e pagare insieme al
+  // resto. Resta a sola carta: il wallet non si ricarica col wallet.
+  const { aggiungi: aggiungiArticolo } = useCarrello();
+  const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
+
+  const aggiungiAlCarrello = async () => {
+    if (!selectedPackage || !user?.id || aggiungendoAlCarrello) return;
+    setAggiungendoAlCarrello(true);
+    setPaymentError(null);
+    try {
+      await aggiungiArticolo({
+        tipo: 'wallet',
+        titolo: `Credit Wallet — ${selectedPackage.name}`,
+        sottotitolo: `${formatAmount(selectedPackage.rechargeAmount, lang)} → ${formatAmount(selectedPackage.receivedAmount, lang)}`,
+        prezzoCents: Math.round(selectedPackage.rechargeAmount * 100),
+        dati: {
+          purchase: {
+            package_id: selectedPackage.id,
+            package_name: selectedPackage.name,
+            package_series: selectedPackage.series,
+            recharge_amount: selectedPackage.rechargeAmount,
+            received_amount: selectedPackage.receivedAmount,
+            bonus_amount: selectedPackage.bonus,
+            bonus_percentage: selectedPackage.bonusPercentage,
+            currency: 'EUR',
+            customer_name: formData.fullName || user.fullName || '',
+            customer_email: formData.email || user.email || '',
+            customer_phone: formData.phone || user.phone || '',
+            customer_codice_fiscale: formData.codiceFiscale,
+            customer_indirizzo: formData.indirizzo,
+            customer_numero_civico: formData.numeroCivico,
+            customer_citta: formData.cittaResidenza,
+            customer_cap: formData.codicePostale,
+            customer_provincia: formData.provinciaResidenza,
+          },
+        },
+      });
+      setShowPaymentModal(false);
+    } catch (e: any) {
+      setPaymentError(e?.message || 'Errore');
+    } finally {
+      setAggiungendoAlCarrello(false);
+    }
+  };
+
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+
 
     if (!selectedPackage || !user?.id) {
       setPaymentError(w('err_payment_not_ready_it', 'err_payment_not_ready_en'));
@@ -743,6 +790,16 @@ const CreditWalletPage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
+                <button
+                  type="button"
+                  onClick={aggiungiAlCarrello}
+                  disabled={isProcessing || aggiungendoAlCarrello}
+                  className="mb-4 w-full border border-white/15 bg-white/5 px-6 py-3 text-[11px] font-medium uppercase tracking-label text-white transition-colors hover:bg-white/12 disabled:opacity-50"
+                >
+                  {aggiungendoAlCarrello
+                    ? t({ it: 'Aggiungo…', en: 'Adding…' })
+                    : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                </button>
                 <div className="flex gap-4">
                   <button
                     type="button"

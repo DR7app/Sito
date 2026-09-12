@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
-    const { departureId, seatIds, customer, userId, paymentMethod, durationPriceCents, durationLabel } = JSON.parse(event.body || '{}');
+    const { departureId, seatIds, customer, userId, paymentMethod, durationPriceCents, durationLabel, nexiOrderId: ordineDalCarrello, carrelloOrderId } = JSON.parse(event.body || '{}');
     if (!departureId || !Array.isArray(seatIds) || seatIds.length === 0 || !customer?.name) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Dati mancanti (partenza, posti o cliente).' }) };
     }
@@ -108,7 +108,12 @@ export const handler = async (event: any) => {
     // create-nexi-payment, che rimuove i trattini). Lo salviamo sul booking
     // così nexi-callback ritrova la prenotazione (match su nexi_order_id) e
     // manda conferma/fattura. Stesso schema del noleggio auto (CarBookingWizard).
-    const nexiOrderId = `DR7${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    // Dal carrello l'ordine arriva gia' deciso: e' il figlio dell'ordine
+    // unico pagato dal cliente, ed e' con quello che nexi-callback ritrova
+    // questa partenza. Fuori dal carrello se lo genera come sempre.
+    const nexiOrderId = typeof ordineDalCarrello === 'string' && ordineDalCarrello.trim()
+      ? ordineDalCarrello.trim()
+      : `DR7${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     // Dati comuni della prenotazione. seat_ids serve a nexi-callback per marcare
     // i posti 'sold' dopo il pagamento (flusso carta: la prenotazione nasce SOLO
@@ -129,7 +134,7 @@ export const handler = async (event: any) => {
       guest_name: customer.name,
       guest_email: customer.email || null,
       guest_phone: customer.phone || null,
-      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, seat_ids: seatIds, nexi_order_id: nexiOrderId, ...(durationLabel ? { duration_label: String(durationLabel) } : {}) },
+      booking_details: { tour_departure_id: departureId, seats: seatLabels, seat_count: seats.length, seat_ids: seatIds, nexi_order_id: nexiOrderId, ...(carrelloOrderId ? { carrello_order_id: String(carrelloOrderId) } : {}), ...(durationLabel ? { duration_label: String(durationLabel) } : {}) },
     };
 
     if (isWallet) {

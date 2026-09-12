@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+import { useCarrello } from '../../hooks/useCarrello'
 import { supabase } from '../../supabaseClient'
 import { getUserCreditBalance, getCreditTransactions } from '../../utils/creditWallet'
 import type { CreditTransaction } from '../../utils/creditWallet'
@@ -91,6 +92,32 @@ const DR7Club = () => {
   }
 
   const [subscribeError, setSubscribeError] = useState<string | null>(null)
+
+  // Carrello: l'iscrizione si puo' mettere da parte e pagare insieme al
+  // resto. Resta a sola carta, come ogni abbonamento.
+  const { aggiungi: aggiungiArticolo } = useCarrello()
+
+  const aggiungiAlCarrello = async (plan: 'monthly' | 'annual') => {
+    if (!user?.id || bloccato) return
+    const planInfo = plans[plan]
+    const expiresAt = new Date()
+    if (plan === 'monthly') expiresAt.setMonth(expiresAt.getMonth() + 1)
+    else expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+    setSubscribing(true)
+    setSubscribeError(null)
+    try {
+      await aggiungiArticolo({
+        tipo: 'club',
+        titolo: `DR7 Club — ${planInfo.label}`,
+        prezzoCents: Math.round(planInfo.price * 100),
+        dati: { subscription: { plan, price: planInfo.price, expires_at: expiresAt.toISOString() } },
+      })
+    } catch (err: any) {
+      setSubscribeError(err.message || 'Errore')
+    } finally {
+      setSubscribing(false)
+    }
+  }
 
   const handleSubscribe = async (plan: 'monthly' | 'annual') => {
     if (!user?.id) return
@@ -284,6 +311,13 @@ const DR7Club = () => {
               >
                 {t({ it: "Iscriviti ora", en: "Join now" })}
               </button>
+              <button
+                onClick={() => aggiungiAlCarrello('monthly')}
+                disabled={subscribing}
+                className="w-full mt-2 py-2.5 border border-gray-600 text-white font-bold hover:bg-white/10 transition-colors text-xs uppercase tracking-[0.18em]"
+              >
+                {t({ it: "Aggiungi al carrello", en: "Add to cart" })}
+              </button>
             </div>
 
             {/* Annual */}
@@ -305,6 +339,13 @@ const DR7Club = () => {
                 className="w-full mt-3 py-2.5 bg-[#C9A96E] text-black font-bold hover:bg-[#D4B896] transition-colors text-sm"
               >
                 {t({ it: "Iscriviti ora", en: "Join now" })}
+              </button>
+              <button
+                onClick={() => aggiungiAlCarrello('annual')}
+                disabled={subscribing}
+                className="w-full mt-2 py-2.5 border border-[#C9A96E]/60 text-white font-bold hover:bg-[#C9A96E]/15 transition-colors text-xs uppercase tracking-[0.18em]"
+              >
+                {t({ it: "Aggiungi al carrello", en: "Add to cart" })}
               </button>
             </div>
           </div>

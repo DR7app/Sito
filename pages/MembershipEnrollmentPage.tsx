@@ -7,6 +7,7 @@ import { MEMBERSHIP_TIERS as DEFAULT_MEMBERSHIP_TIERS } from '../constants';
 import { getMembershipTiers } from '../utils/getMembershipTiers';
 import type { MembershipTier } from '../types';
 import { supabase } from '../supabaseClient';
+import { useCarrello } from '../hooks/useCarrello';
 
 const MembershipEnrollmentPage: React.FC = () => {
     const { tierId } = useParams<{ tierId: string }>();
@@ -33,6 +34,49 @@ const MembershipEnrollmentPage: React.FC = () => {
     const price = useMemo(() => tier?.price[billingCycle].eur || 0, [tier, billingCycle]);
 
     const formatPrice = (p: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(p);
+
+    // Carrello: l'abbonamento si puo' mettere da parte e pagare insieme al
+    // resto dell'ordine. Resta a sola carta, come ogni abbonamento.
+    const { aggiungi: aggiungiArticolo } = useCarrello();
+    const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
+
+    const aggiungiAlCarrello = async () => {
+        if (!tier || !user?.id || aggiungendoAlCarrello) return;
+        setAggiungendoAlCarrello(true);
+        setPaymentError(null);
+        try {
+            let baseDate = new Date();
+            if (user.membership?.renewalDate) {
+                const currentExpiry = new Date(user.membership.renewalDate);
+                if (currentExpiry > baseDate) baseDate = currentExpiry;
+            }
+            const renewalDate = new Date(baseDate);
+            if (billingCycle === 'monthly') renewalDate.setMonth(renewalDate.getMonth() + 1);
+            else renewalDate.setFullYear(renewalDate.getFullYear() + 1);
+
+            await aggiungiArticolo({
+                tipo: 'membership',
+                titolo: `${tier.name[lang]} — ${billingCycle === 'monthly' ? (lang === 'it' ? 'Mensile' : 'Monthly') : (lang === 'it' ? 'Annuale' : 'Annual')}`,
+                prezzoCents: Math.round(price * 100),
+                dati: {
+                    purchase: {
+                        tier_id: tier.id,
+                        tier_name: tier.name[lang],
+                        billing_cycle: billingCycle,
+                        price,
+                        currency: 'EUR',
+                        is_recurring: true,
+                        subscription_status: 'active',
+                        renewal_date: renewalDate.toISOString(),
+                    },
+                },
+            });
+        } catch (e: any) {
+            setPaymentError(e?.message || 'Errore');
+        } finally {
+            setAggiungendoAlCarrello(false);
+        }
+    };
 
     const handleConfirm = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -210,6 +254,16 @@ const MembershipEnrollmentPage: React.FC = () => {
                             {isProcessing
                                 ? (t({ it: 'Elaborazione...', en: 'Processing...' }))
                                 : (t({ it: 'Conferma e paga', en: 'Confirm and pay' }))}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={aggiungiAlCarrello}
+                            disabled={isProcessing || aggiungendoAlCarrello}
+                            className="w-full mt-3 py-3.5 border border-gray-600 text-white text-xs font-bold uppercase tracking-[0.18em] hover:bg-white/10 transition-colors disabled:opacity-60"
+                        >
+                            {aggiungendoAlCarrello
+                                ? t({ it: 'Aggiungo…', en: 'Adding…' })
+                                : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
                         </button>
                     </form>
                 </div>

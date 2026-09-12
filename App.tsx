@@ -4,6 +4,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { BookingProvider } from './contexts/BookingContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { CarrelloProvider } from './contexts/CarrelloContext';
 // Nexi payment - no Stripe imports needed
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -96,6 +97,8 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import PaymentPage from './pages/PaymentPage';
 import FirmaPage from './pages/FirmaPage';
+import CheckoutPage from './pages/CheckoutPage';
+import CarrelloDrawer from './components/ui/CarrelloDrawer';
 
 
 
@@ -397,6 +400,7 @@ const AnimatedRoutes = () => {
         <Route path="/car-booking-success" element={<CarBookingConfirmationPage />} />
         <Route path="/booking-success" element={<ConfirmationSuccessPage />} />
         <Route path="/pay" element={<PaymentPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-cancel" element={<PaymentCancelPage />} />
         <Route path="/post/:id" element={<PostPage />} />
@@ -459,6 +463,7 @@ const MainContent = () => {
           <WbFooterOppure><Footer /></WbFooterOppure>
         </div>
         <BookingModal />
+        <CarrelloDrawer />
         <VerificationModal />
         <CookieBanner />
         <ConsentPopupManager />
@@ -506,6 +511,7 @@ const App = () => {
       <CurrencyProvider>
         <BookingProvider>
           <AuthProvider>
+            <CarrelloProvider>
             <VerificationProvider>
               <BrowserRouter>
                 <ScrollToTop />
@@ -515,6 +521,7 @@ const App = () => {
                 </Routes>
               </BrowserRouter>
             </VerificationProvider>
+            </CarrelloProvider>
           </AuthProvider>
         </BookingProvider>
       </CurrencyProvider>

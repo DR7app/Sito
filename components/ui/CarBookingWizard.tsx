@@ -7,6 +7,7 @@ import { calculateMultiDayPrice, calculateIncludedKmFromConfig } from '../../uti
 import { invalidateVehicleCache } from '../../hooks/useVehicles';
 import { addCredits } from '../../utils/creditWallet';
 import { useAuth } from '../../hooks/useAuth';
+import { useCarrello } from '../../hooks/useCarrello';
 import { useBooking } from '../../hooks/useBooking';
 import { supabase } from '../../supabaseClient';
 import { PICKUP_LOCATIONS as DEFAULT_PICKUP_LOCATIONS, RETURN_LOCATIONS as DEFAULT_RETURN_LOCATIONS } from '../../constants';
@@ -303,6 +304,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const { t, lang, getTranslated } = useTranslation();
   const { currency } = useCurrency();
   const { user, loading: authLoading } = useAuth();
+  // Carrello: il noleggio configurato si puo' pagare subito oppure mettere
+  // da parte e pagare insieme a lavaggi, tour e resto dell'ordine.
+  const { aggiungi: aggiungiArticolo } = useCarrello();
   const { initialSearchDates } = useBooking();
   const [pickupLocs, setPickupLocs] = useState(DEFAULT_PICKUP_LOCATIONS);
   const [returnLocs, setReturnLocs] = useState(DEFAULT_RETURN_LOCATIONS);
@@ -1522,7 +1526,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     return filteredTimes;
   };
 
-  const getValidReturnTimes = (date: string): string[] => {
+  // 2026-09-12 (direzione): il noleggio in giornata e' ammesso — si puo'
+  // riconsegnare poche ore dopo il ritiro e si paga comunque una giornata
+  // intera. La funzione prende ritiro e ora esplicitamente cosi' puo' essere
+  // chiamata anche mentre il ritiro sta cambiando (calendario del ritiro),
+  // quando formData e' ancora quello vecchio.
+  const computeValidReturnTimes = (date: string, pickupDate: string, pickupTime: string): string[] => {
     if (isHoliday(date)) return []; // Block Holidays
     // Office-hour windows + slot granularity come from Centralina Pro
     // (Orari Noleggio); helper closes Sundays via config (default Dom CHIUSO).
@@ -1545,13 +1554,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
     // If no pickup date/time set, return empty array
     // User must select pickup before selecting return
-    if (!formData.pickupDate || !formData.pickupTime) {
+    if (!pickupDate || !pickupTime) {
       return [];
     }
 
     // Server-side conflict check (checkVehicleAvailability) handles real conflicts
     // Allow all valid return times based on office hours
-    const pickup = new Date(`${formData.pickupDate}T${formData.pickupTime}`);
+    const pickup = new Date(`${pickupDate}T${pickupTime}`);
 
     // 1 rental day = 22h30 → return time capped at pickupTime - 1h30
     // EXCEPTION: Saturday returns (Friday pickup) — Saturday has limited hours,
@@ -1559,16 +1568,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const returnDayOfWeek = getDayOfWeek(date);
     const isSaturdayReturn = returnDayOfWeek === 6;
 
-    const [pickupH, pickupM] = formData.pickupTime.split(':').map(Number);
+    const [pickupH, pickupM] = pickupTime.split(':').map(Number);
     const maxReturnMinutes = (pickupH * 60 + pickupM) - 90; // pickup time - 1h30
 
     // Check if this is a single-day rental (return = pickup + 1 day)
-    const pickupDateObj = new Date(formData.pickupDate);
+    const pickupDateObj = new Date(pickupDate);
     const returnDateObj = new Date(date);
     pickupDateObj.setHours(0, 0, 0, 0);
     returnDateObj.setHours(0, 0, 0, 0);
     const daysDiff = Math.round((returnDateObj.getTime() - pickupDateObj.getTime()) / (1000 * 60 * 60 * 24));
-    const isMinimumRental = daysDiff <= 1;
+    // Riconsegna nello stesso giorno: nessun tetto "ritiro - 1h30", basta che
+    // l'ora sia dopo il ritiro (il prezzo resta di una giornata).
+    const isSameDayReturn = daysDiff === 0;
+    const isMinimumRental = daysDiff === 1;
 
     return filteredTimes.filter(time => {
       const [hours, minutes] = time.split(':').map(Number);
@@ -1578,6 +1590,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Must be after pickup datetime
       if (returnDt <= pickup) return false;
+
+      // Noleggio in giornata: ogni orario di apertura dopo il ritiro va bene
+      if (isSameDayReturn) return true;
 
       // Saturday return: allow all office-hour times (no 22h30 restriction)
       if (isSaturdayReturn) return true;
@@ -1591,6 +1606,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       return true;
     });
   };
+
+  const getValidReturnTimes = (date: string): string[] =>
+    computeValidReturnTimes(date, formData.pickupDate, formData.pickupTime);
 
   const [hasStoredDocs, setHasStoredDocs] = useState<{ licensePath: string | null; idPath: string | null; cfPath: string | null }>({ licensePath: null, idPath: null, cfPath: null });
   const [checkingDocs, setCheckingDocs] = useState(false);
@@ -1788,6 +1806,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (validTimes.length === 0) {
         // No valid times available — clear the return time
         setFormData(prev => ({ ...prev, returnTime: '' }));
+        return;
+      }
+
+      // Noleggio in giornata (2026-09-12): l'ora ideale "ritiro - 1h30"
+      // cadrebbe PRIMA del ritiro, e lo snap sceglierebbe la prima fascia
+      // subito dopo il ritiro (noleggio di 15 minuti). Si tiene quindi l'ora
+      // gia' scelta se e' ancora valida, altrimenti l'ultima fascia utile
+      // della giornata.
+      if (formData.returnDate === formData.pickupDate) {
+        const scelta = validTimes.includes(formData.returnTime)
+          ? formData.returnTime
+          : validTimes[validTimes.length - 1];
+        if (scelta !== formData.returnTime) {
+          setFormData(prev => ({ ...prev, returnTime: scelta }));
+        }
         return;
       }
 
@@ -3852,7 +3885,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // `alCarrello`: stesso identico percorso di una conferma normale
+  // (validazioni, disponibilita', documenti, calcolo prezzo), ma alla fine il
+  // noleggio viene messo nel carrello invece che pagato. Il metodo e' sempre
+  // carta: chi mette da parte paga dopo, insieme al resto.
+  const handleSubmit = async (e: React.FormEvent, opzioni?: { alCarrello?: boolean }) => {
     e.preventDefault();
     setPaymentError(null);
     console.log("handleSubmit called", { paymentMethod: formData.paymentMethod, step, userId: user?.id });
@@ -3877,8 +3914,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const SUPPORTED_PAYMENT_METHODS = ['credit', 'nexi'] as const;
     type SupportedPaymentMethod = typeof SUPPORTED_PAYMENT_METHODS[number];
     const rawPaymentMethod = formData.paymentMethod;
-    const normalizedPaymentMethod: SupportedPaymentMethod =
-      SUPPORTED_PAYMENT_METHODS.includes(rawPaymentMethod as SupportedPaymentMethod)
+    const normalizedPaymentMethod: SupportedPaymentMethod = opzioni?.alCarrello
+      ? 'nexi'
+      : SUPPORTED_PAYMENT_METHODS.includes(rawPaymentMethod as SupportedPaymentMethod)
         ? (rawPaymentMethod as SupportedPaymentMethod)
         : 'nexi';
 
@@ -4503,6 +4541,38 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
         console.log("Booking amount:", { nexiOrderId, amount: bookingData.price_total });
 
+        // ── CARRELLO ────────────────────────────────────────────────────
+        // Qui la prenotazione e' pronta ma non e' ancora stata scritta da
+        // nessuna parte: e' il punto giusto per metterla da parte. A creare
+        // la riga e a bloccare il mezzo sara' il checkout, come fa adesso
+        // questo stesso codice qualche riga piu' sotto.
+        if (opzioni?.alCarrello) {
+          if (Math.round(grandTotal * 100) <= 0) {
+            clearTimeout(safetyTimer);
+            setPaymentError(t({ it: "Con lo sconto il totale e' zero: conferma subito la prenotazione, non serve il carrello.", en: "With the discount the total is zero: confirm the booking now, no need for the cart." }));
+            isSubmittingRef.current = false;
+            setIsProcessing(false);
+            return;
+          }
+          bookingData.vehicle_image_url = item.image;
+          bookingData.vehicle_id = formData.selectedVehicleId || null;
+          bookingData.deposit_amount = getDeposit();
+          bookingData.booking_usage_zone = formData.usageZone || null;
+          await aggiungiArticolo({
+            tipo: 'noleggio',
+            titolo: vehicleName,
+            sottotitolo: `${formData.pickupDate} ${formData.pickupTime} → ${formData.returnDate} ${formData.returnTime}`,
+            immagine: item.image,
+            prezzoCents: eurosToCents(grandTotal),
+            dati: { booking: bookingData },
+          });
+          clearTimeout(safetyTimer);
+          isSubmittingRef.current = false;
+          setIsProcessing(false);
+          onClose();
+          return;
+        }
+
         // CHECK: If discount covers full amount (€0 total), skip Nexi and book directly
         if (Math.round(grandTotal * 100) <= 0) {
           console.log("Zero-total booking: discount covers full amount, skipping Nexi payment");
@@ -5038,7 +5108,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {formData.pickupDate && !formData.pickupTime && (
                     <p className="text-xs text-gray-400 mt-1">{t({ it: "Seleziona prima l'ora di ritiro", en: "Select the pick-up time first" })}</p>
                   )}
-                  <p className="text-xs text-gray-400 mt-1">{t({ it: "L'ora si propone da sola (ritiro - 1h30) e resta modificabile", en: "The time is proposed automatically (pick-up - 1h30) and stays editable" })}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formData.pickupDate && formData.returnDate === formData.pickupDate
+                    ? t({ it: "Riconsegna in giornata: si paga comunque una giornata intera. L'ora resta modificabile", en: "Same-day drop-off: still billed as one full day. The time stays editable" })
+                    : t({ it: "L'ora si propone da sola (ritiro - 1h30) e resta modificabile", en: "The time is proposed automatically (pick-up - 1h30) and stays editable" })}</p>
 
                   <CalendarioGiornoOrario
                     aperto={calendarioAperto === 'ritiro'}
@@ -5052,20 +5124,28 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     oraIniziale={formData.pickupTime}
                     titolo={{ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' }}
                     onConferma={(data, ora) => {
-                      // La riconsegna resta valida solo se e' almeno il giorno
-                      // dopo: altrimenti si sposta di un giorno da sola, come
-                      // faceva la vecchia tendina.
+                      // 2026-09-12 (direzione): scegliendo il giorno di ritiro
+                      // la riconsegna si propone nello STESSO giorno — si puo'
+                      // noleggiare anche per poche ore e si paga comunque una
+                      // giornata intera. Si prende l'ultima fascia di
+                      // riconsegna utile dopo il ritiro; se quel giorno non ne
+                      // ha nessuna si torna al giorno dopo con ritiro - 1h30,
+                      // come faceva la vecchia tendina.
                       const [y, m, g] = data.split('-').map(Number);
                       const dopo = new Date(y, m - 1, g + 1);
                       const giornoDopo = `${dopo.getFullYear()}-${String(dopo.getMonth() + 1).padStart(2, '0')}-${String(dopo.getDate()).padStart(2, '0')}`;
                       const retMin = Math.max(0, Number(ora.split(':')[0]) * 60 + Number(ora.split(':')[1]) - 90);
                       const oraRiconsegna = `${String(Math.floor(retMin / 60)).padStart(2, '0')}:${String(retMin % 60).padStart(2, '0')}`;
+                      const orariStessoGiorno = computeValidReturnTimes(data, data, ora);
+                      const ultimaStessoGiorno = orariStessoGiorno.length > 0
+                        ? orariStessoGiorno[orariStessoGiorno.length - 1]
+                        : null;
                       setFormData(prev => ({
                         ...prev,
                         pickupDate: data,
                         pickupTime: ora,
-                        returnDate: prev.returnDate && prev.returnDate > data ? prev.returnDate : giornoDopo,
-                        returnTime: oraRiconsegna,
+                        returnDate: ultimaStessoGiorno ? data : giornoDopo,
+                        returnTime: ultimaStessoGiorno || oraRiconsegna,
                       }));
                       setErrors(prev => ({ ...prev, pickupDate: '', pickupTime: '', date: '' }));
                     }}
@@ -5074,9 +5154,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <CalendarioGiornoOrario
                     aperto={calendarioAperto === 'riconsegna'}
                     onClose={() => setCalendarioAperto(null)}
-                    minDate={formData.pickupDate
-                      ? (() => { const [y, m, g] = formData.pickupDate.split('-').map(Number); const d = new Date(y, m - 1, g + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()
-                      : today}
+                    // Stesso giorno del ritiro ammesso: il noleggio a ore si
+                    // paga come una giornata intera.
+                    minDate={formData.pickupDate || today}
                     maxDate={isUtilitaria ? UTILITARIE_MAX_DATE : maxReturnDate}
                     orariDelGiorno={getValidReturnTimes}
                     dataIniziale={formData.returnDate}
@@ -8080,6 +8160,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
                               {isProcessing ? 'Elaborazione in corso...' : 'CONFERMA PRENOTAZIONE'}
+                            </button>
+                            {/* Stesso noleggio, pagato dopo insieme al resto
+                                del carrello. Non blocca il mezzo: il mezzo si
+                                blocca quando si paga. */}
+                            <button
+                              type="button"
+                              onClick={(e) => handleSubmit(e, { alCarrello: true })}
+                              disabled={isProcessing || !formData.agreesToTerms || !formData.agreesToPrivacy || !formData.confirmsDocuments}
+                              className="flex-1 px-6 sm:px-8 py-3 border border-white text-white text-sm sm:text-base font-bold hover:bg-white hover:text-black transition-colors flex items-center justify-center disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"
+                              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                            >
+                              {t({ it: 'AGGIUNGI AL CARRELLO', en: 'ADD TO CART' })}
                             </button>
                             <button
                               type="button"

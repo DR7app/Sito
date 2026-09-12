@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { svuotaIstantaneaLavaggio } from './CarWashServicesPage';
+import { useCarrello } from '../hooks/useCarrello';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
@@ -1255,6 +1256,37 @@ const CarWashBookingPage: React.FC = () => {
     setShowPaymentModal(true);
   };
 
+  // Carrello: lo stesso lavaggio che si puo' pagare subito si puo' anche
+  // mettere da parte e pagare insieme a un noleggio o a un tour. Cambia solo
+  // quando si paga: i dati della prenotazione sono gia' pronti qui.
+  const { aggiungi: aggiungiArticolo } = useCarrello();
+  const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
+
+  const aggiungiAlCarrello = async () => {
+    if (!pendingBookingData || aggiungendoAlCarrello) return;
+    setAggiungendoAlCarrello(true);
+    setPaymentError(null);
+    try {
+      const quando = formData.appointmentDate && formData.appointmentTime
+        ? `${formData.appointmentDate.split('-').reverse().join('/')} ${formData.appointmentTime}`
+        : '';
+      await aggiungiArticolo({
+        tipo: 'lavaggio',
+        titolo: pendingBookingData.service_name || (lang === 'it' ? 'Lavaggio' : 'Car wash'),
+        sottotitolo: [quando, pendingBookingData.vehicle_name, pendingBookingData.vehicle_plate].filter(Boolean).join(' · '),
+        prezzoCents: pendingBookingData.price_total,
+        dati: { booking: pendingBookingData },
+      });
+      setShowPaymentModal(false);
+      svuotaIstantaneaLavaggio();
+      navigate('/prime-wash');
+    } catch (e: any) {
+      setPaymentError(e?.message || t({ it: 'Non riesco ad aggiungere al carrello.', en: 'Could not add to the cart.' }));
+    } finally {
+      setAggiungendoAlCarrello(false);
+    }
+  };
+
   const handlePayment = async () => {
     console.log('handlePayment called with method:', paymentMethod);
     if (!pendingBookingData) {
@@ -2363,6 +2395,18 @@ const CarWashBookingPage: React.FC = () => {
                   )}
                 </>
               ) : null}
+
+              {/* Non e' un secondo modo di pagare: e' lo stesso servizio messo
+                  da parte, per pagarlo insieme al resto del carrello. */}
+              <button
+                onClick={aggiungiAlCarrello}
+                disabled={isProcessing || aggiungendoAlCarrello}
+                className="w-full mt-4 border border-gray-600 text-white font-bold py-3 px-6 text-sm uppercase tracking-[0.18em] hover:bg-gray-800 transition-colors disabled:opacity-60"
+              >
+                {aggiungendoAlCarrello
+                  ? t({ it: 'Aggiungo…', en: 'Adding…' })
+                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+              </button>
             </motion.div>
           </motion.div>
         )}

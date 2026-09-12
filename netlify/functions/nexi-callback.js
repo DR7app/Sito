@@ -258,127 +258,15 @@ function parseCallback(event) {
 }
 
 /**
- * Nexi XPay Callback Handler
- * Receives payment notifications from Nexi (both old XPay and HPP API v1 formats)
+ * Elabora UN ordine Nexi: cerca a chi appartiene (prenotazione, pending,
+ * ricarica wallet, membership, DR7 Club) e lo porta a termine.
+ *
+ * 12/09/2026 — prima questo corpo stava dentro l'handler. E' stato estratto
+ * senza cambiarne una riga per una ragione sola: col carrello un pagamento
+ * puo' contenere piu' servizi, ognuno col suo ordine figlio, e ognuno deve
+ * essere chiuso con la stessa identica logica di quando era da solo.
  */
-exports.handler = async (event) => {
-  try {
-    console.log('Nexi callback received:', event.httpMethod);
-    console.log('Content-Type:', event.headers['content-type']);
-    console.log('Raw body (first 500 chars):', (event.body || '').substring(0, 500));
-
-    const { orderId, isSuccess, authCode, errorMessage, isHPP, rawParams } = parseCallback(event);
-
-    console.log('Parsed callback:', { orderId, isSuccess, authCode, errorMessage, isHPP });
-    console.log('Raw params:', JSON.stringify(rawParams, null, 2));
-
-    // Verify MAC for old XPay format only (HPP v1 uses API key auth, no MAC)
-    if (!isHPP) {
-      const macKey = process.env.NEXI_MAC_KEY;
-      const mac = rawParams.mac;
-
-      if (!macKey) {
-        console.error('NEXI_MAC_KEY not configured - rejecting old XPay callback');
-        return { statusCode: 500, body: 'MAC key not configured' };
-      }
-
-      if (!mac) {
-        console.error('No MAC provided in old XPay callback - rejecting');
-        return { statusCode: 400, body: 'Missing MAC' };
-      }
-
-      const paramsForMAC = { ...rawParams };
-      delete paramsForMAC.mac;
-      const calculatedMAC = generateMAC(paramsForMAC, macKey);
-
-      if (calculatedMAC !== mac) {
-        console.error('Invalid MAC - possible fraud attempt');
-        return { statusCode: 400, body: 'Invalid MAC' };
-      }
-
-      console.log('MAC verified successfully');
-    } else {
-      // HPP v1: Verify payment by calling Nexi's order status API (server-to-server)
-      // This prevents forged callbacks — we trust Nexi's API response, not the callback body
-      const apiKey = process.env.NEXI_API_KEY;
-      if (!apiKey) {
-        console.error('NEXI_API_KEY not configured — cannot verify HPP callback');
-        return { statusCode: 500, body: 'API key not configured' };
-      }
-
-      const nexiEnv = process.env.NEXI_ENVIRONMENT || 'production';
-      const verifyBaseUrl = nexiEnv === 'production'
-        ? 'https://xpay.nexigroup.com/api/phoenix-0.0/psp/api/v1'
-        : 'https://xpaysandbox.nexigroup.com/api/phoenix-0.0/psp/api/v1';
-
-      const correlationId = crypto.randomBytes(16).toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-
-      try {
-        const verifyResponse = await fetch(`${verifyBaseUrl}/orders/${orderId}`, {
-          method: 'GET',
-          headers: {
-            'X-API-KEY': apiKey,
-            'Correlation-Id': correlationId,
-          },
-        });
-
-        if (!verifyResponse.ok) {
-          console.error('Nexi order verification failed:', verifyResponse.status);
-          return { statusCode: 400, body: 'Order verification failed' };
-        }
-
-        const verifyData = await verifyResponse.json();
-        console.log('Nexi order verification response:', JSON.stringify(verifyData, null, 2));
-
-        // Override isSuccess with the verified status from Nexi's API
-        const verifiedResult = verifyData.operationResult || verifyData.orderStatus?.lastOperationResult;
-        if (verifiedResult) {
-          const verifiedSuccess = verifiedResult === 'AUTHORIZED' || verifiedResult === 'EXECUTED';
-          if (verifiedSuccess !== isSuccess) {
-            console.warn(`Callback claimed ${isSuccess ? 'success' : 'failure'} but Nexi API says ${verifiedSuccess ? 'success' : 'failure'} — using verified result`);
-            isSuccess = verifiedSuccess;
-          }
-        }
-
-        // Extract contractId from verification response (needed for recurring MIT)
-        // Nexi returns it in recurrence.contractId or operations[].additionalData
-        if (verifyData.recurrence?.contractId) {
-          rawParams.contractId = verifyData.recurrence.contractId;
-          console.log('Extracted contractId from recurrence:', rawParams.contractId);
-        } else if (verifyData.operations) {
-          for (const op of verifyData.operations) {
-            const cid = op.additionalData?.contractId || op.recurrence?.contractId;
-            if (cid) {
-              rawParams.contractId = cid;
-              console.log('Extracted contractId from operations:', rawParams.contractId);
-              break;
-            }
-          }
-        }
-
-        console.log('HPP API v1 notification verified via order status API');
-      } catch (verifyErr) {
-        console.error('Error verifying order with Nexi API:', verifyErr.message);
-        return { statusCode: 500, body: 'Order verification error' };
-      }
-    }
-
-    if (!orderId) {
-      console.error('No orderId found in callback params');
-      console.error('Full event body:', event.body);
-      return { statusCode: 400, body: 'Missing orderId' };
-    }
-
-    // Initialize Supabase — require service role key (never fall back to anon key)
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
-      return { statusCode: 500, body: 'Server configuration error' };
-    }
-    const supabase = createClient(
-      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-
+async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessage, rawParams) {
     // Find booking or credit wallet purchase by order ID
     console.log('Looking for order with orderId:', orderId);
 
@@ -1578,6 +1466,191 @@ exports.handler = async (event) => {
 
     console.error('No matching order found for orderId:', orderId);
     return { statusCode: 404, body: 'Order not found' };
+}
+
+/**
+ * Nexi XPay Callback Handler
+ * Receives payment notifications from Nexi (both old XPay and HPP API v1 formats)
+ */
+exports.handler = async (event) => {
+  try {
+    console.log('Nexi callback received:', event.httpMethod);
+    console.log('Content-Type:', event.headers['content-type']);
+    console.log('Raw body (first 500 chars):', (event.body || '').substring(0, 500));
+
+    const { orderId, isSuccess, authCode, errorMessage, isHPP, rawParams } = parseCallback(event);
+
+    console.log('Parsed callback:', { orderId, isSuccess, authCode, errorMessage, isHPP });
+    console.log('Raw params:', JSON.stringify(rawParams, null, 2));
+
+    // Verify MAC for old XPay format only (HPP v1 uses API key auth, no MAC)
+    if (!isHPP) {
+      const macKey = process.env.NEXI_MAC_KEY;
+      const mac = rawParams.mac;
+
+      if (!macKey) {
+        console.error('NEXI_MAC_KEY not configured - rejecting old XPay callback');
+        return { statusCode: 500, body: 'MAC key not configured' };
+      }
+
+      if (!mac) {
+        console.error('No MAC provided in old XPay callback - rejecting');
+        return { statusCode: 400, body: 'Missing MAC' };
+      }
+
+      const paramsForMAC = { ...rawParams };
+      delete paramsForMAC.mac;
+      const calculatedMAC = generateMAC(paramsForMAC, macKey);
+
+      if (calculatedMAC !== mac) {
+        console.error('Invalid MAC - possible fraud attempt');
+        return { statusCode: 400, body: 'Invalid MAC' };
+      }
+
+      console.log('MAC verified successfully');
+    } else {
+      // HPP v1: Verify payment by calling Nexi's order status API (server-to-server)
+      // This prevents forged callbacks — we trust Nexi's API response, not the callback body
+      const apiKey = process.env.NEXI_API_KEY;
+      if (!apiKey) {
+        console.error('NEXI_API_KEY not configured — cannot verify HPP callback');
+        return { statusCode: 500, body: 'API key not configured' };
+      }
+
+      const nexiEnv = process.env.NEXI_ENVIRONMENT || 'production';
+      const verifyBaseUrl = nexiEnv === 'production'
+        ? 'https://xpay.nexigroup.com/api/phoenix-0.0/psp/api/v1'
+        : 'https://xpaysandbox.nexigroup.com/api/phoenix-0.0/psp/api/v1';
+
+      const correlationId = crypto.randomBytes(16).toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+
+      try {
+        const verifyResponse = await fetch(`${verifyBaseUrl}/orders/${orderId}`, {
+          method: 'GET',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Correlation-Id': correlationId,
+          },
+        });
+
+        if (!verifyResponse.ok) {
+          console.error('Nexi order verification failed:', verifyResponse.status);
+          return { statusCode: 400, body: 'Order verification failed' };
+        }
+
+        const verifyData = await verifyResponse.json();
+        console.log('Nexi order verification response:', JSON.stringify(verifyData, null, 2));
+
+        // Override isSuccess with the verified status from Nexi's API.
+        //
+        // 12/09/2026 — si guardano anche le OPERAZIONI, come fa gia'
+        // nexi-verify-order: un ordine puo' avere un tentativo rifiutato e
+        // un ritentativo riuscito, e leggendo solo l'ultimo esito un incasso
+        // vero veniva letto come fallito (e il pending cancellato).
+        const riuscito = (e) => e === 'AUTHORIZED' || e === 'EXECUTED';
+        let verifiedResult = verifyData.operationResult || verifyData.orderStatus?.lastOperationResult;
+        if (!riuscito(verifiedResult) && Array.isArray(verifyData.operations)) {
+          const op = verifyData.operations.find(o => o && riuscito(o.operationResult)
+            && ['AUTHORIZATION', 'CAPTURE'].includes(String(o.operationType || '').toUpperCase()));
+          if (op) verifiedResult = op.operationResult;
+        }
+        if (verifiedResult) {
+          const verifiedSuccess = riuscito(verifiedResult);
+          if (verifiedSuccess !== isSuccess) {
+            console.warn(`Callback claimed ${isSuccess ? 'success' : 'failure'} but Nexi API says ${verifiedSuccess ? 'success' : 'failure'} — using verified result`);
+            isSuccess = verifiedSuccess;
+          }
+        }
+
+        // Extract contractId from verification response (needed for recurring MIT)
+        // Nexi returns it in recurrence.contractId or operations[].additionalData
+        if (verifyData.recurrence?.contractId) {
+          rawParams.contractId = verifyData.recurrence.contractId;
+          console.log('Extracted contractId from recurrence:', rawParams.contractId);
+        } else if (verifyData.operations) {
+          for (const op of verifyData.operations) {
+            const cid = op.additionalData?.contractId || op.recurrence?.contractId;
+            if (cid) {
+              rawParams.contractId = cid;
+              console.log('Extracted contractId from operations:', rawParams.contractId);
+              break;
+            }
+          }
+        }
+
+        console.log('HPP API v1 notification verified via order status API');
+      } catch (verifyErr) {
+        console.error('Error verifying order with Nexi API:', verifyErr.message);
+        return { statusCode: 500, body: 'Order verification error' };
+      }
+    }
+
+    if (!orderId) {
+      console.error('No orderId found in callback params');
+      console.error('Full event body:', event.body);
+      return { statusCode: 400, body: 'Missing orderId' };
+    }
+
+    // Initialize Supabase — require service role key (never fall back to anon key)
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      return { statusCode: 500, body: 'Server configuration error' };
+    }
+    const supabase = createClient(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // Carrello (12/09/2026): un pagamento solo, piu' servizi dentro. Ogni
+    // articolo ha il suo ordine figlio e viene chiuso uno per uno con la
+    // stessa logica di sempre — nessun servizio sa di essere in un carrello.
+    const { data: ordiniCarrello, error: erroreOrdineCarrello } = await supabase
+      .from('ordini_carrello')
+      .select('*')
+      .eq('nexi_order_id', orderId)
+      .limit(1);
+
+    if (erroreOrdineCarrello) {
+      console.error('[nexi-callback] lettura ordini_carrello fallita:', erroreOrdineCarrello);
+    }
+
+    if (ordiniCarrello && ordiniCarrello.length > 0) {
+      const ordineCarrello = ordiniCarrello[0];
+      const articoli = Array.isArray(ordineCarrello.articoli) ? ordineCarrello.articoli : [];
+      console.log(`[nexi-callback] ordine carrello ${orderId}: ${articoli.length} articoli`);
+
+      for (const articolo of articoli) {
+        if (!articolo || !articolo.ordine) continue;
+        try {
+          const esito = await elaboraOrdine(supabase, articolo.ordine, isSuccess, authCode, errorMessage, rawParams);
+          console.log(`[nexi-callback] articolo ${articolo.ordine} (${articolo.tipo}) ->`, esito && esito.statusCode);
+        } catch (erroreArticolo) {
+          // Un articolo che va storto non deve fermare gli altri: il cliente
+          // ha pagato tutto, il resto dell'ordine deve comunque nascere.
+          console.error(`[nexi-callback] articolo ${articolo.ordine} fallito:`, erroreArticolo);
+        }
+      }
+
+      await supabase
+        .from('ordini_carrello')
+        .update({ stato: isSuccess ? 'pagato' : 'fallito', aggiornato_il: new Date().toISOString() })
+        .eq('nexi_order_id', orderId);
+
+      // Pagato: dal carrello del cliente spariscono SOLO gli articoli di
+      // questo ordine, non quelli che ha aggiunto nel frattempo.
+      if (isSuccess) {
+        const idArticoli = articoli.map(a => a && a.articolo_id).filter(Boolean);
+        if (idArticoli.length > 0) {
+          await supabase.from('carrello_articoli').delete().in('id', idArticoli);
+        }
+      }
+
+      return { statusCode: 200, body: 'OK' };
+    }
+
+    return await elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessage, rawParams);
+
+
   } catch (error) {
     console.error('Callback error:', error);
     return {

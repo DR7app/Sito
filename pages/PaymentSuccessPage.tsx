@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { addCredits } from '../utils/creditWallet';
+import { useCarrello } from '../hooks/useCarrello';
 import { useTranslation } from '../hooks/useTranslation';
 import { getPaymentSuccessCopy, type PaymentSuccessCopy, getMessageTemplateBody } from '../utils/siteCopy';
 import { trackBookingCompleted } from '../utils/analytics';
@@ -101,12 +102,14 @@ const PaymentSuccessPage: React.FC = () => {
     const { lang } = useTranslation();
     const [searchParams] = useSearchParams();
     const contact = useContactInfo();
+    const { ricarica: ricaricaCarrello } = useCarrello();
     const [updating, setUpdating] = useState(true);
     const [updateError, setUpdateError] = useState<string | null>(null);
     // Nexi non conferma nessun incasso per questo ordine: niente schermata verde,
     // niente scritture, niente messaggi. Vedi il blocco di verifica piu' sotto.
     const [pagamentoNonConfermato, setPagamentoNonConfermato] = useState(false);
-    const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | 'cauzione' | null>(null);
+    const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | 'cauzione' | 'carrello' | null>(null);
+    const [articoliCarrello, setArticoliCarrello] = useState<number>(0);
     const [walletInfo, setWalletInfo] = useState<{ packageName: string; receivedAmount: number } | null>(null);
     const [membershipInfo, setMembershipInfo] = useState<{ tierName: string; billingCycle: string } | null>(null);
     const [copy, setCopy] = useState<PaymentSuccessCopy | null>(null);
@@ -276,6 +279,44 @@ const PaymentSuccessPage: React.FC = () => {
                     return;
                 }
                 console.log('[PaymentSuccess] Pagamento confermato da Nexi:', verificaEsito);
+
+                // ── CARRELLO ──────────────────────────────────────────────
+                // Un pagamento, piu' servizi dentro. A far nascere ogni pezzo
+                // (prenotazione, ricarica, iscrizione) e' `nexi-callback`, che
+                // li conosce tutti: qui lo si chiama subito invece di
+                // aspettare il webhook, che puo' arrivare con ritardo o non
+                // arrivare. Non gli si sta chiedendo di fidarsi del browser:
+                // la function ricontrolla l'incasso con Nexi per conto suo.
+                const { data: ordineCarrello } = await supabase
+                    .from('ordini_carrello')
+                    .select('*')
+                    .eq('nexi_order_id', orderId)
+                    .maybeSingle();
+
+                if (ordineCarrello) {
+                    const articoli = Array.isArray(ordineCarrello.articoli) ? ordineCarrello.articoli : [];
+                    setPurchaseType('carrello');
+                    setArticoliCarrello(articoli.length);
+                    try {
+                        const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/nexi-callback`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            // `operationResult` e' solo il punto di partenza:
+                            // la function ricontrolla comunque l'incasso con
+                            // Nexi. Qui ci si arriva solo dopo una verifica
+                            // gia' andata a buon fine.
+                            body: JSON.stringify({ orderId, operationResult: 'AUTHORIZED' }),
+                        });
+                        console.log('[PaymentSuccess] chiusura ordine carrello:', res.status);
+                    } catch (e) {
+                        console.error('[PaymentSuccess] chiusura ordine carrello fallita:', e);
+                    }
+                    // Il carrello si e' svuotato lato server: qui si rilegge
+                    // cosi' il numero sul chariot sparisce senza ricaricare.
+                    void ricaricaCarrello();
+                    setUpdating(false);
+                    return;
+                }
 
                 // 1. Try bookings first (nexi_order_id column, then booking_details JSONB fallback)
                 let bookings = null;
@@ -835,6 +876,10 @@ const PaymentSuccessPage: React.FC = () => {
                                 packageName: walletInfo?.packageName || '',
                                 amount: walletInfo?.receivedAmount?.toFixed(2) || '',
                             })
+                            : purchaseType === 'carrello'
+                            ? (lang === 'it'
+                                ? `Ordine completato: ${articoliCarrello} ${articoliCarrello === 1 ? 'servizio confermato' : 'servizi confermati'}. Li trovi tutti nella tua area cliente.`
+                                : `Order complete: ${articoliCarrello} ${articoliCarrello === 1 ? 'service confirmed' : 'services confirmed'}. You will find them all in your account.`)
                             : s('body_generic_it', 'body_generic_en')}
                     </p>
 

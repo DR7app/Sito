@@ -186,6 +186,13 @@ const CarWashServicesPage: React.FC = () => {
    * sopra il catalogo (12/09/2026).
    */
   const [prenotazioneAperta, setPrenotazioneAperta] = useState<any | null>(null);
+  /**
+   * Alzata appena si sceglie un servizio: la finestra di data e ora si apre
+   * DA SOLA, senza barre ne' riepiloghi da premere. Non si apre subito
+   * dentro la funzione perche' il carrello si aggiorna al giro dopo: la
+   * finestra nascerebbe senza il servizio appena scelto.
+   */
+  const [apriPrenotazione, setApriPrenotazione] = useState(false);
   const [showCart, setShowCart] = useState(false);
   // Pianta sedili aperta: `index` valorizzato = si sta modificando una riga
   // gia' nel carrello, altrimenti si sta aggiungendo.
@@ -373,7 +380,7 @@ const CarWashServicesPage: React.FC = () => {
     setSeatPicker(null);
     // Dall'upsell non si apre il carrello: la card passa gia' a "Aggiunto" e
     // il pannello finirebbe nascosto sotto l'overlay a tutto schermo.
-    if (!fromUpsell) setShowCart(true);
+    if (!fromUpsell) setApriPrenotazione(true);
   };
 
   const addToCart = (service: WashService, selectedOption?: { label: string; price: number }) => {
@@ -399,7 +406,7 @@ const CarWashServicesPage: React.FC = () => {
 
       return [...prev, { service, quantity: 1, selectedOption }];
     });
-    setShowCart(true);
+    setApriPrenotazione(true);
   };
 
   const removeFromCart = (index: number) => {
@@ -499,7 +506,7 @@ const CarWashServicesPage: React.FC = () => {
       setUpsellStep(2);
     } else {
       setShowUpsell(false);
-      setShowCart(true);
+      setApriPrenotazione(true);
     }
   };
 
@@ -513,18 +520,23 @@ const CarWashServicesPage: React.FC = () => {
       setUpsellStep(2);
     } else {
       setShowUpsell(false);
+      setApriPrenotazione(true);
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = (opzioni?: { silenzioso?: boolean }) => {
     if (cart.length === 0) return;
 
     // Check if extra care services are selected without a main wash
     const hasExtraCare = cart.some(item => item.service.id.startsWith('extra-'));
     if (hasExtraCare && !hasWashService()) {
-      alert(lang === 'it'
-        ? 'I servizi Extra Care richiedono la selezione di un lavaggio principale.'
-        : 'Extra Care services require selecting a main wash service.');
+      // All'apertura automatica non si urla: manca il lavaggio principale,
+      // il cliente e' ancora nel catalogo e lo sceglie adesso.
+      if (!opzioni?.silenzioso) {
+        alert(lang === 'it'
+          ? 'I servizi Extra Care richiedono la selezione di un lavaggio principale.'
+          : 'Extra Care services require selecting a main wash service.');
+      }
       return;
     }
 
@@ -553,6 +565,21 @@ const CarWashServicesPage: React.FC = () => {
       } : {})
     });
   };
+
+  /**
+   * Scelto un servizio, la finestra di data e ora si apre da sola. Si
+   * aspetta che il carrello sia davvero aggiornato, e si sta zitti finche'
+   * sono aperte la pianta dei sedili o la finestra degli extra: quelle
+   * fanno parte della scelta, non del passo dopo.
+   */
+  useEffect(() => {
+    if (!apriPrenotazione) return;
+    if (showUpsell || seatPicker) return;
+    setApriPrenotazione(false);
+    if (cart.length === 0) return;
+    handleCheckout({ silenzioso: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apriPrenotazione, cart, showUpsell, seatPicker]);
 
   const currentServices = mainTab === 'lavaggio'
     ? getLavaggioServices(lavaggioCategory)
@@ -911,45 +938,6 @@ const CarWashServicesPage: React.FC = () => {
       </div>
       </>)}
 
-      {/* Servizi scelti: una barra fissa in basso, sempre sotto gli occhi.
-          La riga dentro la pagina non si capiva — passava per un riepilogo
-          e nessuno ci leggeva il passo dopo (12/09/2026). Il bottone bianco
-          apre la finestra di prenotazione: data, ora, PRENOTA ORA o
-          Aggiungi al carrello, senza lasciare il catalogo. */}
-      {cart.length > 0 && !prenotazioneAperta && (
-        <motion.div
-          initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-black/95 backdrop-blur-md px-4 py-3"
-        >
-          <div className="container mx-auto flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3 text-white">
-              <span className="bg-white text-black w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">
-                {cart.reduce((sum, item) => sum + item.quantity, 0)}
-              </span>
-              <span className="uppercase tracking-[0.12em] text-xs text-gray-400">
-                {cw('servizi_titolo_it', 'servizi_titolo_en', lang === 'it' ? 'I tuoi servizi' : 'Your services')}
-              </span>
-              <span className="font-bold text-lg">€{getCartTotal().toFixed(2)}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setShowCart(true)}
-                className="px-4 py-3 border border-gray-600 text-white text-[11px] uppercase tracking-[0.12em] hover:bg-gray-800 transition-colors"
-              >
-                {t({ it: 'Modifica', en: 'Edit' })}
-              </button>
-              <button
-                onClick={handleCheckout}
-                className="px-6 py-3 bg-white text-black text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-gray-200 transition-colors"
-              >
-                {cw('servizi_procedi_it', 'servizi_procedi_en', lang === 'it' ? 'SCEGLI DATA E ORA' : 'PICK DATE AND TIME')}
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {/* Finestra di prenotazione — gli stessi passi della pagina
           /car-wash-booking, aperti sopra il catalogo. z-[150]: sopra la
           barra in alto (z-[90]); il calendario e la finestra di pagamento
@@ -969,14 +957,26 @@ const CarWashServicesPage: React.FC = () => {
                 exit={{ opacity: 0, y: 24 }}
                 className="relative w-full max-w-4xl border border-gray-800 bg-black shadow-2xl"
               >
-                <button
-                  type="button"
-                  onClick={() => setPrenotazioneAperta(null)}
-                  aria-label={t({ it: 'Chiudi', en: 'Close' })}
-                  className="absolute right-4 top-4 z-10 w-10 h-10 flex items-center justify-center border border-gray-700 text-gray-400 hover:text-white hover:border-white transition-colors"
-                >
-                  &times;
-                </button>
+                {/* Togliere un servizio o cambiarne la quantita': l'unica
+                    porta verso il pannello dei servizi, ora che sotto non
+                    c'e' piu' nessuna barra. */}
+                <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setPrenotazioneAperta(null); setShowCart(true); }}
+                    className="px-3 h-10 border border-gray-700 text-gray-300 text-[11px] uppercase tracking-[0.12em] hover:text-white hover:border-white transition-colors"
+                  >
+                    {t({ it: 'Modifica servizi', en: 'Edit services' })}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrenotazioneAperta(null)}
+                    aria-label={t({ it: 'Chiudi', en: 'Close' })}
+                    className="w-10 h-10 flex items-center justify-center border border-gray-700 text-gray-400 hover:text-white hover:border-white transition-colors"
+                  >
+                    &times;
+                  </button>
+                </div>
                 <CarWashBookingPage
                   inModale
                   datiIniziali={prenotazioneAperta}
@@ -1094,7 +1094,7 @@ const CarWashServicesPage: React.FC = () => {
                     <span className="text-2xl font-bold text-white">€{getCartTotal().toFixed(2)}</span>
                   </div>
                   <button
-                    onClick={handleCheckout}
+                    onClick={() => handleCheckout()}
                     className="w-full bg-white text-black py-4 font-bold text-lg hover:bg-gray-200 transition-colors"
                   >
                     {cw('servizi_procedi_it', 'servizi_procedi_en', lang === 'it' ? 'SCEGLI DATA E ORA' : 'PICK DATE AND TIME')}

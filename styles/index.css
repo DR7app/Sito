@@ -249,12 +249,14 @@ body {
 }
 
 .marmo {
-  /* 10/09/2026 — il velo torna fitto. Alleggerito per far vedere le venature,
-     la lastra si mangiava la pagina: venature bianche larghe quanto una
-     colonna, il titolo sopra che non si leggeva. Il marmo e' un fondo, deve
-     restare sotto il testo: si intuisce, non si guarda. */
+  /* 12/09/2026 — il velo si alza: a 0.88-0.92 la lastra era nero piatto, il
+     marmo non si vedeva piu'. Adesso il velo non e' piu' uniforme: fitto in
+     alto a sinistra, dove sta il testo (titolo e occhiello sono allineati a
+     sinistra), e leggero verso destra e in basso, dove restano solo le
+     venature. Cosi' si vede il marmo senza rimettere le venature bianche
+     sotto le lettere — l'errore che aveva fatto tornare il velo fitto. */
   background-image:
-    linear-gradient(rgba(6, 6, 7, 0.88), rgba(6, 6, 7, 0.92)),
+    linear-gradient(to bottom right, rgba(6, 6, 7, 0.86), rgba(6, 6, 7, 0.66) 55%, rgba(6, 6, 7, 0.5)),
     url('/marmo-oro.jpg');
   background-size: cover;
   background-position: center;

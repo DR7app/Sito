@@ -949,6 +949,14 @@ export interface PaymentCopy {
 export interface SignUpCopy {
   // Page chrome
   subtitle_it: string; subtitle_en: string;
+  // Patente di guida (iscrizione sito)
+  section_patente_it: string; section_patente_en: string;
+  field_patente_tipo_it: string; field_patente_tipo_en: string;
+  field_patente_numero_it: string; field_patente_numero_en: string;
+  field_patente_ente_it: string; field_patente_ente_en: string;
+  field_patente_rilascio_it: string; field_patente_rilascio_en: string;
+  field_patente_scadenza_it: string; field_patente_scadenza_en: string;
+  patente_hint_it: string; patente_hint_en: string;
   // Pre-compilazione dai documenti + popup "Compila piu' velocemente"
   prefill_title_it: string; prefill_title_en: string;
   prefill_body_it: string; prefill_body_en: string;
@@ -3134,6 +3142,14 @@ const DEFAULT_PAYMENT: PaymentCopy = {
 // ─── Default SignUp seed (registrazione cliente) ──────────────────────────
 const DEFAULT_SIGNUP: SignUpCopy = {
   subtitle_it: 'Registrazione Cliente - DR7', subtitle_en: 'Client Registration - DR7',
+  section_patente_it: 'Patente di guida', section_patente_en: 'Driving licence',
+  field_patente_tipo_it: 'Categoria', field_patente_tipo_en: 'Category',
+  field_patente_numero_it: 'Numero patente', field_patente_numero_en: 'Licence number',
+  field_patente_ente_it: 'Rilasciata da', field_patente_ente_en: 'Issued by',
+  field_patente_rilascio_it: 'Data di conseguimento', field_patente_rilascio_en: 'Date obtained',
+  field_patente_scadenza_it: 'Scadenza', field_patente_scadenza_en: 'Expiry date',
+  patente_hint_it: 'Si compilano da sole caricando la patente qui sopra. Non sono obbligatorie.',
+  patente_hint_en: 'Filled automatically when you upload your licence above. Not required.',
   prefill_title_it: 'Carica i tuoi documenti',
   prefill_title_en: 'Upload your documents',
   prefill_body_it: "Carica patente e documento d'identità. I dati verranno rilevati automaticamente e inseriti nei campi richiesti, riducendo i tempi di registrazione.",

@@ -105,6 +105,13 @@ const SignUpPage: React.FC = () => {
     cittaResidenza: '',
     provinciaResidenza: '',
 
+    // Patente di guida
+    tipoPatente: '',
+    numeroPatente: '',
+    patenteEmessaDa: '',
+    patenteDataRilascio: '',
+    patenteScadenza: '',
+
     // Pubblica Amministrazione fields
     codiceUnivoco: '',
     enteUfficio: '',
@@ -172,6 +179,13 @@ const SignUpPage: React.FC = () => {
         set('provinciaNascita', data.provincia_nascita?.toUpperCase());
         set('codiceFiscale', data.codice_fiscale?.toUpperCase());
       }
+      set('tipoPatente', data.patente_tipo);
+      set('numeroPatente', data.patente_numero);
+      set('patenteEmessaDa', data.patente_ente);
+      // La data REALE di conseguimento sta sul retro (colonna 10, categoria
+      // B): la 4a del fronte e' solo l'emissione della tessera.
+      set('patenteDataRilascio', data.patente_conseguimento || data.patente_rilascio);
+      set('patenteScadenza', data.patente_scadenza);
       set('indirizzo', data.indirizzo);
       set('numeroCivico', data.numero_civico);
       set('codicePostale', data.codice_postale);
@@ -436,6 +450,18 @@ const SignUpPage: React.FC = () => {
         customerData.citta = formData.citta;
         customerData.email = formData.email;
         customerData.telefono = formData.telefono;
+      }
+
+      // Patente: le stesse chiavi che legge "Dettagli Profilo" nell'area
+      // personale, cosi' quello che si legge dalla foto resta sulla scheda.
+      const datiPatente: Record<string, string> = {};
+      if (formData.tipoPatente) datiPatente.tipo_patente = formData.tipoPatente;
+      if (formData.numeroPatente) datiPatente.numero_patente = formData.numeroPatente;
+      if (formData.patenteEmessaDa) datiPatente.patente_emessa_da = formData.patenteEmessaDa;
+      if (formData.patenteDataRilascio) datiPatente.patente_data_rilascio = formData.patenteDataRilascio;
+      if (formData.patenteScadenza) datiPatente.patente_scadenza = formData.patenteScadenza;
+      if (Object.keys(datiPatente).length > 0) {
+        customerData.metadata = { ...(customerData.metadata || {}), ...datiPatente };
       }
 
       // Call the backend function to handle registration securely
@@ -1233,6 +1259,36 @@ const SignUpPage: React.FC = () => {
                       required
                     />
                     {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email}</p>}
+                  </div>
+                </div>
+              )}
+
+              {/* PATENTE — si compila da sola leggendo la foto caricata sopra */}
+              {tipoCliente && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="border-t border-gray-700 pt-4"></div>
+                  <h3 className="text-lg font-semibold text-white">{s('section_patente_it', 'section_patente_en')}</h3>
+                  <p className="text-xs text-gray-500">{s('patente_hint_it', 'patente_hint_en')}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {([
+                      { campo: 'tipoPatente', label: s('field_patente_tipo_it', 'field_patente_tipo_en'), type: 'text' },
+                      { campo: 'numeroPatente', label: s('field_patente_numero_it', 'field_patente_numero_en'), type: 'text' },
+                      { campo: 'patenteEmessaDa', label: s('field_patente_ente_it', 'field_patente_ente_en'), type: 'text' },
+                      { campo: 'patenteDataRilascio', label: s('field_patente_rilascio_it', 'field_patente_rilascio_en'), type: 'date' },
+                      { campo: 'patenteScadenza', label: s('field_patente_scadenza_it', 'field_patente_scadenza_en'), type: 'date' },
+                    ] as const).map(({ campo, label, type }) => (
+                      <div key={campo}>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
+                        <input
+                          type={type}
+                          name={campo}
+                          value={(formData as Record<string, string>)[campo]}
+                          onChange={handleChange}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white"
+                          style={{ colorScheme: 'dark' }}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

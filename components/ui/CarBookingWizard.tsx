@@ -1654,6 +1654,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   const [hasStoredDocs, setHasStoredDocs] = useState<{ licensePath: string | null; idPath: string | null; cfPath: string | null }>({ licensePath: null, idPath: null, cfPath: null });
   const [percorsiPatente, setPercorsiPatente] = useState<string[]>([]);
+  const [urlPatenteArchivio, setUrlPatenteArchivio] = useState<string[]>([]);
   const letturaArchivioFatta = useRef(false);
   const [checkingDocs, setCheckingDocs] = useState(false);
 
@@ -1669,16 +1670,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     if (formData.licenseIssueDate) return;
     letturaArchivioFatta.current = true;
     (async () => {
-      for (const percorso of percorsiPatente) {
+      const daLeggere = urlPatenteArchivio.length > 0
+        ? urlPatenteArchivio
+        : (await Promise.all(percorsiPatente.map(async (percorso) => {
+            const { data: firmato } = await supabase.storage
+              .from('driver-licenses')
+              .createSignedUrl(percorso, 300);
+            return firmato?.signedUrl || null;
+          }))).filter(Boolean) as string[];
+
+      for (const url of daLeggere) {
         try {
-          const { data: firmato } = await supabase.storage
-            .from('driver-licenses')
-            .createSignedUrl(percorso, 300);
-          if (!firmato?.signedUrl) continue;
           const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/extract-document-data`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageUrl: firmato.signedUrl }),
+            body: JSON.stringify({ imageUrl: url }),
           });
           if (!res.ok) continue;
           const json = await res.json();
@@ -1698,7 +1704,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         }
       }
     })();
-  }, [percorsiPatente, formData.licenseIssueDate]);
+  }, [percorsiPatente, urlPatenteArchivio, formData.licenseIssueDate]);
 
   // Indirizzo di residenza in una riga sola, dalla scheda cliente.
   const indirizzoCompleto = (c: Record<string, any>): string => {
@@ -1740,6 +1746,37 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!user?.id) return;
       setCheckingDocs(true);
       try {
+        // Prima si chiede al server: guarda sotto l'identificativo
+        // dell'account E sotto quello della scheda cliente, cosi' vale anche
+        // quello che ha caricato l'ufficio dal gestionale. Dal browser le
+        // policy mostrano solo la cartella dell'account.
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/documenti-cliente`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            });
+            if (res.ok) {
+              const j = await res.json();
+              const primo = (a: any[]) => (a && a.length > 0 ? a[0].percorso : null);
+              if (j?.ok && (j.patente?.length || j.identita?.length || j.codiceFiscale?.length)) {
+                setHasStoredDocs({
+                  licensePath: primo(j.patente),
+                  idPath: primo(j.identita),
+                  cfPath: primo(j.codiceFiscale),
+                });
+                setUrlPatenteArchivio((j.patente || []).map((d: any) => d.url).filter(Boolean));
+                setPercorsiPatente((j.patente || []).map((d: any) => d.percorso));
+                setCheckingDocs(false);
+                return;
+              }
+            }
+          }
+        } catch (errServer) {
+          console.warn('Lettura documenti dal server non riuscita, si prova dal browser:', errServer);
+        }
+
         // Check License bucket: driver-licenses
         // List files in the user folder
         const { data: licenseFiles } = await supabase.storage.from('driver-licenses').list(user.id);

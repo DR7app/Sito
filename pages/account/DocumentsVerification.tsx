@@ -58,6 +58,44 @@ const DocumentsVerification = () => {
 
             setLoadingDocuments(true);
             try {
+                // Prima il server: guarda sotto l'identificativo dell'account
+                // E sotto quello della scheda cliente, cosi' si vedono anche i
+                // documenti caricati dall'ufficio dal gestionale.
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.access_token) {
+                        const res = await fetch('/.netlify/functions/documenti-cliente', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+                        });
+                        if (res.ok) {
+                            const j = await res.json();
+                            if (j?.ok && Array.isArray(j.documenti) && j.documenti.length > 0) {
+                                const docs = j.documenti.map((d: any) => ({
+                                    id: `${d.bucket}-${d.nomeFile}`,
+                                    document_type: String(d.nomeFile).split('_')[0] || 'document',
+                                    bucket: d.bucket,
+                                    file_path: d.percorso,
+                                    upload_date: d.caricatoIl || new Date().toISOString(),
+                                    status: d.stato || 'pending_verification',
+                                }));
+                                setUploadedDocuments(docs);
+                                const passi = new Set<number>();
+                                docs.forEach((doc: any) => {
+                                    const i = uploadSteps.findIndex(step =>
+                                        doc.file_path.includes(step.key) || doc.document_type === step.key);
+                                    if (i !== -1) passi.add(i);
+                                });
+                                setUploadedSteps(passi);
+                                setLoadingDocuments(false);
+                                return;
+                            }
+                        }
+                    }
+                } catch (errServer) {
+                    console.warn('Lettura documenti dal server non riuscita, si prova dal browser:', errServer);
+                }
+
                 const buckets = ['carta-identita', 'codice-fiscale', 'driver-licenses'];
                 const allDocs: any[] = [];
 

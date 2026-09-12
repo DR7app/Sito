@@ -346,7 +346,9 @@ const MechanicalBookingPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // `alCarrello`: stesse verifiche e stessi dati, ma alla fine l'intervento
+  // finisce nel carrello del sito invece che nella finestra di pagamento.
+  const handleSubmit = async (e: React.FormEvent, opzioni?: { alCarrello?: boolean }) => {
     e.preventDefault();
 
     if (!validate() || !selectedService) {
@@ -400,6 +402,11 @@ const MechanicalBookingPage: React.FC = () => {
       booked_at: new Date().toISOString()
     };
 
+    if (opzioni?.alCarrello) {
+      await aggiungiAlCarrello(bookingData);
+      return;
+    }
+
     setPendingBookingData(bookingData);
     setShowPaymentModal(true);
   };
@@ -409,8 +416,9 @@ const MechanicalBookingPage: React.FC = () => {
   const { aggiungi: aggiungiArticolo } = useCarrello();
   const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
 
-  const aggiungiAlCarrello = async () => {
-    if (!pendingBookingData || aggiungendoAlCarrello) return;
+  const aggiungiAlCarrello = async (prenotazione?: any) => {
+    const dati = prenotazione || pendingBookingData;
+    if (!dati || aggiungendoAlCarrello) return;
     setAggiungendoAlCarrello(true);
     setPaymentError(null);
     try {
@@ -419,10 +427,10 @@ const MechanicalBookingPage: React.FC = () => {
         : '';
       await aggiungiArticolo({
         tipo: 'meccanica',
-        titolo: pendingBookingData.service_name || (lang === 'it' ? 'Servizio meccanico' : 'Mechanical service'),
-        sottotitolo: [quando, pendingBookingData.vehicle_name].filter(Boolean).join(' · '),
-        prezzoCents: pendingBookingData.price_total,
-        dati: { booking: pendingBookingData },
+        titolo: dati.service_name || (lang === 'it' ? 'Servizio meccanico' : 'Mechanical service'),
+        sottotitolo: [quando, dati.vehicle_name].filter(Boolean).join(' · '),
+        prezzoCents: dati.price_total,
+        dati: { booking: dati },
       });
       setShowPaymentModal(false);
       navigate('/mechanical-services');
@@ -1128,6 +1136,18 @@ const MechanicalBookingPage: React.FC = () => {
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
                 {t({ it: 'PROCEDI AL PAGAMENTO', en: 'PROCEED TO PAYMENT' })}
+              </button>
+
+              {/* Stesso intervento, pagato dopo insieme al resto del carrello. */}
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, { alCarrello: true })}
+                disabled={isSubmitting || aggiungendoAlCarrello}
+                className="w-full mt-3 border border-gray-600 text-white font-bold py-4 px-6 text-sm uppercase tracking-[0.18em] hover:bg-gray-800 transition-colors disabled:opacity-60"
+              >
+                {aggiungendoAlCarrello
+                  ? t({ it: 'Aggiungo…', en: 'Adding…' })
+                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
               </button>
             </div>
           </form>

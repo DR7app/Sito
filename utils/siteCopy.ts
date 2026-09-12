@@ -1541,6 +1541,16 @@ export interface CarWashCopy {
   cart_remove_it: string; cart_remove_en: string;
   cart_total_it: string; cart_total_en: string;
   cart_checkout_it: string; cart_checkout_en: string;
+  // 12/09/2026 — Il carrello del sito e' UNO SOLO, quello del chariot in
+  // alto. Qui si scelgono i servizi di UN appuntamento: finche' non c'e'
+  // data e ora non e' un articolo da pagare, quindi queste voci non dicono
+  // piu' "carrello". Chiavi nuove apposta: quelle vecchie possono avere
+  // gia' un testo salvato nel gestionale, che vincerebbe sul codice.
+  seleziona_servizio_it?: string; seleziona_servizio_en?: string;
+  servizi_titolo_it?: string; servizi_titolo_en?: string;
+  servizi_vuoto_it?: string; servizi_vuoto_en?: string;
+  servizi_procedi_it?: string; servizi_procedi_en?: string;
+  servizi_rivedi_it?: string; servizi_rivedi_en?: string;
   // Upsell overlay
   upsell_review_cart_it: string; upsell_review_cart_en: string;
   upsell_step1_title_it: string; upsell_step1_title_en: string;

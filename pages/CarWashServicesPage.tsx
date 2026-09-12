@@ -848,7 +848,7 @@ const CarWashServicesPage: React.FC = () => {
                         onClick={() => addToCart(service)}
                         className="w-full bg-black/50 border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
                       >
-                        {cw('add_to_cart_it', 'add_to_cart_en', 'AGGIUNGI AL CARRELLO')}
+                        {cw('seleziona_servizio_it', 'seleziona_servizio_en', lang === 'it' ? 'SELEZIONA' : 'SELECT')}
                       </button>
                     </div>
                   )}
@@ -888,6 +888,9 @@ const CarWashServicesPage: React.FC = () => {
           <span className="bg-dr7-obsidian text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
             {cart.reduce((sum, item) => sum + item.quantity, 0)}
           </span>
+          {/* "Servizi" e non "carrello": il carrello del sito e' quello del
+              chariot in alto, e ci si arriva dopo aver scelto data e ora. */}
+          <span className="uppercase tracking-[0.12em] text-xs">{t({ it: 'Servizi', en: 'Services' })}</span>
           <span>€{getCartTotal().toFixed(2)}</span>
         </motion.button>
       )}
@@ -912,7 +915,7 @@ const CarWashServicesPage: React.FC = () => {
             >
               <div className="p-6 border-b border-gray-800 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-white">
-                  {cw('cart_title_it', 'cart_title_en', 'Il tuo carrello')}
+                  {cw('servizi_titolo_it', 'servizi_titolo_en', lang === 'it' ? 'I tuoi servizi' : 'Your services')}
                 </h2>
                 <button onClick={() => setShowCart(false)} className="text-gray-400 hover:text-white text-2xl">
                   &times;
@@ -922,7 +925,7 @@ const CarWashServicesPage: React.FC = () => {
               <div className="flex-grow overflow-y-auto p-6 space-y-4">
                 {cart.length === 0 ? (
                   <p className="text-gray-400 text-center py-8">
-                    {cw('cart_empty_it', 'cart_empty_en', 'Il carrello è vuoto')}
+                    {cw('servizi_vuoto_it', 'servizi_vuoto_en', lang === 'it' ? 'Nessun servizio selezionato' : 'No service selected')}
                   </p>
                 ) : (
                   cart.map((item, index) => (
@@ -995,7 +998,7 @@ const CarWashServicesPage: React.FC = () => {
                     onClick={handleCheckout}
                     className="w-full bg-white text-black py-4 font-bold text-lg hover:bg-gray-200 transition-colors"
                   >
-                    {cw('cart_checkout_it', 'cart_checkout_en', 'PROCEDI')}
+                    {cw('servizi_procedi_it', 'servizi_procedi_en', lang === 'it' ? 'SCEGLI DATA E ORA' : 'PICK DATE AND TIME')}
                   </button>
                 </div>
               )}
@@ -1040,7 +1043,7 @@ const CarWashServicesPage: React.FC = () => {
                   onClick={handleReviewCart}
                   className="bg-white text-black px-5 py-2 font-bold text-sm hover:bg-gray-200 transition-colors flex-shrink-0"
                 >
-                  {cw('upsell_review_cart_it', 'upsell_review_cart_en', 'Rivedi carrello')}
+                  {cw('servizi_rivedi_it', 'servizi_rivedi_en', lang === 'it' ? 'Rivedi i servizi' : 'Review services')}
                 </button>
               </div>
             </div>
@@ -1192,7 +1195,7 @@ const CarWashServicesPage: React.FC = () => {
                 >
                   {upsellStep === 1
                     ? (t({ it: 'Continua', en: 'Continue' }))
-                    : `${t({ it: 'Rivedi carrello', en: 'Review Cart' })} — €${getCartTotal().toFixed(2)}`
+                    : `${t({ it: 'Rivedi i servizi', en: 'Review services' })} — €${getCartTotal().toFixed(2)}`
                   }
                 </button>
                 <button

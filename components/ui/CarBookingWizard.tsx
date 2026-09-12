@@ -22,6 +22,7 @@ import DocumentUploader from './DocumentUploader';
 import CompilaButton from './CompilaButton';
 import AddressAutocomplete from './AddressAutocomplete';
 import { cercaLuoghiSito, dettaglioLuogoSito } from '../../utils/ricercaLuoghi';
+import { preparaFileDocumento } from '../../utils/immagineDocumento';
 import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 import {
   getUnlimitedKmOptions,
@@ -2833,6 +2834,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       } else {
         fileToUpload = fileOrDataUrl;
         fileName = fileOrDataUrl.name;
+      }
+
+      // HEIC dell'iPhone, webp o foto troppo pesanti: il bucket le rifiuta.
+      // Qui diventano un JPEG sotto soglia prima di partire.
+      if (fileToUpload instanceof Blob) {
+        const comeFile = fileToUpload instanceof File
+          ? fileToUpload
+          : new File([fileToUpload], fileName, { type: fileToUpload.type || 'image/jpeg' });
+        const pronto = await preparaFileDocumento(comeFile);
+        fileToUpload = pronto;
+        fileName = pronto.name;
       }
 
       const body = new FormData();

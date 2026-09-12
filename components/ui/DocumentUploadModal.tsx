@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { XIcon } from '../icons/Icons';
 import { supabase } from '../../supabaseClient';
 import { useTranslation } from '../../hooks/useTranslation';
+import { preparaFileDocumento } from '../../utils/immagineDocumento';
 
 export interface DocumentiPrecaricati {
   patenteFront?: File | null;
@@ -65,8 +66,9 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
         meta.name ||
         [meta.nome, meta.cognome].filter(Boolean).join(' ').trim();
 
+      const pronto = await preparaFileDocumento(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', pronto);
       formData.append('bucket', bucket);
       formData.append('userId', userId);
       formData.append('prefix', prefix);

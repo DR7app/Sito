@@ -88,10 +88,24 @@ const handler: Handler = async (event) => {
             return { statusCode: 500, headers, body: JSON.stringify({ error: 'Upload fallito: ' + upErr.message }) }
         }
 
+        // Email e nome sulla riga: senza, in "Verifica Documenti" il
+        // documento arriva anonimo e l'ufficio non sa di chi e'.
+        const { data: scheda } = await supabase
+            .from('customers_extended')
+            .select('email, nome, cognome, ragione_sociale, denominazione')
+            .eq('id', customerId)
+            .maybeSingle()
+        const nomeCliente = scheda
+            ? (scheda.ragione_sociale || scheda.denominazione ||
+               [scheda.nome, scheda.cognome].filter(Boolean).join(' ').trim())
+            : ''
+
         const { data: doc, error: insErr } = await supabase
             .from('user_documents')
             .insert({
                 user_id: customerId,
+                user_email: scheda?.email || null,
+                user_full_name: nomeCliente || null,
                 document_type: kind,
                 bucket,
                 file_path: path,

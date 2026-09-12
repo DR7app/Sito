@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
+import { preparaFileDocumento } from '../../utils/immagineDocumento';
 import { supabase } from '../../supabaseClient';
 
 const StatusBadge: React.FC<{ status: 'pending_verification' | 'verified' | 'rejected' }> = ({ status }) => {
@@ -117,8 +118,9 @@ const DocumentsVerification = () => {
         try {
             console.log(`Uploading ${step.key} to ${step.bucket} via Netlify function`);
 
+            const pronto = await preparaFileDocumento(files[stepIndex]!);
             const formData = new FormData();
-            formData.append('file', files[stepIndex]!);
+            formData.append('file', pronto);
             formData.append('bucket', step.bucket);
             formData.append('userId', user.id);
             formData.append('prefix', step.key);

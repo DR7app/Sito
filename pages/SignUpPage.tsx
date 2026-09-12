@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import DocumentUploadModal from '../components/ui/DocumentUploadModal';
 import CompilaButton, { type ExtractedData } from '../components/ui/CompilaButton';
+import { preparaFileDocumento } from '../utils/immagineDocumento';
 import MarketingConsentModal from '../components/ui/MarketingConsentModal';
 import { countries } from '../utils/countries';
 import { AppleStyleSelect } from '../components/ui/AppleStyleSelect';
@@ -217,6 +218,7 @@ const SignUpPage: React.FC = () => {
 
   const caricaDocumentiPrecompilati = async (userId: string): Promise<string[]> => {
     const fatti: string[] = [];
+    const falliti: string[] = [];
     const nomeCompleto = tipoCliente === 'azienda'
       ? [formData.rappresentanteNome, formData.rappresentanteCognome].filter(Boolean).join(' ').trim()
       : [formData.nome, formData.cognome].filter(Boolean).join(' ').trim();
@@ -225,8 +227,11 @@ const SignUpPage: React.FC = () => {
       const file = (docsPrecompila as Record<string, File | null>)[chiave];
       if (!file) continue;
       try {
+        // HEIC dell'iPhone, webp o foto da 8 MB: il bucket le rifiuta. Qui
+        // diventano un JPEG sotto soglia prima di partire.
+        const pronto = await preparaFileDocumento(file);
         const body = new FormData();
-        body.append('file', file);
+        body.append('file', pronto);
         body.append('bucket', bucket);
         body.append('userId', userId);
         body.append('prefix', chiave);
@@ -234,10 +239,22 @@ const SignUpPage: React.FC = () => {
         if (nomeCompleto) body.append('userFullName', nomeCompleto);
         const res = await fetch('/.netlify/functions/upload-file', { method: 'POST', body });
         if (res.ok) fatti.push(chiave);
-        else console.error('[SignUp] upload documento fallito', chiave, await res.text());
+        else {
+          const dettaglio = await res.text();
+          console.error('[SignUp] upload documento fallito', chiave, dettaglio);
+          falliti.push(file.name);
+        }
       } catch (err) {
         console.error('[SignUp] upload documento fallito', chiave, err);
+        falliti.push(err instanceof Error ? err.message : file.name);
       }
+    }
+    if (falliti.length > 0) {
+      // Meglio dirlo: prima il documento spariva senza che nessuno lo sapesse.
+      setGeneralError(
+        'Account creato. Questi documenti non sono stati caricati: ' + falliti.join(', ') +
+        '. Puoi ricaricarli dalla tua area personale, sezione Documenti.'
+      );
     }
     return fatti;
   };

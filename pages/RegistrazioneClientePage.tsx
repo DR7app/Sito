@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import CalcolaCFButton from '../components/ui/CalcolaCFButton'
 import CompilaButton, { type ExtractedData } from '../components/ui/CompilaButton'
+import { preparaFileDocumento } from '../utils/immagineDocumento'
 import { useTranslation } from '../hooks/useTranslation'
 import { getRegistrazioneClienteCopy, type RegistrazioneClienteCopy } from '../utils/siteCopy'
 
@@ -303,8 +304,17 @@ export default function RegistrazioneClientePage() {
             if (item.uploaded) continue
             setDocs(prev => prev.map((d, j) => j === i ? { ...d, uploading: true, error: undefined } : d))
             try {
-                const fileBuf = await item.file.arrayBuffer()
-                const b64 = btoa(String.fromCharCode(...new Uint8Array(fileBuf)))
+                // HEIC dell'iPhone e foto pesanti: i bucket le rifiutano.
+                const pronto = await preparaFileDocumento(item.file)
+                const fileBuf = await pronto.arrayBuffer()
+                // A blocchi: con lo spread di un array intero i file grandi
+                // facevano saltare lo stack e il caricamento moriva li'.
+                const byte = new Uint8Array(fileBuf)
+                let binario = ''
+                for (let k = 0; k < byte.length; k += 8192) {
+                    binario += String.fromCharCode(...byte.subarray(k, k + 8192))
+                }
+                const b64 = btoa(binario)
                 const res = await fetch('/.netlify/functions/upload-customer-invite-document', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -312,8 +322,8 @@ export default function RegistrazioneClientePage() {
                         token,
                         customerId,
                         docKind: item.kind,
-                        fileName: item.file.name,
-                        contentType: item.file.type,
+                        fileName: pronto.name,
+                        contentType: pronto.type,
                         fileBase64: b64,
                     }),
                 })

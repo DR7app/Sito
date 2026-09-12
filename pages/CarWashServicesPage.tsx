@@ -872,28 +872,41 @@ const CarWashServicesPage: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Riepilogo dei servizi scelti. Prima era una pastiglia BIANCA fissa
+            in basso allo schermo: sembrava un secondo carrello sopra a quello
+            del sito (2026-09-12). Ora e' una riga dentro la pagina, sotto ai
+            servizi, e porta a data e ora — il carrello resta uno solo, quello
+            del chariot in alto. */}
+        {cart.length > 0 && (
+          <div className="mt-8 border border-gray-800 bg-gray-900/50 p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-white">
+              <span className="bg-white text-black w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold">
+                {cart.reduce((sum, item) => sum + item.quantity, 0)}
+              </span>
+              <span className="uppercase tracking-[0.12em] text-xs text-gray-400">
+                {cw('servizi_titolo_it', 'servizi_titolo_en', lang === 'it' ? 'I tuoi servizi' : 'Your services')}
+              </span>
+              <span className="font-bold">€{getCartTotal().toFixed(2)}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setShowCart(true)}
+                className="px-4 py-2 border border-gray-600 text-white text-[11px] uppercase tracking-[0.12em] hover:bg-gray-800 transition-colors"
+              >
+                {t({ it: 'Modifica', en: 'Edit' })}
+              </button>
+              <button
+                onClick={handleCheckout}
+                className="px-4 py-2 border-2 border-white text-white text-[11px] uppercase tracking-[0.12em] hover:bg-white hover:text-black transition-all duration-300"
+              >
+                {cw('servizi_procedi_it', 'servizi_procedi_en', lang === 'it' ? 'SCEGLI DATA E ORA' : 'PICK DATE AND TIME')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       </>)}
-
-      {/* Floating Cart Button */}
-      {cart.length > 0 && (
-        <motion.button
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          onClick={() => setShowCart(true)}
-          className="fixed bottom-6 right-6 bg-white text-black px-6 py-4 font-bold shadow-2xl flex items-center gap-3 z-40 hover:bg-gray-200 transition-colors"
-        >
-          {/* Pastiglia del contatore: sta dentro un bottone BIANCO, quindi resta
-              nera piena invece di lasciar passare il marmo. */}
-          <span className="bg-dr7-obsidian text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
-            {cart.reduce((sum, item) => sum + item.quantity, 0)}
-          </span>
-          {/* "Servizi" e non "carrello": il carrello del sito e' quello del
-              chariot in alto, e ci si arriva dopo aver scelto data e ora. */}
-          <span className="uppercase tracking-[0.12em] text-xs">{t({ it: 'Servizi', en: 'Services' })}</span>
-          <span>€{getCartTotal().toFixed(2)}</span>
-        </motion.button>
-      )}
 
       {/* Cart Sidebar */}
       <AnimatePresence>

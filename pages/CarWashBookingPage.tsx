@@ -1718,7 +1718,10 @@ const CarWashBookingPage: React.FC = () => {
           </div>
           {hasCartItems ? (
             <div className="mb-8">
-              <p className="text-gray-400 mb-3">{t({ it: 'Il tuo carrello:', en: 'Your cart:' })}</p>
+              {/* Non e' un carrello: sono i servizi di QUESTO appuntamento.
+                  Il carrello del sito e' uno solo, quello del chariot in alto
+                  (2026-09-12). */}
+              <p className="text-gray-400 mb-3">{t({ it: 'I tuoi servizi:', en: 'Your services:' })}</p>
               <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 space-y-2">
                 {cartItems.map((item, index) => (
                   <div key={index} className="flex justify-between items-center text-white">

@@ -168,6 +168,8 @@ const CarWashServicesPage: React.FC = () => {
   // Le due etichette fisse della scheda si cambiano da Sito > Lavaggio.
   const etichettaCaratteristiche = cw('carta_cosa_facciamo_it', 'carta_cosa_facciamo_en', lang === 'it' ? 'Cosa facciamo' : 'What we do');
   const etichettaRisultato = cw('carta_risultato_it', 'carta_risultato_en', lang === 'it' ? 'Risultato' : 'Result');
+  const etichettaDa = cw('carta_da_it', 'carta_da_en', lang === 'it' ? 'da' : 'from');
+  const etichettaPreventivo = cw('carta_preventivo_it', 'carta_preventivo_en', lang === 'it' ? 'Su preventivo' : 'On request');
   // Quello che c'era prima della freccia "indietro" (vedi leggiIstantanea).
   const [istantanea] = useState<Record<string, any>>(() => leggiIstantanea());
   const [mainTab, setMainTab] = useState<MainTabType>(istantanea.mainTab || 'lavaggio');
@@ -792,7 +794,7 @@ const CarWashServicesPage: React.FC = () => {
                           }}
                           className="w-full bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-white hover:text-black transition-all duration-300"
                         >
-                          {t({ it: 'da', en: 'from' })} €{formatPrice(lowestPrice)}
+                          {etichettaDa} €{formatPrice(lowestPrice)}
                         </button>
                       )}
                     </SchedaCatalogo>
@@ -826,7 +828,7 @@ const CarWashServicesPage: React.FC = () => {
                       rel="noopener noreferrer"
                       className="w-full inline-flex items-center justify-center bg-white text-black px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-gray-200 transition-all duration-300"
                     >
-                      Su preventivo
+                      {etichettaPreventivo}
                     </a>
                   ) : (
                     <button
@@ -839,7 +841,7 @@ const CarWashServicesPage: React.FC = () => {
                       }}
                       className="w-full bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-white hover:text-black transition-all duration-300"
                     >
-                      Su preventivo
+                      {etichettaPreventivo}
                     </button>
                   )}
                 </SchedaCatalogo>

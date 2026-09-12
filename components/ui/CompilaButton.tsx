@@ -42,11 +42,22 @@ export interface ExtractedData {
   patente_rilascio?: string
   patente_scadenza?: string
   patente_ente?: string
+  patente_conseguimento?: string
+  // Patente nautica (Noleggio Mare)
+  nautica_numero?: string
+  nautica_categoria?: string
+  nautica_limite?: string
+  nautica_abilitazione?: string
+  nautica_rilascio?: string
+  nautica_scadenza?: string
+  nautica_ente?: string
+  /** true = date patente lette dalla tabella del RETRO (colonne 10/11) */
+  patente_date_dal_retro?: boolean
   // Meta
   document_type?: string
   confidence?: string
   notes?: string
-  [key: string]: string | undefined
+  [key: string]: string | boolean | undefined
 }
 
 export interface DataConflict {
@@ -86,12 +97,18 @@ async function fileToBase64(file: File): Promise<string> {
       const base64 = result.includes(',') ? result.split(',')[1] : result
       resolve(base64)
     }
-    reader.onerror = reject
+    reader.onerror = () => reject(new Error(`Lettura file fallita: ${file.name}`))
     reader.readAsDataURL(file)
   })
 }
 
 async function compressImage(file: File, maxSizeKB = 4000, maxDim = 3000): Promise<string> {
+  // I documenti caricati possono essere PDF: il canvas non li disegna e
+  // prima l'errore faceva saltare la lettura di TUTTI i file del giro.
+  // Claude legge i PDF nativamente, quindi li mandiamo cosi' come sono.
+  if (!file.type.startsWith('image/')) {
+    return fileToBase64(file)
+  }
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -117,16 +134,36 @@ async function compressImage(file: File, maxSizeKB = 4000, maxDim = 3000): Promi
       }
       resolve(base64)
     }
-    img.onerror = reject
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      // Formato immagine che il browser non sa disegnare (HEIC, TIFF...):
+      // mandiamo i byte grezzi, ci pensa il server a dire se non va bene.
+      fileToBase64(file).then(resolve).catch(reject)
+    }
     img.src = url
   })
 }
 
+const META_KEYS = ['document_type', 'confidence', 'notes', 'raw_text', 'patente_date_dal_retro']
+
+/**
+ * Le date della patente devono arrivare dal RETRO: li' c'e' la tabella
+ * delle categorie, e la riga "B" porta il conseguimento (colonna 10) e la
+ * scadenza (colonna 11). Sul fronte i campi 4a/4b sono emissione e
+ * scadenza DELLA TESSERA: su una patente rinnovata sono date diverse.
+ */
 function mergeExtractedData(results: ExtractedData[]): ExtractedData {
   const merged: ExtractedData = {}
-  for (const result of results) {
+  // Il retro vince: prima le letture che hanno davvero visto la tabella
+  // delle categorie, poi le altre. Senza questo ordine la foto del fronte,
+  // letta per prima, piazzava la 4a al posto del conseguimento.
+  const ordinati = [
+    ...results.filter(r => r.patente_date_dal_retro === true),
+    ...results.filter(r => r.patente_date_dal_retro !== true),
+  ]
+  for (const result of ordinati) {
     for (const [key, value] of Object.entries(result)) {
-      if (!value || key === 'document_type' || key === 'confidence' || key === 'notes' || key === 'raw_text') continue
+      if (!value || typeof value !== 'string' || META_KEYS.includes(key)) continue
       // Keep first non-empty value for each field
       if (!merged[key]) {
         merged[key] = value
@@ -142,8 +179,8 @@ function findConflicts(
 ): DataConflict[] {
   const conflicts: DataConflict[] = []
   for (const [key, extractedValue] of Object.entries(extracted)) {
-    if (!extractedValue) continue
-    if (['document_type', 'confidence', 'notes', 'raw_text'].includes(key)) continue
+    if (!extractedValue || typeof extractedValue !== 'string') continue
+    if (META_KEYS.includes(key)) continue
     const currentValue = currentData[key]
     if (currentValue && currentValue.trim() !== '' && currentValue.toLowerCase().trim() !== extractedValue.toLowerCase().trim()) {
       conflicts.push({ field: key, currentValue, extractedValue })
@@ -175,6 +212,13 @@ const FIELD_LABELS: Record<string, string> = {
   patente_rilascio: 'Rilascio patente',
   patente_scadenza: 'Scadenza patente',
   patente_ente: 'Ente patente',
+  nautica_numero: 'N. patente nautica',
+  nautica_categoria: 'Categoria nautica',
+  nautica_limite: 'Limite dalla costa',
+  nautica_abilitazione: 'Abilitazione nautica',
+  nautica_rilascio: 'Rilascio patente nautica',
+  nautica_scadenza: 'Scadenza patente nautica',
+  nautica_ente: 'Ente patente nautica',
 }
 
 export default function CompilaButton({
@@ -226,12 +270,17 @@ export default function CompilaButton({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ imageUrl: doc.file }),
             })
-            const data = await res.json()
-            if (res.ok && data.extractedData) {
-              results.push(data.extractedData)
-              if (data.extractedData.notes) notes.push(`${doc.label || 'Documento'}: ${data.extractedData.notes}`)
+            const json = await res.json()
+            // La funzione risponde { success, extractedData, data }: il
+            // gestionale legge `data`, il sito `extractedData`. Accettiamo
+            // entrambe le forme cosi' un cambio lato server non spegne la
+            // lettura.
+            const estratto = json.data || json.extractedData
+            if (res.ok && estratto) {
+              results.push(estratto)
+              if (estratto.notes) notes.push(`${doc.label || 'Documento'}: ${estratto.notes}`)
             } else {
-              notes.push(`${doc.label || 'Documento'}: ${data.error || 'Non leggibile'}`)
+              notes.push(`${doc.label || 'Documento'}: ${json.error || 'Non leggibile'}`)
             }
             continue
           } else {
@@ -246,19 +295,29 @@ export default function CompilaButton({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64: base64 }),
         })
-        const data = await res.json()
+        const json = await res.json()
+        const estratto = json.data || json.extractedData
 
-        if (res.ok && data.extractedData) {
-          results.push(data.extractedData)
-          if (data.extractedData.notes) notes.push(`${doc.label || 'Documento'}: ${data.extractedData.notes}`)
-          if (data.extractedData.confidence === 'low') notes.push(`${doc.label || 'Documento'}: Lettura a bassa affidabilità`)
+        if (res.ok && estratto) {
+          results.push(estratto)
+          if (estratto.notes) notes.push(`${doc.label || 'Documento'}: ${estratto.notes}`)
+          if (estratto.confidence === 'low') notes.push(`${doc.label || 'Documento'}: Lettura a bassa affidabilità`)
         } else {
-          notes.push(`${doc.label || 'Documento'}: ${data.error || 'Impossibile estrarre i dati'}`)
+          notes.push(`${doc.label || 'Documento'}: ${json.error || 'Impossibile estrarre i dati'}`)
         }
       }
 
       if (results.length === 0) {
-        onError?.('Impossibile estrarre dati dai documenti caricati')
+        // Diciamo PERCHE' non si e' letto (formato non supportato, foto
+        // illeggibile, modello non disponibile) invece del generico
+        // "impossibile": senza il motivo il cliente ricarica la stessa foto.
+        console.error('[CompilaButton] nessun dato estratto. Note:', notes)
+        const primaNota = notes[0] || ''
+        const altre = notes.length > 1 ? ` (+${notes.length - 1} altri)` : ''
+        onError?.(primaNota
+          ? `Lettura non riuscita — ${primaNota}${altre}`
+          : 'Impossibile estrarre dati dai documenti caricati')
+        setExtractionNotes(notes)
         setIsExtracting(false)
         return
       }
@@ -274,10 +333,13 @@ export default function CompilaButton({
       if (merged.patente_scadenza && merged.patente_scadenza < today) {
         notes.push('Patente SCADUTA')
       }
+      if (merged.nautica_scadenza && merged.nautica_scadenza < today) {
+        notes.push('Patente nautica SCADUTA')
+      }
 
       // Validate codice fiscale length
-      if (merged.codice_fiscale && merged.codice_fiscale.length !== 16) {
-        notes.push(`Codice fiscale rilevato non valido (${merged.codice_fiscale.length} caratteri invece di 16)`)
+      if (merged.codice_fiscale && String(merged.codice_fiscale).length !== 16) {
+        notes.push(`Codice fiscale rilevato non valido (${String(merged.codice_fiscale).length} caratteri invece di 16)`)
         delete merged.codice_fiscale
       }
 
@@ -294,7 +356,7 @@ export default function CompilaButton({
         // No conflicts — apply directly (only fill empty fields)
         const safeData: ExtractedData = {}
         for (const [key, value] of Object.entries(merged)) {
-          if (!value || ['document_type', 'confidence', 'notes', 'raw_text'].includes(key)) continue
+          if (!value || typeof value !== 'string' || META_KEYS.includes(key)) continue
           const current = currentData[key]
           if (!current || current.trim() === '') {
             safeData[key] = value
@@ -358,7 +420,7 @@ export default function CompilaButton({
     const safeData: ExtractedData = {}
     const conflictFields = new Set(conflicts.map(c => c.field))
     for (const [key, value] of Object.entries(pendingData)) {
-      if (!value || ['document_type', 'confidence', 'notes', 'raw_text'].includes(key)) continue
+      if (!value || typeof value !== 'string' || META_KEYS.includes(key)) continue
       if (!conflictFields.has(key)) {
         const current = currentData[key]
         if (!current || current.trim() === '') {

@@ -257,6 +257,17 @@ const calculateYearsSince = (dateString: string): number => {
   return years < 0 ? 0 : years;
 };
 
+/**
+ * Le date che il sistema legge dai documenti arrivano in YYYY-MM-DD; a
+ * schermo si mostrano sempre in gg/mm/aaaa.
+ */
+const dataItaliana = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const [anno, mese, giorno] = String(iso).split('-');
+  if (!anno || !mese || !giorno) return String(iso);
+  return `${giorno}/${mese}/${anno}`;
+};
+
 const createItalyDateTime = (dateStr: string, timeStr: string) => {
   if (!dateStr || !timeStr) return new Date();
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -3035,9 +3046,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               : "È richiesta una patente con almeno 3 anni di anzianità.";
           }
         }
-        if (!sd.licenseExpiryDate) {
-          newErrors['secondDriver.licenseExpiryDate'] = "La data di scadenza della patente è obbligatoria.";
-        } else {
+        // La scadenza NON e' obbligatoria: le patenti francesi (modello
+        // cartaceo rosa) non riportano nessuna data di scadenza, quindi il
+        // campo vuoto non deve bloccare. Si controlla solo se c'e'.
+        if (sd.licenseExpiryDate) {
           const today = new Date().toISOString().split('T')[0];
           if (sd.licenseExpiryDate < today) {
             newErrors['secondDriver.licenseExpiryDate'] = "La patente è scaduta.";
@@ -5175,7 +5187,27 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               </>
               <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Data rilascio patente *", en: "Licence issue date *" })}</label><input type="date" name={`${prefix}licenseIssueDate`} value={(driverData as any).licenseIssueDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}</div>
+              {/* 12/09/2026 — la data della patente non si sceglie piu' a
+                  mano: la legge il sistema dal RETRO della patente (tabella
+                  categorie, riga B, colonna 10). Scritta a mano passava
+                  un'anzianita' inventata alla fascia A/B. */}
+              <div>
+                <label className="text-sm text-gray-400">{t({ it: "Data conseguimento patente B *", en: "Category B licence date *" })}</label>
+                <input
+                  type="text"
+                  readOnly
+                  aria-readonly="true"
+                  value={dataItaliana((driverData as any).licenseIssueDate)}
+                  placeholder={t({ it: "Si compila da sola", en: "Filled automatically" })}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2.5 mt-1 text-gray-300 text-sm min-h-[44px] cursor-not-allowed"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {(driverData as any).licenseIssueDate
+                    ? t({ it: "Letta dal retro della patente (categoria B).", en: "Read from the back of the licence (category B)." })
+                    : t({ it: "Carica il RETRO della patente: la data si compila da sola.", en: "Upload the BACK of the licence: the date fills in on its own." })}
+                </p>
+                {errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}
+              </div>
               {driverType === 'main' && (
                 <div className="md:col-span-2">
                   <label className="text-sm text-gray-400">{t({ it: "Indirizzo di residenza *", en: "Residential address *" })}</label>
@@ -5207,7 +5239,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               )}
               {driverType === 'second' && (
                 <>
-                  <div><label className="text-sm text-gray-400">{t({ it: "Data scadenza patente *", en: "Licence expiry date *" })}</label><input type="date" name={`${prefix}licenseExpiryDate`} value={(driverData as any).licenseExpiryDate} onChange={handleChange} min={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseExpiryDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseExpiryDate`]}</p>}</div>
+                  <div>
+                    <label className="text-sm text-gray-400">{t({ it: "Data scadenza patente", en: "Licence expiry date" })}</label>
+                    <input
+                      type="text"
+                      readOnly
+                      aria-readonly="true"
+                      value={dataItaliana((driverData as any).licenseExpiryDate)}
+                      placeholder={t({ it: "Si compila da sola", en: "Filled automatically" })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2.5 mt-1 text-gray-300 text-sm min-h-[44px] cursor-not-allowed"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {t({ it: "Letta dal retro della patente (categoria B). Le patenti francesi non hanno scadenza: resta vuota.", en: "Read from the back of the licence (category B). French licences have no expiry date: it stays empty." })}
+                    </p>
+                    {errors[`${prefix}licenseExpiryDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseExpiryDate`]}</p>}
+                  </div>
                   <div><label className="text-sm text-gray-400">{t({ it: "Paese di rilascio *", en: "Country of issue *" })}</label><input type="text" name={`${prefix}countryOfIssue`} value={(driverData as any).countryOfIssue} onChange={handleChange} placeholder={t({ it: "es. Italia", en: "e.g. Italy" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}countryOfIssue`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}countryOfIssue`]}</p>}</div>
                 </>
               )}
@@ -5232,7 +5278,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
               {/* Documenti gia' in archivio: chi li ha caricati una volta non
                   li ricarica a ogni prenotazione. Servono tutti e tre. */}
-              {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath) ? (
+              {/* 12/09/2026 — l'archivio basta SOLO se da li' e' gia' uscita
+                  la data della categoria B. Senza quella data il campo e' di
+                  sola lettura e il cliente resterebbe bloccato: in quel caso
+                  gli si richiede la patente, fronte e retro. */}
+              {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath && !!formData.licenseIssueDate) ? (
                 <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-4 flex items-center mb-4">
                   <div className="mr-3 bg-green-500/20 p-2 rounded-full">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -5255,8 +5305,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       barre. */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {([
-                      { campo: 'licenseImage', archivio: hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImage', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
@@ -5301,7 +5351,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           data_nascita: formData.birthDate,
                           codice_fiscale: formData.codiceFiscale,
                           patente_numero: formData.licenseNumber,
-                          patente_rilascio: formData.licenseIssueDate,
+                          // patente_rilascio NON va qui: il campo e' di sola
+                          // lettura, quindi ogni rilettura dei documenti deve
+                          // poterlo ricorreggere invece di essere scartata
+                          // perche' "gia' compilato".
                         }}
                         onDataExtracted={(data) => {
                           setFormData(prev => {
@@ -5321,7 +5374,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             // RETRO (colonna 10, categoria B). La 4a del fronte e' solo
                             // l'emissione della tessera: si usa se il retro non si legge.
                             const conseguimento = data.patente_conseguimento || data.patente_rilascio;
-                            if (conseguimento && !prev.licenseIssueDate) agg.licenseIssueDate = conseguimento;
+                            if (conseguimento) agg.licenseIssueDate = conseguimento;
                             // Nessun codice fiscale sui documenti ma i dati per
                             // calcolarlo si': meglio calcolarlo che lasciarlo vuoto.
                             const cognome = (agg.lastName as string) || prev.lastName;
@@ -5469,11 +5522,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       ))}
                     </div>
 
-                    {/* Compila automaticamente: legge tutte le foto caricate
-                        e riempie i campi ancora vuoti. */}
+                    {/* Come per il primo conducente la lettura parte DA
+                        SOLA: le due date patente sono di sola lettura, quindi
+                        aspettare un click avrebbe lasciato il form bloccato. */}
                     {([formData.secondDriver.licenseImage, formData.secondDriver.licenseImageBack, formData.secondDriver.idImage, formData.secondDriver.idImageBack, formData.secondDriver.cfImage, formData.secondDriver.cfImageBack].some(f => f instanceof File)) && (
                       <div className="mt-4">
                         <CompilaButton
+                          auto
                           documents={[
                             { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente (fronte)' },
                             { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: 'Patente Secondo Conducente (retro)' },
@@ -5488,8 +5543,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             data_nascita: formData.secondDriver.birthDate,
                             codice_fiscale: formData.secondDriver.codiceFiscale,
                             patente_numero: formData.secondDriver.licenseNumber,
-                            patente_rilascio: formData.secondDriver.licenseIssueDate,
-                            patente_scadenza: formData.secondDriver.licenseExpiryDate,
+                            // Le due date patente sono di sola lettura: si
+                            // lasciano fuori da currentData cosi' una nuova
+                            // lettura del retro puo' sempre correggerle.
                           }}
                           onDataExtracted={(data) => {
                             setFormData(prev => {
@@ -5505,8 +5561,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               // conseguimento (retro, col.10 cat.B), non da
                               // quella del duplicato.
                               const conseguimento = data.patente_conseguimento || data.patente_rilascio;
-                              if (conseguimento && !sd.licenseIssueDate) sd.licenseIssueDate = conseguimento;
-                              if (data.patente_scadenza && !sd.licenseExpiryDate) sd.licenseExpiryDate = data.patente_scadenza;
+                              if (conseguimento) sd.licenseIssueDate = conseguimento;
+                              if (data.patente_scadenza) sd.licenseExpiryDate = data.patente_scadenza;
                               if (data.patente_ente && !sd.countryOfIssue) sd.countryOfIssue = data.patente_ente;
                               // Nessun codice fiscale sui documenti ma i dati
                               // per calcolarlo si': lo si calcola invece di

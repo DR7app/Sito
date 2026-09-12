@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
-import { useNavigate } from 'react-router-dom';
 import { type VehicleCategory } from '../utils/vehicleClassification';
 import { classifyVehicle as classifyWashVehicle } from '../utils/classifyWashVehicle';
 import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } from '../utils/lookupTarga';
@@ -14,6 +13,10 @@ import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
 import { useFilmato } from '../hooks/useFilmato';
+// Prenotazione in finestra: gli stessi identici passi della pagina
+// /car-wash-booking (data e ora, DR7 Flex, codice sconto, PRENOTA ORA e
+// Aggiungi al carrello), aperti sopra il catalogo invece che altrove.
+import CarWashBookingPage from './CarWashBookingPage';
 
 export interface WashService {
   id: string;
@@ -140,7 +143,6 @@ const CarWashServicesPage: React.FC = () => {
   const { t, lang } = useTranslation();
   // Il filmato dell'apertura arriva da Sito > Aspetto & Funzionalita'.
   const filmato = useFilmato('lavaggio');
-  const navigate = useNavigate();
   const contact = useContactInfo();
   const [copy, setCopy] = useState<CarWashCopy | null>(null);
   useEffect(() => {
@@ -176,6 +178,14 @@ const CarWashServicesPage: React.FC = () => {
   const [lavaggioCategory, setLavaggioCategory] = useState<LavaggioCategory>(istantanea.lavaggioCategory || 'wash');
   const [meccanicaCategory, setMeccanicaCategory] = useState<MeccanicaCategory>(istantanea.meccanicaCategory || 'tech');
   const [cart, setCart] = useState<CartItem[]>(Array.isArray(istantanea.cart) ? istantanea.cart : []);
+  /**
+   * Servizi pronti per la finestra di prenotazione. Prima si cambiava
+   * pagina (/car-wash-booking) e il catalogo spariva: chi voleva solo
+   * vedere gli orari perdeva di vista quello che aveva scelto e tornava
+   * indietro con la freccia. Ora data e ora si scelgono in una finestra
+   * sopra il catalogo (12/09/2026).
+   */
+  const [prenotazioneAperta, setPrenotazioneAperta] = useState<any | null>(null);
   const [showCart, setShowCart] = useState(false);
   // Pianta sedili aperta: `index` valorizzato = si sta modificando una riga
   // gia' nel carrello, altrimenti si sta aggiungendo.
@@ -518,30 +528,29 @@ const CarWashServicesPage: React.FC = () => {
       return;
     }
 
-    navigate('/car-wash-booking', {
-      state: {
-        cartItems: cart.map(item => ({
-          serviceId: item.service.id,
-          serviceName: lang === 'it' ? item.service.name : item.service.nameEn,
-          price: item.selectedOption?.price || item.service.price,
-          quantity: item.quantity,
-          option: item.selectedOption?.label,
-          ...(item.seats ? { seats: item.seats } : {})
-        })),
-        total: getCartTotal(),
-        ...(targaResult ? {
-          customerVehicle: {
-            plate: targaResult.plate,
-            carMake: targaResult.carMake,
-            carModel: targaResult.carModel,
-            description: targaResult.description,
-            registrationYear: targaResult.registrationYear,
-            fuelType: targaResult.fuelType,
-            // The (possibly overridden) wash category — Urban / Maxi / Moto.
-            category: washCategory || detectedCategory || targaManualCategory,
-          }
-        } : {})
-      }
+    setShowCart(false);
+    setPrenotazioneAperta({
+      cartItems: cart.map(item => ({
+        serviceId: item.service.id,
+        serviceName: lang === 'it' ? item.service.name : item.service.nameEn,
+        price: item.selectedOption?.price || item.service.price,
+        quantity: item.quantity,
+        option: item.selectedOption?.label,
+        ...(item.seats ? { seats: item.seats } : {})
+      })),
+      total: getCartTotal(),
+      ...(targaResult ? {
+        customerVehicle: {
+          plate: targaResult.plate,
+          carMake: targaResult.carMake,
+          carModel: targaResult.carModel,
+          description: targaResult.description,
+          registrationYear: targaResult.registrationYear,
+          fuelType: targaResult.fuelType,
+          // The (possibly overridden) wash category — Urban / Maxi / Moto.
+          category: washCategory || detectedCategory || targaManualCategory,
+        }
+      } : {})
     });
   };
 
@@ -899,40 +908,91 @@ const CarWashServicesPage: React.FC = () => {
           </div>
         )}
 
-        {/* Riepilogo dei servizi scelti. Prima era una pastiglia BIANCA fissa
-            in basso allo schermo: sembrava un secondo carrello sopra a quello
-            del sito (2026-09-12). Ora e' una riga dentro la pagina, sotto ai
-            servizi, e porta a data e ora — il carrello resta uno solo, quello
-            del chariot in alto. */}
-        {cart.length > 0 && (
-          <div className="mt-8 border border-gray-800 bg-gray-900/50 p-4 flex flex-wrap items-center justify-between gap-3">
+      </div>
+      </>)}
+
+      {/* Servizi scelti: una barra fissa in basso, sempre sotto gli occhi.
+          La riga dentro la pagina non si capiva — passava per un riepilogo
+          e nessuno ci leggeva il passo dopo (12/09/2026). Il bottone bianco
+          apre la finestra di prenotazione: data, ora, PRENOTA ORA o
+          Aggiungi al carrello, senza lasciare il catalogo. */}
+      {cart.length > 0 && !prenotazioneAperta && (
+        <motion.div
+          initial={{ y: 80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-black/95 backdrop-blur-md px-4 py-3"
+        >
+          <div className="container mx-auto flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-white">
-              <span className="bg-white text-black w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold">
+              <span className="bg-white text-black w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">
                 {cart.reduce((sum, item) => sum + item.quantity, 0)}
               </span>
               <span className="uppercase tracking-[0.12em] text-xs text-gray-400">
                 {cw('servizi_titolo_it', 'servizi_titolo_en', lang === 'it' ? 'I tuoi servizi' : 'Your services')}
               </span>
-              <span className="font-bold">€{getCartTotal().toFixed(2)}</span>
+              <span className="font-bold text-lg">€{getCartTotal().toFixed(2)}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setShowCart(true)}
-                className="px-4 py-2 border border-gray-600 text-white text-[11px] uppercase tracking-[0.12em] hover:bg-gray-800 transition-colors"
+                className="px-4 py-3 border border-gray-600 text-white text-[11px] uppercase tracking-[0.12em] hover:bg-gray-800 transition-colors"
               >
                 {t({ it: 'Modifica', en: 'Edit' })}
               </button>
               <button
                 onClick={handleCheckout}
-                className="px-4 py-2 border-2 border-white text-white text-[11px] uppercase tracking-[0.12em] hover:bg-white hover:text-black transition-all duration-300"
+                className="px-6 py-3 bg-white text-black text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-gray-200 transition-colors"
               >
                 {cw('servizi_procedi_it', 'servizi_procedi_en', lang === 'it' ? 'SCEGLI DATA E ORA' : 'PICK DATE AND TIME')}
               </button>
             </div>
           </div>
+        </motion.div>
+      )}
+
+      {/* Finestra di prenotazione — gli stessi passi della pagina
+          /car-wash-booking, aperti sopra il catalogo. z-[150]: sopra la
+          barra in alto (z-[90]); il calendario e la finestra di pagamento
+          che nascono qui dentro restano sopra a loro volta. */}
+      <AnimatePresence>
+        {prenotazioneAperta && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] overflow-y-auto bg-black/90 backdrop-blur-sm"
+          >
+            <div className="min-h-full flex items-start justify-center p-4 sm:p-8">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                className="relative w-full max-w-4xl border border-gray-800 bg-black shadow-2xl"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPrenotazioneAperta(null)}
+                  aria-label={t({ it: 'Chiudi', en: 'Close' })}
+                  className="absolute right-4 top-4 z-10 w-10 h-10 flex items-center justify-center border border-gray-700 text-gray-400 hover:text-white hover:border-white transition-colors"
+                >
+                  &times;
+                </button>
+                <CarWashBookingPage
+                  inModale
+                  datiIniziali={prenotazioneAperta}
+                  onChiudi={() => setPrenotazioneAperta(null)}
+                  onConclusa={() => {
+                    // Il servizio e' nel carrello del sito: il catalogo
+                    // riparte pulito, altrimenti lo si aggiungerebbe due volte.
+                    setPrenotazioneAperta(null);
+                    setCart([]);
+                  }}
+                />
+              </motion.div>
+            </div>
+          </motion.div>
         )}
-      </div>
-      </>)}
+      </AnimatePresence>
 
       {/* Cart Sidebar */}
       <AnimatePresence>

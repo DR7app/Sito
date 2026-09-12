@@ -34,11 +34,35 @@ function serviceNameWithSeats(item: CartItem, lang: string): string {
   return seats ? `${item.serviceName} (${seats})` : item.serviceName;
 }
 
-const CarWashBookingPage: React.FC = () => {
+interface CarWashBookingPageProps {
+  /** I servizi scelti: di solito arrivano da navigate(state), ma quando la
+   *  prenotazione si apre come finestra sopra il catalogo glieli passa il
+   *  catalogo stesso, senza cambiare pagina. */
+  datiIniziali?: any;
+  /** Finestra sopra il catalogo invece di pagina intera. */
+  inModale?: boolean;
+  /** Chiudi la finestra e torna ai servizi. */
+  onChiudi?: () => void;
+  /** Servizio messo nel carrello del sito: il catalogo si svuota. */
+  onConclusa?: () => void;
+}
+
+const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
+  datiIniziali,
+  inModale = false,
+  onChiudi,
+  onConclusa,
+}) => {
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
+
+  /** In finestra non serve ne' l'altezza piena ne' lo spazio per la barra
+   *  in alto: a incorniciare ci pensa la finestra. */
+  const classiGuscio = inModale
+    ? 'px-6 py-8'
+    : 'min-h-screen bg-black pt-32 pb-16 px-6';
 
   // Existing clients state
   const [existingClients, setExistingClients] = useState<any[]>([]);
@@ -46,7 +70,7 @@ const CarWashBookingPage: React.FC = () => {
   const [showClientDropdown, setShowClientDropdown] = useState(false);
 
   // Support both single serviceId (legacy) and cartItems (new multi-service)
-  const locationState = location.state as any;
+  const locationState = datiIniziali ?? (location.state as any);
   // Gli orari veri arrivano dal database poco dopo il primo disegno. Senza
   // questo stato la pagina resterebbe sui default del codice (9-13 / 15-19)
   // e mostrerebbe orari che in Centralina Pro non esistono piu'.
@@ -460,10 +484,11 @@ const CarWashBookingPage: React.FC = () => {
   // Removed Stripe initialization - now using Nexi
 
   useEffect(() => {
-    if (!hasValidBooking) {
-      navigate('/car-wash-services');
-    }
-  }, [hasValidBooking, navigate]);
+    if (hasValidBooking) return;
+    // In finestra il catalogo e' gia' sotto: si chiude, non si naviga.
+    if (inModale) { onChiudi?.(); return; }
+    navigate('/car-wash-services');
+  }, [hasValidBooking, navigate, inModale, onChiudi]);
 
   // 09/09/2026 — come nel noleggio Terra, dove scelta l'auto si apre subito il
   // calendario delle date: qui, scelto il lavaggio, si apre da solo il
@@ -1265,8 +1290,17 @@ const CarWashBookingPage: React.FC = () => {
   const { aggiungi: aggiungiArticolo } = useCarrello();
   const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
 
+  /**
+   * `prenotazione` arriva solo da chi ha gia' i dati pronti. Il bottone del
+   * modale la chiama senza argomenti: se ci finisse dentro l'evento del
+   * click, il carrello proverebbe a salvare un oggetto che rimanda a se
+   * stesso e JSON.stringify fallirebbe ("cyclic structures").
+   */
   const aggiungiAlCarrello = async (prenotazione?: any) => {
-    const dati = prenotazione || pendingBookingData;
+    const passata = prenotazione && typeof prenotazione === 'object' && !('nativeEvent' in prenotazione)
+      ? prenotazione
+      : null;
+    const dati = passata || pendingBookingData;
     if (!dati || aggiungendoAlCarrello) return;
     setAggiungendoAlCarrello(true);
     setPaymentError(null);
@@ -1283,6 +1317,9 @@ const CarWashBookingPage: React.FC = () => {
       }, articoloDaModificare ? { sostituisce: articoloDaModificare.id } : undefined);
       setShowPaymentModal(false);
       svuotaIstantaneaLavaggio();
+      // In finestra siamo gia' sul catalogo: si chiude e basta, cambiare
+      // pagina qui vorrebbe dire ricaricare quella su cui siamo.
+      if (inModale) { onConclusa?.(); return; }
       navigate('/prime-wash');
     } catch (e: any) {
       setPaymentError(e?.message || t({ it: 'Non riesco ad aggiungere al carrello.', en: 'Could not add to the cart.' }));
@@ -1628,7 +1665,7 @@ const CarWashBookingPage: React.FC = () => {
 
   if (!hasValidBooking) {
     return (
-      <div className="min-h-screen bg-black pt-32 pb-16 px-6 flex items-center justify-center">
+      <div className={`${classiGuscio} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white">{t({ it: 'Caricamento...', en: 'Loading...' })}</p>
@@ -1640,7 +1677,7 @@ const CarWashBookingPage: React.FC = () => {
   // Show loading while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen bg-black pt-32 pb-16 px-6">
+      <div className={classiGuscio}>
         <div className="container mx-auto max-w-4xl flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-dr7-gold mx-auto mb-4"></div>
@@ -1654,7 +1691,7 @@ const CarWashBookingPage: React.FC = () => {
   // Require authentication for booking
   if (!user) {
     return (
-      <div className="min-h-screen bg-black pt-32 pb-16 px-6">
+      <div className={classiGuscio}>
         <div className="container mx-auto max-w-2xl">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-8 text-center">
             <div className="mb-6">
@@ -1691,7 +1728,7 @@ const CarWashBookingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black pt-32 pb-16 px-6">
+    <div className={classiGuscio}>
       <div className="container mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1700,7 +1737,7 @@ const CarWashBookingPage: React.FC = () => {
         >
           <div className="flex items-center gap-4 mb-2">
             <button
-              onClick={() => navigate('/car-wash-services')}
+              onClick={() => { if (inModale) { onChiudi?.(); return; } navigate('/car-wash-services'); }}
               className="w-10 h-10 flex items-center justify-center border border-gray-700 text-gray-400 hover:text-white hover:border-white transition-all"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -2302,7 +2339,7 @@ const CarWashBookingPage: React.FC = () => {
               {/* Non e' un secondo modo di pagare: e' lo stesso servizio messo
                   da parte, per pagarlo insieme al resto del carrello. */}
               <button
-                onClick={aggiungiAlCarrello}
+                onClick={() => { void aggiungiAlCarrello(); }}
                 disabled={isProcessing || aggiungendoAlCarrello}
                 className="w-full mt-4 border border-gray-600 text-white font-bold py-3 px-6 text-sm uppercase tracking-[0.18em] hover:bg-gray-800 transition-colors disabled:opacity-60"
               >

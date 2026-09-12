@@ -5278,10 +5278,24 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           const driverData = driverType === 'main' ? formData : formData.secondDriver;
           const prefix = driverType === 'main' ? '' : 'secondDriver.';
 
+          // 12/09/2026 — i dati del conducente arrivano dai documenti del
+          // punto A: quello che il sistema ha letto non si corregge a mano,
+          // altrimenti tanto valeva non chiedere le foto. Restano liberi
+          // email e telefono (su nessun documento) e i campi che la lettura
+          // non e' riuscita a riempire, cosi' nessuno resta bloccato.
+          const daDocumenti = driverType === 'main';
+          const letto = (v: unknown) => daDocumenti && !!String(v ?? '').trim();
+          const classeCampo = (bloccato: boolean, compatto = false) => {
+            const pad = compatto ? 'px-3 py-1.5' : 'px-3 py-2.5 min-h-[44px]';
+            return bloccato
+              ? `w-full bg-gray-900 border border-gray-700 rounded-md ${pad} mt-1 text-gray-300 text-sm cursor-not-allowed`
+              : `w-full bg-gray-800 border-gray-700 rounded-md ${pad} mt-1 text-white text-sm`;
+          };
+
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} autoComplete="given-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} autoComplete="family-name" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} readOnly={letto((driverData as any).firstName)} aria-readonly={letto((driverData as any).firstName)} autoComplete="given-name" className={classeCampo(letto((driverData as any).firstName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} readOnly={letto((driverData as any).lastName)} aria-readonly={letto((driverData as any).lastName)} autoComplete="family-name" className={classeCampo(letto((driverData as any).lastName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
               <div><label className="text-sm text-gray-400">Email *</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
               {/* Codice fiscale, sesso e nascita: uguali per tutti e due i
@@ -5292,8 +5306,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div>
                   <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
                   <div className="flex gap-2 mt-1">
-                    <input type="text" name={`${prefix}codiceFiscale`} value={(driverData as any).codiceFiscale || ''} onChange={handleChange} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className="flex-1 bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm uppercase" />
-                    <CalcolaCFButton
+                    <input type="text" name={`${prefix}codiceFiscale`} value={(driverData as any).codiceFiscale || ''} onChange={handleChange} readOnly={letto((driverData as any).codiceFiscale)} aria-readonly={letto((driverData as any).codiceFiscale)} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className={`flex-1 uppercase ${letto((driverData as any).codiceFiscale) ? 'bg-gray-900 border border-gray-700 rounded-md px-3 py-1.5 text-gray-300 text-sm cursor-not-allowed' : 'bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm'}`} />
+                    {!letto((driverData as any).codiceFiscale) && <CalcolaCFButton
                       className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
                       config={{
                         getCognome: () => (driverData as any).lastName,
@@ -5308,23 +5322,23 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         setLuogoNascita: (v) => scriviCampo(driverType, 'luogoNascita', v),
                         setProvinciaNascita: (v) => scriviCampo(driverType, 'provinciaNascita', v),
                       }}
-                    />
+                    />}
                   </div>
                   {errors[`${prefix}codiceFiscale`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}codiceFiscale`]}</p>}
                 </div>
                 <div>
                   <label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label>
-                  <select name={`${prefix}sesso`} value={(driverData as any).sesso || ''} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm">
+                  <select name={`${prefix}sesso`} value={(driverData as any).sesso || ''} onChange={handleChange} disabled={letto((driverData as any).sesso)} className={classeCampo(letto((driverData as any).sesso), true)}>
                     <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
                     <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
                     <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
                   </select>
                 </div>
-                <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name={`${prefix}luogoNascita`} value={(driverData as any).luogoNascita || ''} onChange={handleChange} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm" /></div>
-                <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" value={(driverData as any).provinciaNascita || ''} onChange={(e) => scriviCampo(driverType, 'provinciaNascita', e.target.value.toUpperCase())} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm uppercase" /></div>
+                <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name={`${prefix}luogoNascita`} value={(driverData as any).luogoNascita || ''} onChange={handleChange} readOnly={letto((driverData as any).luogoNascita)} aria-readonly={letto((driverData as any).luogoNascita)} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className={classeCampo(letto((driverData as any).luogoNascita), true)} /></div>
+                <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" value={(driverData as any).provinciaNascita || ''} onChange={(e) => scriviCampo(driverType, 'provinciaNascita', e.target.value.toUpperCase())} readOnly={letto((driverData as any).provinciaNascita)} aria-readonly={letto((driverData as any).provinciaNascita)} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className={`${classeCampo(letto((driverData as any).provinciaNascita), true)} uppercase`} /></div>
               </>
-              <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} max={new Date().toISOString().split('T')[0]} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} readOnly={letto((driverData as any).birthDate)} aria-readonly={letto((driverData as any).birthDate)} max={new Date().toISOString().split('T')[0]} className={classeCampo(letto((driverData as any).birthDate))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} readOnly={letto((driverData as any).licenseNumber)} aria-readonly={letto((driverData as any).licenseNumber)} className={classeCampo(letto((driverData as any).licenseNumber))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
               {/* 12/09/2026 — la data della patente non si sceglie piu' a
                   mano: la legge il sistema dal RETRO della patente (tabella
                   categorie, riga B, colonna 10). Scritta a mano passava
@@ -5541,7 +5555,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* Main Driver Form — after documents for auto-fill */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "B. DATI CONDUCENTE", en: "B. DRIVER DETAILS" })}</h3>
+              <h3 className="text-lg font-bold text-white mb-2">{t({ it: "B. DATI CONDUCENTE", en: "B. DRIVER DETAILS" })}</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                {t({
+                  it: 'I dati sono letti dai documenti caricati al punto A e non si modificano. Restano da compilare email e telefono.',
+                  en: 'These details are read from the documents uploaded in step A and cannot be edited. Only email and phone are left to fill in.',
+                })}
+              </p>
               {renderDriverForm('main')}
             </section>
 

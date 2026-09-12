@@ -1551,6 +1551,13 @@ export interface CarWashCopy {
   servizi_vuoto_it?: string; servizi_vuoto_en?: string;
   servizi_procedi_it?: string; servizi_procedi_en?: string;
   servizi_rivedi_it?: string; servizi_rivedi_en?: string;
+  // 12/09/2026 — le schede del catalogo non sono piu' locandine con il testo
+  // stampato dentro alla fotografia. Le voci del servizio arrivano dal
+  // Catalogo Lavaggio (car_wash_services); qui restano le due etichette
+  // fisse che le introducono. Chiavi nuove: quelle vecchie possono avere
+  // gia' un testo salvato nel gestionale, che vincerebbe sul codice.
+  carta_cosa_facciamo_it?: string; carta_cosa_facciamo_en?: string;
+  carta_risultato_it?: string; carta_risultato_en?: string;
   // Upsell overlay
   upsell_review_cart_it: string; upsell_review_cart_en: string;
   upsell_step1_title_it: string; upsell_step1_title_en: string;
@@ -3592,6 +3599,8 @@ const DEFAULT_CARWASH: CarWashCopy = {
   cart_remove_it: 'Rimuovi', cart_remove_en: 'Remove',
   cart_total_it: 'Totale', cart_total_en: 'Total',
   cart_checkout_it: 'PROCEDI', cart_checkout_en: 'CHECKOUT',
+  carta_cosa_facciamo_it: 'Cosa facciamo', carta_cosa_facciamo_en: 'What we do',
+  carta_risultato_it: 'Risultato', carta_risultato_en: 'Result',
   upsell_review_cart_it: 'Rivedi carrello', upsell_review_cart_en: 'Review Cart',
   upsell_step1_title_it: 'Completa il tuo lavaggio', upsell_step1_title_en: 'Complete your wash',
   upsell_step1_text_it: 'Aggiungi un servizio Extra Care per ottenere il massimo dal tuo lavaggio.',

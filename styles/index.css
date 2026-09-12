@@ -280,6 +280,25 @@ body {
   background-repeat: no-repeat;
 }
 
+/* Il marmo delle CARD del catalogo Lavaggio & Meccanica.
+   12/09/2026 — quelle card erano locandine: titolo, prezzo, durata e lista
+   delle lavorazioni stavano STAMPATI dentro alla fotografia. Non si potevano
+   cambiare dal gestionale, e il prezzo disegnato nella locandina litigava con
+   quello del listino sotto (24,90 sulla foto, 25,00 sul bottone). Ora la card
+   e' testo che arriva dal Catalogo Lavaggio, e il fondo e' la stessa lastra di
+   tutto il sito.
+   Il velo qui e' piu' fitto che altrove perche' sopra ci passa testo piccolo
+   su una superficie di pochi centimetri: le venature restano visibili sul
+   lato caldo della card, il buio sta dove corrono le righe. */
+.marmo-carta {
+  background-image:
+    linear-gradient(to bottom right, rgba(6, 6, 7, 0.9), rgba(6, 6, 7, 0.78) 55%, rgba(6, 6, 7, 0.62)),
+    url('/marmo-oro.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Il marmo del fondo pagina non entra MAI di taglio: la sua prima fascia
    sfuma sempre, cosi' fra la pagina e il fondo non c'e' una riga netta.
    La sfumatura e' corta (110px) perche' il marmo si deve comunque vedere:

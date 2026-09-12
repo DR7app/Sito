@@ -8,7 +8,7 @@ import { lookupTarga, isValidItalianPlate, normalizePlate, type TargaResult } fr
 import { useCarWashServices } from '../hooks/useCarWashServices';
 import SeatPlanPicker from '../components/ui/SeatPlanPicker';
 import { seatLabel, isSeatPricedService } from '../utils/seatPlan';
-import RiquadroCatalogo from '../components/ui/RiquadroCatalogo';
+import SchedaCatalogo from '../components/ui/SchedaCatalogo';
 import SfondoVideo from '../components/ui/SfondoVideo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
@@ -49,27 +49,28 @@ interface CartItem {
  */
 const isSeatService = (s: WashService): boolean => isSeatPricedService(s.name, s.priceUnit);
 
-// COMBINED WASH SERVICES (Urban + Maxi paired) — UI scaffolding for the
-// side-by-side comparison cards. Service data (price, features) comes
-// from the DB via useCarWashServices(); only the comparison-card
-// image + suffix→pairing rule is defined here.
+// COMBINED WASH SERVICES (Urban + Maxi paired) — impalcatura delle schede
+// che confrontano i due listini. I dati del servizio (prezzo, durata, voci,
+// risultato) arrivano dal Catalogo Lavaggio via useCarWashServices(): qui
+// resta solo la regola che accoppia `urban-<suffisso>` con `maxi-<suffisso>`.
+// 12/09/2026 — via anche le locandine (`/combined-*.jpeg`): la scheda e'
+// testo, vedi SchedaCatalogo.
 interface CombinedWashService {
   id: string;
   name: string;
   nameEn: string;
-  image: string;
   urban: WashService;
   maxi: WashService;
 }
 
-const COMBINED_TEMPLATES: { suffix: string; name: string; nameEn: string; image: string }[] = [
-  { suffix: 'exterior',  name: 'EXTERIOR CLEAN',      nameEn: 'EXTERIOR CLEAN', image: '/combined-exterior.jpeg' },
-  { suffix: 'interior',  name: 'INTERIOR CLEAN',      nameEn: 'INTERIOR CLEAN', image: '/combined-interior.jpeg' },
-  { suffix: 'full',      name: 'FULL CLEAN',          nameEn: 'FULL CLEAN',     image: '/combined-full.jpeg' },
-  { suffix: 'full-n2',   name: 'FULL CLEAN N2',       nameEn: 'FULL CLEAN N2',  image: '/combined-full-n2.jpeg' },
-  { suffix: 'top-shine', name: 'TOP SHINE',           nameEn: 'TOP SHINE',      image: '/combined-topshine.jpeg' },
-  { suffix: 'vip',       name: 'VIP',                 nameEn: 'VIP',            image: '/combined-vip.jpeg' },
-  { suffix: 'luxury',    name: 'LUXURY',              nameEn: 'LUXURY',         image: '/combined-luxury.jpeg' },
+const COMBINED_TEMPLATES: { suffix: string; name: string; nameEn: string }[] = [
+  { suffix: 'exterior',  name: 'EXTERIOR CLEAN',      nameEn: 'EXTERIOR CLEAN' },
+  { suffix: 'interior',  name: 'INTERIOR CLEAN',      nameEn: 'INTERIOR CLEAN' },
+  { suffix: 'full',      name: 'FULL CLEAN',          nameEn: 'FULL CLEAN' },
+  { suffix: 'full-n2',   name: 'FULL CLEAN N2',       nameEn: 'FULL CLEAN N2' },
+  { suffix: 'top-shine', name: 'TOP SHINE',           nameEn: 'TOP SHINE' },
+  { suffix: 'vip',       name: 'VIP',                 nameEn: 'VIP' },
+  { suffix: 'luxury',    name: 'LUXURY',              nameEn: 'LUXURY' },
 ];
 
 type MainTabType = 'lavaggio' | 'meccanica';
@@ -151,6 +152,20 @@ const CarWashServicesPage: React.FC = () => {
     const k = lang === 'it' ? it : en;
     return (copy as Record<string, string>)[k as string] || fallback;
   };
+  // 12/09/2026 — le schede del catalogo non sono piu' locandine con il testo
+  // stampato dentro alla fotografia: nome, durata, lavorazioni e risultato si
+  // leggono dal Catalogo Lavaggio del gestionale, quindi si cambiano da li'.
+  // L'inglese ricade sull'italiano quando la traduzione non c'e': meglio una
+  // riga in italiano che una scheda mezza vuota.
+  const nomeServizio = (s: WashService): string =>
+    (lang === 'it' ? s.name : (s.nameEn || s.name)) || '';
+  const vociServizio = (s: WashService): string[] =>
+    (lang === 'it' ? s.features : (s.featuresEn?.length ? s.featuresEn : s.features)) || [];
+  const risultatoServizio = (s: WashService): string =>
+    (lang === 'it' ? s.description : (s.descriptionEn || s.description)) || '';
+  // Le due etichette fisse della scheda si cambiano da Sito > Lavaggio.
+  const etichettaCaratteristiche = cw('carta_cosa_facciamo_it', 'carta_cosa_facciamo_en', lang === 'it' ? 'Cosa facciamo' : 'What we do');
+  const etichettaRisultato = cw('carta_risultato_it', 'carta_risultato_en', lang === 'it' ? 'Risultato' : 'Result');
   // Quello che c'era prima della freccia "indietro" (vedi leggiIstantanea).
   const [istantanea] = useState<Record<string, any>>(() => leggiIstantanea());
   const [mainTab, setMainTab] = useState<MainTabType>(istantanea.mainTab || 'lavaggio');
@@ -189,18 +204,14 @@ const CarWashServicesPage: React.FC = () => {
       const urban = liveUrban.find(s => s.id === `urban-${tpl.suffix}`);
       const maxi = liveMaxi.find(s => s.id === `maxi-${tpl.suffix}`);
       if (!urban || !maxi) return null;
-      // 2026-07-24: l'immagine della card combinata viene dal Catalogo Lavaggio
-      // (urban/maxi.image). Prima usava tpl.image hardcoded: cambiare la foto
-      // dall'admin non aveva effetto. Fallback al template solo se il catalogo
-      // non ha immagine.
-      return { id: `combined-${tpl.suffix}`, name: tpl.name, nameEn: tpl.nameEn, image: urban.image || maxi.image || tpl.image, urban, maxi };
+      return { id: `combined-${tpl.suffix}`, name: tpl.name, nameEn: tpl.nameEn, urban, maxi };
     })
     .filter((x): x is CombinedWashService => x !== null);
 
-  // 2026-07-24: immagine "Absolute Detail" dal Catalogo Lavaggio se presente
-  // (servizio con id/nome che contiene "absolute"), altrimenti fallback locale.
+  // "Absolute Detail" e' una riga del Catalogo Lavaggio come le altre
+  // (servizio con id/nome che contiene "absolute"): nome, voci e risultato
+  // della sua scheda si cambiano da li'.
   const absoluteDetailService = dbServices.find(s => /absolute/i.test(s.id) || /absolute/i.test(s.name || '') || /absolute/i.test(s.nameEn || ''));
-  const absoluteDetailImage = absoluteDetailService?.image;
 
   // Targa lookup state
   const [targaInput, setTargaInput] = useState(istantanea.targaInput || '');
@@ -737,6 +748,10 @@ const CarWashServicesPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {liveCombined.map((combo) => {
                 const autoService = detectedCategory === 'urban' ? combo.urban : detectedCategory === 'maxi' ? combo.maxi : null;
+                // Senza categoria (targa non trovata e nessuna scelta a mano)
+                // la scheda racconta comunque il servizio: si mostra il
+                // listino Urban e il bottone chiede la targa.
+                const dati = autoService || combo.urban;
                 const lowestPrice = Math.min(combo.urban.price, combo.maxi.price);
                 const formatPrice = (p: number) => p % 1 === 0 ? `${p}` : p.toFixed(2);
                 return (
@@ -746,13 +761,16 @@ const CarWashServicesPage: React.FC = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
-                    className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
+                    className="border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
                   >
-                    <RiquadroCatalogo
-                      src={autoService?.image || combo.image}
-                      alt={lang === 'it' ? (autoService?.name || combo.name) : (autoService?.nameEn || combo.nameEn)}
-                    />
-                    <div className="p-2 sm:p-3">
+                    <SchedaCatalogo
+                      titolo={nomeServizio(dati)}
+                      durata={dati.duration}
+                      caratteristiche={vociServizio(dati)}
+                      risultato={risultatoServizio(dati)}
+                      etichettaCaratteristiche={etichettaCaratteristiche}
+                      etichettaRisultato={etichettaRisultato}
+                    >
                       {autoService ? (
                         <button
                           onClick={() => handleCombinedWashSelect(autoService)}
@@ -774,7 +792,7 @@ const CarWashServicesPage: React.FC = () => {
                           {t({ it: 'da', en: 'from' })} €{formatPrice(lowestPrice)}
                         </button>
                       )}
-                    </div>
+                    </SchedaCatalogo>
                   </motion.div>
                 );
               })}
@@ -785,14 +803,16 @@ const CarWashServicesPage: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
+                className="border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
               >
-                <RiquadroCatalogo
-                  src={absoluteDetailImage}
-                  fallback="/absolute-detail.jpeg"
-                  alt={t({ it: 'Absolute Detail', en: 'Absolute Detail' })}
-                />
-                <div className="p-2 sm:p-3">
+                <SchedaCatalogo
+                  titolo={absoluteDetailService ? nomeServizio(absoluteDetailService) : 'Absolute Detail'}
+                  durata={absoluteDetailService?.duration}
+                  caratteristiche={absoluteDetailService ? vociServizio(absoluteDetailService) : []}
+                  risultato={absoluteDetailService ? risultatoServizio(absoluteDetailService) : ''}
+                  etichettaCaratteristiche={etichettaCaratteristiche}
+                  etichettaRisultato={etichettaRisultato}
+                >
                   {targaResult && washCategory ? (
                     <a
                       href={`${contact.whatsapp_url}?text=${encodeURIComponent(
@@ -818,7 +838,7 @@ const CarWashServicesPage: React.FC = () => {
                       Su preventivo
                     </button>
                   )}
-                </div>
+                </SchedaCatalogo>
               </motion.div>
             </div>
           </>
@@ -832,42 +852,41 @@ const CarWashServicesPage: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
+                className="border border-gray-800 rounded-lg overflow-hidden group transition-all duration-300 hover:border-white/50 hover:shadow-2xl hover:shadow-white/10 flex flex-col"
               >
-                {/* Service Image - full image display */}
-                <div className="relative">
-                  <RiquadroCatalogo
-                    src={service.image}
-                    fallback="/luxurywash.jpeg"
-                    alt={lang === 'it' ? service.name : service.nameEn}
-                  />
-                  {/* Single-price: overlay button at bottom */}
-                  {!service.priceOptions && (
-                    <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/90 to-transparent">
-                      <button
-                        onClick={() => addToCart(service)}
-                        className="w-full bg-black/50 border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
-                      >
-                        {cw('seleziona_servizio_it', 'seleziona_servizio_en', lang === 'it' ? 'SELEZIONA' : 'SELECT')}
-                      </button>
+                <SchedaCatalogo
+                  titolo={nomeServizio(service)}
+                  durata={service.duration}
+                  caratteristiche={vociServizio(service)}
+                  risultato={risultatoServizio(service)}
+                  etichettaCaratteristiche={etichettaCaratteristiche}
+                  etichettaRisultato={etichettaRisultato}
+                >
+                  {/* Prezzo unico: un bottone solo. Piu' prezzi (per esempio a
+                      sedile): una riga per opzione. */}
+                  {service.priceOptions ? (
+                    <div className="space-y-1.5">
+                      {service.priceOptions.map((option) => (
+                        <button
+                          key={option.label}
+                          onClick={() => addToCart(service, option)}
+                          className="w-full flex justify-between items-center bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
+                        >
+                          <span>{option.label}</span>
+                          <span>€{option.price.toFixed(2)}</span>
+                        </button>
+                      ))}
                     </div>
+                  ) : (
+                    <button
+                      onClick={() => addToCart(service)}
+                      className="w-full flex justify-between items-center gap-2 bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
+                    >
+                      <span>{cw('seleziona_servizio_it', 'seleziona_servizio_en', lang === 'it' ? 'SELEZIONA' : 'SELECT')}</span>
+                      <span>€{service.price % 1 === 0 ? service.price : service.price.toFixed(2)}</span>
+                    </button>
                   )}
-                </div>
-                {/* Multi-price options: below the image */}
-                {service.priceOptions && (
-                  <div className="p-2 sm:p-3 space-y-1.5">
-                    {service.priceOptions.map((option) => (
-                      <button
-                        key={option.label}
-                        onClick={() => addToCart(service, option)}
-                        className="w-full flex justify-between items-center bg-transparent border-2 border-white text-white px-2 py-1.5 font-semibold text-[11px] sm:text-xs hover:bg-white hover:text-black transition-all duration-300"
-                      >
-                        <span>{option.label}</span>
-                        <span>€{option.price.toFixed(2)}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                </SchedaCatalogo>
               </motion.div>
             ))}
           </div>
@@ -1107,22 +1126,17 @@ const CarWashServicesPage: React.FC = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden flex flex-col"
+                        className="border border-gray-800 rounded-xl overflow-hidden flex flex-col"
                       >
-                        <RiquadroCatalogo
-                          src={extra.image}
-                          fallback="/luxurywash.jpeg"
-                          larghezza={500}
-                          alt={lang === 'it' ? extra.name : extra.nameEn}
-                        />
-                        <div className="p-3 flex flex-col flex-grow">
-                          <h3 className="text-white font-bold text-xs leading-tight mb-1">
-                            {lang === 'it' ? extra.name : extra.nameEn}
-                          </h3>
-                          <p className="text-gray-400 text-[11px] leading-snug line-clamp-2 mb-2 flex-grow">
-                            {lang === 'it' ? extra.description : extra.descriptionEn}
-                          </p>
-                          <div className="flex items-center justify-between mt-auto">
+                        <SchedaCatalogo
+                          titolo={nomeServizio(extra)}
+                          durata={extra.duration}
+                          caratteristiche={vociServizio(extra)}
+                          risultato={risultatoServizio(extra)}
+                          etichettaCaratteristiche={etichettaCaratteristiche}
+                          etichettaRisultato={etichettaRisultato}
+                        >
+                          <div className="flex items-center justify-between gap-2">
                             <span className="text-white font-bold text-sm">
                               €{extra.price % 1 === 0 ? extra.price : extra.price.toFixed(2)}
                               {extra.priceUnit && (
@@ -1143,7 +1157,7 @@ const CarWashServicesPage: React.FC = () => {
                               }
                             </button>
                           </div>
-                        </div>
+                        </SchedaCatalogo>
                       </motion.div>
                     );
                   })}
@@ -1164,15 +1178,16 @@ const CarWashServicesPage: React.FC = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden flex flex-col"
+                        className="border border-gray-800 rounded-xl overflow-hidden flex flex-col"
                       >
-                        <RiquadroCatalogo
-                          src={exp.image}
-                          fallback="/luxurywash.jpeg"
-                          larghezza={500}
-                          alt={lang === 'it' ? exp.name : exp.nameEn}
-                        />
-                        <div className="p-3">
+                        <SchedaCatalogo
+                          titolo={nomeServizio(exp)}
+                          durata={exp.duration}
+                          caratteristiche={vociServizio(exp)}
+                          risultato={risultatoServizio(exp)}
+                          etichettaCaratteristiche={etichettaCaratteristiche}
+                          etichettaRisultato={etichettaRisultato}
+                        >
                           <div className="flex gap-1.5 justify-center flex-wrap">
                             {exp.priceOptions?.map((option) => {
                               const isSelected = addedOptionLabel === option.label;
@@ -1191,7 +1206,7 @@ const CarWashServicesPage: React.FC = () => {
                               );
                             })}
                           </div>
-                        </div>
+                        </SchedaCatalogo>
                       </motion.div>
                     );
                   })}

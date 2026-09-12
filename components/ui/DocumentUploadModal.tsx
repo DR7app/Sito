@@ -4,10 +4,24 @@ import { XIcon } from '../icons/Icons';
 import { supabase } from '../../supabaseClient';
 import { useTranslation } from '../../hooks/useTranslation';
 
+export interface DocumentiPrecaricati {
+  patenteFront?: File | null;
+  patenteBack?: File | null;
+  cartaIdentitaFront?: File | null;
+  cartaIdentitaBack?: File | null;
+  codiceFiscale?: File | null;
+}
+
 interface DocumentUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  /**
+   * Documenti gia' scelti durante la registrazione (blocco "Carica i tuoi
+   * documenti"): arrivano qui gia' pronti, cosi' non si chiede due volta la
+   * stessa foto.
+   */
+  initialFiles?: DocumentiPrecaricati;
 }
 
 const FUNCTIONS_BASE =
@@ -16,14 +30,14 @@ const FUNCTIONS_BASE =
     ? 'http://localhost:8888'
     : window.location.origin);
 
-const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClose, userId }) => {
+const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClose, userId, initialFiles }) => {
   const { t } = useTranslation();
   const [step, setStep] = useState<'welcome' | 'upload' | 'confirm-skip'>('welcome');
-  const [patenteFront, setPatenteFront] = useState<File | null>(null);
-  const [patenteBack, setPatenteBack] = useState<File | null>(null);
-  const [cartaIdentitaFront, setCartaIdentitaFront] = useState<File | null>(null);
-  const [cartaIdentitaBack, setCartaIdentitaBack] = useState<File | null>(null);
-  const [codiceFiscale, setCodiceFiscale] = useState<File | null>(null);
+  const [patenteFront, setPatenteFront] = useState<File | null>(initialFiles?.patenteFront || null);
+  const [patenteBack, setPatenteBack] = useState<File | null>(initialFiles?.patenteBack || null);
+  const [cartaIdentitaFront, setCartaIdentitaFront] = useState<File | null>(initialFiles?.cartaIdentitaFront || null);
+  const [cartaIdentitaBack, setCartaIdentitaBack] = useState<File | null>(initialFiles?.cartaIdentitaBack || null);
+  const [codiceFiscale, setCodiceFiscale] = useState<File | null>(initialFiles?.codiceFiscale || null);
   const [uploading, setUploading] = useState(false);
 
   const uploadFile = async (file: File, bucket: string, prefix: string): Promise<boolean> => {

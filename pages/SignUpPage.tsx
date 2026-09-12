@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import DocumentUploadModal from '../components/ui/DocumentUploadModal';
+import CompilaButton, { type ExtractedData } from '../components/ui/CompilaButton';
 import MarketingConsentModal from '../components/ui/MarketingConsentModal';
 import { countries } from '../utils/countries';
 import { AppleStyleSelect } from '../components/ui/AppleStyleSelect';
@@ -112,6 +113,72 @@ const SignUpPage: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
+
+  // ─── Compila dai documenti ────────────────────────────────────────────
+  // I documenti si caricano PRIMA di scrivere: la lettura riempie da sola i
+  // campi vuoti, e gli stessi file finiscono nel modale di fine iscrizione
+  // cosi' non si chiedono due volte.
+  const [docsPrecompila, setDocsPrecompila] = useState<{
+    patenteFront: File | null;
+    patenteBack: File | null;
+    cartaIdentitaFront: File | null;
+    cartaIdentitaBack: File | null;
+    codiceFiscale: File | null;
+  }>({ patenteFront: null, patenteBack: null, cartaIdentitaFront: null, cartaIdentitaBack: null, codiceFiscale: null });
+  const [prefillError, setPrefillError] = useState('');
+  const [showPrefillPopup, setShowPrefillPopup] = useState(false);
+  const [prefillPopupDone, setPrefillPopupDone] = useState(false);
+  const prefillRef = useRef<HTMLDivElement | null>(null);
+
+  const documentiScelti = Object.values(docsPrecompila).filter(Boolean) as File[];
+
+  // La finestra "Compila piu' velocemente" si apre alla PRIMA lettera
+  // digitata, una volta sola, e solo se non e' ancora arrivato nessun file.
+  const handleFirstInput = () => {
+    if (prefillPopupDone || documentiScelti.length > 0) return;
+    setPrefillPopupDone(true);
+    setShowPrefillPopup(true);
+  };
+
+  const vaiAiDocumenti = () => {
+    setShowPrefillPopup(false);
+    prefillRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // Si scrive SOLO nei campi ancora vuoti: quello che la persona ha gia'
+  // digitato non viene mai sovrascritto.
+  const applicaDatiEstratti = (data: ExtractedData) => {
+    setPrefillError('');
+    setFormData(prev => {
+      const next = { ...prev } as Record<string, string>;
+      const set = (k: string, v?: string) => {
+        if (v && !String(next[k] ?? '').trim()) next[k] = v;
+      };
+      if (tipoCliente === 'azienda') {
+        set('rappresentanteNome', data.nome);
+        set('rappresentanteCognome', data.cognome);
+        set('rappresentanteCF', data.codice_fiscale?.toUpperCase());
+        set('documentoTipo', data.documento_tipo);
+        set('documentoNumero', data.documento_numero);
+        set('documentoDataRilascio', data.documento_rilascio);
+        set('documentoLuogoRilascio', data.documento_ente);
+      } else {
+        set('nome', data.nome);
+        set('cognome', data.cognome);
+        set('sesso', data.sesso);
+        set('dataNascita', data.data_nascita);
+        set('cittaNascita', data.luogo_nascita);
+        set('provinciaNascita', data.provincia_nascita?.toUpperCase());
+        set('codiceFiscale', data.codice_fiscale?.toUpperCase());
+      }
+      set('indirizzo', data.indirizzo);
+      set('numeroCivico', data.numero_civico);
+      set('codicePostale', data.codice_postale);
+      set('cittaResidenza', data.citta_residenza);
+      set('provinciaResidenza', data.provincia_residenza?.toUpperCase());
+      return next as typeof prev;
+    });
+  };
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -424,7 +491,7 @@ const SignUpPage: React.FC = () => {
               </p>
             )}
 
-            <form className="space-y-6" onSubmit={handleSignUp} noValidate>
+            <form className="space-y-6" onSubmit={handleSignUp} onInput={handleFirstInput} noValidate>
               {/* Client Type Selection */}
               <AppleStyleSelect
                 label={s('client_type_label_it', 'client_type_label_en')}
@@ -452,6 +519,68 @@ const SignUpPage: React.FC = () => {
                 required
                 error={errors.tipoCliente}
               />
+
+              {/* Carica i tuoi documenti — sta PRIMA dei campi: si caricano le
+                  foto e il resto del modulo si riempie da solo. */}
+              <div ref={prefillRef} className="border border-gray-700 rounded-lg p-4 bg-gray-800/40 space-y-3">
+                <h3 className="text-base font-bold text-white">{s('prefill_title_it', 'prefill_title_en')}</h3>
+                <p className="text-sm text-gray-400">{s('prefill_body_it', 'prefill_body_en')}</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {([
+                    { campo: 'patenteFront', label: t({ it: 'Patente (fronte)', en: 'Licence (front)' }) },
+                    { campo: 'patenteBack', label: t({ it: 'Patente (retro)', en: 'Licence (back)' }) },
+                    { campo: 'cartaIdentitaFront', label: t({ it: "Carta d'identità (fronte)", en: 'ID card (front)' }) },
+                    { campo: 'cartaIdentitaBack', label: t({ it: "Carta d'identità (retro)", en: 'ID card (back)' }) },
+                    { campo: 'codiceFiscale', label: t({ it: 'Codice fiscale / Tessera sanitaria', en: 'Tax code / Health card' }) },
+                  ] as const).map(({ campo, label }) => (
+                    <label key={campo} className="block">
+                      <span className="block text-xs font-semibold text-gray-300 mb-1">{label}</span>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] || null;
+                          setDocsPrecompila(prev => ({ ...prev, [campo]: f }));
+                        }}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-xs
+                          file:mr-3 file:py-1.5 file:px-3 file:border-0
+                          file:text-xs file:font-semibold file:bg-white file:text-black
+                          hover:file:bg-gray-200 file:cursor-pointer"
+                      />
+                      {docsPrecompila[campo] && (
+                        <p className="text-xs text-green-400 mt-1 truncate">✓ {docsPrecompila[campo]!.name}</p>
+                      )}
+                    </label>
+                  ))}
+                </div>
+
+                {documentiScelti.length > 0 && (
+                  <CompilaButton
+                    auto
+                    label={s('prefill_cta_it', 'prefill_cta_en')}
+                    documents={[
+                      { file: docsPrecompila.patenteFront, label: 'Patente (fronte)' },
+                      { file: docsPrecompila.patenteBack, label: 'Patente (retro)' },
+                      { file: docsPrecompila.cartaIdentitaFront, label: "Carta d'identita' (fronte)" },
+                      { file: docsPrecompila.cartaIdentitaBack, label: "Carta d'identita' (retro)" },
+                      { file: docsPrecompila.codiceFiscale, label: 'Codice fiscale' },
+                    ]}
+                    currentData={{
+                      nome: tipoCliente === 'azienda' ? formData.rappresentanteNome : formData.nome,
+                      cognome: tipoCliente === 'azienda' ? formData.rappresentanteCognome : formData.cognome,
+                      data_nascita: formData.dataNascita,
+                      codice_fiscale: tipoCliente === 'azienda' ? formData.rappresentanteCF : formData.codiceFiscale,
+                      indirizzo: formData.indirizzo,
+                      citta_residenza: formData.cittaResidenza,
+                    }}
+                    onDataExtracted={applicaDatiEstratti}
+                    onError={() => setPrefillError(s('prefill_error_it', 'prefill_error_en'))}
+                  />
+                )}
+
+                {prefillError && <p className="text-sm text-red-400">{prefillError}</p>}
+              </div>
 
               {/* AZIENDA FIELDS */}
               {tipoCliente === 'azienda' && (
@@ -1173,6 +1302,33 @@ const SignUpPage: React.FC = () => {
         }
       `}</style>
 
+      {/* "Compila piu' velocemente" — si apre alla prima lettera digitata */}
+      {showPrefillPopup && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPrefillPopup(false)} />
+          <div className="relative bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-xl font-bold text-white">{s('popup_title_it', 'popup_title_en')}</h3>
+            <p className="text-sm text-gray-300">{s('popup_body_it', 'popup_body_en')}</p>
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <button
+                type="button"
+                onClick={vaiAiDocumenti}
+                className="flex-1 px-5 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
+              >
+                {s('popup_cta_upload_it', 'popup_cta_upload_en')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPrefillPopup(false)}
+                className="flex-1 px-5 py-3 bg-gray-800 border border-gray-600 text-white font-semibold hover:bg-gray-700 transition-colors"
+              >
+                {s('popup_cta_manual_it', 'popup_cta_manual_en')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Document Upload Modal */}
       {
         showDocumentModal && newUserId && (
@@ -1184,6 +1340,7 @@ const SignUpPage: React.FC = () => {
               setShowMarketingModal(true);
             }}
             userId={newUserId || ''}
+            initialFiles={docsPrecompila}
           />
         )
       }

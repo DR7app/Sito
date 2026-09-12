@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import CalcolaCFButton from '../components/ui/CalcolaCFButton'
+import CompilaButton, { type ExtractedData } from '../components/ui/CompilaButton'
 import { useTranslation } from '../hooks/useTranslation'
 import { getRegistrazioneClienteCopy, type RegistrazioneClienteCopy } from '../utils/siteCopy'
 
@@ -98,6 +99,49 @@ export default function RegistrazioneClientePage() {
     const [cfMsg, setCfMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
     const [customerId, setCustomerId] = useState<string | null>(null)
     const [docs, setDocs] = useState<DocItem[]>([])
+    // Pre-compilazione dai documenti: la finestra "Compila piu' velocemente"
+    // si apre alla PRIMA lettera digitata, una volta sola, e solo se non e'
+    // ancora stato caricato nessun documento.
+    const [showPrefillPopup, setShowPrefillPopup] = useState(false)
+    const [popupDone, setPopupDone] = useState(false)
+    const [prefillMsg, setPrefillMsg] = useState<string | null>(null)
+    const prefillRef = useRef<HTMLElement | null>(null)
+
+    function onFormInput() {
+        if (popupDone || docs.length > 0) return
+        setPopupDone(true)
+        setShowPrefillPopup(true)
+    }
+
+    function goToPrefill() {
+        setShowPrefillPopup(false)
+        prefillRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    // I dati letti dai documenti riempiono SOLO i campi ancora vuoti: quello
+    // che la persona ha gia' scritto non viene mai sovrascritto.
+    function applyExtracted(data: ExtractedData) {
+        setPrefillMsg(null)
+        setForm(prev => {
+            const next: Record<string, string> = { ...prev }
+            const set = (k: keyof FormState, v?: string) => {
+                if (v && !String(next[k] ?? '').trim()) next[k] = v
+            }
+            set('nome', data.nome)
+            set('cognome', data.cognome)
+            set('sesso', data.sesso)
+            set('data_nascita', data.data_nascita)
+            set('luogo_nascita', data.luogo_nascita)
+            set('provincia_nascita', data.provincia_nascita?.toUpperCase())
+            set('codice_fiscale', data.codice_fiscale?.toUpperCase())
+            set('indirizzo', data.indirizzo)
+            set('numero_civico', data.numero_civico)
+            set('citta', data.citta_residenza)
+            set('cap', data.codice_postale)
+            set('provincia', data.provincia_residenza?.toUpperCase())
+            return next as unknown as FormState
+        })
+    }
 
     useEffect(() => {
         if (!token) {
@@ -313,7 +357,45 @@ export default function RegistrazioneClientePage() {
                 />
 
                 {step === 'form' && (
-                    <form onSubmit={handleSubmit} className="bg-black/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8 space-y-7">
+                    <form onSubmit={handleSubmit} onInput={onFormInput} className="bg-black/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8 space-y-7">
+                        {/* 0. Carica i tuoi documenti — sta PRIMA dei campi:
+                            si caricano le foto e il modulo si riempie da solo. */}
+                        <section ref={prefillRef} className="border border-white/30 rounded-xl p-4 space-y-3">
+                            <h3 className="text-base font-bold text-white">{r('prefill_title_it', 'prefill_title_en')}</h3>
+                            <p className="text-sm text-white/70">{r('prefill_body_it', 'prefill_body_en')}</p>
+
+                            <div className="space-y-2">
+                                <DocPicker label={r('docs_label_identity_it', 'docs_label_identity_en')} kind="identity_document" onAdd={addDoc} />
+                                <DocPicker label={r('docs_label_license_it', 'docs_label_license_en')} kind="drivers_license" onAdd={addDoc} />
+                                <DocPicker label={r('docs_label_codice_fiscale_it', 'docs_label_codice_fiscale_en')} kind="codice_fiscale" onAdd={addDoc} />
+                            </div>
+
+                            {docs.length > 0 && (
+                                <>
+                                    <ul className="text-xs text-white/70 space-y-1">
+                                        {docs.map((d, i) => <li key={i} className="truncate">• {d.file.name}</li>)}
+                                    </ul>
+                                    <CompilaButton
+                                        auto
+                                        label={r('prefill_cta_it', 'prefill_cta_en')}
+                                        documents={docs.map(d => ({ file: d.file, label: d.kind.replace('_', ' ') }))}
+                                        currentData={{
+                                            nome: form.nome,
+                                            cognome: form.cognome,
+                                            data_nascita: form.data_nascita,
+                                            codice_fiscale: form.codice_fiscale,
+                                            indirizzo: form.indirizzo,
+                                            citta_residenza: form.citta,
+                                        }}
+                                        onDataExtracted={applyExtracted}
+                                        onError={() => setPrefillMsg(r('prefill_error_it', 'prefill_error_en'))}
+                                    />
+                                </>
+                            )}
+
+                            {prefillMsg && <p className="text-sm text-white/70">{prefillMsg}</p>}
+                        </section>
+
                         {/* 1. Tipo Cliente */}
                         <section>
                             <SectionTitle index="1" title={r('section_1_tipo_it', 'section_1_tipo_en').replace(/^1\.\s*/, '')} />
@@ -499,6 +581,27 @@ export default function RegistrazioneClientePage() {
                     </div>
                 )}
             </div>
+
+            {/* "Compila piu' velocemente" — si apre alla prima lettera digitata */}
+            {showPrefillPopup && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPrefillPopup(false)} />
+                    <div className="relative bg-black border border-white/30 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+                        <h3 className="text-xl font-bold text-white">{r('popup_title_it', 'popup_title_en')}</h3>
+                        <p className="text-sm text-white/70">{r('popup_body_it', 'popup_body_en')}</p>
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                            <button type="button" onClick={goToPrefill}
+                                className="flex-1 px-5 py-3 bg-white text-black font-bold hover:bg-white/90 transition-colors">
+                                {r('popup_cta_upload_it', 'popup_cta_upload_en')}
+                            </button>
+                            <button type="button" onClick={() => setShowPrefillPopup(false)}
+                                className="flex-1 px-5 py-3 bg-black border border-white/40 text-white font-semibold hover:bg-white/5 transition-colors">
+                                {r('popup_cta_manual_it', 'popup_cta_manual_en')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

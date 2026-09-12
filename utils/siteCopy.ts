@@ -601,6 +601,15 @@ export interface RegistrazioneClienteCopy {
   invalid_help_it: string; invalid_help_en: string;
   done_title_it: string; done_title_en: string;
   done_body_it: string; done_body_en: string;
+  // Pre-compilazione dai documenti (step form) + popup "compila piu' velocemente"
+  prefill_title_it: string; prefill_title_en: string;
+  prefill_body_it: string; prefill_body_en: string;
+  prefill_cta_it: string; prefill_cta_en: string;
+  prefill_error_it: string; prefill_error_en: string;
+  popup_title_it: string; popup_title_en: string;
+  popup_body_it: string; popup_body_en: string;
+  popup_cta_upload_it: string; popup_cta_upload_en: string;
+  popup_cta_manual_it: string; popup_cta_manual_en: string;
   // Documents step
   docs_intro_it: string; docs_intro_en: string;
   docs_label_identity_it: string; docs_label_identity_en: string;
@@ -940,6 +949,15 @@ export interface PaymentCopy {
 export interface SignUpCopy {
   // Page chrome
   subtitle_it: string; subtitle_en: string;
+  // Pre-compilazione dai documenti + popup "Compila piu' velocemente"
+  prefill_title_it: string; prefill_title_en: string;
+  prefill_body_it: string; prefill_body_en: string;
+  prefill_cta_it: string; prefill_cta_en: string;
+  prefill_error_it: string; prefill_error_en: string;
+  popup_title_it: string; popup_title_en: string;
+  popup_body_it: string; popup_body_en: string;
+  popup_cta_upload_it: string; popup_cta_upload_en: string;
+  popup_cta_manual_it: string; popup_cta_manual_en: string;
   // Client type selector
   client_type_label_it: string; client_type_label_en: string;
   client_type_default_it: string; client_type_default_en: string;
@@ -2155,7 +2173,11 @@ export async function getAspettoCopy(): Promise<Required<AspettoCopy>> {
 /** SignUp page chrome + form labels + validation messages. */
 export async function getSignUpCopy(): Promise<SignUpCopy> {
   const snap = await loadOnce();
-  if (snap.signUp && snap.signUp.client_type_label_it) return snap.signUp;
+  // Merge sui default: i testi gia' salvati dal CMS non hanno le chiavi
+  // aggiunte dopo, e senza merge la pagina mostrerebbe stringhe vuote.
+  if (snap.signUp && snap.signUp.client_type_label_it) {
+    return { ...DEFAULT_SIGNUP, ...snap.signUp };
+  }
   return DEFAULT_SIGNUP;
 }
 
@@ -2258,7 +2280,12 @@ export async function getFirmaCopy(): Promise<FirmaCopy> {
 /** Registrazione Cliente page (token-gated customer data completion form). */
 export async function getRegistrazioneClienteCopy(): Promise<RegistrazioneClienteCopy> {
   const snap = await loadOnce();
-  if (snap.registrazioneCliente && snap.registrazioneCliente.intro_title_it) return snap.registrazioneCliente;
+  // I testi salvati dal CMS sono stati scritti prima che esistessero le
+  // chiavi nuove: senza il merge sui default la pagina mostrerebbe stringhe
+  // vuote finche' qualcuno non risalva dal CMS.
+  if (snap.registrazioneCliente && snap.registrazioneCliente.intro_title_it) {
+    return { ...DEFAULT_REGISTRAZIONE_CLIENTE, ...snap.registrazioneCliente };
+  }
   return DEFAULT_REGISTRAZIONE_CLIENTE;
 }
 
@@ -2742,6 +2769,22 @@ const DEFAULT_REGISTRAZIONE_CLIENTE: RegistrazioneClienteCopy = {
   done_title_it: 'Registrazione completata', done_title_en: 'Registration complete',
   done_body_it: 'Grazie. Il team DR7 verificherà i documenti caricati al più presto.',
   done_body_en: 'Thank you. The DR7 team will verify the uploaded documents as soon as possible.',
+  prefill_title_it: 'Carica i tuoi documenti',
+  prefill_title_en: 'Upload your documents',
+  prefill_body_it: "Carica patente e documento d'identità. I dati verranno rilevati automaticamente e inseriti nei campi richiesti, riducendo i tempi di registrazione.",
+  prefill_body_en: 'Upload your driving licence and ID document. The data is read automatically and written into the required fields, so registration takes less time.',
+  prefill_cta_it: 'Carica e compila automaticamente',
+  prefill_cta_en: 'Upload and fill automatically',
+  prefill_error_it: 'Non siamo riusciti a leggere i documenti. Puoi compilare i campi a mano.',
+  prefill_error_en: 'We could not read the documents. You can fill in the fields manually.',
+  popup_title_it: 'Compila più velocemente',
+  popup_title_en: 'Fill in faster',
+  popup_body_it: 'Carica i tuoi documenti e lascia che DR7 compili automaticamente i tuoi dati.',
+  popup_body_en: 'Upload your documents and let DR7 fill in your details automatically.',
+  popup_cta_upload_it: 'Carica i documenti',
+  popup_cta_upload_en: 'Upload documents',
+  popup_cta_manual_it: 'Continua manualmente',
+  popup_cta_manual_en: 'Continue manually',
   docs_intro_it: 'Carica i tuoi documenti. Saranno verificati dal team DR7 prima di confermare la registrazione. Formati: JPG, PNG, PDF (max 10 MB ciascuno).',
   docs_intro_en: 'Upload your documents. They will be verified by the DR7 team before confirming the registration. Formats: JPG, PNG, PDF (max 10 MB each).',
   docs_label_identity_it: "Carta d'identità o Passaporto",
@@ -3091,6 +3134,22 @@ const DEFAULT_PAYMENT: PaymentCopy = {
 // ─── Default SignUp seed (registrazione cliente) ──────────────────────────
 const DEFAULT_SIGNUP: SignUpCopy = {
   subtitle_it: 'Registrazione Cliente - DR7', subtitle_en: 'Client Registration - DR7',
+  prefill_title_it: 'Carica i tuoi documenti',
+  prefill_title_en: 'Upload your documents',
+  prefill_body_it: "Carica patente e documento d'identità. I dati verranno rilevati automaticamente e inseriti nei campi richiesti, riducendo i tempi di registrazione.",
+  prefill_body_en: 'Upload your driving licence and ID document. The data is read automatically and written into the required fields, so registration takes less time.',
+  prefill_cta_it: 'Carica e compila automaticamente',
+  prefill_cta_en: 'Upload and fill automatically',
+  prefill_error_it: 'Non siamo riusciti a leggere i documenti. Puoi compilare i campi a mano.',
+  prefill_error_en: 'We could not read the documents. You can fill in the fields manually.',
+  popup_title_it: 'Compila più velocemente',
+  popup_title_en: 'Fill in faster',
+  popup_body_it: 'Carica i tuoi documenti e lascia che DR7 compili automaticamente i tuoi dati.',
+  popup_body_en: 'Upload your documents and let DR7 fill in your details automatically.',
+  popup_cta_upload_it: 'Carica i documenti',
+  popup_cta_upload_en: 'Upload documents',
+  popup_cta_manual_it: 'Continua manualmente',
+  popup_cta_manual_en: 'Continue manually',
   client_type_label_it: 'Tipo Cliente', client_type_label_en: 'Client Type',
   client_type_default_it: 'Seleziona...', client_type_default_en: 'Select...',
   client_type_azienda_it: 'Azienda', client_type_azienda_en: 'Company',

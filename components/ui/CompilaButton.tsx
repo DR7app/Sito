@@ -82,6 +82,10 @@ interface CompilaButtonProps {
    */
   auto?: boolean
   currentData?: Record<string, string | undefined | null>
+  /** Testo del bottone. Senza, resta quello storico ("Compila automaticamente"). */
+  label?: string
+  /** Colore del bottone quando e' attivo: bianco (default) o rosso. */
+  tone?: 'default' | 'rosso'
   onDataExtracted: (data: ExtractedData, conflicts: DataConflict[]) => void
   onError?: (error: string) => void
   className?: string
@@ -225,6 +229,8 @@ export default function CompilaButton({
   documents,
   auto = false,
   currentData = {},
+  label,
+  tone = 'default',
   onDataExtracted,
   onError,
   className = '',
@@ -445,12 +451,14 @@ export default function CompilaButton({
             ? 'bg-yellow-600 text-white cursor-wait animate-pulse'
             : validDocs.length === 0
               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-black hover:bg-gray-200 cursor-pointer'
+              : tone === 'rosso'
+                ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                : 'bg-white text-black hover:bg-gray-200 cursor-pointer'
         } ${className}`}
       >
         {isExtracting
           ? 'Lettura in corso...'
-          : auto ? 'Rileggi i documenti' : 'Compila automaticamente'}
+          : label || (auto ? 'Rileggi i documenti' : 'Compila automaticamente')}
       </button>
 
       {/* Extraction notes */}

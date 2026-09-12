@@ -5475,6 +5475,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <div className="mt-4">
                       <CompilaButton
                         auto
+                        tone="rosso"
                         documents={[
                           { file: formData.licenseImage, label: 'Patente (fronte)' },
                           { file: formData.licenseImageBack, label: 'Patente (retro)' },
@@ -5667,6 +5668,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <div className="mt-4">
                         <CompilaButton
                           auto
+                          tone="rosso"
                           documents={[
                             { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente (fronte)' },
                             { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: 'Patente Secondo Conducente (retro)' },

@@ -4,13 +4,16 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { preparaFileDocumento } from '../../utils/immagineDocumento';
 import { supabase } from '../../supabaseClient';
 
-const StatusBadge: React.FC<{ status: 'pending_verification' | 'verified' | 'rejected' }> = ({ status }) => {
-    const statusMap = {
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+    const statusMap: Record<string, { text: string; color: string }> = {
         pending_verification: { text: 'In Revisione', color: 'bg-yellow-500/20 text-yellow-400' },
+        pending: { text: 'In Revisione', color: 'bg-yellow-500/20 text-yellow-400' },
         verified: { text: 'Verificato', color: 'bg-green-500/20 text-green-400' },
         rejected: { text: 'Rifiutato', color: 'bg-red-500/20 text-red-400' },
     };
-    return <span className={`px-2 py-1 text-xs font-medium ${statusMap[status].color}`}>{statusMap[status].text}</span>;
+    // Uno stato sconosciuto non deve far sparire la riga: vale come in revisione.
+    const v = statusMap[status] || statusMap.pending_verification;
+    return <span className={`px-2 py-1 text-xs font-medium ${v.color}`}>{v.text}</span>;
 }
 
 const DocumentsVerification = () => {
@@ -58,6 +61,19 @@ const DocumentsVerification = () => {
                 const buckets = ['carta-identita', 'codice-fiscale', 'driver-licenses'];
                 const allDocs: any[] = [];
 
+                // Lo stato vero sta in user_documents: prima la pagina
+                // scriveva "Verificato" su tutto quello che trovava in
+                // archivio, mentre in "Verifica Documenti" il documento era
+                // ancora in attesa.
+                const statoPerPercorso = new Map<string, string>();
+                const { data: righe } = await supabase
+                    .from('user_documents')
+                    .select('file_path, document_type, status, upload_date')
+                    .eq('user_id', user.id);
+                (righe || []).forEach(r => {
+                    if (r.file_path) statoPerPercorso.set(r.file_path, r.status || 'pending_verification');
+                });
+
                 for (const bucket of buckets) {
                     const { data: files, error } = await supabase.storage
                         .from(bucket)
@@ -67,13 +83,16 @@ const DocumentsVerification = () => {
                         // Filter out placeholder files and add to documents list
                         const validFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder');
                         validFiles.forEach(file => {
+                            const percorso = `${user.id}/${file.name}`;
                             allDocs.push({
                                 id: `${bucket}-${file.name}`,
                                 document_type: file.name.split('_')[0] || 'document',
                                 bucket: bucket,
-                                file_path: `${user.id}/${file.name}`,
+                                file_path: percorso,
                                 upload_date: file.created_at || new Date().toISOString(),
-                                status: 'verified' // Default to verified since they're uploaded
+                                // Finche' l'ufficio non lo verifica resta in
+                                // revisione, esattamente come nel gestionale.
+                                status: statoPerPercorso.get(percorso) || 'pending_verification',
                             });
                         });
                     }

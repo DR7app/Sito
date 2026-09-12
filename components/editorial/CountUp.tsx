@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * Quanto dura la salita del numero: cinque secondi, richiesti dalla
- * direzione. Sono i dati di bilancio, e devono vedersi salire.
+ * Quanto dura la salita del numero: tre secondi, richiesti dalla direzione
+ * (12/09/2026, prima erano cinque). Sono i dati di bilancio, e devono
+ * vedersi salire.
  */
-const DURATA = 5000;
+const DURATA = 3000;
 
 /**
- * Ogni quanto si riscrive la cifra. Non a ogni fotogramma: cinque secondi a
- * 60 al secondo sono trecento riscritture per numero, nove numeri insieme,
+ * Ogni quanto si riscrive la cifra. Non a ogni fotogramma: tre secondi a
+ * 60 al secondo sono centottanta riscritture per numero, nove numeri insieme,
  * ognuna in corpo da titolo. Il browser passava il tempo a rimpaginare e si
  * vedeva: la fascia intera scattava. A 25 al secondo un contatore si legge
  * identico e il lavoro e' meno di meta'.
@@ -16,10 +17,10 @@ const DURATA = 5000;
 const PASSO_MS = 40;
 
 /**
- * Cinque secondi con un fuori piano soltanto non funzionano: la cifra
- * arriverebbe quasi a destinazione nel primo secondo e passerebbe gli altri
- * quattro ferma. Questa curva parte piano, corre in mezzo e si posa: il
- * numero e' in movimento per tutta la durata.
+ * La durata con un fuori piano soltanto non funziona: la cifra arriverebbe
+ * quasi a destinazione nel primo secondo e passerebbe fermi quelli dopo.
+ * Questa curva parte piano, corre in mezzo e si posa: il numero e' in
+ * movimento per tutta la durata.
  */
 const easeInOutCubic = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;

@@ -183,6 +183,51 @@ const SignUpPage: React.FC = () => {
 
   // Spuntata di default: l'iscrizione al sito nasce con il consenso agli
   // aggiornamenti gia' dato, la persona puo' sempre toglierlo.
+  // Prefissi dei documenti gia' finiti in archivio subito dopo la creazione
+  // dell'account: il modale di fine iscrizione non li richiede piu'.
+  const [docsCaricati, setDocsCaricati] = useState<string[]>([]);
+
+  // I documenti scelti nel modulo si caricano appena l'account esiste, SENZA
+  // aspettare il modale di fine iscrizione: quel modale si apre solo se il
+  // login immediato riesce, e con la conferma email attiva non riesce mai.
+  // Prima di questa funzione i file restavano nel browser e non arrivavano
+  // mai in "Verifica Documenti".
+  const BUCKET_PER_DOCUMENTO: Record<string, string> = {
+    patenteFront: 'driver-licenses',
+    patenteBack: 'driver-licenses',
+    cartaIdentitaFront: 'carta-identita',
+    cartaIdentitaBack: 'carta-identita',
+    codiceFiscaleFront: 'codice-fiscale',
+    codiceFiscaleBack: 'codice-fiscale',
+  };
+
+  const caricaDocumentiPrecompilati = async (userId: string): Promise<string[]> => {
+    const fatti: string[] = [];
+    const nomeCompleto = tipoCliente === 'azienda'
+      ? [formData.rappresentanteNome, formData.rappresentanteCognome].filter(Boolean).join(' ').trim()
+      : [formData.nome, formData.cognome].filter(Boolean).join(' ').trim();
+
+    for (const [chiave, bucket] of Object.entries(BUCKET_PER_DOCUMENTO)) {
+      const file = (docsPrecompila as Record<string, File | null>)[chiave];
+      if (!file) continue;
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        body.append('bucket', bucket);
+        body.append('userId', userId);
+        body.append('prefix', chiave);
+        if (formData.email) body.append('userEmail', formData.email);
+        if (nomeCompleto) body.append('userFullName', nomeCompleto);
+        const res = await fetch('/.netlify/functions/upload-file', { method: 'POST', body });
+        if (res.ok) fatti.push(chiave);
+        else console.error('[SignUp] upload documento fallito', chiave, await res.text());
+      } catch (err) {
+        console.error('[SignUp] upload documento fallito', chiave, err);
+      }
+    }
+    return fatti;
+  };
+
   const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -446,6 +491,14 @@ const SignUpPage: React.FC = () => {
           'Account creato e credito di benvenuto accreditato, ma alcuni dati non sono stati salvati. ' +
           'Completali dalla tua area personale (Il mio account) o scrivici: info@dr7.app'
         );
+      }
+
+      // I documenti partono qui: l'account esiste gia', e non dipendiamo piu'
+      // dal login immediato (che con la conferma email fallisce sempre).
+      const idNuovoUtente: string | undefined = result?.user?.id;
+      if (idNuovoUtente) {
+        const caricati = await caricaDocumentiPrecompilati(idNuovoUtente);
+        setDocsCaricati(caricati);
       }
 
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -1347,6 +1400,7 @@ const SignUpPage: React.FC = () => {
             }}
             userId={newUserId || ''}
             initialFiles={docsPrecompila}
+            alreadyUploaded={docsCaricati}
           />
         )
       }

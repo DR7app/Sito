@@ -23,6 +23,11 @@ interface DocumentUploadModalProps {
    * stessa foto.
    */
   initialFiles?: DocumentiPrecaricati;
+  /**
+   * Prefissi dei documenti gia' finiti in archivio (caricati subito dopo la
+   * creazione dell'account): non si richiedono e non si ricaricano.
+   */
+  alreadyUploaded?: string[];
 }
 
 const FUNCTIONS_BASE =
@@ -31,7 +36,7 @@ const FUNCTIONS_BASE =
     ? 'http://localhost:8888'
     : window.location.origin);
 
-const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClose, userId, initialFiles }) => {
+const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClose, userId, initialFiles, alreadyUploaded = [] }) => {
   const { t } = useTranslation();
   const [step, setStep] = useState<'welcome' | 'upload' | 'confirm-skip'>('welcome');
   const [patenteFront, setPatenteFront] = useState<File | null>(initialFiles?.patenteFront || null);
@@ -41,6 +46,8 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
   const [codiceFiscaleFront, setCodiceFiscaleFront] = useState<File | null>(initialFiles?.codiceFiscaleFront || null);
   const [codiceFiscaleBack, setCodiceFiscaleBack] = useState<File | null>(initialFiles?.codiceFiscaleBack || null);
   const [uploading, setUploading] = useState(false);
+  const gia = (chiave: string) => alreadyUploaded.includes(chiave);
+  const mancante = (chiave: string, file: File | null) => !gia(chiave) && !file;
 
   const uploadFile = async (file: File, bucket: string, prefix: string): Promise<boolean> => {
     try {
@@ -86,7 +93,14 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
   };
 
   const handleSubmit = async () => {
-    if (!patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscaleFront || !codiceFiscaleBack) {
+    if (
+      mancante('patenteFront', patenteFront) ||
+      mancante('patenteBack', patenteBack) ||
+      mancante('cartaIdentitaFront', cartaIdentitaFront) ||
+      mancante('cartaIdentitaBack', cartaIdentitaBack) ||
+      mancante('codiceFiscaleFront', codiceFiscaleFront) ||
+      mancante('codiceFiscaleBack', codiceFiscaleBack)
+    ) {
       alert(t({ it: "Per favore carica tutti i documenti richiesti", en: "Please upload all the required documents" }));
       return;
     }
@@ -94,14 +108,18 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
     setUploading(true);
 
     try {
-      const uploads = [
-        uploadFile(patenteFront, 'driver-licenses', 'patenteFront'),
-        uploadFile(patenteBack, 'driver-licenses', 'patenteBack'),
-        uploadFile(cartaIdentitaFront, 'carta-identita', 'cartaIdentitaFront'),
-        uploadFile(cartaIdentitaBack, 'carta-identita', 'cartaIdentitaBack'),
-        uploadFile(codiceFiscaleFront, 'codice-fiscale', 'codiceFiscaleFront'),
-        uploadFile(codiceFiscaleBack, 'codice-fiscale', 'codiceFiscaleBack'),
+      // Si ricaricano solo i file che non sono gia' in archivio.
+      const daCaricare: [File | null, string, string][] = [
+        [patenteFront, 'driver-licenses', 'patenteFront'],
+        [patenteBack, 'driver-licenses', 'patenteBack'],
+        [cartaIdentitaFront, 'carta-identita', 'cartaIdentitaFront'],
+        [cartaIdentitaBack, 'carta-identita', 'cartaIdentitaBack'],
+        [codiceFiscaleFront, 'codice-fiscale', 'codiceFiscaleFront'],
+        [codiceFiscaleBack, 'codice-fiscale', 'codiceFiscaleBack'],
       ];
+      const uploads = daCaricare
+        .filter(([file, , prefisso]) => file && !gia(prefisso))
+        .map(([file, bucket, prefisso]) => uploadFile(file as File, bucket, prefisso));
 
       const results = await Promise.all(uploads);
       const allSuccess = results.every(r => r === true);
@@ -439,7 +457,13 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={uploading || !patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscaleFront || !codiceFiscaleBack}
+                  disabled={uploading
+                    || mancante('patenteFront', patenteFront)
+                    || mancante('patenteBack', patenteBack)
+                    || mancante('cartaIdentitaFront', cartaIdentitaFront)
+                    || mancante('cartaIdentitaBack', cartaIdentitaBack)
+                    || mancante('codiceFiscaleFront', codiceFiscaleFront)
+                    || mancante('codiceFiscaleBack', codiceFiscaleBack)}
                   className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploading ? t({ it: "Caricamento...", en: "Uploading..." }) : t({ it: "Carica Documenti", en: "Upload Documents" })}

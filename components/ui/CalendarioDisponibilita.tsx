@@ -256,22 +256,25 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
   }, [ritiroYmd, ritiroOra, occupati, orizzonteYmd]);
 
   const statoDi = useCallback((ymd: string): StatoGiorno => {
-    // Fuori dalla scelta della riconsegna — e anche sui giorni PRIMA del
-    // ritiro, dove il click deve poter far ripartire il periodo invece di
-    // costringere al bottone "Ricomincia" — vale lo stato di ritiro.
-    if (!ritiroYmd || (riconsegnaYmd && !riconsegnaProposta) || ymd <= ritiroYmd) {
+    // Senza ritiro, e sui giorni FINO al ritiro — dove il click deve poter
+    // far ripartire il periodo invece di costringere al bottone
+    // "Ricomincia" — vale lo stato di ritiro. Tutti i giorni successivi
+    // restano sempre riconsegne scegliibili: la data proposta e' solo un
+    // punto di partenza, non una scelta chiusa.
+    if (!ritiroYmd || ymd <= ritiroYmd) {
       return statoGiornoRitiro(ymd, oggiYmd, getPickupTimesForDateString(ymd), occupati);
     }
     if (ymd > limiteRiconsegna) return 'occupato';
     return statoGiornoRiconsegna(
       ymd, ritiroYmd, ritiroOra, getReturnTimesForDateString(ymd), occupati,
     );
-  }, [ritiroYmd, ritiroOra, riconsegnaYmd, riconsegnaProposta, oggiYmd, occupati, limiteRiconsegna]);
+  }, [ritiroYmd, ritiroOra, oggiYmd, occupati, limiteRiconsegna]);
 
   const scegliGiorno = (ymd: string) => {
-    // Terza selezione (riconsegna gia' scelta dal cliente) o click su un
-    // giorno precedente al ritiro: si ricomincia da questo giorno.
-    if (!ritiroYmd || (riconsegnaYmd && !riconsegnaProposta) || ymd <= ritiroYmd) {
+    // Click sul giorno del ritiro o su uno precedente: si ricomincia da
+    // questo giorno. Su un giorno successivo si sposta SEMPRE la
+    // riconsegna, quante volte serve.
+    if (!ritiroYmd || ymd <= ritiroYmd) {
       const slot = slotRitiroUtili(ymd, getPickupTimesForDateString(ymd), occupati);
       if (slot.length === 0) return;
       const ora = slot[0];

@@ -57,9 +57,27 @@ const CarWashBookingPage: React.FC = () => {
     orariLavaggioPronti().then(() => { if (vivo) setOrariPronti(true); });
     return () => { vivo = false; };
   }, []);
-  const cartItems: CartItem[] = locationState?.cartItems || [];
-  const cartTotal: number = locationState?.total || 0;
-  const customerVehicle = locationState?.customerVehicle || null;
+  /**
+   * Modifica di un lavaggio gia' messo nel carrello.
+   *
+   * La riga torna qui dentro con i servizi, il mezzo e l'orario che aveva; al
+   * salvataggio SOSTITUISCE quella vecchia invece di aggiungerne una seconda
+   * (carrello: `aggiungi(..., { sostituisce })`). Finche' non si risalva, la
+   * riga vecchia resta nel carrello: chi cambia idea non perde niente.
+   */
+  const articoloDaModificare = locationState?.modificaArticolo as
+    | { id: string; dati?: { booking?: any } }
+    | undefined;
+  const prenotazioneDaModificare = articoloDaModificare?.dati?.booking;
+
+  const cartItems: CartItem[] = locationState?.cartItems
+    || prenotazioneDaModificare?.booking_details?.cartItems
+    || [];
+  const cartTotal: number = locationState?.total
+    ?? (prenotazioneDaModificare ? (Number(prenotazioneDaModificare.price_total) || 0) / 100 : 0);
+  const customerVehicle = locationState?.customerVehicle
+    || prenotazioneDaModificare?.booking_details?.customerVehicle
+    || null;
 
   // Legacy single service support
   const serviceId = locationState?.serviceId;
@@ -127,9 +145,11 @@ const CarWashBookingPage: React.FC = () => {
     cittaResidenza: '',
     codicePostale: '',
     provinciaResidenza: '',
-    appointmentDate: '',
-    appointmentTime: '',
-    notes: ''
+    appointmentDate: prenotazioneDaModificare?.appointment_date
+      ? String(prenotazioneDaModificare.appointment_date).slice(0, 10)
+      : '',
+    appointmentTime: prenotazioneDaModificare?.appointment_time || '',
+    notes: prenotazioneDaModificare?.booking_details?.notes || ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -1260,7 +1280,7 @@ const CarWashBookingPage: React.FC = () => {
         sottotitolo: [quando, dati.vehicle_name, dati.vehicle_plate].filter(Boolean).join(' · '),
         prezzoCents: dati.price_total,
         dati: { booking: dati },
-      });
+      }, articoloDaModificare ? { sostituisce: articoloDaModificare.id } : undefined);
       setShowPaymentModal(false);
       svuotaIstantaneaLavaggio();
       navigate('/prime-wash');
@@ -2027,12 +2047,15 @@ const CarWashBookingPage: React.FC = () => {
                 </p>
               )}
 
+              {/* Due strade sole, come su qualunque negozio: PRENOTA ORA paga
+                  subito questo lavaggio, Aggiungi al carrello lo mette da
+                  parte per pagarlo insieme al resto. */}
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
-                {t({ it: 'PROCEDI AL PAGAMENTO', en: 'PROCEED TO PAYMENT' })}
+                {t({ it: 'PRENOTA ORA', en: 'BOOK NOW' })}
               </button>
 
               {/* Stesso lavaggio, pagato dopo insieme al resto del carrello

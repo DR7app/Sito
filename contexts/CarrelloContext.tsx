@@ -22,14 +22,37 @@ interface CarrelloContextType {
   articoli: ArticoloCarrello[];
   numero: number;
   totaleCents: number;
+  /** Articoli con la spunta: sono quelli che vanno al pagamento. */
+  articoliSelezionati: ArticoloCarrello[];
+  totaleSelezionatiCents: number;
+  selezionato: (id: string) => boolean;
+  commutaSelezione: (id: string) => void;
+  selezionaTutti: (spunta: boolean) => void;
+  /** Spunta solo questo articolo: e' "Prenota ora", che paga una cosa sola. */
+  selezionaSolo: (id: string) => void;
   caricamento: boolean;
   aperto: boolean;
   apri: () => void;
   chiudi: () => void;
-  aggiungi: (articolo: NuovoArticolo) => Promise<void>;
+  /**
+   * Mette un articolo nel carrello e ne restituisce l'id.
+   *
+   * `apri` (vero di default) apre il carrello: "Prenota ora" lo passa falso,
+   * perche' va dritto al checkout. `sostituisce` e' l'id dell'articolo che
+   * questo rimpiazza: serve a "Modifica", che riapre la configurazione e
+   * deve aggiornare la riga invece di aggiungerne una seconda.
+   */
+  aggiungi: (articolo: NuovoArticolo, opzioni?: OpzioniAggiunta) => Promise<string>;
   rimuovi: (id: string) => Promise<void>;
   svuota: () => Promise<void>;
   ricarica: () => Promise<void>;
+}
+
+export interface OpzioniAggiunta {
+  /** Aprire il carrello dopo l'aggiunta. Vero di default. */
+  apri?: boolean;
+  /** Id dell'articolo che questo rimpiazza (Modifica). */
+  sostituisce?: string;
 }
 
 export const CarrelloContext = createContext<CarrelloContextType | undefined>(undefined);
@@ -90,6 +113,13 @@ export const CarrelloProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [articoli, setArticoli] = useState<ArticoloCarrello[]>([]);
   const [caricamento, setCaricamento] = useState(true);
   const [aperto, setAperto] = useState(false);
+  /**
+   * Si tengono i DEselezionati, non i selezionati: un articolo appena messo
+   * nel carrello parte con la spunta senza che nessuno debba ricordarsi di
+   * aggiungerlo. Chi toglie la spunta lascia l'articolo li' per un'altra
+   * volta — il pagamento porta via solo quelli spuntati.
+   */
+  const [deselezionati, setDeselezionati] = useState<Set<string>>(new Set());
   const versamentoFatto = useRef<string | null>(null);
 
   const userId = user?.id || null;
@@ -152,7 +182,22 @@ export const CarrelloProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => { void ricarica(); }, [ricarica]);
 
-  const aggiungi = useCallback(async (articolo: NuovoArticolo) => {
+  const rimuoviRiga = useCallback(async (id: string) => {
+    setArticoli(prec => {
+      const dopo = prec.filter(a => a.id !== id);
+      if (!userId) scriviLocale(dopo);
+      return dopo;
+    });
+    if (userId) {
+      const { error } = await supabase.from('carrello_articoli').delete().eq('id', id).eq('user_id', userId);
+      if (error) console.error('[carrello] rimozione fallita:', error);
+    }
+  }, [userId]);
+
+  const rimuovi = rimuoviRiga;
+
+  const aggiungi = useCallback(async (articolo: NuovoArticolo, opzioni?: OpzioniAggiunta) => {
+    let idNuovo = '';
     if (userId) {
       const { data, error } = await supabase
         .from('carrello_articoli')
@@ -171,6 +216,7 @@ export const CarrelloProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.error('[carrello] inserimento fallito:', error);
         throw new Error(error.message);
       }
+      idNuovo = (data as RigaDb).id;
       setArticoli(prec => [...prec, daRiga(data as RigaDb)]);
     } else {
       const nuovo: ArticoloCarrello = {
@@ -179,26 +225,22 @@ export const CarrelloProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         id: `loc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         creatoIl: new Date().toISOString(),
       };
+      idNuovo = nuovo.id;
       setArticoli(prec => {
         const dopo = [...prec, nuovo];
         scriviLocale(dopo);
         return dopo;
       });
     }
-    setAperto(true);
-  }, [userId]);
-
-  const rimuovi = useCallback(async (id: string) => {
-    setArticoli(prec => {
-      const dopo = prec.filter(a => a.id !== id);
-      if (!userId) scriviLocale(dopo);
-      return dopo;
-    });
-    if (userId) {
-      const { error } = await supabase.from('carrello_articoli').delete().eq('id', id).eq('user_id', userId);
-      if (error) console.error('[carrello] rimozione fallita:', error);
+    // Modifica: la riga vecchia se ne va solo ORA, a nuova riga scritta, cosi'
+    // un errore a meta' strada non lascia il cliente senza ne' l'una ne'
+    // l'altra.
+    if (opzioni?.sostituisce && opzioni.sostituisce !== idNuovo) {
+      await rimuoviRiga(opzioni.sostituisce);
     }
-  }, [userId]);
+    if (opzioni?.apri !== false) setAperto(true);
+    return idNuovo;
+  }, [userId, rimuoviRiga]);
 
   const svuota = useCallback(async () => {
     setArticoli([]);
@@ -209,10 +251,39 @@ export const CarrelloProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [userId]);
 
+  const selezionato = useCallback((id: string) => !deselezionati.has(id), [deselezionati]);
+
+  const commutaSelezione = useCallback((id: string) => {
+    setDeselezionati(prec => {
+      const dopo = new Set(prec);
+      if (dopo.has(id)) dopo.delete(id); else dopo.add(id);
+      return dopo;
+    });
+  }, []);
+
+  const selezionaTutti = useCallback((spunta: boolean) => {
+    setDeselezionati(spunta ? new Set() : new Set(articoli.map(a => a.id)));
+  }, [articoli]);
+
+  const selezionaSolo = useCallback((id: string) => {
+    setDeselezionati(new Set(articoli.filter(a => a.id !== id).map(a => a.id)));
+  }, [articoli]);
+
+  const articoliSelezionati = useMemo(
+    () => articoli.filter(a => !deselezionati.has(a.id)),
+    [articoli, deselezionati],
+  );
+
   const valore = useMemo<CarrelloContextType>(() => ({
     articoli,
     numero: articoli.length,
     totaleCents: totaleCarrelloCents(articoli),
+    articoliSelezionati,
+    totaleSelezionatiCents: totaleCarrelloCents(articoliSelezionati),
+    selezionato,
+    commutaSelezione,
+    selezionaTutti,
+    selezionaSolo,
     caricamento,
     aperto,
     apri: () => setAperto(true),
@@ -221,7 +292,7 @@ export const CarrelloProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     rimuovi,
     svuota,
     ricarica,
-  }), [articoli, caricamento, aperto, aggiungi, rimuovi, svuota, ricarica]);
+  }), [articoli, articoliSelezionati, selezionato, commutaSelezione, selezionaTutti, selezionaSolo, caricamento, aperto, aggiungi, rimuovi, svuota, ricarica]);
 
   return <CarrelloContext.Provider value={valore}>{children}</CarrelloContext.Provider>;
 };

@@ -79,6 +79,81 @@ async function disponibilitaNoleggio(prenotazione: Dati): Promise<EsitoArticolo 
   return null;
 }
 
+/* ─── Dati del cliente raccolti al checkout ───────────────────────────────── */
+
+/**
+ * Anagrafica e fatturazione chieste UNA volta al checkout, non piu' dentro
+ * ogni configurazione di servizio.
+ *
+ * Il travaso e' NON distruttivo: riempie solo i campi che l'articolo non ha
+ * gia'. Un noleggio porta con se' i dati del conducente raccolti dal wizard
+ * (servono al contratto) e quelli restano come sono; un lavaggio, che ormai
+ * non chiede piu' niente, li prende tutti da qui.
+ */
+export interface DatiClienteOrdine {
+  fullName: string;
+  email: string;
+  phone: string;
+  richiedeFattura: boolean;
+  ragioneSociale?: string;
+  codiceFiscale?: string;
+  partitaIva?: string;
+  indirizzo?: string;
+  numeroCivico?: string;
+  codicePostale?: string;
+  citta?: string;
+  provincia?: string;
+  sdi?: string;
+  pec?: string;
+}
+
+const pieno = (v: unknown): boolean => typeof v === 'string' ? v.trim() !== '' : v != null;
+const riempi = (attuale: unknown, nuovo: unknown): unknown => (pieno(attuale) ? attuale : (nuovo ?? attuale));
+
+export function conDatiCliente(articolo: ArticoloCarrello, cliente: DatiClienteOrdine): ArticoloCarrello {
+  const contenuto = articolo.dati as { booking?: Dati } | undefined;
+  if (!contenuto?.booking) return articolo;
+
+  const booking: Dati = { ...contenuto.booking };
+  const dettagli: Dati = { ...((booking.booking_details as Dati) || {}) };
+  const anagrafica: Dati = { ...((dettagli.customer as Dati) || {}) };
+
+  booking.customer_name = riempi(booking.customer_name, cliente.fullName);
+  booking.customer_email = riempi(booking.customer_email, cliente.email);
+  booking.customer_phone = riempi(booking.customer_phone, cliente.phone);
+
+  anagrafica.fullName = riempi(anagrafica.fullName, cliente.fullName);
+  anagrafica.email = riempi(anagrafica.email, cliente.email);
+  anagrafica.phone = riempi(anagrafica.phone, cliente.phone);
+  anagrafica.codiceFiscale = riempi(anagrafica.codiceFiscale, cliente.codiceFiscale);
+  anagrafica.indirizzo = riempi(anagrafica.indirizzo, cliente.indirizzo);
+  anagrafica.numeroCivico = riempi(anagrafica.numeroCivico, cliente.numeroCivico);
+  anagrafica.cittaResidenza = riempi(anagrafica.cittaResidenza, cliente.citta);
+  anagrafica.codicePostale = riempi(anagrafica.codicePostale, cliente.codicePostale);
+  anagrafica.provinciaResidenza = riempi(anagrafica.provinciaResidenza, cliente.provincia);
+
+  dettagli.customer = anagrafica;
+  // La fattura e' una richiesta esplicita del cliente: si porta appresso i
+  // dati in piu' (ragione sociale, P.IVA, SDI/PEC) che l'anagrafica non ha.
+  if (cliente.richiedeFattura) {
+    dettagli.fattura = {
+      richiesta: true,
+      ragione_sociale: cliente.ragioneSociale || cliente.fullName,
+      codice_fiscale: cliente.codiceFiscale || '',
+      partita_iva: cliente.partitaIva || '',
+      indirizzo: [cliente.indirizzo, cliente.numeroCivico].filter(Boolean).join(' '),
+      cap: cliente.codicePostale || '',
+      citta: cliente.citta || '',
+      provincia: cliente.provincia || '',
+      sdi: cliente.sdi || '',
+      pec: cliente.pec || '',
+    };
+  }
+  booking.booking_details = dettagli;
+
+  return { ...articolo, dati: { ...articolo.dati, booking } };
+}
+
 /* ─── Pagamento con carta: si prepara, non si crea nulla di pagato ────────── */
 
 export async function preparaArticoloCarta(

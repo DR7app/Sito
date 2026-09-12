@@ -377,6 +377,7 @@ export default function RegistrazioneClientePage() {
                                     </ul>
                                     <CompilaButton
                                         auto
+                                        tone="rosso"
                                         label={r('prefill_cta_it', 'prefill_cta_en')}
                                         documents={docs.map(d => ({ file: d.file, label: d.kind.replace('_', ' ') }))}
                                         currentData={{
@@ -591,7 +592,7 @@ export default function RegistrazioneClientePage() {
                         <p className="text-sm text-white/70">{r('popup_body_it', 'popup_body_en')}</p>
                         <div className="flex flex-col sm:flex-row gap-2 pt-2">
                             <button type="button" onClick={goToPrefill}
-                                className="flex-1 px-5 py-3 bg-white text-black font-bold hover:bg-white/90 transition-colors">
+                                className="flex-1 px-5 py-3 bg-red-600 text-white font-bold hover:bg-red-700 transition-colors">
                                 {r('popup_cta_upload_it', 'popup_cta_upload_en')}
                             </button>
                             <button type="button" onClick={() => setShowPrefillPopup(false)}

@@ -123,8 +123,9 @@ const SignUpPage: React.FC = () => {
     patenteBack: File | null;
     cartaIdentitaFront: File | null;
     cartaIdentitaBack: File | null;
-    codiceFiscale: File | null;
-  }>({ patenteFront: null, patenteBack: null, cartaIdentitaFront: null, cartaIdentitaBack: null, codiceFiscale: null });
+    codiceFiscaleFront: File | null;
+    codiceFiscaleBack: File | null;
+  }>({ patenteFront: null, patenteBack: null, cartaIdentitaFront: null, cartaIdentitaBack: null, codiceFiscaleFront: null, codiceFiscaleBack: null });
   const [prefillError, setPrefillError] = useState('');
   const [showPrefillPopup, setShowPrefillPopup] = useState(false);
   const [prefillPopupDone, setPrefillPopupDone] = useState(false);
@@ -532,7 +533,8 @@ const SignUpPage: React.FC = () => {
                     { campo: 'patenteBack', label: t({ it: 'Patente (retro)', en: 'Licence (back)' }) },
                     { campo: 'cartaIdentitaFront', label: t({ it: "Carta d'identità (fronte)", en: 'ID card (front)' }) },
                     { campo: 'cartaIdentitaBack', label: t({ it: "Carta d'identità (retro)", en: 'ID card (back)' }) },
-                    { campo: 'codiceFiscale', label: t({ it: 'Codice fiscale / Tessera sanitaria', en: 'Tax code / Health card' }) },
+                    { campo: 'codiceFiscaleFront', label: t({ it: 'Codice fiscale (fronte)', en: 'Tax code (front)' }) },
+                    { campo: 'codiceFiscaleBack', label: t({ it: 'Codice fiscale (retro)', en: 'Tax code (back)' }) },
                   ] as const).map(({ campo, label }) => (
                     <label key={campo} className="block">
                       <span className="block text-xs font-semibold text-gray-300 mb-1">{label}</span>
@@ -558,13 +560,15 @@ const SignUpPage: React.FC = () => {
                 {documentiScelti.length > 0 && (
                   <CompilaButton
                     auto
+                    tone="rosso"
                     label={s('prefill_cta_it', 'prefill_cta_en')}
                     documents={[
                       { file: docsPrecompila.patenteFront, label: 'Patente (fronte)' },
                       { file: docsPrecompila.patenteBack, label: 'Patente (retro)' },
                       { file: docsPrecompila.cartaIdentitaFront, label: "Carta d'identita' (fronte)" },
                       { file: docsPrecompila.cartaIdentitaBack, label: "Carta d'identita' (retro)" },
-                      { file: docsPrecompila.codiceFiscale, label: 'Codice fiscale' },
+                      { file: docsPrecompila.codiceFiscaleFront, label: 'Codice fiscale (fronte)' },
+                      { file: docsPrecompila.codiceFiscaleBack, label: 'Codice fiscale (retro)' },
                     ]}
                     currentData={{
                       nome: tipoCliente === 'azienda' ? formData.rappresentanteNome : formData.nome,
@@ -1313,7 +1317,7 @@ const SignUpPage: React.FC = () => {
               <button
                 type="button"
                 onClick={vaiAiDocumenti}
-                className="flex-1 px-5 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
+                className="flex-1 px-5 py-3 bg-red-600 text-white font-bold hover:bg-red-700 transition-colors"
               >
                 {s('popup_cta_upload_it', 'popup_cta_upload_en')}
               </button>

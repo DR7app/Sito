@@ -9,7 +9,8 @@ export interface DocumentiPrecaricati {
   patenteBack?: File | null;
   cartaIdentitaFront?: File | null;
   cartaIdentitaBack?: File | null;
-  codiceFiscale?: File | null;
+  codiceFiscaleFront?: File | null;
+  codiceFiscaleBack?: File | null;
 }
 
 interface DocumentUploadModalProps {
@@ -37,7 +38,8 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
   const [patenteBack, setPatenteBack] = useState<File | null>(initialFiles?.patenteBack || null);
   const [cartaIdentitaFront, setCartaIdentitaFront] = useState<File | null>(initialFiles?.cartaIdentitaFront || null);
   const [cartaIdentitaBack, setCartaIdentitaBack] = useState<File | null>(initialFiles?.cartaIdentitaBack || null);
-  const [codiceFiscale, setCodiceFiscale] = useState<File | null>(initialFiles?.codiceFiscale || null);
+  const [codiceFiscaleFront, setCodiceFiscaleFront] = useState<File | null>(initialFiles?.codiceFiscaleFront || null);
+  const [codiceFiscaleBack, setCodiceFiscaleBack] = useState<File | null>(initialFiles?.codiceFiscaleBack || null);
   const [uploading, setUploading] = useState(false);
 
   const uploadFile = async (file: File, bucket: string, prefix: string): Promise<boolean> => {
@@ -84,7 +86,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
   };
 
   const handleSubmit = async () => {
-    if (!patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscale) {
+    if (!patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscaleFront || !codiceFiscaleBack) {
       alert(t({ it: "Per favore carica tutti i documenti richiesti", en: "Please upload all the required documents" }));
       return;
     }
@@ -97,7 +99,8 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
         uploadFile(patenteBack, 'driver-licenses', 'patenteBack'),
         uploadFile(cartaIdentitaFront, 'carta-identita', 'cartaIdentitaFront'),
         uploadFile(cartaIdentitaBack, 'carta-identita', 'cartaIdentitaBack'),
-        uploadFile(codiceFiscale, 'codice-fiscale', 'codiceFiscaleFront'),
+        uploadFile(codiceFiscaleFront, 'codice-fiscale', 'codiceFiscaleFront'),
+        uploadFile(codiceFiscaleBack, 'codice-fiscale', 'codiceFiscaleBack'),
       ];
 
       const results = await Promise.all(uploads);
@@ -388,22 +391,41 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                   )}
                 </div>
 
-                {/* Codice Fiscale */}
+                {/* Codice Fiscale — fronte E retro: sul retro c'e' il codice
+                    a barre della tessera sanitaria. */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    {t({ it: 'Codice Fiscale', en: 'Tax code' })} <span className="text-red-500">*</span>
+                    {t({ it: 'Codice Fiscale (Fronte)', en: 'Tax code (Front)' })} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
-                    onChange={(e) => setCodiceFiscale(e.target.files?.[0] || null)}
+                    onChange={(e) => setCodiceFiscaleFront(e.target.files?.[0] || null)}
                     accept="image/*,.pdf"
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
                       file:mr-4 file:py-2 file:px-4 file:border-0
                       file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
                       hover:file:bg-yellow-600 file:cursor-pointer"
                   />
-                  {codiceFiscale && (
-                    <p className="text-xs text-green-400 mt-1">✓ {codiceFiscale.name}</p>
+                  {codiceFiscaleFront && (
+                    <p className="text-xs text-green-400 mt-1">✓ {codiceFiscaleFront.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    {t({ it: 'Codice Fiscale (Retro)', en: 'Tax code (Back)' })} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) => setCodiceFiscaleBack(e.target.files?.[0] || null)}
+                    accept="image/*,.pdf"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm
+                      file:mr-4 file:py-2 file:px-4 file:border-0
+                      file:text-sm file:font-semibold file:bg-yellow-500 file:text-black
+                      hover:file:bg-yellow-600 file:cursor-pointer"
+                  />
+                  {codiceFiscaleBack && (
+                    <p className="text-xs text-green-400 mt-1">✓ {codiceFiscaleBack.name}</p>
                   )}
                 </div>
               </div>
@@ -417,7 +439,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={uploading || !patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscale}
+                  disabled={uploading || !patenteFront || !patenteBack || !cartaIdentitaFront || !cartaIdentitaBack || !codiceFiscaleFront || !codiceFiscaleBack}
                   className="flex-1 px-6 py-3 bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploading ? t({ it: "Caricamento...", en: "Uploading..." }) : t({ it: "Carica Documenti", en: "Upload Documents" })}

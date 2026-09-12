@@ -181,7 +181,9 @@ const SignUpPage: React.FC = () => {
     });
   };
 
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // Spuntata di default: l'iscrizione al sito nasce con il consenso agli
+  // aggiornamenti gia' dato, la persona puo' sempre toglierlo.
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

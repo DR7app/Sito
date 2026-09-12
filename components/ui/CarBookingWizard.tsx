@@ -21,6 +21,7 @@ import { calcolaCodiceFiscale } from '../../utils/codiceFiscale';
 import DocumentUploader from './DocumentUploader';
 import CompilaButton from './CompilaButton';
 import AddressAutocomplete from './AddressAutocomplete';
+import { cercaLuoghiSito, dettaglioLuogoSito } from '../../utils/ricercaLuoghi';
 import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 import {
   getUnlimitedKmOptions,
@@ -1653,6 +1654,40 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [hasStoredDocs, setHasStoredDocs] = useState<{ licensePath: string | null; idPath: string | null; cfPath: string | null }>({ licensePath: null, idPath: null, cfPath: null });
   const [checkingDocs, setCheckingDocs] = useState(false);
 
+  // Indirizzo di residenza in una riga sola, dalla scheda cliente.
+  const indirizzoCompleto = (c: Record<string, any>): string => {
+    const via = [c.indirizzo, c.numero_civico].filter(Boolean).join(' ').trim();
+    const citta = [c.codice_postale, c.citta_residenza || c.citta, c.provincia_residenza || c.provincia]
+      .filter(Boolean).join(' ').trim();
+    return [via, citta].filter(Boolean).join(', ');
+  };
+
+  /**
+   * L'indirizzo letto dai documenti spesso non ha il CAP (sulla carta
+   * d'identita' non c'e') e a volte nemmeno il comune. Qui si completa
+   * cercando il posto: se la ricerca trova via, civico, CAP, comune e
+   * provincia, l'indirizzo torna intero come serve alla fattura.
+   */
+  const completaIndirizzoLetto = async (grezzo: string): Promise<string | null> => {
+    const testo = grezzo.trim();
+    if (!testo) return null;
+    try {
+      const sessione = `ocr-${Date.now()}`;
+      const risultati = await cercaLuoghiSito(testo, sessione);
+      const primo = risultati && risultati[0];
+      if (!primo) return null;
+      const pieno = await dettaglioLuogoSito(primo, sessione) || primo;
+      const p = pieno.parti;
+      if (!p || !p.cap || !p.comune) return pieno.indirizzoCompleto || null;
+      const via = [p.via, p.civico].filter(Boolean).join(' ').trim();
+      const citta = [p.cap, p.comune, p.provincia].filter(Boolean).join(' ').trim();
+      return [via, citta].filter(Boolean).join(', ');
+    } catch (err) {
+      console.warn('Completamento indirizzo non riuscito:', err);
+      return null;
+    }
+  };
+
   // Check for existing documents in storage
   useEffect(() => {
     const checkDocs = async () => {
@@ -1761,8 +1796,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           email: customerData.email || prev.email || user.email || '',
           phone: customerData.telefono || prev.phone || user.phone || '',
           birthDate: customerData.data_nascita || prev.birthDate,
+          // 12/09/2026 — sesso, luogo e provincia di nascita mancavano dal
+          // riempimento: erano gia' sulla scheda cliente ma la prenotazione
+          // li richiedeva a ogni giro.
+          sesso: customerData.sesso || prev.sesso,
+          luogoNascita: customerData.citta_nascita || customerData.luogo_nascita || prev.luogoNascita,
+          provinciaNascita: String(customerData.provincia_nascita || prev.provinciaNascita || '').toUpperCase(),
           codiceFiscale: customerData.codice_fiscale || prev.codiceFiscale,
-          residenza: customerData.indirizzo || prev.residenza,
+          // Indirizzo completo, non la sola via: civico, CAP, citta' e
+          // provincia servono alla fattura e alla cauzione.
+          residenza: indirizzoCompleto(customerData) || prev.residenza,
           // License fields from metadata
           licenseNumber: customerData.metadata?.numero_patente || prev.licenseNumber,
           licenseIssueDate: customerData.metadata?.patente_data_rilascio || prev.licenseIssueDate,
@@ -2797,6 +2840,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       body.append('bucket', bucket);
       body.append('userId', userId);
       body.append('prefix', prefix);
+      // Senza email e nome la riga in "Verifica Documenti" arriva anonima e
+      // l'ufficio non sa a chi appartiene il documento.
+      const emailCliente = formData.email || user?.email || '';
+      const nomeCliente = [formData.firstName, formData.lastName].filter(Boolean).join(' ').trim() || user?.fullName || '';
+      if (emailCliente) body.append('userEmail', emailCliente);
+      if (nomeCliente) body.append('userFullName', nomeCliente);
 
       // Get auth token for authenticated upload
       const { data: { session } } = await supabase.auth.getSession();
@@ -2844,6 +2893,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         }
         uploadPath = directPath;
         console.log('Direct Supabase upload succeeded:', directPath);
+
+        // Il file c'e' ma la funzione non ha potuto scrivere la riga: senza
+        // questa registrazione il documento resta invisibile in "Verifica
+        // Documenti" anche se in archivio esiste.
+        const { error: regErr } = await supabase.from('user_documents').insert({
+          user_id: userId,
+          user_email: emailCliente || null,
+          user_full_name: nomeCliente || null,
+          document_type: prefix,
+          file_path: directPath,
+          bucket,
+          upload_date: new Date().toISOString(),
+          status: 'pending_verification',
+        });
+        if (regErr) console.error('Registrazione documento non riuscita:', regErr);
       }
 
       return uploadPath;
@@ -5520,7 +5584,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             if (data.provincia_nascita && !prev.provinciaNascita) agg.provinciaNascita = data.provincia_nascita;
                             if (data.codice_fiscale && !prev.codiceFiscale) agg.codiceFiscale = data.codice_fiscale.toUpperCase();
                             if (data.indirizzo && !prev.residenza) {
-                              agg.residenza = `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}, ${data.codice_postale || ''} ${data.citta_residenza || ''} ${data.provincia_residenza || ''}`.trim();
+                              const via = `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}`.trim();
+                              const citta = [data.codice_postale, data.citta_residenza, data.provincia_residenza].filter(Boolean).join(' ').trim();
+                              agg.residenza = [via, citta].filter(Boolean).join(', ');
+                              agg.address = agg.residenza;
+                              // Senza CAP o senza comune l'indirizzo non basta
+                              // per la fattura: lo si completa cercando il posto.
+                              if (!data.codice_postale || !data.citta_residenza) {
+                                const cercato = [via, data.citta_residenza || '', data.provincia_residenza || ''].filter(Boolean).join(' ').trim();
+                                void completaIndirizzoLetto(cercato).then(intero => {
+                                  if (intero) setFormData(p => ({ ...p, residenza: intero, address: intero }));
+                                });
+                              }
                             }
                             if (data.patente_numero && !prev.licenseNumber) agg.licenseNumber = data.patente_numero;
                             // Anzianità patente: la data REALE di conseguimento sta sul

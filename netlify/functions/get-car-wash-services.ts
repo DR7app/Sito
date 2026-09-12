@@ -44,6 +44,10 @@ export const handler: Handler = async (event) => {
       image: s.image_url || undefined,
       priceUnit: s.price_unit || undefined,
       priceOptions: s.price_options || undefined,
+      // Pastiglia del catalogo (es. "CLASSICO"). Colonna aggiunta il
+      // 12/09/2026: su un database senza la colonna resta semplicemente vuota,
+      // perche' la select e' `*`.
+      badge: s.badge || undefined,
       category: s.category,
       mainTab: s.main_tab,
     }))

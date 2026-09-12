@@ -26,6 +26,8 @@ export interface WashService {
   features: string[];
   featuresEn: string[];
   image?: string;
+  /** Pastiglia scritta nel Catalogo Lavaggio, es. "CLASSICO". */
+  badge?: string;
   priceUnit?: string;
   priceOptions?: { label: string; price: number }[];
 }
@@ -766,6 +768,7 @@ const CarWashServicesPage: React.FC = () => {
                     <SchedaCatalogo
                       titolo={nomeServizio(dati)}
                       durata={dati.duration}
+                      etichetta={dati.badge || combo.urban.badge || combo.maxi.badge}
                       caratteristiche={vociServizio(dati)}
                       risultato={risultatoServizio(dati)}
                       etichettaCaratteristiche={etichettaCaratteristiche}
@@ -808,6 +811,7 @@ const CarWashServicesPage: React.FC = () => {
                 <SchedaCatalogo
                   titolo={absoluteDetailService ? nomeServizio(absoluteDetailService) : 'Absolute Detail'}
                   durata={absoluteDetailService?.duration}
+                  etichetta={absoluteDetailService?.badge}
                   caratteristiche={absoluteDetailService ? vociServizio(absoluteDetailService) : []}
                   risultato={absoluteDetailService ? risultatoServizio(absoluteDetailService) : ''}
                   etichettaCaratteristiche={etichettaCaratteristiche}
@@ -857,6 +861,7 @@ const CarWashServicesPage: React.FC = () => {
                 <SchedaCatalogo
                   titolo={nomeServizio(service)}
                   durata={service.duration}
+                  etichetta={service.badge}
                   caratteristiche={vociServizio(service)}
                   risultato={risultatoServizio(service)}
                   etichettaCaratteristiche={etichettaCaratteristiche}
@@ -1131,6 +1136,7 @@ const CarWashServicesPage: React.FC = () => {
                         <SchedaCatalogo
                           titolo={nomeServizio(extra)}
                           durata={extra.duration}
+                          etichetta={extra.badge}
                           caratteristiche={vociServizio(extra)}
                           risultato={risultatoServizio(extra)}
                           etichettaCaratteristiche={etichettaCaratteristiche}
@@ -1183,6 +1189,7 @@ const CarWashServicesPage: React.FC = () => {
                         <SchedaCatalogo
                           titolo={nomeServizio(exp)}
                           durata={exp.duration}
+                          etichetta={exp.badge}
                           caratteristiche={vociServizio(exp)}
                           risultato={risultatoServizio(exp)}
                           etichettaCaratteristiche={etichettaCaratteristiche}

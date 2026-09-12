@@ -26,6 +26,8 @@ type Props = {
   titolo: string;
   /** Durata dichiarata a catalogo ("45 min"). Si nasconde se vale "-". */
   durata?: string;
+  /** Pastiglia del catalogo, es. "CLASSICO". Vuota = nessuna pastiglia. */
+  etichetta?: string;
   /** Le lavorazioni, una per riga nel Catalogo Lavaggio. */
   caratteristiche?: string[];
   /** La descrizione del servizio: e' la riga "Risultato" della locandina. */
@@ -42,6 +44,7 @@ const MAX_CARATTERISTICHE = 6;
 export default function SchedaCatalogo({
   titolo,
   durata,
+  etichetta,
   caratteristiche,
   risultato,
   etichettaCaratteristiche,
@@ -50,14 +53,24 @@ export default function SchedaCatalogo({
 }: Props) {
   const voci = (caratteristiche || []).filter(v => v && v.trim()).slice(0, MAX_CARATTERISTICHE);
   const durataVisibile = durata && durata.trim() && durata.trim() !== '-' ? durata.trim() : null;
+  const etichettaVisibile = etichetta && etichetta.trim() ? etichetta.trim() : null;
 
   return (
     <div className="marmo-carta flex h-full flex-col">
       <div className="flex flex-1 flex-col gap-2.5 p-3 sm:p-4">
-        {durataVisibile && (
-          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#C8A24A]">
-            {durataVisibile}
-          </p>
+        {(durataVisibile || etichettaVisibile) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {durataVisibile && (
+              <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#C8A24A]">
+                {durataVisibile}
+              </span>
+            )}
+            {etichettaVisibile && (
+              <span className="border border-[#C8A24A]/60 bg-[#C8A24A]/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.2em] text-[#C8A24A]">
+                {etichettaVisibile}
+              </span>
+            )}
+          </div>
         )}
 
         <h3 className="font-display text-sm leading-tight text-white uppercase sm:text-base">

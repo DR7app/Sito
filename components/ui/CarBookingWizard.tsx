@@ -378,14 +378,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const urlParams = new URLSearchParams(window.location.search);
     const hasSearchParams = !!(urlParams.get('pickup') && urlParams.get('return'));
     const prefillPickup = urlParams.get('pickup') || today;
-    const prefillReturn = urlParams.get('return') || (() => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const y = parseInt(tomorrow.toLocaleString('en-GB', { timeZone: 'Europe/Rome', year: 'numeric' }));
-      const m = parseInt(tomorrow.toLocaleString('en-GB', { timeZone: 'Europe/Rome', month: '2-digit' }));
-      const d = parseInt(tomorrow.toLocaleString('en-GB', { timeZone: 'Europe/Rome', day: '2-digit' }));
-      return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    })();
+    // 2026-09-12 (direzione): senza date in arrivo dalla ricerca, ritiro e
+    // riconsegna partono dallo STESSO giorno — il noleggio in giornata si paga
+    // comunque una giornata intera. L'ora di riconsegna viene poi allineata
+    // all'ultima fascia utile dall'effetto piu' sotto.
+    const prefillReturn = urlParams.get('return') || prefillPickup;
     const prefillPickupTime = urlParams.get('pickupTime') || '10:30';
     const prefillReturnTime = urlParams.get('returnTime') || '09:00';
     const prefillPickupLoc = urlParams.get('pickupLoc') || DEFAULT_PICKUP_LOCATIONS[0].id;

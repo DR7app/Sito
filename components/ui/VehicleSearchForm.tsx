@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { motion } from 'framer-motion';
 import {
@@ -6,6 +6,7 @@ import {
     getReturnTimesForDateString,
     isPickupClosed,
     isReturnClosed,
+    orariPronti,
 } from '../../utils/noleggioHours';
 
 export interface SearchFormData {
@@ -41,22 +42,42 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const dayAfter = new Date(today);
-    dayAfter.setDate(dayAfter.getDate() + 2);
 
     const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
+    // 2026-09-12 (direzione): di default ritiro e riconsegna sono lo STESSO
+    // giorno — il noleggio in giornata si paga comunque una giornata intera.
+    // Chi vuole piu' giorni sposta la data di riconsegna.
     const [formData, setFormData] = useState<SearchFormData>({
         pickupLocation: LOCATIONS[0],
         returnLocation: LOCATIONS[0],
         pickupDate: formatDate(tomorrow),
         pickupTime: '10:30',
-        returnDate: formatDate(dayAfter),
-        returnTime: '10:00',
+        returnDate: formatDate(tomorrow),
+        returnTime: '18:30',
         ageBracket: '26to69',
     });
 
     const [sameLocation, setSameLocation] = useState(true);
+
+    // Gli orari veri arrivano dalla Centralina Pro dopo il primo render: appena
+    // sono pronti si allinea l'ora di riconsegna del noleggio in giornata
+    // all'ultima fascia utile (il default scritto qui sopra e' solo un
+    // segnaposto e puo' non esistere fra gli orari configurati).
+    useEffect(() => {
+        let attivo = true;
+        orariPronti().then(() => {
+            if (!attivo) return;
+            setFormData(prev => {
+                if (prev.returnDate !== prev.pickupDate) return prev;
+                const slots = getReturnTimesForDateString(prev.returnDate).filter(t => t > prev.pickupTime);
+                if (slots.length === 0) return prev;
+                const ultimo = slots[slots.length - 1];
+                return ultimo === prev.returnTime ? prev : { ...prev, returnTime: ultimo };
+            });
+        });
+        return () => { attivo = false; };
+    }, []);
 
     const pickupTimesForDay = useMemo(
         () => getPickupTimesForDateString(formData.pickupDate),
@@ -87,14 +108,53 @@ const VehicleSearchForm: React.FC<VehicleSearchFormProps> = ({ onSearch, isSearc
         });
     };
 
+    // 2026-09-12 (direzione): si puo' noleggiare anche solo per qualche ora
+    // nella STESSA giornata — si paga comunque una giornata intera. Scegliendo
+    // la data di ritiro la riconsegna si allinea quindi allo stesso giorno, con
+    // l'ultima fascia di riconsegna utile di quel giorno. Se quel giorno non ha
+    // nessuna fascia dopo l'ora di ritiro (orari chiusi, ritiro a fine
+    // giornata) si torna al comportamento di prima: giorno dopo.
+    const addDays = (dateStr: string, n: number) => {
+        const d = new Date(dateStr + 'T12:00:00');
+        d.setDate(d.getDate() + n);
+        return formatDate(d);
+    };
+    const minusNinety = (time: string) => {
+        const [h, m] = time.split(':').map(Number);
+        const v = Math.max(0, h * 60 + m - 90);
+        return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
+    };
+    const lastSameDayReturn = (dateStr: string, pickupTime: string): string | null => {
+        const slots = getReturnTimesForDateString(dateStr).filter(t => t > pickupTime);
+        return slots.length > 0 ? slots[slots.length - 1] : null;
+    };
+
     const update = (key: keyof SearchFormData, value: string) => {
         setFormData(prev => {
             const next = { ...prev, [key]: value };
-            // Auto-adjust return date if pickup date changes to be after it
-            if (key === 'pickupDate' && value >= prev.returnDate) {
-                const nextDay = new Date(value + 'T12:00:00');
-                nextDay.setDate(nextDay.getDate() + 1);
-                next.returnDate = formatDate(nextDay);
+            if (key === 'pickupDate' && value) {
+                const sameDay = lastSameDayReturn(value, next.pickupTime);
+                if (sameDay) {
+                    next.returnDate = value;
+                    next.returnTime = sameDay;
+                } else if (value >= prev.returnDate) {
+                    next.returnDate = addDays(value, 1);
+                }
+            }
+            // Cambiando l'ora di ritiro su un noleggio in giornata l'ora di
+            // riconsegna deve restare DOPO il ritiro.
+            if (key === 'pickupTime' && value && next.returnDate === next.pickupDate) {
+                const sameDay = lastSameDayReturn(next.returnDate, value);
+                if (sameDay) {
+                    next.returnTime = sameDay;
+                } else {
+                    next.returnDate = addDays(next.pickupDate, 1);
+                    next.returnTime = minusNinety(value);
+                }
+            }
+            if (key === 'returnDate' && value === next.pickupDate && next.returnTime <= next.pickupTime) {
+                const sameDay = lastSameDayReturn(value, next.pickupTime);
+                if (sameDay) next.returnTime = sameDay;
             }
             return next;
         });

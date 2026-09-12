@@ -249,14 +249,14 @@ body {
 }
 
 .marmo {
-  /* 12/09/2026 — il velo si alza: a 0.88-0.92 la lastra era nero piatto, il
-     marmo non si vedeva piu'. Adesso il velo non e' piu' uniforme: fitto in
-     alto a sinistra, dove sta il testo (titolo e occhiello sono allineati a
-     sinistra), e leggero verso destra e in basso, dove restano solo le
-     venature. Cosi' si vede il marmo senza rimettere le venature bianche
-     sotto le lettere — l'errore che aveva fatto tornare il velo fitto. */
+  /* 12/09/2026 — il velo era 0.88-0.92: la lastra usciva nero piatto, del
+     marmo non restava niente. Adesso il velo non e' piu' uniforme e parte
+     molto piu' basso: 0.72 in alto a sinistra, dove sono allineati titolo e
+     occhiello, 0.2 verso destra e in basso, dove la lastra si guarda per
+     quello che e'. Il testo resta leggibile perche' il buio sta dove
+     passano le lettere, non su tutta la superficie. */
   background-image:
-    linear-gradient(to bottom right, rgba(6, 6, 7, 0.86), rgba(6, 6, 7, 0.66) 55%, rgba(6, 6, 7, 0.5)),
+    linear-gradient(to bottom right, rgba(6, 6, 7, 0.72), rgba(6, 6, 7, 0.42) 55%, rgba(6, 6, 7, 0.2)),
     url('/marmo-oro.jpg');
   background-size: cover;
   background-position: center;
@@ -266,8 +266,14 @@ body {
 /* Variante piu' scura, per quando sopra ci va testo piccolo (il fondo
    pagina: contatti, indirizzi, note legali). */
 .marmo-fondo {
+  /* 12/09/2026 — anche qui il velo era talmente fitto (0.82-0.88) che il
+     fondo pagina sembrava nero: dietro la fotografia delle recensioni, che
+     sta in alto, del marmo non si vedeva niente. Adesso il velo e' leggero
+     in alto, dove corre la vetrina (che porta gia' il suo velo scuro da
+     sinistra), e si chiude verso il basso, dove stanno le colonne di testo
+     piccolo: contatti, voci, note legali. */
   background-image:
-    linear-gradient(rgba(4, 4, 5, 0.82), rgba(4, 4, 5, 0.88)),
+    linear-gradient(rgba(4, 4, 5, 0.34), rgba(4, 4, 5, 0.52) 45%, rgba(4, 4, 5, 0.8)),
     url('/marmo-oro.jpg');
   background-size: cover;
   background-position: center;

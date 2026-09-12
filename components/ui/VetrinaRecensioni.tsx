@@ -139,7 +139,11 @@ const VetrinaRecensioni: React.FC<VetrinaRecensioniProps & { lingua?: string }> 
             decoding="async"
             className="foto-scena pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-auto max-w-full object-cover"
           />
-          <div className="velo-scena pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A] via-[#08090A]/75 to-transparent" />
+          {/* 12/09/2026 — il velo era pieno a sinistra e al 75% in mezzo:
+              sommato al marmo del fondo pagina la fascia usciva nera. Ora
+              parte all'88% e scende in fretta: il buio resta sotto titolo e
+              frase, il resto lascia passare la lastra. */}
+          <div className="velo-scena pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#08090A]/88 via-[#08090A]/45 to-transparent" />
         </>
       )}
 

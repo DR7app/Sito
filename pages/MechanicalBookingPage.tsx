@@ -1130,6 +1130,14 @@ const MechanicalBookingPage: React.FC = () => {
                 <span className="text-4xl font-bold text-white">€{discountedPrice.toFixed(2)}</span>
               </div>
 
+              {/* L'errore del carrello si vedeva solo dentro la finestra di
+                  pagamento: da qui il pulsante sembrava non fare niente. */}
+              {paymentError && !showPaymentModal && (
+                <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-3 mb-4">
+                  {paymentError}
+                </p>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}

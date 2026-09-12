@@ -603,17 +603,6 @@ const CarWashBookingPage: React.FC = () => {
 
   // Removed Stripe payment intent and card element mounting - now using Nexi redirect
 
-  // Validation functions
-  const validateCodiceFiscale = (cf: string): boolean => {
-    const cfRegex = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i;
-    return cf.length === 16 && cfRegex.test(cf.toUpperCase());
-  };
-
-  const validateItalianPhone = (phone: string): boolean => {
-    const phoneRegex = /^(\+39|0039)?[\s]?[0-9]{9,13}$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let newValue = value;
@@ -832,26 +821,12 @@ const CarWashBookingPage: React.FC = () => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    // Required: Nome e cognome, Telefono, Email
-    if (!formData.fullName) newErrors.fullName = t({ it: 'Il nome è obbligatorio', en: 'Name is required' });
-    if (!formData.email) newErrors.email = t({ it: 'L\'email è obbligatoria', en: 'Email is required' });
-    if (!formData.phone) {
-      newErrors.phone = t({ it: 'Il telefono è obbligatorio', en: 'Phone is required' });
-    } else if (!validateItalianPhone(formData.phone)) {
-      newErrors.phone = t({ it: 'Formato telefono non valido', en: 'Invalid phone format' });
-    }
-    // Codice Fiscale + indirizzo OBBLIGATORI: servono per emettere la fattura
-    // (il SDI rifiuta senza CF + indirizzo del cliente). Per i clienti loggati
-    // questi campi sono già precompilati dal loro profilo (vedi prefill da
-    // customers_extended) → non li reinseriscono una seconda volta.
-    if (!formData.codiceFiscale.trim()) {
-      newErrors.codiceFiscale = t({ it: 'Il codice fiscale è obbligatorio per la fattura', en: 'Codice Fiscale is required for the invoice' });
-    } else if (!validateCodiceFiscale(formData.codiceFiscale)) {
-      newErrors.codiceFiscale = t({ it: 'Codice fiscale non valido (16 caratteri)', en: 'Invalid Codice Fiscale (16 characters)' });
-    }
-    if (!formData.indirizzo.trim()) newErrors.indirizzo = t({ it: 'L\'indirizzo è obbligatorio per la fattura', en: 'Address is required for the invoice' });
-    if (!formData.cittaResidenza.trim()) newErrors.cittaResidenza = t({ it: 'La città è obbligatoria per la fattura', en: 'City is required for the invoice' });
-    if (!formData.codicePostale.trim()) newErrors.codicePostale = t({ it: 'Il CAP è obbligatorio per la fattura', en: 'Postal code is required for the invoice' });
+    // 12/09/2026 — Anagrafica e dati fattura NON fermano piu' la
+    // prenotazione. Erano obbligatori qui perche' il modulo li chiedeva; il
+    // modulo non c'e' piu' (li ha gia' dati all'iscrizione) e un campo
+    // rimasto vuoto nel profilo bloccava il cliente su un pulsante che
+    // sembrava rotto. Quello che manca si completa dal gestionale, come
+    // gia' avviene per la ricarica del Credit Wallet.
     if (!formData.appointmentDate) newErrors.appointmentDate = t({ it: 'La data è obbligatoria', en: 'Date is required' });
     if (!formData.appointmentTime) newErrors.appointmentTime = t({ it: 'L\'ora è obbligatoria', en: 'Time is required' });
 
@@ -1751,142 +1726,14 @@ const CarWashBookingPage: React.FC = () => {
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Customer Info */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                {t({ it: 'Informazioni Cliente', en: 'Customer Information' })}
-              </h2>
-
-              {/* Client search removed - form auto-fills from logged-in user data */}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Nome Completo', en: 'Full Name' })} *
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                  {errors.fullName && <p className="text-xs text-red-400 mt-1">{errors.fullName}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                  {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Telefono', en: 'Phone' })} *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+39 320 1234567"
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                  {errors.phone && <p className="text-xs text-red-400 mt-1">{errors.phone}</p>}
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Codice Fiscale *', en: 'Tax Code *' })}
-                    <span className="text-xs text-gray-500 font-normal ml-1">{t({ it: '(necessario per la fattura)', en: '(required for the invoice)' })}</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="codiceFiscale"
-                    value={formData.codiceFiscale}
-                    onChange={handleChange}
-                    placeholder={t({ it: "RSSMRA80A01H501U", en: "RSSMRA80A01H501U" })}
-                    maxLength={16}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase"
-                  />
-                  {errors.codiceFiscale && <p className="text-xs text-red-400 mt-1">{errors.codiceFiscale}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Indirizzo *', en: 'Address *' })}
-                  </label>
-                  <input
-                    type="text"
-                    name="indirizzo"
-                    value={formData.indirizzo}
-                    onChange={handleChange}
-                    placeholder={t({ it: 'Via Roma', en: 'Main Street' })}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                  {errors.indirizzo && <p className="text-xs text-red-400 mt-1">{errors.indirizzo}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Numero Civico', en: 'Civic Number' })}
-                  </label>
-                  <input
-                    type="text"
-                    name="numeroCivico"
-                    value={formData.numeroCivico}
-                    onChange={handleChange}
-                    placeholder="123"
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Città di Residenza *', en: 'City *' })}
-                  </label>
-                  <input
-                    type="text"
-                    name="cittaResidenza"
-                    value={formData.cittaResidenza}
-                    onChange={handleChange}
-                    placeholder={t({ it: 'Milano', en: 'Milan' })}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                  {errors.cittaResidenza && <p className="text-xs text-red-400 mt-1">{errors.cittaResidenza}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'CAP *', en: 'Postal Code *' })}
-                  </label>
-                  <input
-                    type="text"
-                    name="codicePostale"
-                    value={formData.codicePostale}
-                    onChange={handleChange}
-                    placeholder="20100"
-                    maxLength={5}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
-                  />
-                  {errors.codicePostale && <p className="text-xs text-red-400 mt-1">{errors.codicePostale}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t({ it: 'Provincia', en: 'Province' })}
-                  </label>
-                  <input
-                    type="text"
-                    name="provinciaResidenza"
-                    value={formData.provinciaResidenza}
-                    onChange={handleChange}
-                    placeholder="MI"
-                    maxLength={2}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white uppercase"
-                  />
-                  {errors.provinciaResidenza && <p className="text-xs text-red-400 mt-1">{errors.provinciaResidenza}</p>}
-                </div>
-              </div>
-            </div>
+            {/* 12/09/2026 — Niente piu' "Informazioni Cliente" qui.
+                Nome, telefono, codice fiscale e indirizzo sono gia' stati
+                dati all'iscrizione: richiederli a ogni prenotazione era un
+                doppione. Si leggono in silenzio dal profilo
+                (utils/datiFatturaCliente.ts) e viaggiano con la
+                prenotazione; se manca qualcosa si completa dal gestionale,
+                senza mai fermare il cliente. Stessa regola gia' in vigore
+                sulla ricarica del Credit Wallet. */}
 
             {/* Appointment */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
@@ -2169,6 +2016,14 @@ const CarWashBookingPage: React.FC = () => {
               {errors.form && (
                 <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-3 mb-4">
                   {errors.form}
+                </p>
+              )}
+
+              {/* L'errore del carrello si vedeva solo dentro la finestra di
+                  pagamento: da qui il pulsante sembrava non fare niente. */}
+              {paymentError && !showPaymentModal && (
+                <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-3 mb-4">
+                  {paymentError}
                 </p>
               )}
 

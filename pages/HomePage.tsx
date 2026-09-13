@@ -7,6 +7,7 @@ import { Shell, Section, Eyebrow, Statement, Cta, Metric, SeamRule } from '../co
 import { Grid } from '../components/editorial/layout';
 import Reveal from '../components/editorial/Reveal';
 import { useInViewOnce } from '../hooks/useInViewOnce';
+import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
 import MediaVideo from '../components/editorial/MediaVideo';
 
 /**
@@ -147,6 +148,10 @@ const HomePage: React.FC = () => {
   // React si ferma sulla pagina bianca.
   const [numeriRef, numeriInCampo] = useInViewOnce<HTMLDivElement>();
 
+  // Il conteggio delle recensioni non e' un numero di questa pagina: arriva da
+  // Google. Le metriche lo chiedono scrivendo `{reviewCount}` nel valore.
+  const reviewCount = useReviewCount();
+
   if (!copy) {
     // Guscio silenzioso mentre la configurazione arriva: nessun lampo bianco,
     // nessun salto di layout quando il contenuto entra.
@@ -156,6 +161,14 @@ const HomePage: React.FC = () => {
   const t = (it: string, en: string) => (lang === 'it' ? it : en);
   const brandLines = lang === 'it' ? copy.brand_lines_it : copy.brand_lines_en;
   const stmtLines = lang === 'it' ? copy.statement_lines_it : copy.statement_lines_en;
+
+  // 14/09/2026 — le recensioni erano "317+" scritte a mano e non salivano
+  // piu'. Adesso il valore che contiene `{reviewCount}` prende il numero
+  // vero di Google; finche' non si sa, quella metrica non si mostra (non si
+  // stampa una cifra vecchia solo per riempire la griglia).
+  const metrics = copy.metrics
+    .map((m) => ({ ...m, value: risolviReviewCount(m.value, reviewCount) }))
+    .filter((m): m is typeof copy.metrics[number] => m.value !== null);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
@@ -193,7 +206,7 @@ const HomePage: React.FC = () => {
           fondo bianco si leggono come su carta. `surface="light"` ribalta
           testo, testo secondario e filetti in un colpo solo: nessun colore
           scritto a mano qui dentro. */}
-      {copy.metrics.length > 0 && (
+      {metrics.length > 0 && (
         <Section rhythm="lg" surface="light">
           <Shell>
             <div ref={numeriRef}>
@@ -207,8 +220,8 @@ const HomePage: React.FC = () => {
                     fondo. Sul telefono resta una colonna sola, e non e' pigrizia:
                     "€2,5M+" scritto nel corpo monumentale non ha uno spazio dove
                     andare a capo e in mezza schermata uscirebbe dal bordo. */}
-                <Grid cols={copy.metrics.length % 3 === 0 ? 3 : 4} gap="lg">
-                  {copy.metrics.map((m, i) => (
+                <Grid cols={metrics.length % 3 === 0 ? 3 : 4} gap="lg">
+                  {metrics.map((m, i) => (
                     <Metric
                       key={m.id}
                       value={m.value}

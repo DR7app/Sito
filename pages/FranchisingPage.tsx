@@ -3,7 +3,7 @@ import CountUp from '../components/editorial/CountUp';
 import { useInViewOnce } from '../hooks/useInViewOnce';
 import LegalPageLayout from '../components/layout/LegalPageLayout';
 import { useTranslation } from '../hooks/useTranslation';
-import { fetchGoogleReviews } from '../services/googleReviews';
+import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
 import { getFranchisingCopy, DEFAULT_FRANCHISING, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
 import { useFilmato } from '../hooks/useFilmato';
 
@@ -59,7 +59,9 @@ const BenefitIcon: React.FC<{ icon: FranchisingBenefitIcon }> = ({ icon }) => {
 
 const FranchisingPage: React.FC = () => {
     const { t, lang } = useTranslation();
-    const [reviewCount, setReviewCount] = useState(300);
+    // Il conteggio delle recensioni arriva da Google, come in home e nella
+    // vetrina: un hook solo per tutto il sito (hooks/useReviewCount.ts).
+    const reviewCount = useReviewCount();
     // I testi partono da quelli di fabbrica e non aspettano il gestionale.
     // Prima la pagina restava su "Caricamento" finche' non arrivava la riga
     // di configurazione (275 kB per 6 kB di testi): i numeri comparivano
@@ -70,15 +72,6 @@ const FranchisingPage: React.FC = () => {
     useEffect(() => {
         let cancelled = false;
         getFranchisingCopy().then((c) => { if (!cancelled) setCopy(c); });
-        const loadReviewCount = async () => {
-            try {
-                const data = await fetchGoogleReviews();
-                if (!cancelled) setReviewCount(data.ratingSummary.reviewCount);
-            } catch (error) {
-                console.error('Failed to load review count:', error);
-            }
-        };
-        loadReviewCount();
         return () => { cancelled = true; };
     }, []);
 
@@ -91,7 +84,12 @@ const FranchisingPage: React.FC = () => {
     // I numeri salgono da zero quando la sezione entra in campo.
     const [numeriRef, numeriInCampo] = useInViewOnce<HTMLDivElement>();
 
-    const resolveReviewCount = (s: string) => s.split('{reviewCount}').join(reviewCount > 300 ? String(reviewCount) : '300');
+    // 14/09/2026 — prima qui c'era un pavimento a 300: sotto quella soglia la
+    // pagina scriveva comunque "300+", cioe' un numero che non era di nessuno.
+    // Adesso o si dice il numero vero, o la riga non si mostra.
+    const righeDati = bilingualList(copy, 'stats_lines', lang)
+        .map((line) => risolviReviewCount(line, reviewCount))
+        .filter((line): line is string => line !== null);
 
     return (
         <LegalPageLayout title={t('Franchising')} filmato={filmato}>
@@ -146,10 +144,10 @@ const FranchisingPage: React.FC = () => {
                         spazio dove andare a capo e in mezza schermata
                         uscirebbe dal bordo. */}
                     <div ref={numeriRef} className="mt-10 grid grid-cols-2 gap-x-6 gap-y-9 sm:mt-12 sm:gap-x-10 sm:gap-y-12 lg:grid-cols-3">
-                        {bilingualList(copy, 'stats_lines', lang).map((line, i) => (
+                        {righeDati.map((line, i) => (
                             <CountUp
                                 key={i}
-                                text={resolveReviewCount(line)}
+                                text={line}
                                 run={numeriInCampo}
                                 lang={lang}
                                 classeNumero="font-serif text-[1.75rem] sm:text-5xl md:text-6xl font-normal leading-none tracking-[-0.02em] text-black"

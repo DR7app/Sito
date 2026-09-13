@@ -3939,7 +3939,7 @@ const DEFAULT_FOOTER: FooterCopy = {
     { id: 'tt', label: 'Tiktok',    href: 'https://www.tiktok.com/@dr7luxuryempire',           icon: 'tiktok' },
   ],
   // 10/09/2026 — il titolo e' la SECONDA riga: la prima la scrive la vetrina
-  // col numero vero delle recensioni ("317 esperienze."). Percio' qui sta una
+  // col numero vero delle recensioni ("N esperienze."). Percio' qui sta una
   // frase corta che chiude, non un titolo intero.
   reviews_title: 'One standard only.',
   reviews_title_it: 'Un solo standard.',
@@ -4112,7 +4112,10 @@ const DEFAULT_HOME: HomeCopy = {
     { id: 'parco',      value: '\u20ac3M+',    label_it: 'Valore del parco auto',            label_en: 'Fleet value' },
     { id: 'patrimonio', value: '\u20ac6M+',    label_it: 'Patrimonio netto',                 label_en: 'Net equity' },
     { id: 'capitale',   value: '\u20ac1M',     label_it: 'Capitale sociale',                 label_en: 'Share capital' },
-    { id: 'recensioni', value: '317+',    label_it: 'Recensioni a 5 stelle',            label_en: '5-star reviews' },
+    // 14/09/2026 — qui c'era "317+" scritto a mano: le recensioni salivano e
+    // il sito continuava a dirne 317. `{reviewCount}` lo riempie la pagina col
+    // numero vero di Google (hooks/useReviewCount.ts), come sulla Business.
+    { id: 'recensioni', value: '{reviewCount}+', label_it: 'Recensioni a 5 stelle',        label_en: '5-star reviews' },
     { id: 'brand',      value: '\u20ac5M',     label_it: 'Valutazione del brand',            label_en: 'Brand valuation' },
     { id: 'azienda',    value: '\u20ac15M',    label_it: 'Valutazione aziendale',            label_en: 'Company valuation' },
   ],

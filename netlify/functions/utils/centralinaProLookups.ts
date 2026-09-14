@@ -49,9 +49,10 @@ async function loadProConfig(): Promise<ProConfig | null> {
 }
 
 /**
- * Resolve an insurance id (e.g. "KASKO_BLACK" or a custom id defined in Pro)
- * to the display name stored in Centralina Pro. Scans byFascia tiers + `all`
- * across every category. Returns the raw id if no match.
+ * Nome dell'assicurazione a partire dall'id salvato sulla prenotazione.
+ * Unica fonte: Centralina Pro (scorre byFascia + `all` di ogni categoria).
+ * Se la Centralina non conosce quell'id il nome resta vuoto — mai l'id
+ * grezzo e mai un nome scritto nel codice.
  */
 export async function getInsuranceNameById(id: string | null | undefined): Promise<string> {
   if (!id) return ''
@@ -59,7 +60,7 @@ export async function getInsuranceNameById(id: string | null | undefined): Promi
   if (!key) return ''
   const cfg = await loadProConfig()
   const insurance = cfg?.insurance
-  if (!Array.isArray(insurance)) return key
+  if (!Array.isArray(insurance)) return ''
   for (const cat of insurance) {
     const byFascia = cat.byFascia || {}
     for (const tier of Object.keys(byFascia)) {
@@ -70,7 +71,7 @@ export async function getInsuranceNameById(id: string | null | undefined): Promi
     const opt = all.find(o => o && o.id === key)
     if (opt && typeof opt.name === 'string' && opt.name.trim()) return opt.name.trim()
   }
-  return key
+  return ''
 }
 
 export function invalidateProConfigCache() {

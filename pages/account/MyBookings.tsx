@@ -623,7 +623,7 @@ const MyBookings = () => {
         // Read the display name from Centralina Pro (configOverlay insurance arrays).
         // Pro config is the single source of truth — no hardcoded fallbacks.
         const insuranceLabel = (() => {
-          if (!insuranceRaw || !proOverlay) return insuranceRaw;
+          if (!insuranceRaw || !proOverlay) return '';
           const pools = [
             proOverlay.insuranceTier1, proOverlay.insuranceTier2,
             proOverlay.urbanInsurance, proOverlay.utilitaireInsurance, proOverlay.furgoneInsurance,
@@ -632,7 +632,8 @@ const MyBookings = () => {
             const hit = pool.find(o => o?.id === insuranceRaw);
             if (hit?.name) return hit.name;
           }
-          return insuranceRaw;
+          // Solo Centralina Pro: se l'id non c'e' piu', niente nome.
+          return '';
         })();
         const depositLabel = bd.depositOption === 'no_deposit'
           ? 'No Cauzione'
@@ -1010,8 +1011,9 @@ const MyBookings = () => {
                                     if (hit?.name) return hit.name;
                                   }
                                 }
-                                // 3) Humanize the raw id
-                                return raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                // 3) La Centralina non conosce quell'id: niente
+                                //    nome inventato dal codice.
+                                return 'N/A';
                               })()}
                             </p>
                           </div>

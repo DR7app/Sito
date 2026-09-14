@@ -29,51 +29,14 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
     furgone: { label: 'Furgone / NCC' },
   },
 
-  insurance: {
-    exotic: {
-      TIER_1: [
-        { id: 'RCA', name: 'RCA Compresa (no Kasko)', daily_price: 0, mandatory_deposit: 15000 },
-        { id: 'KASKO_BASE', name: 'Kasko Base', daily_price: 119, deductible: '€5.000 + 30% del danno' },
-      ],
-      TIER_2: [
-        { id: 'RCA', name: 'RCA Compresa (no Kasko)', daily_price: 0, mandatory_deposit: 10000 },
-        { id: 'KASKO_BASE', name: 'Kasko Base', daily_price: 89, deductible: '€5.000 + 30% del danno' },
-        { id: 'KASKO_BLACK', name: 'Kasko Black', daily_price: 149, deductible: '€5.000 + 10% del danno' },
-        { id: 'KASKO_SIGNATURE', name: 'Kasko Signature', daily_price: 189, deductible: '€5.000 fisso' },
-        { id: 'KASKO_DR7', name: 'Kasko DR7', daily_price: 289, deductible: '€0' },
-      ],
-    },
-    urban: {
-      _all_tiers: [
-        { id: 'KASKO_BASE', name: 'Kasko Base', daily_price: 15 },
-        { id: 'KASKO_DR7', name: 'Kasko DR7', daily_price: 45 },
-      ],
-    },
-    utilitaire: {
-      _all_tiers: [
-        { id: 'KASKO_BASE', name: 'Kasko Base', daily_price: 45 },
-        { id: 'KASKO_DR7', name: 'Kasko DR7', daily_price: 90 },
-      ],
-    },
-    furgone: {
-      _all_tiers: [
-        { id: 'RCA', name: 'RCA Compresa (no Kasko)', daily_price: 0 },
-        { id: 'KASKO_BASE', name: 'Kasko Base', daily_price: 45 },
-      ],
-    },
-    eligibility: {
-      RCA: { min_age: 18, min_license_years: 2 },
-      KASKO_BASE: { min_age: 20, min_license_years: 2 },
-      KASKO_BLACK: { min_age: 25, min_license_years: 5 },
-      KASKO_SIGNATURE: { min_age: 30, min_license_years: 10 },
-      KASKO_DR7: { min_age: 25, min_license_years: 3 },
-    },
-    deductibles: {
-      urban: { fixed: 2000, percent: 30 },
-      utilitaire: { fixed: 2000, percent: 30 },
-      exotic: { fixed: 5000, percent: 30 },
-    },
-  },
+  // Nessuna assicurazione di fabbrica: l'unica fonte e' Centralina Pro >
+  // Assicurazioni. Prima qui c'era un listino completo (RCA / Kasko Base /
+  // Black / Signature / DR7) che rientrava dalla finestra ogni volta che la
+  // Centralina non aveva ancora risposto.
+  insurance: ({
+    eligibility: {},
+    deductibles: {},
+  }) as RentalConfig['insurance'],
 
   km_included: {
     _global: { table: { '1': 100, '2': 180, '3': 240, '4': 280, '5': 300 }, extra_per_day: 60 },

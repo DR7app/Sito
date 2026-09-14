@@ -125,9 +125,10 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     const customerPhone = booking.customer_phone || booking.booking_details?.customer?.phone || 'N/A';
     const insuranceOption = booking.insurance_option || booking.booking_details?.insuranceOption || '';
 
-    // Resolve display name from Centralina Pro (no hardcoded map). If Pro has
-    // no matching id, returns the raw id so the miss is visible.
-    const insuranceDisplayName = (await getInsuranceNameById(insuranceOption)) || insuranceOption;
+    // Nome dell'assicurazione: unica fonte Centralina Pro. Se la Centralina
+    // non conosce l'id salvato, resta vuoto — mai l'id grezzo in una mail al
+    // cliente, mai un nome scritto nel codice.
+    const insuranceDisplayName = await getInsuranceNameById(insuranceOption);
 
     // Get deposit from booking data (calculated in frontend based on loyalty/membership)
     const depositAmount = booking.deposit_amount !== undefined && booking.deposit_amount !== null

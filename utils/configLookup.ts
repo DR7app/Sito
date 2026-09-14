@@ -36,6 +36,31 @@ export function getSforoKm(config: RentalConfig, vehicleId: string, category: st
     ?? config.sforo_km._global
 }
 
+/** Opzione assicurativa per id, cercata in tutte le categorie/fasce della
+ *  Centralina Pro (l'id e' unico). Unica fonte: la Centralina. */
+export function getInsuranceOptionById(config: RentalConfig | null | undefined, id: string): InsuranceOption | null {
+  if (!config?.insurance || !id) return null
+  for (const [catKey, catConfig] of Object.entries(config.insurance)) {
+    if (catKey === 'eligibility' || catKey === 'deductibles' || catKey === 'category_labels') continue
+    if (!catConfig || typeof catConfig !== 'object') continue
+    for (const tierKey of ['TIER_1', 'TIER_2', '_all_tiers']) {
+      const opts = (catConfig as Record<string, InsuranceOption[]>)[tierKey]
+      if (!Array.isArray(opts)) continue
+      const match = opts.find(o => o.id === id)
+      if (match) return match
+    }
+  }
+  return null
+}
+
+/** L'opzione scelta e' una RCA (nessuna Kasko)? Lo dice il NOME che le ha
+ *  dato la direzione in Centralina Pro: gli id sono codici generati. */
+export function isRcaInsurance(config: RentalConfig | null | undefined, insuranceId: string): boolean {
+  const opt = getInsuranceOptionById(config, insuranceId)
+  if (!opt) return false
+  return /^\s*rca\b/i.test(opt.name || '')
+}
+
 /** Get insurance options for a category + tier */
 export function getConfigInsuranceOptions(config: RentalConfig, category: string, tier: DriverTier): InsuranceOption[] {
   const catConfig = lookupByCategoryAlias(config.insurance, category)
@@ -107,7 +132,7 @@ export function getNoCauzioneSurcharge(config: RentalConfig): number {
 export function isNoCauzioneAvailable(config: RentalConfig, tier: DriverTier, insuranceId: string): boolean {
   const restriction = config.no_cauzione_surcharge?.tier_restriction
   if (restriction && tier !== restriction) return false
-  if (config.no_cauzione_surcharge?.requires_kasko && insuranceId === 'RCA') return false
+  if (config.no_cauzione_surcharge?.requires_kasko && isRcaInsurance(config, insuranceId)) return false
   return true
 }
 

@@ -266,6 +266,70 @@ function parseCallback(event) {
  * puo' contenere piu' servizi, ognuno col suo ordine figlio, e ognuno deve
  * essere chiuso con la stessa identica logica di quando era da solo.
  */
+/**
+ * Registra la carta tokenizzata del pagamento appena riuscito.
+ *
+ * 14/09/2026 — ogni carta usata sul sito deve finire nella scheda cliente del
+ * gestionale. La catena e': create-nexi-payment chiede sempre la
+ * tokenizzazione (CONTRACT_CREATION) -> Nexi restituisce un contractId ->
+ * questa riga in `nexi_transactions` -> il tab Nexi la mostra e
+ * `nexi-attach-cards-to-customers` la porta sulla scheda (o la segnala come
+ * "Non in scheda cliente").
+ *
+ * Prima il sito salvava la carta SOLO per le ricariche wallet, scrivendo
+ * dritto su customers_extended: noleggio, lavaggio, meccanica, prevendite e
+ * saldi restavano senza carta, quindi niente addebito di penali o danni e
+ * niente noleggio senza cauzione. Qui si scrive una volta per ordine, prima
+ * che il flusso si divida per tipo di servizio, cosi' vale per tutti.
+ *
+ * Non blocca mai il callback: il pagamento e' gia' andato a buon fine e una
+ * carta non registrata si recupera dal gestionale.
+ */
+async function registraCartaTokenizzata(supabase, orderId, isSuccess, rawParams) {
+  try {
+    if (!isSuccess) return;
+    const contractId = rawParams?.contractId || rawParams?.contract_id;
+    if (!contractId || !orderId) return;
+
+    // Idempotenza: il callback Nexi puo' arrivare piu' volte per lo stesso
+    // ordine (retry, ritorno dal browser + notifica server).
+    const { data: gia } = await supabase
+      .from('nexi_transactions')
+      .select('id')
+      .eq('order_id', orderId)
+      .eq('contract_id', contractId)
+      .limit(1);
+    if (gia && gia.length > 0) return;
+
+    const d = rawParams?.datiCarta || {};
+    const email = String(d.email || '').includes('@') ? String(d.email) : null;
+
+    const { error } = await supabase.from('nexi_transactions').insert({
+      order_id: orderId,
+      contract_id: contractId,
+      customer_email: email,
+      amount_cents: Number(d.importo_cent) || 0,
+      status: 'completed',
+      description: d.descrizione || 'Pagamento sito',
+      metadata: {
+        fonte: 'sito',
+        customer_name: d.nome || '',
+        masked_pan: d.masked_pan || '',
+        circuit: d.circuit || '',
+        registrata_il: new Date().toISOString(),
+      },
+    });
+
+    if (error) {
+      console.error('[nexi-callback] carta non registrata (non bloccante):', error.message);
+    } else {
+      console.log(`[nexi-callback] carta tokenizzata registrata: contractId=${contractId} ordine=${orderId}`);
+    }
+  } catch (err) {
+    console.error('[nexi-callback] registrazione carta fallita (non bloccante):', err);
+  }
+}
+
 async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessage, rawParams) {
     // Find booking or credit wallet purchase by order ID
     console.log('Looking for order with orderId:', orderId);
@@ -1562,6 +1626,27 @@ exports.handler = async (event) => {
           }
         }
 
+        // 14/09/2026 — dati della carta usata, per la scheda cliente.
+        // Servono al gestionale (tab Nexi + "Porta le carte nelle schede")
+        // per mostrare la carta con circuito e ultime cifre invece di un
+        // contratto anonimo. L'email sta in order.customerId: e' li' che
+        // create-nexi-payment la mette al momento dell'ordine.
+        try {
+          const opPagata = Array.isArray(verifyData.operations)
+            ? verifyData.operations.find(o => o && riuscito(o.operationResult)) || verifyData.operations[0]
+            : null;
+          rawParams.datiCarta = {
+            email: verifyData.order?.customerId || verifyData.customerInfo?.cardHolderEmail || '',
+            nome: verifyData.customerInfo?.cardHolderName || '',
+            masked_pan: opPagata?.paymentInstrumentInfo || opPagata?.cardNumber || '',
+            circuit: opPagata?.paymentCircuit || '',
+            importo_cent: Number(verifyData.order?.amount || opPagata?.operationAmount || 0) || 0,
+            descrizione: verifyData.order?.description || '',
+          };
+        } catch (cardErr) {
+          console.warn('[nexi-callback] dati carta non leggibili (non bloccante):', cardErr.message);
+        }
+
         // Extract contractId from verification response (needed for recurring MIT)
         // Nexi returns it in recurrence.contractId or operations[].additionalData
         if (verifyData.recurrence?.contractId) {
@@ -1600,6 +1685,12 @@ exports.handler = async (event) => {
       process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
+
+    // La carta si registra qui, una volta per ordine Nexi e prima che il
+    // flusso si divida per tipo di servizio (carrello, noleggio, lavaggio,
+    // wallet, abbonamento, prevendita): cosi' ogni carta usata sul sito
+    // arriva nella scheda cliente, non solo quelle delle ricariche wallet.
+    await registraCartaTokenizzata(supabase, orderId, isSuccess, rawParams);
 
     // Carrello (12/09/2026): un pagamento solo, piu' servizi dentro. Ogni
     // articolo ha il suo ordine figlio e viene chiuso uno per uno con la

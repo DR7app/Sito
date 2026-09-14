@@ -198,9 +198,18 @@ exports.handler = async (event) => {
 
     // Recurrence: tokenize the card so future charges can be merchant-initiated.
     // - MIT_SCHEDULED → memberships / DR7 Club (auto-renewal on a fixed frequency)
-    // - MIT_UNSCHEDULED → wallet recharges (no schedule; lets admin re-charge the
-    //   same card later for penalties, late fees, future top-ups)
-    if (recurringType === 'MIT_SCHEDULED') {
+    // - MIT_UNSCHEDULED → tutto il resto (nessuna scadenza fissa)
+    //
+    // 14/09/2026 — OGNI carta usata sul sito viene tokenizzata, non solo
+    // wallet, tour e abbonamenti. Prima noleggio, lavaggio, meccanica,
+    // prevendite e saldi da "Le mie prenotazioni" chiamavano questa funzione
+    // senza `recurringType`: nessun contratto Nexi, quindi nessuna carta in
+    // scheda cliente e nessun addebito possibile dopo (penali, danni,
+    // cauzione senza contanti). La tokenizzazione e' il presupposto di tutto
+    // quello che il gestionale fa sulla carta: il default e' tokenizzare, e
+    // MIT_SCHEDULED resta la scelta esplicita degli abbonamenti.
+    const tipoRicorrenza = recurringType || 'MIT_UNSCHEDULED';
+    if (tipoRicorrenza === 'MIT_SCHEDULED') {
       requestBody.recurrence = {
         action: 'CONTRACT_CREATION',
         contractId: sanitizedOrderId,
@@ -208,7 +217,7 @@ exports.handler = async (event) => {
         contractFrequency: billingCycle === 'monthly' ? '30' : '365',
         contractExpiryDate: new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0].replace(/-/g, ''),
       };
-    } else if (recurringType === 'MIT_UNSCHEDULED') {
+    } else {
       requestBody.recurrence = {
         action: 'CONTRACT_CREATION',
         contractId: sanitizedOrderId,
@@ -217,7 +226,7 @@ exports.handler = async (event) => {
       };
     }
 
-    console.log('Creating Nexi payment via API:', { orderId, amount, currency, correlationId, recurringType });
+    console.log('Creating Nexi payment via API:', { orderId, amount, currency, correlationId, recurringType: tipoRicorrenza });
     console.log('Request headers:', {
       'Content-Type': 'application/json',
       'X-API-KEY': nexiConfig.apiKey.substring(0, 10) + '...',

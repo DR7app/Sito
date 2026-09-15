@@ -1528,6 +1528,48 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
       return { statusCode: 200, body: 'OK' };
     }
 
+    // 6. Try prevendite (pacchetti di utilizzi pagati in anticipo)
+    // 14/09/2026 — l'attivazione vera (stato pagato, scadenza, fattura) sta
+    // tutta dentro `prevendite-finalizza`, che e' idempotente. Qui si chiama
+    // e basta: lo fa anche la pagina di pagamento riuscito, e chi arriva
+    // secondo trova gia' fatto. Stessa lezione delle ricariche wallet, dove
+    // il webhook a volte usciva prima e il cliente restava senza niente.
+    const { data: prevendite } = await supabase
+      .from('prevendite_clienti')
+      .select('id, payment_status, nome')
+      .eq('nexi_order_id', orderId)
+      .limit(1);
+
+    if (prevendite && prevendite.length > 0) {
+      const acquisto = prevendite[0];
+      console.log('Found prevendita purchase:', acquisto.id);
+
+      if (isSuccess) {
+        try {
+          const risposta = await fetch(`${process.env.URL || 'https://dr7.app'}/.netlify/functions/prevendite-finalizza`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, prevenditaClienteId: acquisto.id }),
+          });
+          console.log('[nexi-callback] prevendita finalizzata:', risposta.status);
+        } catch (e) {
+          console.error('[nexi-callback] finalizzazione prevendita fallita:', e);
+        }
+      } else {
+        // Pagamento fallito: la riga resta in pending e non vale niente
+        // (prevendita_verifica la rifiuta). Si segna, non si cancella: serve
+        // a capire perche' un cliente dice di aver comprato e non ha nulla.
+        await supabase
+          .from('prevendite_clienti')
+          .update({ payment_status: 'failed' })
+          .eq('id', acquisto.id)
+          .neq('payment_status', 'succeeded');
+        console.log(`Prevendita ${acquisto.id}: pagamento non riuscito`);
+      }
+
+      return { statusCode: 200, body: 'OK' };
+    }
+
     console.error('No matching order found for orderId:', orderId);
     return { statusCode: 404, body: 'Order not found' };
 }

@@ -57,6 +57,9 @@ import PartnerSecuritySettings from './pages/partner/settings/PartnerSecuritySet
 import PartnerNotificationSettings from './pages/partner/settings/PartnerNotificationSettings';
 import PartnerPayoutSettings from './pages/partner/settings/PartnerPayoutSettings';
 import CookieBanner from './components/ui/CookieBanner';
+import PrevenditePopup from './components/ui/PrevenditePopup';
+import PrevenditePage from './pages/PrevenditePage';
+import MiePrevendite from './pages/account/MiePrevendite';
 import AutoBookingPopup from './components/ui/AutoBookingPopup';
 import HeliTourPopup from './components/ui/HeliTourPopup';
 import { useAuth } from './hooks/useAuth';
@@ -272,7 +275,7 @@ const AnimatedRoutes = () => {
   const RESERVED_PATHS = new Set([
     'cars', 'urban-cars', 'corporate-fleet', 'supercar-luxury', 'urban',
     'car-wash-services', 'prime-wash', 'mechanical-services',
-    'membership', 'credit-wallet',
+    'membership', 'credit-wallet', 'prevendite',
     'yachts', 'villas', 'jets', 'helicopters',
     'aviation-quote', 'contact', 'flotta',
   ]);
@@ -339,6 +342,9 @@ const AnimatedRoutes = () => {
           </ProtectedRoute>
         } />
         <Route path="/credit-wallet" element={<CreditWalletPage />} />
+        {/* Prevendite: pacchetti di utilizzi pagati in anticipo. La vetrina e'
+            pubblica, l'acquisto chiede l'accesso solo al momento di pagare. */}
+        <Route path="/prevendite" element={<PrevenditePage />} />
         <Route
           path="/cancellation-policy"
           element={<CancellationPolicyPage />}
@@ -356,6 +362,7 @@ const AnimatedRoutes = () => {
           <Route path="membership" element={<MembershipStatus />} />
           <Route path="bookings" element={<MyBookings />} />
           <Route path="preventivi" element={<MyPreventivi />} />
+          <Route path="prevendite" element={<MiePrevendite />} />
           <Route path="referral" element={<ReferralProgram />} />
           <Route path="notifications" element={<NotificationSettings />} />
         </Route>
@@ -466,6 +473,7 @@ const MainContent = () => {
         <CarrelloDrawer />
         <VerificationModal />
         <CookieBanner />
+        <PrevenditePopup />
         <ConsentPopupManager />
         {aspetto.auto_booking_popup_enabled && <AutoBookingPopup />}
         {aspetto.heli_tour_popup_enabled && <HeliTourPopup />}

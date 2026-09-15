@@ -108,7 +108,9 @@ const PaymentSuccessPage: React.FC = () => {
     // Nexi non conferma nessun incasso per questo ordine: niente schermata verde,
     // niente scritture, niente messaggi. Vedi il blocco di verifica piu' sotto.
     const [pagamentoNonConfermato, setPagamentoNonConfermato] = useState(false);
-    const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | 'cauzione' | 'carrello' | null>(null);
+    const [purchaseType, setPurchaseType] = useState<'booking' | 'wallet' | 'membership' | 'dr7_club' | 'cauzione' | 'carrello' | 'prevendita' | null>(null);
+    // 14/09/2026 — nome del pacchetto acquistato, per il messaggio finale.
+    const [prevenditaInfo, setPrevenditaInfo] = useState<{ nome: string; utilizzi: number } | null>(null);
     const [articoliCarrello, setArticoliCarrello] = useState<number>(0);
     const [walletInfo, setWalletInfo] = useState<{ packageName: string; receivedAmount: number } | null>(null);
     const [membershipInfo, setMembershipInfo] = useState<{ tierName: string; billingCycle: string } | null>(null);
@@ -776,6 +778,38 @@ const PaymentSuccessPage: React.FC = () => {
                     return;
                 }
 
+                // 5. Prevendite (pacchetti di utilizzi pagati in anticipo)
+                const { data: prevendite } = await supabase
+                    .from('prevendite_clienti')
+                    .select('*')
+                    .eq('nexi_order_id', orderId)
+                    .limit(1);
+
+                if (prevendite && prevendite.length > 0) {
+                    const acquisto = prevendite[0];
+                    console.log('Found prevendita purchase:', acquisto.id);
+                    setPurchaseType('prevendita');
+                    setPrevenditaInfo({ nome: acquisto.nome, utilizzi: acquisto.utilizzi_iniziali });
+
+                    // L'attivazione la fa il server: il webhook Nexi a volte
+                    // esce prima (e' gia' successo con le ricariche wallet), e
+                    // questa pagina invece viene sempre raggiunta. La funzione
+                    // e' idempotente, quindi chiamarla da tutte e due va bene.
+                    try {
+                        const risposta = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/prevendite-finalizza`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderId, prevenditaClienteId: acquisto.id }),
+                        });
+                        console.log('[PaymentSuccess] prevendita finalizzata:', risposta.status);
+                    } catch (e) {
+                        console.error('[PaymentSuccess] finalizzazione prevendita fallita:', e);
+                    }
+
+                    setUpdating(false);
+                    return;
+                }
+
                 // Nothing found
                 console.error('No order found for orderId:', orderId);
                 setUpdateError(s('err_order_not_found_it', 'err_order_not_found_en'));
@@ -876,6 +910,10 @@ const PaymentSuccessPage: React.FC = () => {
                                 packageName: walletInfo?.packageName || '',
                                 amount: walletInfo?.receivedAmount?.toFixed(2) || '',
                             })
+                            : purchaseType === 'prevendita'
+                            ? (lang === 'it'
+                                ? `Prevendita attiva: ${prevenditaInfo?.nome || ''}. Hai ${prevenditaInfo?.utilizzi ?? 0} utilizzi disponibili, li trovi in Le Mie Prevendite.`
+                                : `Pre-sale active: ${prevenditaInfo?.nome || ''}. You have ${prevenditaInfo?.utilizzi ?? 0} uses available under My Pre-sales.`)
                             : purchaseType === 'carrello'
                             ? (lang === 'it'
                                 ? `Ordine completato: ${articoliCarrello} ${articoliCarrello === 1 ? 'servizio confermato' : 'servizi confermati'}. Li trovi tutti nella tua area cliente.`
@@ -935,6 +973,13 @@ const PaymentSuccessPage: React.FC = () => {
                                 className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
                             >
                                 {s('cta_membership_it', 'cta_membership_en')}
+                            </button>
+                        ) : purchaseType === 'prevendita' ? (
+                            <button
+                                onClick={() => navigate('/account/prevendite')}
+                                className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
+                            >
+                                {lang === 'it' ? 'Vai a Le Mie Prevendite' : 'Go to My Pre-sales'}
                             </button>
                         ) : purchaseType === 'wallet' ? (
                             <button

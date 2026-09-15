@@ -718,6 +718,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const isRcaSelected = (opts: { id?: string; name?: string }[], id: string) =>
     isRcaOpt(opts.find(o => o.id === id));
 
+  // La prevendita salva il NOME dell'assicurazione compresa (scelto dalla
+  // Centralina Pro nel gestionale). Gli id, invece, cambiano da una categoria
+  // all'altra: un pacchetto valido su piu' auto non potrebbe averne uno solo.
+  // Il confronto si fa sul nome ripulito, come nei contratti.
+  const nomeAssicurazioneNormalizzato = (n: string | null | undefined) =>
+    String(n ?? '').toLowerCase().replace(/kasko|compresa|inclusa/g, '').replace(/[^a-z0-9]/g, '');
+  const stessaAssicurazione = (a: string | null | undefined, b: string | null | undefined) => {
+    const x = nomeAssicurazioneNormalizzato(a);
+    const y = nomeAssicurazioneNormalizzato(b);
+    return x !== '' && x === y;
+  };
+
   // L'assicurazione selezionata deve sempre essere una di quelle che
   // Centralina Pro elenca per la categoria del veicolo: se non lo e' (o non
   // c'e' ancora), si prende la prima valida — l'RCA se la categoria ce l'ha.
@@ -733,6 +745,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleType, driverTier, configOverlay, formData.insuranceOption]);
+
+  // Se la prevendita comprende un'assicurazione, il wizard seleziona quella:
+  // e' gia' pagata col pacchetto e il cliente deve vederla a zero senza doverla
+  // cercare. Resta libero di cambiarla — allora paga la differenza.
+  useEffect(() => {
+    const inclusa = prevenditaScelta?.assicurazione_inclusa;
+    if (!inclusa) return;
+    const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
+    const opts = getInsuranceForVehicle(vehicleType, activeTier);
+    const compresa = opts.find((o: { id?: string; name?: string }) => stessaAssicurazione(o.name, inclusa));
+    if (compresa?.id) {
+      setFormData(prev => (prev.insuranceOption === compresa.id ? prev : { ...prev, insuranceOption: compresa.id as string }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prevenditaScelta, vehicleType, driverTier, configOverlay]);
 
   const ACTIVE_TIER_PRICING = useMemo(() => {
     return configOverlay?.tierPricing ?? {
@@ -2542,8 +2569,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       prevenditaCopertura += calculatedRentalCost;
       calculatedRentalCost = 0;
       if (prevenditaAttiva.assicurazione_inclusa) {
-        prevenditaCopertura += calculatedInsuranceCost;
-        calculatedInsuranceCost = 0;
+        // Compresa e' UNA assicurazione precisa, quella scritta nel pacchetto.
+        // Se il cliente sceglie quella, non paga niente; se ne sceglie una piu'
+        // cara, paga la differenza; se la Centralina non ha piu' quel nome, non
+        // c'e' niente da coprire e si vede subito.
+        const inclusa = allInsuranceOpts.find(o => stessaAssicurazione(o.name, prevenditaAttiva.assicurazione_inclusa));
+        const copertura = Math.min(
+          calculatedInsuranceCost,
+          roundToTwoDecimals((inclusa?.dailyPrice || 0) * billingDaysCalc),
+        );
+        prevenditaCopertura += copertura;
+        calculatedInsuranceCost = roundToTwoDecimals(calculatedInsuranceCost - copertura);
       }
       const kmPacchetto = Number(prevenditaAttiva.km_inclusi) || 0;
       if (kmPacchetto > 0 && calculatedIncludedKm !== 9999) {

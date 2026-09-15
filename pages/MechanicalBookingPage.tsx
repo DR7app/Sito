@@ -8,10 +8,14 @@ import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { getMechanicalServices, type MechanicalServiceItem } from '../utils/siteCopy';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 import { useCarrello } from '../hooks/useCarrello';
+import { useTestiCarrello } from '../hooks/useTestiCarrello';
 
 
 const MechanicalBookingPage: React.FC = () => {
   const { t, lang } = useTranslation();
+  // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
+  // una casella sola per tutti i punti in cui si aggiunge qualcosa.
+  const testiCarrello = useTestiCarrello();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
@@ -416,8 +420,17 @@ const MechanicalBookingPage: React.FC = () => {
   const { aggiungi: aggiungiArticolo } = useCarrello();
   const [aggiungendoAlCarrello, setAggiungendoAlCarrello] = useState(false);
 
+  /**
+   * `prenotazione` arriva solo da chi ha gia' i dati pronti. Il bottone del
+   * modale la chiama senza argomenti: se ci finisse dentro l'evento del
+   * click, il carrello proverebbe a salvare un oggetto che rimanda a se
+   * stesso e JSON.stringify fallirebbe ("cyclic structures").
+   */
   const aggiungiAlCarrello = async (prenotazione?: any) => {
-    const dati = prenotazione || pendingBookingData;
+    const passata = prenotazione && typeof prenotazione === 'object' && !('nativeEvent' in prenotazione)
+      ? prenotazione
+      : null;
+    const dati = passata || pendingBookingData;
     if (!dati || aggiungendoAlCarrello) return;
     setAggiungendoAlCarrello(true);
     setPaymentError(null);
@@ -818,7 +831,7 @@ const MechanicalBookingPage: React.FC = () => {
                   {errors.fullName && <p className="text-xs text-red-400 mt-1">{errors.fullName}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t({ it: 'Email *', en: 'Email *' })}</label>
                   <input
                     type="email"
                     name="email"
@@ -1155,7 +1168,7 @@ const MechanicalBookingPage: React.FC = () => {
               >
                 {aggiungendoAlCarrello
                   ? t({ it: 'Aggiungo…', en: 'Adding…' })
-                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                  : testiCarrello.aggiungi}
               </button>
             </div>
           </form>
@@ -1361,13 +1374,13 @@ const MechanicalBookingPage: React.FC = () => {
 
               {/* Stesso servizio, pagato dopo insieme agli altri. */}
               <button
-                onClick={aggiungiAlCarrello}
+                onClick={() => { void aggiungiAlCarrello(); }}
                 disabled={isProcessing || aggiungendoAlCarrello}
                 className="w-full mt-4 border border-gray-600 text-white font-bold py-3 px-6 text-sm uppercase tracking-[0.18em] hover:bg-gray-800 transition-colors disabled:opacity-60"
               >
                 {aggiungendoAlCarrello
                   ? t({ it: 'Aggiungo…', en: 'Adding…' })
-                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                  : testiCarrello.aggiungi}
               </button>
             </motion.div>
           </motion.div>

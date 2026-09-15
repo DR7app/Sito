@@ -82,8 +82,9 @@ async function disponibilitaNoleggio(prenotazione: Dati): Promise<EsitoArticolo 
 /* ─── Dati del cliente raccolti al checkout ───────────────────────────────── */
 
 /**
- * Anagrafica e fatturazione chieste UNA volta al checkout, non piu' dentro
- * ogni configurazione di servizio.
+ * Anagrafica chiesta UNA volta al checkout, non piu' dentro ogni
+ * configurazione di servizio. I dati fattura non si chiedono affatto: sono
+ * gia' obbligatori all'iscrizione e si leggono dal profilo.
  *
  * Il travaso e' NON distruttivo: riempie solo i campi che l'articolo non ha
  * gia'. Un noleggio porta con se' i dati del conducente raccolti dal wizard
@@ -94,7 +95,6 @@ export interface DatiClienteOrdine {
   fullName: string;
   email: string;
   phone: string;
-  richiedeFattura: boolean;
   ragioneSociale?: string;
   codiceFiscale?: string;
   partitaIva?: string;
@@ -105,6 +105,21 @@ export interface DatiClienteOrdine {
   provincia?: string;
   sdi?: string;
   pec?: string;
+  /**
+   * Un privato puo' chiedere la fattura intestata a un'azienda: allora
+   * l'intestazione e' quella della societa' e l'indirizzo e' la SEDE LEGALE,
+   * mai la residenza di chi compra.
+   */
+  fatturaAzienda?: boolean;
+  aziendaRagioneSociale?: string;
+  aziendaPartitaIva?: string;
+  aziendaCodiceFiscale?: string;
+  aziendaSedeLegale?: string;
+  aziendaCap?: string;
+  aziendaCitta?: string;
+  aziendaProvincia?: string;
+  aziendaSdi?: string;
+  aziendaPec?: string;
 }
 
 const pieno = (v: unknown): boolean => typeof v === 'string' ? v.trim() !== '' : v != null;
@@ -133,22 +148,40 @@ export function conDatiCliente(articolo: ArticoloCarrello, cliente: DatiClienteO
   anagrafica.provinciaResidenza = riempi(anagrafica.provinciaResidenza, cliente.provincia);
 
   dettagli.customer = anagrafica;
-  // La fattura e' una richiesta esplicita del cliente: si porta appresso i
-  // dati in piu' (ragione sociale, P.IVA, SDI/PEC) che l'anagrafica non ha.
-  if (cliente.richiedeFattura) {
-    dettagli.fattura = {
-      richiesta: true,
-      ragione_sociale: cliente.ragioneSociale || cliente.fullName,
-      codice_fiscale: cliente.codiceFiscale || '',
-      partita_iva: cliente.partitaIva || '',
-      indirizzo: [cliente.indirizzo, cliente.numeroCivico].filter(Boolean).join(' '),
-      cap: cliente.codicePostale || '',
-      citta: cliente.citta || '',
-      provincia: cliente.provincia || '',
-      sdi: cliente.sdi || '',
-      pec: cliente.pec || '',
-    };
-  }
+  // Ogni pagamento fa fattura: i dati in piu' (ragione sociale, P.IVA,
+  // SDI/PEC) viaggiano sempre con l'articolo, senza chiedere niente al
+  // cliente. Quello che manca nel profilo si completa dal gestionale.
+  dettagli.fattura = cliente.fatturaAzienda
+    ? {
+        richiesta: true,
+        tipo_cliente: 'azienda',
+        ragione_sociale: cliente.aziendaRagioneSociale || '',
+        // Per un'azienda conta la P.IVA; il CF qui e' quello della societa',
+        // non quello di chi sta comprando.
+        codice_fiscale: cliente.aziendaCodiceFiscale || '',
+        partita_iva: cliente.aziendaPartitaIva || '',
+        // Sede legale, mai la residenza del cliente.
+        indirizzo: cliente.aziendaSedeLegale || '',
+        sede_legale: cliente.aziendaSedeLegale || '',
+        cap: cliente.aziendaCap || '',
+        citta: cliente.aziendaCitta || '',
+        provincia: cliente.aziendaProvincia || '',
+        sdi: cliente.aziendaSdi || '',
+        pec: cliente.aziendaPec || '',
+      }
+    : {
+        richiesta: true,
+        tipo_cliente: 'privato',
+        ragione_sociale: cliente.ragioneSociale || cliente.fullName,
+        codice_fiscale: cliente.codiceFiscale || '',
+        partita_iva: cliente.partitaIva || '',
+        indirizzo: [cliente.indirizzo, cliente.numeroCivico].filter(Boolean).join(' '),
+        cap: cliente.codicePostale || '',
+        citta: cliente.citta || '',
+        provincia: cliente.provincia || '',
+        sdi: cliente.sdi || '',
+        pec: cliente.pec || '',
+      };
   booking.booking_details = dettagli;
 
   return { ...articolo, dati: { ...articolo.dati, booking } };

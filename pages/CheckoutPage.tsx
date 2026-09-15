@@ -31,16 +31,16 @@ import {
  * quello che succede dopo il pagamento, e quello resta dove e' sempre stato
  * (nexi-callback per la carta, la RPC del wallet per il credito).
  *
- * 12/09/2026 — il checkout e' a passi: Riepilogo, Dati cliente, Fatturazione,
- * Pagamento. E' qui che si chiedono anagrafica e fattura, UNA volta per
- * ordine: configurare un servizio non deve piu' far comparire moduli di
- * fatturazione a chi sta ancora scegliendo. Chi ha gia' i dati nel profilo li
- * trova pronti e passa oltre.
+ * 12/09/2026 — il checkout e' a passi: Riepilogo, Dati cliente, Pagamento.
+ * La fattura non si chiede piu': ogni pagamento ne genera una, e i dati
+ * (codice fiscale, indirizzo) sono gia' obbligatori all'iscrizione, quindi si
+ * leggono in silenzio dal profilo. Se nel profilo manca qualcosa il pagamento
+ * NON si blocca: si completa dal gestionale.
  */
 
-type Passo = 'riepilogo' | 'cliente' | 'fattura' | 'pagamento';
+type Passo = 'riepilogo' | 'cliente' | 'pagamento';
 
-const PASSI: Passo[] = ['riepilogo', 'cliente', 'fattura', 'pagamento'];
+const PASSI: Passo[] = ['riepilogo', 'cliente', 'pagamento'];
 
 /** Se in ordine c'e' un abbonamento la carta va tokenizzata per i rinnovi. */
 function tipoRicorrenza(articoli: ArticoloCarrello[]): { recurringType?: string; billingCycle?: string } {
@@ -79,10 +79,14 @@ const CheckoutPage: React.FC = () => {
   const [erroriCampi, setErroriCampi] = useState<Record<string, string>>({});
 
   const [cliente, setCliente] = useState<DatiClienteOrdine>({
-    fullName: '', email: '', phone: '', richiedeFattura: false,
+    fullName: '', email: '', phone: '',
     ragioneSociale: '', codiceFiscale: '', partitaIva: '',
     indirizzo: '', numeroCivico: '', codicePostale: '', citta: '', provincia: '',
     sdi: '', pec: '',
+    fatturaAzienda: false,
+    aziendaRagioneSociale: '', aziendaPartitaIva: '', aziendaCodiceFiscale: '',
+    aziendaSedeLegale: '', aziendaCap: '', aziendaCitta: '', aziendaProvincia: '',
+    aziendaSdi: '', aziendaPec: '',
   });
 
   // Paga solo quello che ha la spunta: il resto resta nel carrello per dopo.
@@ -137,32 +141,28 @@ const CheckoutPage: React.FC = () => {
     if (!cliente.fullName.trim()) e.fullName = t({ it: 'Il nome è obbligatorio', en: 'Name is required' });
     if (!cliente.email.trim()) e.email = t({ it: "L'email è obbligatoria", en: 'Email is required' });
     if (!cliente.phone.trim()) e.phone = t({ it: 'Il telefono è obbligatorio', en: 'Phone is required' });
+    // La fattura all'azienda e' una scelta: se la prendi, servono i dati che
+    // lo SDI pretende da una societa'.
+    if (cliente.fatturaAzienda) {
+      if (!String(cliente.aziendaRagioneSociale || '').trim()) {
+        e.aziendaRagioneSociale = t({ it: 'Obbligatoria per la fattura', en: 'Required for the invoice' });
+      }
+      if (!String(cliente.aziendaPartitaIva || '').trim()) {
+        e.aziendaPartitaIva = t({ it: 'Obbligatoria per la fattura', en: 'Required for the invoice' });
+      }
+      if (!String(cliente.aziendaSedeLegale || '').trim()) {
+        e.aziendaSedeLegale = t({ it: 'Obbligatoria per la fattura', en: 'Required for the invoice' });
+      }
+    }
     setErroriCampi(e);
     return Object.keys(e).length === 0;
   };
 
-  const validaFattura = (): boolean => {
-    if (!cliente.richiedeFattura) return true;
-    const e: Record<string, string> = {};
-    const obbligatorio = (k: keyof DatiClienteOrdine, testo: string) => {
-      if (!String(cliente[k] || '').trim()) e[k] = testo;
-    };
-    obbligatorio('ragioneSociale', t({ it: 'Obbligatorio per la fattura', en: 'Required for the invoice' }));
-    if (!String(cliente.codiceFiscale || '').trim() && !String(cliente.partitaIva || '').trim()) {
-      e.codiceFiscale = t({ it: 'Serve il codice fiscale o la partita IVA', en: 'Tax code or VAT number needed' });
-    }
-    obbligatorio('indirizzo', t({ it: 'Obbligatorio per la fattura', en: 'Required for the invoice' }));
-    obbligatorio('codicePostale', t({ it: 'Obbligatorio per la fattura', en: 'Required for the invoice' }));
-    obbligatorio('citta', t({ it: 'Obbligatorio per la fattura', en: 'Required for the invoice' }));
-    setErroriCampi(e);
-    return Object.keys(e).length === 0;
-  };
 
   const avanti = () => {
     setErrore(null);
     if (passo === 'riepilogo') return setPasso('cliente');
-    if (passo === 'cliente') return validaCliente() && setPasso('fattura');
-    if (passo === 'fattura') return validaFattura() && setPasso('pagamento');
+    if (passo === 'cliente') return validaCliente() && setPasso('pagamento');
   };
 
   const indietro = () => {
@@ -270,12 +270,11 @@ const CheckoutPage: React.FC = () => {
     if (inCorso) return;
     setErrore(null);
     if (!validaCliente()) { setPasso('cliente'); return; }
-    if (!validaFattura()) { setPasso('fattura'); return; }
     setInCorso(true);
     try {
-      // Anagrafica e fattura entrano negli articoli solo ora, e solo dove
-      // manca qualcosa: quello che il servizio ha gia' raccolto (il
-      // conducente di un noleggio) resta com'e'.
+      // Anagrafica e dati fattura (letti dal profilo) entrano negli articoli
+      // solo ora, e solo dove manca qualcosa: quello che il servizio ha gia'
+      // raccolto (il conducente di un noleggio) resta com'e'.
       const daPagare = articoliSelezionati.map(a => conDatiCliente(a, cliente));
       if (metodo === 'credit') await pagaCredito(daPagare);
       else await pagaConCarta(daPagare);
@@ -334,7 +333,6 @@ const CheckoutPage: React.FC = () => {
   const nomePasso: Record<Passo, { it: string; en: string }> = {
     riepilogo: { it: 'Riepilogo', en: 'Summary' },
     cliente: { it: 'Dati cliente', en: 'Your details' },
-    fattura: { it: 'Fatturazione', en: 'Billing' },
     pagamento: { it: 'Pagamento', en: 'Payment' },
   };
   const indicePasso = PASSI.indexOf(passo);
@@ -426,7 +424,7 @@ const CheckoutPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={etichetta}>Email</label>
+                <label className={etichetta}>{t({ it: 'Email', en: 'Email' })}</label>
                 <input type="email" className={campo} value={cliente.email} onChange={e => scrivi('email', e.target.value)} />
                 {erroriCampi.email && <p className="text-xs text-red-400 mt-1">{erroriCampi.email}</p>}
               </div>
@@ -436,84 +434,77 @@ const CheckoutPage: React.FC = () => {
                 {erroriCampi.phone && <p className="text-xs text-red-400 mt-1">{erroriCampi.phone}</p>}
               </div>
             </div>
-          </div>
-        )}
 
-        {passo === 'fattura' && (
-          <div className="bg-gray-900/50 border border-gray-800 p-4 sm:p-6 mb-8 space-y-4">
-            <label className="flex items-center gap-3 cursor-pointer text-white">
-              <input
-                type="checkbox"
-                checked={cliente.richiedeFattura}
-                onChange={e => scrivi('richiedeFattura', e.target.checked)}
-                className="h-4 w-4 accent-white"
-              />
-              <span className="text-sm">{t({ it: 'Ho bisogno della fattura', en: 'I need an invoice' })}</span>
-            </label>
-            {!cliente.richiedeFattura ? (
-              <p className="text-gray-500 text-sm">
-                {t({
-                  it: 'Senza fattura non serve altro: ricevi comunque la conferma e la ricevuta del pagamento.',
-                  en: 'Nothing else is needed: you still get the confirmation and the payment receipt.',
-                })}
-              </p>
-            ) : (
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className={etichetta}>{t({ it: 'Nome o ragione sociale', en: 'Name or company' })}</label>
-                  <input className={campo} value={cliente.ragioneSociale} onChange={e => scrivi('ragioneSociale', e.target.value)} />
-                  {erroriCampi.ragioneSociale && <p className="text-xs text-red-400 mt-1">{erroriCampi.ragioneSociale}</p>}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* La fattura parte da sola intestata a te. Chi compra per lavoro
+                la vuole intestata alla societa': un bottone, e i campi che
+                servono solo in quel caso. */}
+            <div className="pt-2 border-t border-gray-800">
+              <button
+                type="button"
+                onClick={() => scrivi('fatturaAzienda', !cliente.fatturaAzienda)}
+                className={`w-full sm:w-auto px-5 py-3 border text-xs uppercase tracking-[0.18em] transition-colors ${
+                  cliente.fatturaAzienda ? 'border-white text-white' : 'border-gray-700 text-gray-400 hover:border-white hover:text-white'
+                }`}
+              >
+                {t({ it: "Fattura a un'azienda", en: 'Invoice to a company' })}
+              </button>
+              {!cliente.fatturaAzienda ? (
+                <p className="text-gray-500 text-xs mt-3">
+                  {t({
+                    it: 'La fattura arriva intestata a te con i dati del tuo account. Premi qui se va intestata a una societa\u2019.',
+                    en: 'The invoice is issued to you with your account details. Tap here if it goes to a company.',
+                  })}
+                </p>
+              ) : (
+                <div className="space-y-4 pt-4">
                   <div>
-                    <label className={etichetta}>{t({ it: 'Codice fiscale', en: 'Tax code' })}</label>
-                    <input className={`${campo} uppercase`} value={cliente.codiceFiscale} onChange={e => scrivi('codiceFiscale', e.target.value.toUpperCase())} />
-                    {erroriCampi.codiceFiscale && <p className="text-xs text-red-400 mt-1">{erroriCampi.codiceFiscale}</p>}
+                    <label className={etichetta}>{t({ it: 'Ragione sociale', en: 'Company name' })}</label>
+                    <input className={campo} value={cliente.aziendaRagioneSociale || ''} onChange={e => scrivi('aziendaRagioneSociale', e.target.value)} />
+                    {erroriCampi.aziendaRagioneSociale && <p className="text-xs text-red-400 mt-1">{erroriCampi.aziendaRagioneSociale}</p>}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={etichetta}>{t({ it: 'Partita IVA', en: 'VAT number' })}</label>
+                      <input className={campo} value={cliente.aziendaPartitaIva || ''} onChange={e => scrivi('aziendaPartitaIva', e.target.value)} />
+                      {erroriCampi.aziendaPartitaIva && <p className="text-xs text-red-400 mt-1">{erroriCampi.aziendaPartitaIva}</p>}
+                    </div>
+                    <div>
+                      <label className={etichetta}>{t({ it: 'Codice fiscale azienda', en: 'Company tax code' })}</label>
+                      <input className={`${campo} uppercase`} value={cliente.aziendaCodiceFiscale || ''} onChange={e => scrivi('aziendaCodiceFiscale', e.target.value.toUpperCase())} />
+                    </div>
                   </div>
                   <div>
-                    <label className={etichetta}>{t({ it: 'Partita IVA', en: 'VAT number' })}</label>
-                    <input className={campo} value={cliente.partitaIva} onChange={e => scrivi('partitaIva', e.target.value)} />
+                    <label className={etichetta}>{t({ it: 'Sede legale', en: 'Registered address' })}</label>
+                    <input className={campo} value={cliente.aziendaSedeLegale || ''} onChange={e => scrivi('aziendaSedeLegale', e.target.value)} />
+                    {erroriCampi.aziendaSedeLegale && <p className="text-xs text-red-400 mt-1">{erroriCampi.aziendaSedeLegale}</p>}
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className={etichetta}>{t({ it: 'Indirizzo', en: 'Address' })}</label>
-                    <input className={campo} value={cliente.indirizzo} onChange={e => scrivi('indirizzo', e.target.value)} />
-                    {erroriCampi.indirizzo && <p className="text-xs text-red-400 mt-1">{erroriCampi.indirizzo}</p>}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className={etichetta}>CAP</label>
+                      <input className={campo} value={cliente.aziendaCap || ''} onChange={e => scrivi('aziendaCap', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={etichetta}>{t({ it: 'Citt\u00e0', en: 'City' })}</label>
+                      <input className={campo} value={cliente.aziendaCitta || ''} onChange={e => scrivi('aziendaCitta', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={etichetta}>{t({ it: 'Provincia', en: 'Province' })}</label>
+                      <input className={`${campo} uppercase`} maxLength={2} value={cliente.aziendaProvincia || ''} onChange={e => scrivi('aziendaProvincia', e.target.value.toUpperCase())} />
+                    </div>
                   </div>
-                  <div>
-                    <label className={etichetta}>{t({ it: 'Civico', en: 'No.' })}</label>
-                    <input className={campo} value={cliente.numeroCivico} onChange={e => scrivi('numeroCivico', e.target.value)} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className={etichetta}>CAP</label>
-                    <input className={campo} value={cliente.codicePostale} onChange={e => scrivi('codicePostale', e.target.value)} />
-                    {erroriCampi.codicePostale && <p className="text-xs text-red-400 mt-1">{erroriCampi.codicePostale}</p>}
-                  </div>
-                  <div>
-                    <label className={etichetta}>{t({ it: 'Città', en: 'City' })}</label>
-                    <input className={campo} value={cliente.citta} onChange={e => scrivi('citta', e.target.value)} />
-                    {erroriCampi.citta && <p className="text-xs text-red-400 mt-1">{erroriCampi.citta}</p>}
-                  </div>
-                  <div>
-                    <label className={etichetta}>{t({ it: 'Provincia', en: 'Province' })}</label>
-                    <input className={`${campo} uppercase`} maxLength={2} value={cliente.provincia} onChange={e => scrivi('provincia', e.target.value.toUpperCase())} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className={etichetta}>{t({ it: 'Codice SDI', en: 'SDI code' })}</label>
-                    <input className={`${campo} uppercase`} value={cliente.sdi} onChange={e => scrivi('sdi', e.target.value.toUpperCase())} />
-                  </div>
-                  <div>
-                    <label className={etichetta}>PEC</label>
-                    <input type="email" className={campo} value={cliente.pec} onChange={e => scrivi('pec', e.target.value)} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={etichetta}>{t({ it: 'Codice SDI', en: 'SDI code' })}</label>
+                      <input className={`${campo} uppercase`} value={cliente.aziendaSdi || ''} onChange={e => scrivi('aziendaSdi', e.target.value.toUpperCase())} />
+                    </div>
+                    <div>
+                      <label className={etichetta}>PEC</label>
+                      <input type="email" className={campo} value={cliente.aziendaPec || ''} onChange={e => scrivi('aziendaPec', e.target.value)} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 

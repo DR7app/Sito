@@ -15,6 +15,7 @@ import CalendarioLavaggio from '../components/ui/CalendarioLavaggio';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 import { dataRoma } from '../utils/oraRoma';
+import { useTestiCarrello } from '../hooks/useTestiCarrello';
 
 interface CartItem {
   serviceId: string;
@@ -54,6 +55,9 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   onConclusa,
 }) => {
   const { t, lang } = useTranslation();
+  // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
+  // una casella sola per tutti i punti in cui si aggiunge qualcosa.
+  const testiCarrello = useTestiCarrello();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
@@ -2105,7 +2109,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
               >
                 {aggiungendoAlCarrello
                   ? t({ it: 'Aggiungo…', en: 'Adding…' })
-                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                  : testiCarrello.aggiungi}
               </button>
             </div>
           </form>
@@ -2345,7 +2349,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
               >
                 {aggiungendoAlCarrello
                   ? t({ it: 'Aggiungo…', en: 'Adding…' })
-                  : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                  : testiCarrello.aggiungi}
               </button>
             </motion.div>
           </motion.div>

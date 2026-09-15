@@ -8,12 +8,16 @@ import { getMembershipTiers } from '../utils/getMembershipTiers';
 import type { MembershipTier } from '../types';
 import { supabase } from '../supabaseClient';
 import { useCarrello } from '../hooks/useCarrello';
+import { useTestiCarrello } from '../hooks/useTestiCarrello';
 
 const MembershipEnrollmentPage: React.FC = () => {
     const { tierId } = useParams<{ tierId: string }>();
     const [searchParams] = useSearchParams();
 
     const { t, lang } = useTranslation();
+    // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
+    // una casella sola per tutti i punti in cui si aggiunge qualcosa.
+    const testiCarrello = useTestiCarrello();
     const { user } = useAuth();
 
     const billingParam = searchParams.get('billing');
@@ -263,7 +267,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                         >
                             {aggiungendoAlCarrello
                                 ? t({ it: 'Aggiungo…', en: 'Adding…' })
-                                : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                                : testiCarrello.aggiungi}
                         </button>
                     </form>
                 </div>

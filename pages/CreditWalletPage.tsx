@@ -15,6 +15,7 @@ import {
 } from '../utils/siteCopy';
 import SfondoVideo from '../components/ui/SfondoVideo';
 import { useFilmato } from '../hooks/useFilmato';
+import { useTestiCarrello } from '../hooks/useTestiCarrello';
 
 // I pacchetti arrivano dal CMS (admin > Sito > Credit Wallet, salvati in
 // centralina_pro_config.site_copy.creditWallet.packages). getCreditWalletCopy
@@ -206,6 +207,9 @@ const CreditWalletPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, lang } = useTranslation();
+  // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
+  // una casella sola per tutti i punti in cui si aggiunge qualcosa.
+  const testiCarrello = useTestiCarrello();
   const [selectedSeries, setSelectedSeries] = useState<string>('all');
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -798,7 +802,7 @@ const CreditWalletPage: React.FC = () => {
                 >
                   {aggiungendoAlCarrello
                     ? t({ it: 'Aggiungo…', en: 'Adding…' })
-                    : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+                    : testiCarrello.aggiungi}
                 </button>
                 <div className="flex gap-4">
                   <button

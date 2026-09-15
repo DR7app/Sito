@@ -7,6 +7,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { dateLocale } from '../../utils/i18nDate';
 import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 import { useCarrello } from '../../hooks/useCarrello';
+import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -61,6 +62,9 @@ const HELI_407_SEATS: Record<number, { x: number; y: number }> = {
 
 export default function TourBookingModal({ item, waHref, onClose, selectedDuration }: Props) {
   const { t, lang } = useTranslation();
+  // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
+  // una casella sola per tutti i punti in cui si aggiunge qualcosa.
+  const testiCarrello = useTestiCarrello();
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState<string>('');
@@ -488,7 +492,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                   {/* Stessi posti, pagati dopo insieme al resto del carrello. */}
                   <button onClick={aggiungiAlCarrello} disabled={submitting || totalCents <= 0}
                     className="w-full px-6 py-3 border border-gray-600 text-white text-sm font-semibold uppercase tracking-[0.18em] hover:bg-white/10 transition-colors disabled:opacity-50">
-                    {t({ it: "Aggiungi al carrello", en: "Add to cart" })}
+                    {testiCarrello.aggiungi}
                   </button>
 
                   {/* Pagamento con Credit Wallet (cliente loggato) */}

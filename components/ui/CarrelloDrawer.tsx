@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCarrello } from '../../hooks/useCarrello';
 import { useTranslation } from '../../hooks/useTranslation';
 import { etichettaTipo, euro, type ArticoloCarrello } from '../../utils/carrello';
+import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 
 /**
  * Il carrello, aperto dal pulsante CARRELLO in alto a destra.
@@ -35,6 +36,12 @@ const CarrelloDrawer: React.FC = () => {
   } = useCarrello();
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
+
+  // 15/09/2026 — titolo, carrello vuoto e pulsante di pagamento stavano scritti
+  // qui dentro: il gestionale aveva le caselle (Sito > Lavaggio > Carrello) e
+  // non cambiavano niente. Ora arrivano da li', con i testi di prima come
+  // ripiego se la configurazione non arriva.
+  const testi = useTestiCarrello();
 
   const vaiAlPagamento = () => {
     chiudi();
@@ -72,7 +79,7 @@ const CarrelloDrawer: React.FC = () => {
           >
             <div className="p-6 border-b border-gray-800 flex justify-between items-center">
               <h2 className="text-xl font-bold text-white uppercase tracking-[0.18em]">
-                {t({ it: 'Carrello', en: 'Cart' })}
+                {testi.titolo}
               </h2>
               <button
                 onClick={chiudi}
@@ -86,7 +93,7 @@ const CarrelloDrawer: React.FC = () => {
             <div className="flex-grow overflow-y-auto p-6 space-y-4">
               {articoli.length === 0 ? (
                 <p className="text-gray-400 text-center py-10">
-                  {t({ it: 'Il carrello è vuoto.', en: 'Your cart is empty.' })}
+                  {testi.vuoto}
                 </p>
               ) : (
                 <>
@@ -166,7 +173,7 @@ const CarrelloDrawer: React.FC = () => {
                   disabled={articoliSelezionati.length === 0}
                   className="w-full bg-white text-black py-4 font-bold text-sm uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
-                  {t({ it: 'Vai al checkout', en: 'Go to checkout' })}
+                  {testi.checkout}
                 </button>
                 <button
                   onClick={chiudi}

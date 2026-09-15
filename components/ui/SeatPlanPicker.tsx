@@ -19,6 +19,7 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../../hooks/useTranslation';
 import { SEAT_BLOCKS, SEAT_LAYOUT, ROW_Y, seatListLabel, normalizeSeats } from '../../utils/seatPlan';
+import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 
 interface Props {
   serviceName: string;
@@ -32,6 +33,9 @@ interface Props {
 
 const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats = [], onConfirm, onClose }) => {
   const { t, lang } = useTranslation();
+  // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
+  // una casella sola per tutti i punti in cui si aggiunge qualcosa.
+  const testiCarrello = useTestiCarrello();
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSeats));
   // La terza fila resta nascosta finche' non serve: la maggior parte delle
   // auto ha 5 posti e mostrarne 7 confonderebbe.
@@ -213,7 +217,7 @@ const SeatPlanPicker: React.FC<Props> = ({ serviceName, unitPrice, initialSeats 
           >
             {count === 0
               ? t({ it: 'Seleziona almeno un sedile', en: 'Select at least one seat' })
-              : t({ it: 'Aggiungi al carrello', en: 'Add to cart' })}
+              : testiCarrello.aggiungi}
           </button>
         </motion.div>
       </div>

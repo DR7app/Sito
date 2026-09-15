@@ -723,7 +723,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // all'altra: un pacchetto valido su piu' auto non potrebbe averne uno solo.
   // Il confronto si fa sul nome ripulito, come nei contratti.
   const nomeAssicurazioneNormalizzato = (n: string | null | undefined) =>
-    String(n ?? '').toLowerCase().replace(/kasko|compresa|inclusa/g, '').replace(/[^a-z0-9]/g, '');
+    String(n ?? '')
+      .toLowerCase()
+      .replace(/\([^)]*\)/g, ' ')      // "RCA Compresa (no Kasko)" e "RCA" sono la stessa cosa
+      .replace(/kasko|compresa|inclusa/g, ' ')
+      .replace(/[^a-z0-9]/g, '');
   const stessaAssicurazione = (a: string | null | undefined, b: string | null | undefined) => {
     const x = nomeAssicurazioneNormalizzato(a);
     const y = nomeAssicurazioneNormalizzato(b);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useCarrello } from '../../hooks/useCarrello'
 import { supabase } from '../../supabaseClient'
-import { getUserCreditBalance, getCreditTransactions } from '../../utils/creditWallet'
+import { getUserCreditBalance, getCreditTransactions, getCreditiVincolati, type CreditoVincolato } from '../../utils/creditWallet'
 import type { CreditTransaction } from '../../utils/creditWallet'
 import { useTranslation } from '../../hooks/useTranslation'
 import ClubTiersBoard from '../../components/ui/ClubTiersBoard'
@@ -26,6 +26,9 @@ const DR7Club = () => {
   const { t, lang } = useTranslation()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
+  // Credito vincolato: vale solo su certi servizi e fino a una data. Non sta
+  // nel saldo — si spende prima, a partire da quello che scade per primo.
+  const [creditiVincolati, setCreditiVincolati] = useState<CreditoVincolato[]>([])
   const [subscription, setSubscription] = useState<ClubSubscription | null>(null)
   const [tierInfo, setTierInfo] = useState<ClubTierInfo | null>(null)
   const [isActive, setIsActive] = useState(false)
@@ -54,14 +57,16 @@ const DR7Club = () => {
     if (!user?.id) return
     setLoading(true)
     try {
-      const [clubStatus, balance, txns, clubTiers, clubPlans, clubBloccato] = await Promise.all([
+      const [clubStatus, balance, txns, clubTiers, clubPlans, clubBloccato, vincolati] = await Promise.all([
         getClubStatus(user.id, user.email),
         getUserCreditBalance(user.id),
         getCreditTransactions(user.id, 10),
         getClubTiers(),
         getClubPlans(),
         isClubBloccato(),
+        getCreditiVincolati(user.id),
       ])
+      setCreditiVincolati(vincolati)
       setBloccato(clubBloccato)
       setTiers(clubTiers)
       setPlans(clubPlans)
@@ -439,6 +444,54 @@ const DR7Club = () => {
             title=""
             currentTier={tierInfo?.tier || null}
           />
+        </div>
+      )}
+
+      {/* Credito vincolato — vale solo su certi servizi e fino a una data */}
+      {creditiVincolati.length > 0 && (
+        <div className="bg-gradient-to-br from-emerald-900/20 to-gray-900/50 border border-emerald-700/40 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-bold text-white">
+              {t({ it: "Credito riservato", en: "Reserved credit" })}
+            </h3>
+            <span className="text-xs text-emerald-400 font-medium">
+              €{creditiVincolati.reduce((s, l) => s + l.residuo, 0).toFixed(2)}
+            </span>
+          </div>
+          <p className="text-gray-400 text-sm mb-4">
+            {t({
+              it: "Si usa da solo, prima del tuo saldo, quando prenoti un servizio per cui vale.",
+              en: "It is used automatically, before your balance, when you book a service it covers.",
+            })}
+          </p>
+          <div className="space-y-2">
+            {creditiVincolati.map(l => {
+              const NOMI: Record<string, { it: string; en: string }> = {
+                rental: { it: 'Noleggio Terra', en: 'Car rental' },
+                boat_rental: { it: 'Noleggio Mare', en: 'Boat rental' },
+                heli_rental: { it: 'Noleggio Aria', en: 'Helicopter' },
+                stay_rental: { it: 'Soggiorni', en: 'Stays' },
+                car_wash: { it: 'Lavaggio & Meccanica', en: 'Wash & mechanics' },
+              }
+              const dove = !l.servizi || l.servizi.length === 0
+                ? t({ it: 'Tutti i servizi', en: 'All services' })
+                : l.servizi.map(x => (NOMI[x] ? t(NOMI[x]) : x)).join(' · ')
+              return (
+                <div key={l.id} className="rounded-lg border border-emerald-700/40 bg-emerald-900/10 p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-white truncate">{l.descrizione || dove}</p>
+                    <p className="text-[11px] text-gray-400">
+                      {dove}
+                      {l.scadenza
+                        ? ` · ${t({ it: 'valido fino al', en: 'valid until' })} ${new Date(l.scadenza).toLocaleDateString('it-IT')}`
+                        : ` · ${t({ it: 'senza scadenza', en: 'no expiry' })}`}
+                    </p>
+                  </div>
+                  <p className="text-lg font-bold text-emerald-400 whitespace-nowrap">€{l.residuo.toFixed(2)}</p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

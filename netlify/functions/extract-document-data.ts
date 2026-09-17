@@ -382,6 +382,19 @@ export const handler: Handler = async (event) => {
       // URL: scarichiamo i byte lato server e li mandiamo in base64, cosi'
       // il tipo di file viene riconosciuto qui (PDF, HEIC, webp) invece di
       // far fallire l'API Claude con "file format invalid".
+      // Solo file dell'archivio Supabase: senza questo controllo la funzione
+      // scaricava qualunque indirizzo le venisse passato.
+      let hostOk = false
+      try {
+        const u = new URL(String(imageUrl))
+        const hostProgetto = (() => {
+          try { return new URL(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').hostname } catch { return '' }
+        })()
+        hostOk = u.protocol === 'https:' && (u.hostname === hostProgetto || u.hostname.endsWith('.supabase.co'))
+      } catch { hostOk = false }
+      if (!hostOk) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'URL del documento non ammessa' }) }
+      }
       let fetched: Response
       try {
         fetched = await fetch(imageUrl)

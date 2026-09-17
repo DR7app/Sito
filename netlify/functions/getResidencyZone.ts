@@ -65,7 +65,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         console.log('[getResidencyZone] Fetching residency zone', { userId, timestamp: new Date().toISOString() });
 
         // Query customers_extended table
-        const COLONNE = 'residency_zone, nome, cognome, email, telefono, data_nascita, codice_fiscale, indirizzo, numero_civico, citta_residenza, provincia_residenza, codice_postale, cap, citta, provincia, metadata, id'
+        // Sesso, luogo di nascita e patente mancavano: il wizard li cercava ma non
+        // arrivavano mai, e la prenotazione li richiedeva a ogni giro.
+        const COLONNE = 'residency_zone, nome, cognome, email, telefono, data_nascita, sesso, luogo_nascita, citta_nascita, provincia_nascita, codice_fiscale, indirizzo, numero_civico, citta_residenza, provincia_residenza, codice_postale, cap, citta, provincia, numero_patente, patente, tipo_patente, emessa_da, data_rilascio_patente, scadenza_patente, metadata, id'
         let { data, error } = await supabase
             .from('customers_extended')
             .select(COLONNE)
@@ -135,6 +137,10 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 email: data.email,
                 telefono: data.telefono,
                 data_nascita: data.data_nascita,
+                sesso: data.sesso,
+                luogo_nascita: data.luogo_nascita,
+                citta_nascita: data.citta_nascita,
+                provincia_nascita: data.provincia_nascita,
                 codice_fiscale: data.codice_fiscale,
                 indirizzo: data.indirizzo,
                 numero_civico: data.numero_civico,
@@ -144,6 +150,11 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 cap: data.cap,
                 citta: data.citta,
                 provincia: data.provincia,
+                numero_patente: data.numero_patente || (String(data.patente || '').trim().length > 4 ? data.patente : null),
+                tipo_patente: data.tipo_patente,
+                emessa_da: data.emessa_da,
+                data_rilascio_patente: data.data_rilascio_patente,
+                scadenza_patente: data.scadenza_patente,
                 metadata: data.metadata,
                 id: data.id,
             }),

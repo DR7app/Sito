@@ -16,6 +16,29 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     return <span className={`px-2 py-1 text-xs font-medium ${v.color}`}>{v.text}</span>;
 }
 
+/**
+ * A quale passo appartiene un file in archivio. I nomi cambiano secondo chi
+ * l'ha caricato (questa pagina: patenteFront; prenotazione: license,
+ * license_back; iscrizione: drivers_license_front; gestionale: carta_back o
+ * solo un numero), quindi si guarda il bucket e poi fronte/retro nel nome.
+ */
+const BUCKET_IDENTITA = ['carta-identita', 'customer-documents', 'driver-ids'];
+const passoDelFile = (bucket: string, percorso: string): string | null => {
+    const nome = (percorso.split('/').pop() || '').toLowerCase();
+    let gruppo: 'patente' | 'cartaIdentita' | 'codiceFiscale' | null = null;
+    if (bucket === 'driver-licenses') {
+        if (/libretto|nautica/.test(nome)) return null;
+        gruppo = 'patente';
+    } else if (bucket === 'codice-fiscale') {
+        gruppo = 'codiceFiscale';
+    } else if (BUCKET_IDENTITA.includes(bucket)) {
+        gruppo = 'cartaIdentita';
+    }
+    if (!gruppo) return null;
+    const retro = /back|retro/.test(nome);
+    return `${gruppo}${retro ? 'Back' : 'Front'}`;
+};
+
 const DocumentsVerification = () => {
     const { user } = useAuth();
     const { t } = useTranslation();
@@ -35,6 +58,28 @@ const DocumentsVerification = () => {
         { key: 'patenteFront', label: t({ it: 'Patente (Fronte) - Opzionale', en: 'Licence (Front) - Optional' }), bucket: 'driver-licenses', required: false },
         { key: 'patenteBack', label: t({ it: 'Patente (Retro) - Opzionale', en: 'Licence (Back) - Optional' }), bucket: 'driver-licenses', required: false }
     ];
+
+    // Passi gia' coperti dai file in archivio. Due file senza "retro" nel
+    // nome nello stesso gruppo valgono fronte e retro: e' come li carica
+    // chi non da' un nome ai file (gestionale, vecchie prenotazioni).
+    const passiCaricati = (docs: any[]): Set<number> => {
+        const passi = new Set<number>();
+        const senzaLato: Record<string, number> = {};
+        for (const doc of docs) {
+            const chiave = doc.document_type;
+            const i = uploadSteps.findIndex(step => step.key === chiave);
+            if (i === -1) continue;
+            passi.add(i);
+            const nome = String(doc.file_path || '').split('/').pop() || '';
+            if (chiave.endsWith('Front') && !/front/i.test(nome)) senzaLato[chiave] = (senzaLato[chiave] || 0) + 1;
+        }
+        for (const [fronte, quanti] of Object.entries(senzaLato)) {
+            if (quanti < 2) continue;
+            const i = uploadSteps.findIndex(step => step.key === fronte.replace(/Front$/, 'Back'));
+            if (i !== -1) passi.add(i);
+        }
+        return passi;
+    };
 
     // Refresh user session on component mount
     useEffect(() => {
@@ -73,20 +118,14 @@ const DocumentsVerification = () => {
                             if (j?.ok && Array.isArray(j.documenti) && j.documenti.length > 0) {
                                 const docs = j.documenti.map((d: any) => ({
                                     id: `${d.bucket}-${d.nomeFile}`,
-                                    document_type: String(d.nomeFile).split('_')[0] || 'document',
+                                    document_type: passoDelFile(d.bucket, d.percorso) || String(d.nomeFile).split('_')[0] || 'document',
                                     bucket: d.bucket,
                                     file_path: d.percorso,
                                     upload_date: d.caricatoIl || new Date().toISOString(),
                                     status: d.stato || 'pending_verification',
                                 }));
                                 setUploadedDocuments(docs);
-                                const passi = new Set<number>();
-                                docs.forEach((doc: any) => {
-                                    const i = uploadSteps.findIndex(step =>
-                                        doc.file_path.includes(step.key) || doc.document_type === step.key);
-                                    if (i !== -1) passi.add(i);
-                                });
-                                setUploadedSteps(passi);
+                                setUploadedSteps(passiCaricati(docs));
                                 setLoadingDocuments(false);
                                 return;
                             }
@@ -124,7 +163,7 @@ const DocumentsVerification = () => {
                             const percorso = `${user.id}/${file.name}`;
                             allDocs.push({
                                 id: `${bucket}-${file.name}`,
-                                document_type: file.name.split('_')[0] || 'document',
+                                document_type: passoDelFile(bucket, percorso) || file.name.split('_')[0] || 'document',
                                 bucket: bucket,
                                 file_path: percorso,
                                 upload_date: file.created_at || new Date().toISOString(),
@@ -138,17 +177,7 @@ const DocumentsVerification = () => {
 
                 setUploadedDocuments(allDocs);
 
-                // Mark steps as uploaded based on found documents
-                const newUploadedSteps = new Set<number>();
-                allDocs.forEach(doc => {
-                    const stepIndex = uploadSteps.findIndex(step =>
-                        doc.file_path.includes(step.key) || doc.document_type === step.key
-                    );
-                    if (stepIndex !== -1) {
-                        newUploadedSteps.add(stepIndex);
-                    }
-                });
-                setUploadedSteps(newUploadedSteps);
+                setUploadedSteps(passiCaricati(allDocs));
             } catch (error) {
                 console.error('Error fetching documents:', error);
             } finally {
@@ -250,50 +279,40 @@ const DocumentsVerification = () => {
             const dati = json.data || json.extractedData;
             if (!dati) return;
 
-            const { data: scheda } = await supabase
-                .from('customers_extended')
-                .select('*')
-                .eq('user_id', user.id)
-                .maybeSingle();
-            if (!scheda) return;
-
-            const aggiornamento: Record<string, any> = {};
-            const scriviSeVuoto = (colonna: string, valore?: string) => {
-                if (valore && !String(scheda[colonna] ?? '').trim()) aggiornamento[colonna] = valore;
-            };
-            scriviSeVuoto('nome', dati.nome);
-            scriviSeVuoto('cognome', dati.cognome);
-            scriviSeVuoto('sesso', dati.sesso);
-            scriviSeVuoto('data_nascita', dati.data_nascita);
-            scriviSeVuoto('citta_nascita', dati.luogo_nascita);
-            scriviSeVuoto('provincia_nascita', dati.provincia_nascita?.toUpperCase());
-            scriviSeVuoto('codice_fiscale', dati.codice_fiscale?.toUpperCase());
-            scriviSeVuoto('indirizzo', dati.indirizzo);
-            scriviSeVuoto('numero_civico', dati.numero_civico);
-            scriviSeVuoto('codice_postale', dati.codice_postale);
-            scriviSeVuoto('citta_residenza', dati.citta_residenza);
-            scriviSeVuoto('provincia_residenza', dati.provincia_residenza?.toUpperCase());
-
-            const meta = { ...(scheda.metadata || {}) };
-            const metaSeVuoto = (chiave: string, valore?: string) => {
-                if (valore && !String(meta[chiave] ?? '').trim()) meta[chiave] = valore;
-            };
-            metaSeVuoto('tipo_patente', dati.patente_tipo);
-            metaSeVuoto('numero_patente', dati.patente_numero);
-            metaSeVuoto('patente_emessa_da', dati.patente_ente);
-            // La data vera di conseguimento sta sul retro (categoria B).
-            metaSeVuoto('patente_data_rilascio', dati.patente_conseguimento || dati.patente_rilascio);
-            metaSeVuoto('patente_scadenza', dati.patente_scadenza);
-            if (JSON.stringify(meta) !== JSON.stringify(scheda.metadata || {})) {
-                aggiornamento.metadata = meta;
-            }
-
-            if (Object.keys(aggiornamento).length === 0) return;
-            const { error } = await supabase
-                .from('customers_extended')
-                .update(aggiornamento)
-                .eq('id', scheda.id);
-            if (error) console.error('Scheda non aggiornata dal documento:', error);
+            // La scrittura passa dal server: trova anche la scheda creata
+            // dall'ufficio con la stessa email, la crea se manca e mette la
+            // patente dove la legge il gestionale (colonne + metadata).
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) return;
+            await fetch('/.netlify/functions/completa-scheda-cliente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({
+                    dati: {
+                        nome: dati.nome,
+                        cognome: dati.cognome,
+                        sesso: dati.sesso,
+                        dataNascita: dati.data_nascita,
+                        luogoNascita: dati.luogo_nascita,
+                        provinciaNascita: dati.provincia_nascita,
+                        codiceFiscale: dati.codice_fiscale,
+                        indirizzo: dati.indirizzo,
+                        numeroCivico: dati.numero_civico,
+                        codicePostale: dati.codice_postale,
+                        cittaResidenza: dati.citta_residenza,
+                        provinciaResidenza: dati.provincia_residenza,
+                        // La data vera di conseguimento sta sul retro (categoria B).
+                        patenteNumero: dati.patente_numero,
+                        patenteTipo: dati.patente_tipo,
+                        patenteEnte: dati.patente_ente,
+                        patenteRilascio: dati.patente_conseguimento || dati.patente_rilascio,
+                        patenteScadenza: dati.patente_scadenza,
+                        documentoTipo: dati.documento_tipo,
+                        documentoNumero: dati.documento_numero,
+                        documentoRilascio: dati.documento_rilascio,
+                    },
+                }),
+            });
         } catch (err) {
             console.warn('Lettura documento per la scheda non riuscita:', err);
         }
@@ -376,15 +395,13 @@ const DocumentsVerification = () => {
                                                             alert(`Errore: ${error.message}`)
                                                             return
                                                         }
+                                                        // Anche la riga in "Verifica Documenti" del gestionale,
+                                                        // altrimenti l'ufficio vede un documento che non c'e' piu'.
+                                                        await supabase.from('user_documents').delete().eq('file_path', doc.file_path).eq('bucket', doc.bucket)
                                                         // Rimuovi dalla lista locale e ricalcola gli step caricati
                                                         const next = uploadedDocuments.filter(d => d.id !== doc.id)
                                                         setUploadedDocuments(next)
-                                                        const newSteps = new Set<number>()
-                                                        next.forEach(d => {
-                                                            const idx = uploadSteps.findIndex(s => d.file_path.includes(s.key) || d.document_type === s.key)
-                                                            if (idx !== -1) newSteps.add(idx)
-                                                        })
-                                                        setUploadedSteps(newSteps)
+                                                        setUploadedSteps(passiCaricati(next))
                                                     } catch (e) {
                                                         alert(`Errore eliminazione: ${e instanceof Error ? e.message : 'sconosciuto'}`)
                                                     }

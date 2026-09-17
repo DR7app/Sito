@@ -7,6 +7,7 @@ import { supabase } from '../../supabaseClient';
 import type { CreditTransaction } from '../../utils/creditWallet';
 import { splitWalletBalance } from '../../utils/walletCredit';
 import CalcolaCFButton from '../../components/ui/CalcolaCFButton';
+import { datiPatenteScheda, luogoNascitaScheda } from '../../utils/datiPatenteScheda';
 import {
     clientStatusClasses,
     fetchClientStatusDefsFresh,
@@ -20,6 +21,7 @@ import {
 
 interface CustomerExtended {
     id: string;
+    user_id?: string | null;
     tipo_cliente: 'persona_fisica' | 'azienda' | 'pubblica_amministrazione';
     nome?: string;
     cognome?: string;
@@ -162,7 +164,7 @@ const ProfileSettings = () => {
                 })));
 
                 // Fetch Extended Profile
-                const { data, error } = await supabase
+                const { data: perAccount, error } = await supabase
                     .from('customers_extended')
                     .select('*')
                     .eq('user_id', user.id)
@@ -172,8 +174,23 @@ const ProfileSettings = () => {
                     console.error('Error fetching extended profile:', error);
                 }
 
+                // Scheda creata dall'ufficio senza legame con l'account: la
+                // si trova per email, altrimenti la pagina mostrava campi
+                // vuoti e al salvataggio ne creava un doppione.
+                let data = perAccount;
+                if (!data && user.email) {
+                    const { data: perEmail } = await supabase
+                        .from('customers_extended')
+                        .select('*')
+                        .ilike('email', user.email)
+                        .order('codice_fiscale', { ascending: false, nullsFirst: false })
+                        .limit(1);
+                    data = perEmail?.[0] || null;
+                }
+
                 if (data) {
                     setExtendedProfile(data);
+                    const patente = datiPatenteScheda(data);
                     // Update form data from extended profile
                     const isAzienda = data.tipo_cliente === 'azienda';
                     setFormData(prev => ({
@@ -187,7 +204,7 @@ const ProfileSettings = () => {
                         codiceFiscale: data.codice_fiscale || '',
                         sesso: data.sesso || '',
                         dataNascita: data.data_nascita || '',
-                        cittaNascita: data.citta_nascita || '',
+                        cittaNascita: luogoNascitaScheda(data),
                         provinciaNascita: data.provincia_nascita || '',
                         // Address
                         indirizzo: data.indirizzo || '',
@@ -195,12 +212,13 @@ const ProfileSettings = () => {
                         cittaResidenza: data.citta_residenza || '',
                         provinciaResidenza: data.provincia_residenza || '',
                         codicePostale: data.codice_postale || '',
-                        // License (from metadata)
-                        tipoPatente: data.metadata?.tipo_patente || '',
-                        numeroPatente: data.metadata?.numero_patente || '',
-                        patenteEmessaDa: data.metadata?.patente_emessa_da || '',
-                        patenteDataRilascio: data.metadata?.patente_data_rilascio || '',
-                        patenteScadenza: data.metadata?.patente_scadenza || ''
+                        // Patente: colonne del gestionale, metadata.patente o
+                        // chiavi piatte, dovunque sia stata salvata.
+                        tipoPatente: patente.tipo,
+                        numeroPatente: patente.numero,
+                        patenteEmessaDa: patente.ente,
+                        patenteDataRilascio: patente.rilascio,
+                        patenteScadenza: patente.scadenza
                     }));
                 } else {
                     // No profile found - we set null to trigger the fallback UI
@@ -323,6 +341,8 @@ const ProfileSettings = () => {
                     updateData.sesso = formData.sesso;
                     updateData.data_nascita = sanitizeDate(formData.dataNascita);
                     updateData.citta_nascita = formData.cittaNascita;
+                    // Il gestionale legge il luogo di nascita da questa colonna.
+                    updateData.luogo_nascita = formData.cittaNascita;
                     updateData.provincia_nascita = formData.provinciaNascita;
                     updateData.indirizzo = formData.indirizzo;
                     updateData.numero_civico = formData.numeroCivico;
@@ -330,21 +350,46 @@ const ProfileSettings = () => {
                     updateData.provincia_residenza = formData.provinciaResidenza;
                     updateData.codice_postale = formData.codicePostale;
 
-                    // Update license metadata
+                    // Patente nelle colonne che legge il gestionale (scheda
+                    // cliente, contratto, CARGOS) e nel metadata, in
+                    // entrambe le forme. Un campo lasciato vuoto non cancella
+                    // quello che l'ufficio ha gia' inserito.
+                    const numeroPatente = formData.numeroPatente?.trim().toUpperCase() || '';
+                    const rilascio = sanitizeDate(formData.patenteDataRilascio);
+                    const scadenza = sanitizeDate(formData.patenteScadenza);
+                    if (numeroPatente) { updateData.numero_patente = numeroPatente; updateData.patente = numeroPatente; }
+                    // La colonna accetta 10 caratteri: oltre, l'intero salvataggio fallirebbe.
+                    if (formData.tipoPatente && formData.tipoPatente.length <= 10) updateData.tipo_patente = formData.tipoPatente;
+                    if (formData.patenteEmessaDa) updateData.emessa_da = formData.patenteEmessaDa;
+                    if (rilascio) updateData.data_rilascio_patente = rilascio;
+                    if (scadenza) updateData.scadenza_patente = scadenza;
+                    const metaAttuale = extendedProfile.metadata || {};
+                    const patenteAttuale = metaAttuale.patente || {};
                     updateData.metadata = {
-                        ...extendedProfile.metadata,
+                        ...metaAttuale,
                         tipo_patente: formData.tipoPatente,
-                        numero_patente: formData.numeroPatente,
+                        numero_patente: numeroPatente,
                         patente_emessa_da: formData.patenteEmessaDa,
-                        patente_data_rilascio: sanitizeDate(formData.patenteDataRilascio),
-                        patente_scadenza: sanitizeDate(formData.patenteScadenza)
+                        patente_data_rilascio: rilascio,
+                        patente_scadenza: scadenza,
+                        patente: {
+                            ...patenteAttuale,
+                            ...(numeroPatente ? { numero: numeroPatente } : {}),
+                            ...(formData.tipoPatente ? { tipo: formData.tipoPatente } : {}),
+                            ...(formData.patenteEmessaDa ? { ente: formData.patenteEmessaDa } : {}),
+                            ...(rilascio ? { rilascio } : {}),
+                            ...(scadenza ? { scadenza } : {}),
+                        },
                     };
+                }
+                if (!extendedProfile.user_id) {
+                    updateData.user_id = user!.id;
                 }
 
                 const { error } = await supabase
                     .from('customers_extended')
                     .update(updateData)
-                    .eq('user_id', user!.id);
+                    .eq('id', extendedProfile.id);
 
                 if (error) throw error;
             } else {

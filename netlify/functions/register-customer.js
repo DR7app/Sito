@@ -245,6 +245,35 @@ exports.handler = async (event) => {
             // Remove empty strings for date fields (PostgREST can't cast '' to date)
             if (customerData.data_nascita === '') delete customerData.data_nascita;
 
+            // Il gestionale legge il luogo di nascita da `luogo_nascita` e la
+            // patente dalle colonne + metadata.patente: l'iscrizione le
+            // scriveva solo in `citta_nascita` e nelle chiavi piatte, e
+            // l'ufficio vedeva la scheda senza patente.
+            if (customerData.citta_nascita && !customerData.luogo_nascita) {
+                customerData.luogo_nascita = customerData.citta_nascita;
+            }
+            const m = customerData.metadata || {};
+            const dataOk = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null);
+            const numeroPatente = (m.numero_patente || '').toString().trim().toUpperCase();
+            if (numeroPatente) { customerData.numero_patente = numeroPatente; customerData.patente = numeroPatente; }
+            if (m.tipo_patente && String(m.tipo_patente).length <= 10) customerData.tipo_patente = m.tipo_patente; // colonna varchar(10)
+            if (m.patente_emessa_da) customerData.emessa_da = m.patente_emessa_da;
+            if (dataOk(m.patente_data_rilascio)) customerData.data_rilascio_patente = dataOk(m.patente_data_rilascio);
+            if (dataOk(m.patente_scadenza)) customerData.scadenza_patente = dataOk(m.patente_scadenza);
+            if (numeroPatente || m.tipo_patente || m.patente_emessa_da || m.patente_data_rilascio || m.patente_scadenza) {
+                customerData.metadata = {
+                    ...m,
+                    patente: {
+                        ...(m.patente || {}),
+                        ...(numeroPatente ? { numero: numeroPatente } : {}),
+                        ...(m.tipo_patente ? { tipo: m.tipo_patente } : {}),
+                        ...(m.patente_emessa_da ? { ente: m.patente_emessa_da } : {}),
+                        ...(dataOk(m.patente_data_rilascio) ? { rilascio: dataOk(m.patente_data_rilascio) } : {}),
+                        ...(dataOk(m.patente_scadenza) ? { scadenza: dataOk(m.patente_scadenza) } : {}),
+                    },
+                };
+            }
+
             // Prepare update payload (without user_id — that's the filter key)
             const updatePayload = { ...customerData };
             delete updatePayload.user_id;

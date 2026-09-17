@@ -52,6 +52,7 @@ import {
   utilizziResidui, type PrevenditaCliente,
 } from '../../utils/prevendite';
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
+import { datiPatenteScheda, luogoNascitaScheda } from '../../utils/datiPatenteScheda';
 
 // Filter out dummy/placeholder names from auth profiles (e.g. "No Name", "User", "Test")
 const DUMMY_NAMES = ['no name', 'no-name', 'noname', 'user', 'test', 'unknown', 'n/a', 'none', 'cliente'];
@@ -1721,6 +1722,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [percorsiPatente, setPercorsiPatente] = useState<string[]>([]);
   const [urlPatenteArchivio, setUrlPatenteArchivio] = useState<string[]>([]);
   const letturaArchivioFatta = useRef(false);
+  // Data di conseguimento presa dalla scheda cliente (non letta ora dai
+  // documenti): se la scheda ha la data di emissione della tessera invece
+  // di quella del retro, la patente risulta piu' giovane del vero e va
+  // riletta dall'archivio.
+  const dataPatenteDallaScheda = useRef(false);
+  // Dati letti dai documenti che il form non mostra (scadenza e ente della
+  // patente, documento d'identita'): finiscono nella scheda cliente.
+  const datiLettiDocumenti = useRef<Record<string, string>>({});
   const [checkingDocs, setCheckingDocs] = useState(false);
 
   /**
@@ -1732,7 +1741,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   useEffect(() => {
     if (letturaArchivioFatta.current) return;
     if (!percorsiPatente.length) return;
-    if (formData.licenseIssueDate) return;
+    const daVerificare = dataPatenteDallaScheda.current && calculateYearsSince(formData.licenseIssueDate) < 5;
+    if (formData.licenseIssueDate && !daVerificare) return;
     letturaArchivioFatta.current = true;
     (async () => {
       const daLeggere = urlPatenteArchivio.length > 0
@@ -1759,9 +1769,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           if (conseguimento) {
             setFormData(prev => ({
               ...prev,
-              licenseIssueDate: prev.licenseIssueDate || conseguimento,
+              // Vince la data piu' vecchia: il retro dice da quando si guida,
+              // la tessera solo quando e' stata stampata.
+              licenseIssueDate: !prev.licenseIssueDate || (dataPatenteDallaScheda.current && conseguimento < prev.licenseIssueDate)
+                ? conseguimento
+                : prev.licenseIssueDate,
               licenseNumber: prev.licenseNumber || dati.patente_numero || '',
             }));
+            if (dati.patente_scadenza) datiLettiDocumenti.current.patenteScadenza = dati.patente_scadenza;
+            if (dati.patente_ente) datiLettiDocumenti.current.patenteEnte = dati.patente_ente;
+            if (dati.patente_tipo) datiLettiDocumenti.current.patenteTipo = dati.patente_tipo;
             return;
           }
         } catch (err) {
@@ -1942,6 +1959,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
         // Autofill form with extended data
         const realName2 = isRealName(user.fullName);
+        const patenteScheda = datiPatenteScheda(customerData);
+        if (patenteScheda.rilascio) dataPatenteDallaScheda.current = true;
         setFormData(prev => ({
           ...prev,
           firstName: customerData.nome || prev.firstName || (realName2 ? realName2.split(' ')[0] : ''),
@@ -1953,15 +1972,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           // riempimento: erano gia' sulla scheda cliente ma la prenotazione
           // li richiedeva a ogni giro.
           sesso: customerData.sesso || prev.sesso,
-          luogoNascita: customerData.citta_nascita || customerData.luogo_nascita || prev.luogoNascita,
+          luogoNascita: luogoNascitaScheda(customerData) || prev.luogoNascita,
           provinciaNascita: String(customerData.provincia_nascita || prev.provinciaNascita || '').toUpperCase(),
           codiceFiscale: customerData.codice_fiscale || prev.codiceFiscale,
           // Indirizzo completo, non la sola via: civico, CAP, citta' e
           // provincia servono alla fattura e alla cauzione.
           residenza: indirizzoCompleto(customerData) || prev.residenza,
-          // License fields from metadata
-          licenseNumber: customerData.metadata?.numero_patente || prev.licenseNumber,
-          licenseIssueDate: customerData.metadata?.patente_data_rilascio || prev.licenseIssueDate,
+          // Patente: colonne del gestionale, metadata.patente o chiavi piatte
+          // del sito, dovunque sia stata salvata.
+          licenseNumber: patenteScheda.numero || prev.licenseNumber,
+          licenseIssueDate: patenteScheda.rilascio || prev.licenseIssueDate,
         }));
 
         // Cattura la provincia di residenza dal profilo per determinare la
@@ -3071,6 +3091,42 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     return new Blob([bytes], { type: mime });
   };
 
+  /**
+   * Porta nella scheda cliente quello che la prenotazione sa del
+   * conducente, patente compresa, cosi' la prossima volta non si richiede
+   * niente. Scrive solo i campi vuoti e non blocca mai la prenotazione.
+   */
+  const salvaSchedaCliente = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const letti = datiLettiDocumenti.current;
+      const dati: Record<string, string> = {
+        nome: formData.firstName,
+        cognome: formData.lastName,
+        telefono: formData.phone,
+        codiceFiscale: formData.codiceFiscale,
+        dataNascita: formData.birthDate,
+        sesso: formData.sesso,
+        luogoNascita: formData.luogoNascita,
+        provinciaNascita: formData.provinciaNascita,
+        patenteNumero: formData.licenseNumber,
+        patenteRilascio: formData.licenseIssueDate,
+        ...letti,
+      };
+      // L'indirizzo letto dal documento arriva a pezzi; se manca si usa la
+      // riga intera scelta nel form.
+      if (!letti.indirizzo && formData.residenza) dati.indirizzo = formData.residenza;
+      await fetch(`${FUNCTIONS_BASE}/.netlify/functions/completa-scheda-cliente`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ dati }),
+      });
+    } catch (err) {
+      console.warn('[booking] scheda cliente non completata:', err);
+    }
+  };
+
   // Upload (File or dataURL) via Netlify function to handle CORS
   const uploadToBucket = async (bucket: string, userId: string, fileOrDataUrl: File | string | null, prefix: string): Promise<string> => {
     if (!fileOrDataUrl) {
@@ -3774,41 +3830,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       }
 
       if (data) {
-        // Upsert customer into customers_extended (find by user_id, don't duplicate)
-        if (user?.id) {
-          supabase.from('customers_extended')
-            .select('id')
-            .eq('user_id', user.id)
-            .maybeSingle()
-            .then(({ data: existing }) => {
-              const customerRecord: Record<string, any> = {
-                nome: formData.firstName,
-                cognome: formData.lastName,
-                email: formData.email,
-                telefono: formData.phone,
-                codice_fiscale: formData.codiceFiscale,
-                indirizzo: formData.residenza,
-                tipo_cliente: 'persona_fisica',
-                source: 'website_booking',
-              };
-              if (formData.birthDate) customerRecord.data_nascita = formData.birthDate;
-              if (formData.sesso) customerRecord.sesso = formData.sesso;
-              if (formData.luogoNascita) customerRecord.luogo_nascita = formData.luogoNascita;
-              if (formData.provinciaNascita) customerRecord.provincia_nascita = formData.provinciaNascita;
-
-              if (existing?.id) {
-                // Update existing record
-                supabase.from('customers_extended').update(customerRecord).eq('id', existing.id)
-                  .then(() => console.log('[booking] customers_extended updated'))
-                  .catch(e => console.error('[booking] customers_extended update error:', e));
-              } else {
-                // Insert new record with user_id
-                supabase.from('customers_extended').insert({ ...customerRecord, user_id: user.id })
-                  .then(() => console.log('[booking] customers_extended created'))
-                  .catch(e => console.error('[booking] customers_extended insert error:', e));
-              }
-            }).catch(e => console.error('[booking] customers_extended lookup error:', e));
-        }
+        // La scheda cliente si completa dal server: solo i campi vuoti,
+        // agganciando anche la scheda creata dall'ufficio con la stessa email.
+        if (user?.id) void salvaSchedaCliente();
 
         // Sync cauzione record so the deposit lands in Cauzioni → Da
         // Incassare. Mirrors the wallet path; runs for any non-zero
@@ -4553,39 +4577,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
           console.log("Calling onBookingComplete...", finalBookingData);
 
-          // Upsert customer into customers_extended (find by user_id, don't duplicate)
-          if (user?.id) {
-            supabase.from('customers_extended')
-              .select('id')
-              .eq('user_id', user.id)
-              .maybeSingle()
-              .then(({ data: existing }) => {
-                const customerRecord: Record<string, any> = {
-                  nome: formData.firstName,
-                  cognome: formData.lastName,
-                  email: formData.email,
-                  telefono: formData.phone,
-                  codice_fiscale: formData.codiceFiscale,
-                  indirizzo: formData.residenza,
-                  tipo_cliente: 'persona_fisica',
-                  source: 'website_booking',
-                };
-                if (formData.birthDate) customerRecord.data_nascita = formData.birthDate;
-                if (formData.sesso) customerRecord.sesso = formData.sesso;
-                if (formData.luogoNascita) customerRecord.luogo_nascita = formData.luogoNascita;
-                if (formData.provinciaNascita) customerRecord.provincia_nascita = formData.provinciaNascita;
-
-                if (existing?.id) {
-                  supabase.from('customers_extended').update(customerRecord).eq('id', existing.id)
-                    .then(() => console.log('[credit-booking] customers_extended updated'))
-                    .catch(e => console.error('[credit-booking] customers_extended update error:', e));
-                } else {
-                  supabase.from('customers_extended').insert({ ...customerRecord, user_id: user.id })
-                    .then(() => console.log('[credit-booking] customers_extended created'))
-                    .catch(e => console.error('[credit-booking] customers_extended insert error:', e));
-                }
-              }).catch(e => console.error('[credit-booking] customers_extended lookup error:', e));
-          }
+          if (user?.id) void salvaSchedaCliente();
 
           // Sync cauzione record so the deposit lands in Cauzioni → Da
           // Incassare. Wallet bookings still need a cauzione tracked for
@@ -5956,7 +5948,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             // RETRO (colonna 10, categoria B). La 4a del fronte e' solo
                             // l'emissione della tessera: si usa se il retro non si legge.
                             const conseguimento = data.patente_conseguimento || data.patente_rilascio;
-                            if (conseguimento) agg.licenseIssueDate = conseguimento;
+                            if (conseguimento) {
+                              agg.licenseIssueDate = conseguimento;
+                              dataPatenteDallaScheda.current = false;
+                            }
+                            const letti = datiLettiDocumenti.current;
+                            if (data.patente_scadenza) letti.patenteScadenza = data.patente_scadenza;
+                            if (data.patente_ente) letti.patenteEnte = data.patente_ente;
+                            if (data.patente_tipo) letti.patenteTipo = data.patente_tipo;
+                            if (data.documento_tipo) letti.documentoTipo = data.documento_tipo;
+                            if (data.documento_numero) letti.documentoNumero = data.documento_numero;
+                            if (data.documento_rilascio) letti.documentoRilascio = data.documento_rilascio;
+                            if (data.numero_civico) letti.numeroCivico = data.numero_civico;
+                            if (data.codice_postale) letti.codicePostale = data.codice_postale;
+                            if (data.citta_residenza) letti.cittaResidenza = data.citta_residenza;
+                            if (data.provincia_residenza) letti.provinciaResidenza = data.provincia_residenza;
+                            if (data.indirizzo) letti.indirizzo = data.indirizzo;
                             // Nessun codice fiscale sui documenti ma i dati per
                             // calcolarlo si': meglio calcolarlo che lasciarlo vuoto.
                             const cognome = (agg.lastName as string) || prev.lastName;

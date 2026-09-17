@@ -4,6 +4,74 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+// 17/09/2026: account creato dal gestionale (tab Credit Wallet) per un
+// cliente che non si era ancora iscritto. Se il cliente non e' mai entrato,
+// l'iscrizione diventa "scegli la password": link di recupero alla sua email.
+// Ritorna true se l'email e' partita.
+async function completaAccountCreatoDallUfficio(email, userMetadata) {
+    try {
+        const siteUrl = process.env.SITE_URL || process.env.URL || 'https://dr7.app';
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+            type: 'recovery',
+            email,
+            options: { redirectTo: `${siteUrl}/reset-password` },
+        });
+        const utente = linkData?.user;
+        if (linkError || !utente) return false;
+        if (utente.user_metadata?.creato_da !== 'gestionale_credit_wallet' || utente.last_sign_in_at) return false;
+
+        // I dati dell'iscrizione vanno sull'account; la password no.
+        await supabase.auth.admin.updateUserById(utente.id, {
+            user_metadata: { ...userMetadata, creato_da: utente.user_metadata.creato_da },
+        });
+
+        // Bonus di benvenuto: la RPC e' idempotente.
+        try {
+            await supabase.rpc('grant_welcome_bonus', { p_user_id: utente.id });
+        } catch (e) {
+            console.error('[register-customer] bonus su account dell\'ufficio non accreditato:', e.message);
+        }
+
+        let link = linkData.properties?.action_link;
+        if (!link) return false;
+        try {
+            const u = new URL(link);
+            const site = new URL(siteUrl);
+            if (u.host !== site.host) { u.protocol = site.protocol; u.host = site.host; link = u.toString(); }
+        } catch (_e) { /* link lasciato com'e' */ }
+
+        const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
+        if (!resendApiKey) return false;
+        const fromAddress = process.env.SMTP_FROM || 'info@dr7.app';
+        const nome = (userMetadata && userMetadata.nome) ? `${userMetadata.nome} ${userMetadata.cognome || ''}`.trim() : '';
+        const risposta = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                from: `DR7 <${fromAddress}>`,
+                reply_to: 'info@dr7.app',
+                to: [email],
+                subject: 'DR7 — Scegli la password del tuo account',
+                text: `Ciao${nome ? ' ' + nome : ''},\n\nil tuo account DR7 esiste gia' (creato dal nostro ufficio). Per entrare scegli la tua password:\n\n${link}\n\nSe non hai richiesto questa registrazione, ignora questo messaggio.\n\nDR7\ninfo@dr7.app`,
+                html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#333">
+<p>Ciao${nome ? ' ' + nome : ''},</p>
+<p>il tuo account DR7 esiste gia' (creato dal nostro ufficio). Per entrare scegli la tua password.</p>
+<p style="margin:24px 0"><a href="${link}" style="background:#1a1a1a;color:#fff;padding:12px 28px;border-radius:4px;text-decoration:none;font-size:14px">Scegli la password</a></p>
+<p style="font-size:12px;color:#999;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Se non hai richiesto questa registrazione, ignora questo messaggio.<br><br>DR7 — info@dr7.app</p>
+</div>`,
+            }),
+        });
+        if (!risposta.ok) {
+            console.error('[register-customer] email scelta password non inviata:', risposta.status, await risposta.text());
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error('[register-customer] completaAccountCreatoDallUfficio:', e.message);
+        return false;
+    }
+}
+
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
@@ -85,6 +153,23 @@ exports.handler = async (event) => {
         });
 
         if (authError) {
+            // 17/09/2026: l'ufficio puo' aver gia' creato l'account (Credit
+            // Wallet caricato prima dell'iscrizione). In quel caso non si
+            // risponde "email gia' registrata": si manda al cliente un link
+            // per scegliere la password. Il link arriva SOLO alla sua email,
+            // quindi nessuno puo' prendersi l'account (e il credito)
+            // conoscendo soltanto l'indirizzo.
+            const giaRegistrata = authError.code === 'email_exists'
+                || /already (been )?registered|already exists/i.test(authError.message || '');
+            if (giaRegistrata && await completaAccountCreatoDallUfficio(email, userMetadata)) {
+                return {
+                    statusCode: 200,
+                    body: JSON.stringify({
+                        accountEsistente: true,
+                        message: 'Il tuo account DR7 esiste gia\': ti abbiamo inviato un\'email per scegliere la password.',
+                    }),
+                };
+            }
             console.error('Auth creation error:', authError);
             console.error('Auth error details:', JSON.stringify(authError, null, 2));
             console.error('Email attempted:', email);

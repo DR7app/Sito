@@ -514,6 +514,13 @@ const SignUpPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
+      // 17/09/2026: account gia' creato dal nostro ufficio. Nessun accesso
+      // qui: il cliente riceve un'email per scegliere la password.
+      if (result?.accountEsistente) {
+        setGeneralError(result.message || 'Il tuo account DR7 esiste gia\': controlla la tua email per scegliere la password.')
+        return
+      }
+
       // Success - now handle post-signup flow
       // Since we created the user via admin API, we might need to sign them in automatically?
       // Or just prompt to check email (if using email confirm)

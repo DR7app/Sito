@@ -278,6 +278,33 @@ exports.handler = async (event) => {
             const updatePayload = { ...customerData };
             delete updatePayload.user_id;
 
+            // 17/09/2026: se il cliente era gia' in Lead (scheda creata
+            // dall'ufficio), il trigger gli ha agganciato l'account invece di
+            // creare un doppione (migrazione 20260917180000 in DR7-AI). Su
+            // quella scheda l'iscrizione riempie SOLO i campi vuoti: i dati
+            // dell'ufficio non si sovrascrivono, la provenienza resta quella
+            // e i metadata si fondono invece di essere sostituiti.
+            const { data: schedaAgganciata } = await supabase
+                .from('customers_extended')
+                .select('*')
+                .eq('user_id', userId)
+                .maybeSingle();
+            if (schedaAgganciata?.metadata?.account_sito_agganciato_il) {
+                const vuoto = (v) => v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
+                for (const campo of Object.keys(updatePayload)) {
+                    if (campo === 'metadata') continue;
+                    if (campo === 'source' || !vuoto(schedaAgganciata[campo])) delete updatePayload[campo];
+                }
+                if (updatePayload.metadata) {
+                    updatePayload.metadata = { ...updatePayload.metadata, ...(schedaAgganciata.metadata || {}) };
+                }
+                // Scheda gia' completa: una UPDATE vuota verrebbe rifiutata.
+                if (Object.keys(updatePayload).length === 0) {
+                    updatePayload.updated_at = new Date().toISOString();
+                }
+                console.log('[register-customer] Scheda Lead esistente agganciata: aggiorno solo i campi vuoti');
+            }
+
             console.log('Updating customer data for user:', userId);
             console.log('Customer data keys:', Object.keys(updatePayload));
 

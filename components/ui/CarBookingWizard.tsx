@@ -416,8 +416,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const prefillReturn = urlParams.get('return') || prefillPickup;
     const prefillPickupTime = urlParams.get('pickupTime') || '10:30';
     const prefillReturnTime = urlParams.get('returnTime') || '09:00';
+    // 19/09/2026 (direzione): si parte su DR7 Cagliari — senza una scelta non si
+    // puo' avanzare, quindi il caso normale e' gia' pronto e chi consegna a
+    // domicilio cambia. La validazione piu' sotto resta: se dalla ricerca arriva
+    // un id che non esiste fra le due opzioni, il cliente deve sceglierne una.
     const prefillPickupLoc = urlParams.get('pickupLoc') || DEFAULT_PICKUP_LOCATIONS[0].id;
-    const prefillReturnLoc = urlParams.get('returnLoc') || DEFAULT_PICKUP_LOCATIONS[0].id;
+    const prefillReturnLoc = urlParams.get('returnLoc') || DEFAULT_RETURN_LOCATIONS[0].id;
     const prefillPickupLocLabel = urlParams.get('pickupLocLabel') || '';
     const prefillReturnLocLabel = urlParams.get('returnLocLabel') || '';
 
@@ -3272,10 +3276,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const validateStep = () => {
     const newErrors: Record<string, string> = {};
     if (step === 1) {
-      // When coming from search, dates/locations are already validated — skip step 1 validation
+      // 19/09/2026 (direzione): ritiro e riconsegna vanno SCELTI, DR7 o
+      // domicilio. Il controllo sta prima dello sconto "arrivo dalla ricerca":
+      // le barre di ricerca usano nomi/id loro (Cagliari Centro, dr7_office...)
+      // che non sono gli id di questa schermata, quindi non valgono come
+      // scelta — si accetta solo un id presente fra le opzioni mostrate.
+      if (!pickupLocs.some(l => l.id === formData.pickupLocation)) {
+        newErrors.pickupLocation = "Scegli il luogo di ritiro: DR7 Cagliari o domicilio.";
+      }
+      if (!returnLocs.some(l => l.id === formData.returnLocation)) {
+        newErrors.returnLocation = "Scegli il luogo di riconsegna: DR7 Cagliari o domicilio.";
+      }
+      // When coming from search, dates are already validated — skip the rest
       if (isFromSearch) {
-        setErrors({});
-        return true;
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
       }
       if (!formData.pickupDate || formData.pickupDate.trim() === '') {
         newErrors.pickupDate = "La data di ritiro è obbligatoria.";
@@ -5407,6 +5422,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       </label>
                     </div>
                   ))}
+                  {errors.pickupLocation && <p className="text-xs text-red-400 mt-2">{errors.pickupLocation}</p>}
                 </div>
                 <div>
                   <label className="text-sm text-gray-400 font-semibold mb-2 block">{t({ it: "Luogo di riconsegna *", en: "Drop-off location *" })}</label>
@@ -5418,6 +5434,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       </label>
                     </div>
                   ))}
+                  {errors.returnLocation && <p className="text-xs text-red-400 mt-2">{errors.returnLocation}</p>}
                 </div>
               </div>
 
@@ -7228,18 +7245,131 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         }
 
         return (
-          <div className="space-y-8">
-
-
-            <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4 uppercase">{t({ it: "Riepilogo Completo Prenotazione", en: "Full Booking Summary" })}</h3>
-              <div className="p-6 bg-gray-800/50 rounded-lg border border-gray-700 space-y-6 text-sm">
-                <div>
-                  <p className="font-bold text-base text-white mb-2">{t({ it: "VEICOLO SELEZIONATO", en: "SELECTED VEHICLE" })}</p>
-                  <hr className="border-gray-600 mb-2" />
-                  <p>{item.name}</p>
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] gap-6 lg:gap-8 items-start">
+            {/* 19/09/2026 (direzione): ultimo passo su due colonne. A sinistra
+                come si paga e le tre spunte, a destra il riepilogo che resta
+                sotto gli occhi mentre si scorre. Solo impaginazione: importi,
+                controlli e invii sono gli stessi di prima. */}
+            <div className="space-y-8 min-w-0 order-2 lg:order-1">
+            <section>
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h3>
+              <div className="flex border-b border-gray-700 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'credit' }))}
+                  className={`flex-1 py-2 text-sm font-semibold ${formData.paymentMethod === 'credit' ? 'text-white border-b-2 border-white' : 'text-gray-400'}`}
+                >
+                  Credit Wallet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'nexi' }))}
+                  className={`flex-1 py-2 text-sm font-semibold ${formData.paymentMethod === 'nexi' ? 'text-white border-b-2 border-white' : 'text-gray-400'}`}
+                >
+                  Carta
+                </button>
+              </div>
+              {/* DR7 Club separate payment notice */}
+              {formData.extras.some(e => e.startsWith('subscription_')) && (
+                <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg text-sm">
+                  <p className="text-white font-semibold">{t({ it: "DR7 Club — Pagamento separato", en: "DR7 Club — Separate payment" })}</p>
+                  <p className="text-white/70 text-xs mt-1">
+                    {formData.paymentMethod === 'credit'
+                      ? `Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club (${clubPrezzoScelto}) con carta.`
+                      : `Il noleggio e DR7 Club (${clubPrezzoScelto}) saranno pagati insieme con carta.`}
+                  </p>
                 </div>
+              )}
 
+              {
+                formData.paymentMethod === 'credit' ? (
+                  <div className="text-center py-6">
+                    {isLoadingBalance ? (
+                      <div className="flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-t-white border-gray-600 rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-400 mb-2">{t({ it: "Saldo Disponibile", en: "Available Balance" })}</p>
+                        <p className="text-4xl font-bold text-white mb-4">€{creditBalance.toFixed(2)}</p>
+                        {creditBalance < total ? (
+                          <p className="text-sm text-red-400">Credito insufficiente. Richiesto: €{total.toFixed(2)}</p>
+                        ) : (
+                          <p className="text-sm text-green-400">{t({ it: "✓ Saldo sufficiente", en: "✓ Sufficient balance" })}</p>
+                        )}
+                      </>
+                    )}
+                    {paymentError && (
+                      <div className="mt-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                        <p className="text-sm text-red-400 text-center">{paymentError}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <h4 className="text-base font-semibold text-white mb-3">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h4>
+                    <div className="p-4 bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <svg viewBox="0 0 131.39 86.9" className="h-6 opacity-70" aria-label={t({ it: 'Mastercard', en: 'Mastercard' })}><rect width="131.39" height="86.9" rx="8" fill="#000"/><circle cx="48.37" cy="43.45" r="27.5" fill="#eb001b"/><circle cx="83.02" cy="43.45" r="27.5" fill="#f79e1b"/><path d="M65.7 20.8a27.4 27.4 0 0 0-10.2 21.4c0 8.6 3.9 16.3 10.2 21.4a27.4 27.4 0 0 0 10.2-21.4c0-8.6-3.9-16.3-10.2-21.4Z" fill="#ff5f00"/></svg>
+                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label={t({ it: 'Visa', en: 'Visa' })}><path d="M293.2 348.7l33.4-195.8h53.4l-33.4 195.8zM541.4 157.6a131.8 131.8 0 0 0-48.4-8.8c-53.2 0-90.7 27-91 65.7-.3 28.6 26.8 44.6 47.2 54.1 21 9.7 28 16 27.9 24.7-.1 13.3-16.7 19.4-32.2 19.4-21.5 0-32.9-3-50.6-10.4l-6.9-3.2-7.5 44.5c12.6 5.5 35.8 10.3 59.9 10.6 56.6 0 93.3-26.7 93.7-68 .2-22.7-14.2-40-45.3-54.2-18.9-9.2-30.4-15.4-30.3-24.7 0-8.3 9.8-17.2 30.9-17.2 17.6-.3 30.4 3.6 40.4 7.6l4.8 2.3 7.3-42.4z" fill="#1434cb"/><path d="M630.6 152.9h-41.6c-12.9 0-22.5 3.5-28.2 16.5l-79.9 182.3h56.5s9.2-24.5 11.3-29.9h69.1c1.6 7 6.5 29.9 6.5 29.9h50l-43.6-198.8zm-66.4 128.3c4.5-11.5 21.5-55.8 21.5-55.8-.3.5 4.4-11.5 7.1-19l3.6 17.2s10.3 47.6 12.5 57.6h-44.7zM232.8 152.9l-52.8 133.5-5.6-27.5c-9.8-31.5-40.2-65.7-74.3-82.8l48.2 172.4 57 0 84.7-195.8h-57.2z" fill="#1434cb"/><path d="M131.9 152.9H46.5l-.7 3.8c67.6 16.5 112.3 56.3 130.9 104.2l-18.9-91.6c-3.2-12.5-12.8-16-25.9-16.4z" fill="#f7a600"/></svg>
+                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label={t({ it: 'PayPal', en: 'PayPal' })}><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l-2.6 16.7c-.4 2.7 1.6 5 4.3 5h30.1c3.5 0 6.5-2.5 7-6l.3-1.5 5.6-35.2.4-1.9c.5-3.4 3.5-6 7-6h4.4c28.5 0 50.8-11.6 57.3-45 2.7-14-1.3-25.6-9-33.4z" fill="#179bd7"/><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3-1-.5-1-.5 0 0 2.2-14.2-.0-23.8-12.2-27.1z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4 9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7-1-.5-1-.5-1.1-27.6z" fill="#179bd7"/></svg>
+                      </div>
+                      <p className="text-gray-400 text-sm text-center">
+                        Sarai reindirizzato a una pagina di pagamento sicura per completare la transazione.
+                      </p>
+                    </div>
+                  </>
+                )
+              }
+            </section >
+            <section className="border-t border-gray-700 pt-6">
+              <h3 className="text-lg font-bold text-white mb-4 uppercase">{t({ it: "Conferme Finali", en: "Final confirmations" })}</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-start">
+                    <input id="confirms-documents" name="confirmsDocuments" type="checkbox" checked={formData.confirmsDocuments} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
+                    <label htmlFor="confirms-documents" className="ml-3 block text-sm font-medium text-white">
+                      Confermo che i documenti caricati sono corretti e appartengono al conducente principale.
+                    </label>
+                  </div>
+                  {errors.confirmsDocuments && <p className="text-xs text-red-400 mt-1 pl-7">{errors.confirmsDocuments}</p>}
+                </div>
+                <div>
+                  <div className="flex items-start">
+                    <input id="agrees-to-terms" name="agreesToTerms" type="checkbox" checked={formData.agreesToTerms} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
+                    <label htmlFor="agrees-to-terms" className="ml-3 block text-sm font-medium text-white">
+                      Ho letto e accetto i <Link to="/rental-agreement" target="_blank" className="underline hover:text-white">{t({ it: "termini e le condizioni di noleggio", en: "rental terms and conditions" })}</Link>.
+                    </label>
+                  </div>
+                  {errors.agreesToTerms && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToTerms}</p>}
+                </div>
+                <div>
+                  <div className="flex items-start">
+                    <input id="agrees-to-privacy" name="agreesToPrivacy" type="checkbox" checked={formData.agreesToPrivacy} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
+                    <label htmlFor="agrees-to-privacy" className="ml-3 block text-sm font-medium text-white">
+                      Ho letto e accetto l'<Link to="/privacy-policy" target="_blank" className="underline hover:text-white">{t({ it: "informativa sulla privacy", en: "privacy policy" })}</Link>.
+                    </label>
+                  </div>
+                  {errors.agreesToPrivacy && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToPrivacy}</p>}
+                </div>
+              </div>
+            </section>
+            </div>
+
+            <aside className="min-w-0 order-1 lg:order-2 lg:sticky lg:top-4">
+              <div className="rounded-2xl border border-gray-700 bg-gray-900/70 overflow-hidden">
+                {item.image && (
+                  <div className="aspect-[16/9] bg-black/60">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" loading="lazy" />
+                  </div>
+                )}
+                <div className="p-4 sm:p-5 border-b border-gray-800">
+                  <p className="text-base font-bold text-white leading-snug">{item.name}</p>
+                  <p className="text-xs uppercase tracking-wider text-gray-500 mt-1">{t({ it: "Riepilogo prenotazione", en: "Booking summary" })}</p>
+                </div>
+                <div className="p-4 sm:p-5 space-y-5 text-sm">
+                {/* Il nome del veicolo e' gia' nell'intestazione della scheda,
+                    sotto la foto: qui non si ripete. */}
                 <div>
                   <p className="font-bold text-base text-white mb-2">{t({ it: "DATE E LOCALITÀ", en: "DATES AND LOCATIONS" })}</p>
                   <hr className="border-gray-600 mb-2" />
@@ -7668,119 +7798,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </div>
                   </details>
                 </div>
-              </div>
-            </section>
-
-            {/* 19/09/2026 (direzione): prima il riepilogo, poi come si paga
-                (carta o Credit Wallet), poi le tre spunte. Si sceglie il
-                pagamento dopo aver visto il totale, non prima. */}
-            <section>
-              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h3>
-              <div className="flex border-b border-gray-700 mb-6">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'credit' }))}
-                  className={`flex-1 py-2 text-sm font-semibold ${formData.paymentMethod === 'credit' ? 'text-white border-b-2 border-white' : 'text-gray-400'}`}
-                >
-                  Credit Wallet
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'nexi' }))}
-                  className={`flex-1 py-2 text-sm font-semibold ${formData.paymentMethod === 'nexi' ? 'text-white border-b-2 border-white' : 'text-gray-400'}`}
-                >
-                  Carta
-                </button>
-              </div>
-              {/* DR7 Club separate payment notice */}
-              {formData.extras.some(e => e.startsWith('subscription_')) && (
-                <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg text-sm">
-                  <p className="text-white font-semibold">{t({ it: "DR7 Club — Pagamento separato", en: "DR7 Club — Separate payment" })}</p>
-                  <p className="text-white/70 text-xs mt-1">
-                    {formData.paymentMethod === 'credit'
-                      ? `Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club (${clubPrezzoScelto}) con carta.`
-                      : `Il noleggio e DR7 Club (${clubPrezzoScelto}) saranno pagati insieme con carta.`}
-                  </p>
                 </div>
-              )}
-
-              {
-                formData.paymentMethod === 'credit' ? (
-                  <div className="text-center py-6">
-                    {isLoadingBalance ? (
-                      <div className="flex items-center justify-center">
-                        <div className="w-8 h-8 border-2 border-t-white border-gray-600 rounded-full animate-spin"></div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-400 mb-2">{t({ it: "Saldo Disponibile", en: "Available Balance" })}</p>
-                        <p className="text-4xl font-bold text-white mb-4">€{creditBalance.toFixed(2)}</p>
-                        {creditBalance < total ? (
-                          <p className="text-sm text-red-400">Credito insufficiente. Richiesto: €{total.toFixed(2)}</p>
-                        ) : (
-                          <p className="text-sm text-green-400">{t({ it: "✓ Saldo sufficiente", en: "✓ Sufficient balance" })}</p>
-                        )}
-                      </>
-                    )}
-                    {paymentError && (
-                      <div className="mt-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-                        <p className="text-sm text-red-400 text-center">{paymentError}</p>
-                      </div>
-                    )}
+                <div className="px-4 sm:px-5 py-4 border-t border-gray-800 flex items-start gap-2">
+                  <svg className="w-4 h-4 mt-0.5 text-dr7-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{t({ it: "Cancellazione gratuita", en: "Free cancellation" })}</p>
+                    <p className="text-[11px] text-gray-500">{t({ it: "secondo i termini e le condizioni", en: "according to the terms and conditions" })}</p>
                   </div>
-                ) : (
-                  <>
-                    <h4 className="text-base font-semibold text-white mb-3">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h4>
-                    <div className="p-4 bg-gray-800 rounded-lg">
-                      <div className="flex items-center justify-center gap-3 mb-3">
-                        <svg viewBox="0 0 131.39 86.9" className="h-6 opacity-70" aria-label={t({ it: 'Mastercard', en: 'Mastercard' })}><rect width="131.39" height="86.9" rx="8" fill="#000"/><circle cx="48.37" cy="43.45" r="27.5" fill="#eb001b"/><circle cx="83.02" cy="43.45" r="27.5" fill="#f79e1b"/><path d="M65.7 20.8a27.4 27.4 0 0 0-10.2 21.4c0 8.6 3.9 16.3 10.2 21.4a27.4 27.4 0 0 0 10.2-21.4c0-8.6-3.9-16.3-10.2-21.4Z" fill="#ff5f00"/></svg>
-                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label={t({ it: 'Visa', en: 'Visa' })}><path d="M293.2 348.7l33.4-195.8h53.4l-33.4 195.8zM541.4 157.6a131.8 131.8 0 0 0-48.4-8.8c-53.2 0-90.7 27-91 65.7-.3 28.6 26.8 44.6 47.2 54.1 21 9.7 28 16 27.9 24.7-.1 13.3-16.7 19.4-32.2 19.4-21.5 0-32.9-3-50.6-10.4l-6.9-3.2-7.5 44.5c12.6 5.5 35.8 10.3 59.9 10.6 56.6 0 93.3-26.7 93.7-68 .2-22.7-14.2-40-45.3-54.2-18.9-9.2-30.4-15.4-30.3-24.7 0-8.3 9.8-17.2 30.9-17.2 17.6-.3 30.4 3.6 40.4 7.6l4.8 2.3 7.3-42.4z" fill="#1434cb"/><path d="M630.6 152.9h-41.6c-12.9 0-22.5 3.5-28.2 16.5l-79.9 182.3h56.5s9.2-24.5 11.3-29.9h69.1c1.6 7 6.5 29.9 6.5 29.9h50l-43.6-198.8zm-66.4 128.3c4.5-11.5 21.5-55.8 21.5-55.8-.3.5 4.4-11.5 7.1-19l3.6 17.2s10.3 47.6 12.5 57.6h-44.7zM232.8 152.9l-52.8 133.5-5.6-27.5c-9.8-31.5-40.2-65.7-74.3-82.8l48.2 172.4 57 0 84.7-195.8h-57.2z" fill="#1434cb"/><path d="M131.9 152.9H46.5l-.7 3.8c67.6 16.5 112.3 56.3 130.9 104.2l-18.9-91.6c-3.2-12.5-12.8-16-25.9-16.4z" fill="#f7a600"/></svg>
-                        <svg viewBox="0 0 780 500" className="h-6 opacity-70" aria-label={t({ it: 'PayPal', en: 'PayPal' })}><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l-2.6 16.7c-.4 2.7 1.6 5 4.3 5h30.1c3.5 0 6.5-2.5 7-6l.3-1.5 5.6-35.2.4-1.9c.5-3.4 3.5-6 7-6h4.4c28.5 0 50.8-11.6 57.3-45 2.7-14-1.3-25.6-9-33.4z" fill="#179bd7"/><path d="M622.8 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8l-23.5 149.4c-.5 3 1.8 5.8 4.9 5.8h37.6l9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3-1-.5-1-.5 0 0 2.2-14.2-.0-23.8-12.2-27.1z" fill="#253b80"/><path d="M342.3 201.7c-8.5-9.6-23.7-13.7-43.3-13.7h-56.6c-4 0-7.4 2.9-8 6.8L211 344.2c-.5 3 1.8 5.8 4.9 5.8h38.5l9.7-61.4 9.4-59.8-.3 1.9c.6-3.9 4-6.8 8-6.8h16.6c32.6 0 58.2-13.3 65.6-51.6.2-1.1.4-2.2.5-3.3 2.2-14.2-.0-23.8-11-32.7-1-.5-1-.5-1.1-27.6z" fill="#179bd7"/></svg>
-                      </div>
-                      <p className="text-gray-400 text-sm text-center">
-                        Sarai reindirizzato a una pagina di pagamento sicura per completare la transazione.
-                      </p>
-                    </div>
-                  </>
-                )
-              }
-            </section >
-
-            {/* 19/09/2026 (direzione): le conferme finali stanno in FONDO, dopo il
-                riepilogo completo: si spunta dopo aver riletto date, conducenti e
-                costi, non prima di vederli. */}
-            <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4 uppercase">{t({ it: "Conferme Finali", en: "Final confirmations" })}</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-start">
-                    <input id="confirms-documents" name="confirmsDocuments" type="checkbox" checked={formData.confirmsDocuments} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
-                    <label htmlFor="confirms-documents" className="ml-3 block text-sm font-medium text-white">
-                      Confermo che i documenti caricati sono corretti e appartengono al conducente principale.
-                    </label>
-                  </div>
-                  {errors.confirmsDocuments && <p className="text-xs text-red-400 mt-1 pl-7">{errors.confirmsDocuments}</p>}
-                </div>
-                <div>
-                  <div className="flex items-start">
-                    <input id="agrees-to-terms" name="agreesToTerms" type="checkbox" checked={formData.agreesToTerms} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
-                    <label htmlFor="agrees-to-terms" className="ml-3 block text-sm font-medium text-white">
-                      Ho letto e accetto i <Link to="/rental-agreement" target="_blank" className="underline hover:text-white">{t({ it: "termini e le condizioni di noleggio", en: "rental terms and conditions" })}</Link>.
-                    </label>
-                  </div>
-                  {errors.agreesToTerms && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToTerms}</p>}
-                </div>
-                <div>
-                  <div className="flex items-start">
-                    <input id="agrees-to-privacy" name="agreesToPrivacy" type="checkbox" checked={formData.agreesToPrivacy} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
-                    <label htmlFor="agrees-to-privacy" className="ml-3 block text-sm font-medium text-white">
-                      Ho letto e accetto l'<Link to="/privacy-policy" target="_blank" className="underline hover:text-white">{t({ it: "informativa sulla privacy", en: "privacy policy" })}</Link>.
-                    </label>
-                  </div>
-                  {errors.agreesToPrivacy && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToPrivacy}</p>}
                 </div>
               </div>
-            </section>
+            </aside>
           </div>
         );
       default:

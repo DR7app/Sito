@@ -4,9 +4,10 @@
  * Si apre cliccando una macchina nella pagina Flotta. Mostra una griglia
  * mensile (mese corrente + i successivi) con le disponibilita' REALI di
  * quel veicolo: i giorni gia' impegnati sono grigi e non cliccabili, i
- * giorni liberi si cliccano per comporre il periodo. Scelte le due date
- * appare il prezzo, e il bottone porta al wizard di prenotazione GIA'
- * COMPILATO con quelle date.
+ * giorni liberi si cliccano per comporre il periodo. Scelte le due date il
+ * bottone porta al wizard di prenotazione GIA' COMPILATO con quelle date.
+ * Qui non si mostrano prezzi (20/09/2026, direzione): il prezzo vive nel
+ * wizard, dove ci sono le opzioni che lo compongono.
  *
  * Non e' un secondo flusso di prenotazione: e' una scorciatoia che
  * finisce nello stesso CarBookingWizard di sempre (via
@@ -21,8 +22,6 @@
  *    solo quando TUTTI sono fuori.
  *  - orari selezionabili: `utils/noleggioHours` (Centralina Pro > Orari
  *    Noleggio), che restituisce [] la domenica e nei festivi.
- *  - prezzo: `calculate-dynamic-price`, la stessa funzione che il wizard
- *    interroga quando il cliente sceglie le date.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -69,26 +68,12 @@ const MESI_EN = ['January', 'February', 'March', 'April', 'May', 'June',
 const GIORNI_IT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const GIORNI_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-interface PrezzoDinamico {
-  enabled: boolean;
-  finalDailyRateEur?: number;
-  finalTotalEur?: number;
-  rentalDays?: number;
-  selectedBaseRateEur?: number;
-}
-
 interface Props {
   item: RentalItem;
   /** 'cars' oppure 'urban-cars': serve al wizard per il routing. */
   categoryContext: string;
   onClose: () => void;
 }
-
-const euro = (n: number) => new Intl.NumberFormat('it-IT', {
-  style: 'currency', currency: 'EUR',
-  minimumFractionDigits: n % 1 === 0 ? 0 : 2,
-  maximumFractionDigits: 2,
-}).format(n);
 
 /** Minuti dall'inizio della giornata, per confrontare due orari. */
 function minutiOra(ora: string): number {
@@ -128,8 +113,6 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
   // click su un altro giorno la SPOSTA invece di far ripartire il periodo.
   const [riconsegnaProposta, setRiconsegnaProposta] = useState(false);
 
-  const [prezzo, setPrezzo] = useState<PrezzoDinamico | null>(null);
-  const [prezzoInCorso, setPrezzoInCorso] = useState(false);
 
   const oggi = useMemo(() => new Date(), []);
   const oggiYmd = useMemo(() => ymdLocale(oggi), [oggi]);
@@ -140,7 +123,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
 
   // Si mostra UN mese alla volta — quello corrente all'apertura — e si
   // scorre con le frecce. Due mesi affiancati riempivano la finestra e
-  // costringevano a scorrere per arrivare a orari e prezzo.
+  // costringevano a scorrere per arrivare agli orari.
   const [mese, setMese] = useState(() => new Date(oggi.getFullYear(), oggi.getMonth(), 1));
 
   // Gli id "veri" dei veicoli: per un gruppo (es. 3 Panda bianche) sono
@@ -211,43 +194,6 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     return () => { annullato = true; };
   }, [vehicleIds, vehiclePlates, orizzonteYmd]);
 
-  // ─── Prezzo (stessa funzione del wizard) ───────────────────────────────
-  useEffect(() => {
-    if (!ritiroYmd || !riconsegnaYmd || !ritiroOra || !riconsegnaOra) {
-      setPrezzo(null);
-      return;
-    }
-    const vehicleId = vehicleIds[0];
-    if (!vehicleId) return;
-
-    let annullato = false;
-    setPrezzoInCorso(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetchWithTimeout(
-          `${FUNCTIONS_BASE}/.netlify/functions/calculate-dynamic-price`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              vehicle_id: vehicleId,
-              pickup_date: `${ritiroYmd}T${ritiroOra}`,
-              dropoff_date: `${riconsegnaYmd}T${riconsegnaOra}`,
-            }),
-          },
-          10000,
-        );
-        if (annullato) return;
-        setPrezzo(res.ok ? await res.json() : null);
-      } catch {
-        if (!annullato) setPrezzo(null);
-      } finally {
-        if (!annullato) setPrezzoInCorso(false);
-      }
-    }, 250);
-
-    return () => { annullato = true; clearTimeout(timer); };
-  }, [ritiroYmd, ritiroOra, riconsegnaYmd, riconsegnaOra, vehicleIds]);
 
   // ─── Selezione ─────────────────────────────────────────────────────────
   const limiteRiconsegna = useMemo(() => {
@@ -386,16 +332,6 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     ? giorniFatturati(ritiroYmd, ritiroOra, riconsegnaYmd, riconsegnaOra, getLateReturnGraceMinutes())
     : 0;
 
-  // Si moltiplica la tariffa giornaliera dinamica per i giorni FATTURATI,
-  // non si usa `finalTotalEur`: la funzione conta i giorni con un
-  // ceil(ore/24), il wizard con i giorni di calendario piu' la regola
-  // della grace. Prendendo la tariffa e contando i giorni come il wizard,
-  // il numero del popup e quello del passo successivo coincidono.
-  const totale = prezzo?.enabled && typeof prezzo.finalDailyRateEur === 'number'
-    ? prezzo.finalDailyRateEur * giorni
-    : (item.pricePerDay?.eur || 0) * giorni;
-  const alGiorno = giorni > 0 ? totale / giorni : 0;
-
   // ─── Passaggio al wizard ───────────────────────────────────────────────
   const vaiAlWizard = () => {
     if (!ritiroYmd || !riconsegnaYmd) return;
@@ -404,8 +340,10 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
       pickupTime: ritiroOra,
       returnDate: riconsegnaYmd,
       returnTime: riconsegnaOra,
-      pickupLocation: 'dr7_office',
-      returnLocation: 'dr7_office',
+      // 20/09/2026: gli id sono quelli di constants.ts (PICKUP_LOCATIONS). Con
+      // 'dr7_office' nessuna delle due opzioni risultava scelta nel wizard.
+      pickupLocation: 'dr7_cagliari',
+      returnLocation: 'dr7_cagliari',
     });
     openCarWizard(item, categoryContext);
     onClose();
@@ -586,7 +524,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
               </span>
             </div>
 
-            {/* Orari + prezzo: appaiono solo a periodo completo. */}
+            {/* Orari: appaiono solo a periodo completo. */}
             {ritiroYmd && (
               <>
                 <span className="seam-line my-7 block" />
@@ -656,24 +594,20 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
               </div>
             )}
 
+            {/* 20/09/2026 (direzione): qui niente prezzi. Il calendario dice
+                quando si puo' prenotare, non quanto costa: il prezzo si vede
+                al passo successivo, dove ci sono assicurazione, chilometri,
+                extra e cauzione che lo compongono. */}
             {ritiroYmd && riconsegnaYmd && (
               <div className="mt-7 border border-[color:var(--line)] p-5">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <p className="t-eyebrow">{it ? 'Solo noleggio' : 'Rental only'}</p>
-                    <p className="mt-2 text-[11px] text-[color:var(--fg-dim)]">
-                      {giorni} {giorni === 1 ? (it ? 'giorno' : 'day') : (it ? 'giorni' : 'days')}
-                      {alGiorno > 0 && <> — {euro(alGiorno)}{it ? '/giorno' : '/day'}</>}
-                    </p>
-                  </div>
-                  <p className="font-serif text-[30px] leading-none tracking-[-0.01em] text-[color:var(--fg)]">
-                    {prezzoInCorso ? '…' : totale > 0 ? euro(totale) : '—'}
-                  </p>
-                </div>
+                <p className="t-eyebrow">{it ? 'Periodo scelto' : 'Selected period'}</p>
+                <p className="mt-2 text-[11px] text-[color:var(--fg-dim)]">
+                  {giorni} {giorni === 1 ? (it ? 'giorno' : 'day') : (it ? 'giorni' : 'days')}
+                </p>
                 <p className="mt-4 text-[11px] leading-relaxed text-[color:var(--fg-dim)]">
                   {it
-                    ? 'Assicurazione, chilometri, extra e cauzione si scelgono nel passo successivo: il totale finale puo cambiare in base alle opzioni.'
-                    : 'Insurance, mileage, extras and deposit are chosen in the next step: the final total may change with your options.'}
+                    ? 'Assicurazione, chilometri, extra e cauzione si scelgono nel passo successivo, insieme al prezzo.'
+                    : 'Insurance, mileage, extras and deposit are chosen in the next step, together with the price.'}
                 </p>
               </div>
             )}

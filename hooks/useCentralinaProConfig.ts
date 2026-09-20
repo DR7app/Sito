@@ -155,6 +155,9 @@ export interface ProInsuranceOption {
   mandatory_deposit?: number | ''
   deductible_fixed?: number | ''
   deductible_percent?: number | ''
+  /** 20/09/2026 (direzione): descrizione della copertura scritta in Centralina
+   *  Pro > Assicurazioni, uguale a quella del contratto. Vuota = frase standard. */
+  coverage?: string
 }
 
 export interface ProInsuranceCategory {
@@ -338,7 +341,10 @@ function toInsuranceOpts(arr: ProInsuranceOption[] | undefined): InsuranceTierOp
       dailyPrice: num(o.daily_price, 0),
       deductible,
       mandatoryDeposit: num(o.mandatory_deposit, 0) || undefined,
-      coverage: DEFAULT_COVERAGE,
+      // 20/09/2026: il testo scritto in Centralina Pro vince. Prima veniva
+      // scartato e ogni Kasko mostrava la stessa frase, anche quando il
+      // contratto per quella categoria ne diceva un'altra.
+      coverage: (o.coverage || '').trim() || DEFAULT_COVERAGE,
     }
   })
 }

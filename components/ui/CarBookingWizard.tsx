@@ -7010,7 +7010,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <span className="text-[13px] font-bold italic tracking-tight text-[#1434CB]">VISA</span>
                         </span>
                         <span className="inline-flex items-center justify-center h-8 w-14 rounded bg-[#006FCF]" aria-label="American Express">
-                          <span className="text-[11px] font-bold tracking-tight text-white">AMEX</span>
+                          {/* Il blu del marchio con la cornice bianca della
+                              tessera: a questa altezza "AMERICAN EXPRESS" per
+                              esteso non si leggerebbe. */}
+                          <span className="inline-flex items-center justify-center h-6 w-12 border border-white/80 rounded-[2px]">
+                            <span className="text-[10px] font-bold tracking-[0.06em] text-white">AMEX</span>
+                          </span>
                         </span>
                         <span className="inline-flex items-center justify-center h-8 w-16 rounded bg-white" aria-label="PayPal">
                           <span className="text-[12px] font-bold italic tracking-tight">

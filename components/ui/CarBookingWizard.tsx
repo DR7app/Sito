@@ -3520,9 +3520,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!formData.idImageBack && !hasStoredDocs.idPath) {
         newErrors.idImageBack = "La foto del documento d'identità (retro) è obbligatoria.";
       }
-      // 20/09/2026 (direzione): il codice fiscale NON blocca la prenotazione.
-      // Obbligatori restano patente e documento d'identita'. La tessera
-      // sanitaria si puo' caricare, non si pretende.
+      // 20/09/2026 (direzione): il codice fiscale e' obbligatorio per chi e'
+      // italiano — serve alla fattura. Chi ha spuntato "Non sono italiano" (o
+      // ha la residenza fuori Italia) non se lo vede nemmeno chiedere.
+      if (!senzaCodiceFiscale) {
+        if (!formData.cfImage && !hasStoredDocs.cfPath) {
+          newErrors.cfImage = "La foto del codice fiscale (fronte) è obbligatoria.";
+        }
+        if (!formData.cfImageBack && !hasStoredDocs.cfPath) {
+          newErrors.cfImageBack = "La foto del codice fiscale (retro) è obbligatoria.";
+        }
+      }
       // 20/09/2026: il secondo conducente si compila in questo passo, quindi
       // qui si controlla. Regole invariate, comprese le patenti senza scadenza.
       const isBMW_M4 = item.name?.includes('BMW M4') || item.name?.includes('M4 Competition');
@@ -3564,8 +3572,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         if (!sd.licenseImageBack) newErrors['secondDriver.licenseImageBack'] = "Patente (retro) obbligatoria.";
         if (!sd.idImage) newErrors['secondDriver.idImage'] = "Documento (fronte) obbligatorio.";
         if (!sd.idImageBack) newErrors['secondDriver.idImageBack'] = "Documento (retro) obbligatorio.";
-        // 20/09/2026 (direzione): nemmeno per il secondo conducente il codice
-        // fiscale e' obbligatorio.
+        // 20/09/2026 (direzione): stessa regola del primo conducente — se e'
+        // italiano il codice fiscale serve, altrimenti non si chiede.
+        if (!senzaCodiceFiscale) {
+          if (!sd.cfImage) newErrors['secondDriver.cfImage'] = "Codice fiscale (fronte) obbligatorio.";
+          if (!sd.cfImageBack) newErrors['secondDriver.cfImageBack'] = "Codice fiscale (retro) obbligatorio.";
+          if (!String(sd.codiceFiscale || '').trim()) newErrors['secondDriver.codiceFiscale'] = "Codice fiscale obbligatorio.";
+        }
       }
       if (!formData.confirmsDocuments) {
         newErrors.confirmsDocuments = "Devi confermare che i documenti sono corretti.";
@@ -7140,8 +7153,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {([
                       { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE", en: "3. TAX CODE CARD — FRONT" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO", en: "4. TAX CODE CARD — BACK" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "6. CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "6. ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
                     ] as const)
@@ -7310,9 +7323,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         { campo: 'licenseImageBack', titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
                         { campo: 'idImage', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: ["Documento valido", "Formati: JPG, PNG, PDF (max 5MB)"] },
                         { campo: 'idImageBack', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE", en: "TAX CODE CARD — FRONT" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO", en: "TAX CODE CARD — BACK" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                      ] as const).map(({ campo, titolo, righe }) => (
+                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                      ] as const)
+                        // Stessa regola del primo conducente: niente tessera
+                        // sanitaria a chi non ha il codice fiscale.
+                        .filter(({ campo }) => !(senzaCodiceFiscale && (campo === 'cfImage' || campo === 'cfImageBack')))
+                        .map(({ campo, titolo, righe }) => (
                         <div key={campo}>
                           <DocumentUploader
                             title={titolo}

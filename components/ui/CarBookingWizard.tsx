@@ -6896,20 +6896,44 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             <div className="space-y-8 min-w-0 order-2 lg:order-1">
             <section>
               <h3 className="text-lg font-bold text-white mb-4">{t({ it: "METODO DI PAGAMENTO", en: "PAYMENT METHOD" })}</h3>
-              <div className="flex border-b border-gray-700 mb-6">
+              {/* 20/09/2026 (direzione): due schede al posto delle linguette,
+                  come nel carrello. Stessa scelta, stesso stato, solo leggibile:
+                  icona, nome, una riga di spiegazione e la spunta a destra. */}
+              <p className="text-sm text-gray-400 mb-4">{t({ it: 'Scegli come desideri effettuare il pagamento', en: 'Choose how you want to pay' })}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'credit' }))}
-                  className={`flex-1 py-2 text-sm font-semibold ${formData.paymentMethod === 'credit' ? 'text-white border-b-2 border-white' : 'text-gray-400'}`}
+                  className={`relative text-left p-4 rounded-lg border transition-colors ${formData.paymentMethod === 'credit' ? 'border-dr7-gold bg-white/[0.03]' : 'border-gray-700 hover:border-gray-500'}`}
                 >
-                  Credit Wallet
+                  <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${formData.paymentMethod === 'credit' ? 'border-dr7-gold bg-dr7-gold' : 'border-gray-600'}`}>
+                    {formData.paymentMethod === 'credit' && (
+                      <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    )}
+                  </span>
+                  <svg className={`w-7 h-7 mb-3 ${formData.paymentMethod === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
+                  <span className={`block text-sm font-bold ${formData.paymentMethod === 'credit' ? 'text-white' : 'text-gray-300'}`}>Credit Wallet</span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    {t({ it: 'Usa il tuo credito disponibile nel wallet DR7', en: 'Use the credit available in your DR7 wallet' })}
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'nexi' }))}
-                  className={`flex-1 py-2 text-sm font-semibold ${formData.paymentMethod === 'nexi' ? 'text-white border-b-2 border-white' : 'text-gray-400'}`}
+                  className={`relative text-left p-4 rounded-lg border transition-colors ${formData.paymentMethod === 'nexi' ? 'border-dr7-gold bg-white/[0.03]' : 'border-gray-700 hover:border-gray-500'}`}
                 >
-                  Carta
+                  <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${formData.paymentMethod === 'nexi' ? 'border-dr7-gold bg-dr7-gold' : 'border-gray-600'}`}>
+                    {formData.paymentMethod === 'nexi' && (
+                      <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    )}
+                  </span>
+                  <svg className={`w-7 h-7 mb-3 ${formData.paymentMethod === 'nexi' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+                  <span className={`block text-sm font-bold ${formData.paymentMethod === 'nexi' ? 'text-white' : 'text-gray-300'}`}>
+                    {t({ it: 'Carta di credito/debito', en: 'Credit/debit card' })}
+                  </span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    {t({ it: 'Paga in modo sicuro con la tua carta', en: 'Pay securely with your card' })}
+                  </span>
                 </button>
               </div>
               {/* DR7 Club separate payment notice */}
@@ -8343,210 +8367,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               </div>
             </div>
 
-            <div className={step === 3 ? "lg:grid lg:grid-cols-3 lg:gap-8 px-2 sm:px-4" : "px-2 sm:px-4"}>
-              {step === 3 && (
-                <aside className="hidden lg:block lg:col-span-1 lg:sticky lg:top-32 self-start mb-8 lg:mb-0">
-                  <div className="bg-gray-900/50 p-6 rounded-lg border border-gray-800">
-                    <p className="text-xs text-green-400 font-medium mb-2">{t({ it: "Prezzo dinamico attivo, blocca ORA, potrebbe aumentare", en: "Dynamic pricing active — lock it in NOW, it may rise" })}</p>
-                    <h2 className="text-2xl font-bold text-white mb-4">{t({ it: "RIEPILOGO COSTI", en: "COST SUMMARY" })}</h2>
-                    <img src={item.image} alt={item.name} className="w-full h-40 object-contain rounded-md mb-4 bg-gray-800/30" />
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Durata noleggio:", en: "Rental duration:" })}</span><span className="text-white font-medium">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</span></div>
-                      {extraDayApplied && (
-                        <div className="p-2 bg-amber-900/30 border border-amber-500/50 rounded">
-                          <p className="text-amber-300 text-xs font-semibold">{t({ it: "+1 giorno: l'orario di riconsegna supera il margine di 1h30 prima dell'orario di ritiro.", en: "+1 day: the drop-off time exceeds the 1h30 margin before the pick-up time." })}</p>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">{t({ it: "Km pacchetto:", en: "Package km:" })}</span>
-                        <span className="text-white font-medium">
-                          {(formData.kmPackageType === 'unlimited' || (includedKm && includedKm >= 9999)) ? 'ILLIMITATI' : `${includedKm} km`}
-                        </span>
-                      </div>
-
-                      <div className="border-t border-gray-700 my-2"></div>
-
-                      <div className="flex justify-between"><span className="text-gray-400">Noleggio {item.name}</span><span className="text-white font-medium">{formatPrice(rentalCost)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400 notranslate">Assicurazione {(() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || ''; })()}</span><span className="text-white font-medium">{formatPrice(insuranceCost)}</span></div>
-                      {/* Lavaggio is now included in the price - no additional fee */}
-                      {pickupFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Spese di ritiro", en: "Pick-up fee" })}</span><span className="text-white font-medium">{formatPrice(pickupFee)}</span></div>}
-                      {dropoffFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Spese di riconsegna", en: "Drop-off fee" })}</span><span className="text-white font-medium">{formatPrice(dropoffFee)}</span></div>}
-                      {formData.pickupLocation === 'home_delivery' && formData.deliveryPickupKm > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Consegna a domicilio ({formData.deliveryPickupKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM})</span>
-                          <span className="text-white font-medium">{formatPrice(formData.deliveryPickupKm * ACTIVE_DELIVERY_PRICE_PER_KM)}</span>
-                        </div>
-                      )}
-                      {formData.returnLocation === 'home_delivery' && formData.deliveryReturnKm > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Riconsegna a domicilio ({formData.deliveryReturnKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM})</span>
-                          <span className="text-white font-medium">{formatPrice(formData.deliveryReturnKm * ACTIVE_DELIVERY_PRICE_PER_KM)}</span>
-                        </div>
-                      )}
-                      {secondDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Secondo guidatore", en: "Second driver" })}</span><span className="text-white font-medium">{formatPrice(secondDriverFee)}</span></div>}
-                      {youngDriverFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento sotto i 25 anni", en: "Under-25 surcharge" })}</span><span className="text-white font-medium">{formatPrice(youngDriverFee)}</span></div>}
-                      {recentLicenseFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Supplemento patente recente", en: "New-licence surcharge" })}</span><span className="text-white font-medium">{formatPrice(recentLicenseFee)}</span></div>}
-                      {noDepositSurcharge > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-white">{t({ it: "Supplemento cauzione", en: "Deposit surcharge" })}</span>
-                          <span className="text-white font-medium">{formatPrice(noDepositSurcharge)}</span>
-                        </div>
-                      )}
-                      {selectedUpsellWash && (
-                        <div className="flex justify-between">
-                          <span className="text-blue-400">{t({ it: "Lavaggio auto (-10%)", en: "Car wash (-10%)" })}</span>
-                          <span className="text-blue-400 font-medium">{formatPrice(washUpsellCost)}</span>
-                        </div>
-                      )}
-                      {selectedUpsellExtras.map(svc => (
-                        <div key={svc.id} className="flex justify-between">
-                          <span className="text-blue-400 text-xs">{svc.name} (-10%)</span>
-                          <span className="text-blue-400 font-medium">{formatPrice(roundToTwoDecimals(svc.price * 0.90))}</span>
-                        </div>
-                      ))}
-
-                      <div className="border-t border-white/20 my-2"></div>
-
-                      {/* Dynamic pricing: prezzo barrato */}
-                      {hasDynamicDiscount && (
-                        <div className="flex justify-between items-center text-sm mb-1">
-                          <span className="text-gray-500">{t({ it: "Prezzo listino", en: "List price" })}</span>
-                          <span className="text-gray-500 line-through">{formatPrice(listSubtotal)}</span>
-                        </div>
-                      )}
-                      {hasDynamicDiscount && (
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="flex items-center gap-2 text-green-400">
-                            Prezzo dinamico
-                            <span className={`text-xs px-1.5 py-0.5 font-semibold ${dynamicDiscountPct > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                              {dynamicDiscountPct > 0 ? `-${dynamicDiscountPct}%` : `+${Math.abs(dynamicDiscountPct)}%`}
-                            </span>
-                          </span>
-                          <span className="text-green-400 font-semibold">{formatPrice(uncappedSubtotal)}</span>
-                        </div>
-                      )}
-                      {clampHit && (
-                        <>
-                          <div className="flex justify-between items-center text-sm text-yellow-400">
-                            <span className="flex items-center gap-1">
-                              ⚠️ Limite {clampHit === 'max' ? 'Max' : 'Min'} Raggiunto
-                              {clampLimitDaily != null && (
-                                <span className="text-gray-400 text-xs">({formatPrice(clampLimitDaily)}/g × {Math.max(1, duration.days)}gg, escl. experience)</span>
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-white font-semibold">
-                            <span>{t({ it: "Nuovo totale", en: "New total" })}</span>
-                            <span>{formatPrice(subtotal)}</span>
-                          </div>
-                        </>
-                      )}
-
-                      {membershipDiscount > 0 ? (
-                        <>
-                          <div className="flex justify-between text-gray-400 line-through text-sm"><span>{t({ it: "Totale", en: "Total" })}</span><span>{formatPrice(originalTotal)}</span></div>
-                          <div className="flex justify-between text-green-400 text-sm">
-                            <span>Sconto {membershipTier}</span>
-                            <span>-{formatPrice(membershipDiscount)}</span>
-                          </div>
-                          {onlineDiscountAmount > 0 && (
-                            <div className="flex justify-between text-green-400 text-sm">
-                              <span>{t({ it: "Sconto Online -5%", en: "Online discount -5%" })}</span>
-                              <span>-{formatPrice(onlineDiscountAmount)}</span>
-                            </div>
-                          )}
-                          {discountAmount > 0 && (
-                            <div className="flex justify-between text-white text-sm">
-                              <span>{t({ it: "Codice Sconto", en: "Discount Code" })}</span>
-                              <span>-{formatPrice(discountAmount)}</span>
-                            </div>
-                          )}
-                          {(selectedUpsellWash || selectedUpsellExtras.length > 0) && (
-                            <div className="flex justify-between text-blue-400 text-sm">
-                              <span>{t({ it: "Lavaggio + Servizi (-10%)", en: "Wash + Services (-10%)" })}</span>
-                              <span>+{formatPrice(totalWashUpsellCost)}</span>
-                            </div>
-                          )}
-                          <RigaPrevendita />
-                          <div className="flex justify-between text-xl font-bold">
-                      <span className="text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span>
-                      <span className="text-white">{formatPrice(grandTotal)}</span>
-                    </div>
-                        </>
-                      ) : (
-                        <>
-                          {!hasDynamicDiscount && (
-                            <div className="flex justify-between text-gray-400 text-sm"><span>{t({ it: "Subtotale", en: "Subtotal" })}</span><span>{formatPrice(finalTotal)}</span></div>
-                          )}
-                          {onlineDiscountAmount > 0 && (
-                            <div className="flex justify-between text-green-400 text-sm">
-                              <span>{t({ it: "Sconto Online -5%", en: "Online discount -5%" })}</span>
-                              <span>-{formatPrice(onlineDiscountAmount)}</span>
-                            </div>
-                          )}
-                          {discountAmount > 0 && (
-                            <div className="flex justify-between text-white text-sm">
-                              <span>{t({ it: "Codice Sconto", en: "Discount Code" })}</span>
-                              <span>-{formatPrice(discountAmount)}</span>
-                            </div>
-                          )}
-                          {(selectedUpsellWash || selectedUpsellExtras.length > 0) && (
-                            <div className="flex justify-between text-blue-400 text-sm">
-                              <span>{t({ it: "Lavaggio + Servizi (-10%)", en: "Wash + Services (-10%)" })}</span>
-                              <span>+{formatPrice(totalWashUpsellCost)}</span>
-                            </div>
-                          )}
-                          <RigaPrevendita />
-                          <div className="flex justify-between text-xl font-bold">
-                      <span className="text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span>
-                      <span className="text-white">{formatPrice(grandTotal)}</span>
-                    </div>
-                        </>
-                      )}
-                      {/* Cauzione al ritiro: legata SOLO alla scelta deposito
-                          effettiva (getDeposit). Prima il blocco era condizionato
-                          a isUrbanOrCorporate (vehicleType UTILITARIA/FURGONE/
-                          V_CLASS) e mostrava sempre €ACTIVE_UTILITARIA_DEPOSIT
-                          anche quando il cliente aveva selezionato "Senza
-                          cauzione" — confusione su Mercedes A45 (category
-                          aziendali, label "Supercar"). Ora se la scelta da\'
-                          €0 nascondiamo il blocco; se > 0 mostriamo il valore
-                          reale della scelta. */}
-                      {(() => {
-                        const dep = getDeposit();
-                        if (formData.depositOption === 'no_deposit' || !dep || dep <= 0) return null;
-                        return (
-                          <div className="mt-2 pt-2 border-t border-gray-700">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-400">{t({ it: "Cauzione al ritiro", en: "Deposit at pick-up" })}</span>
-                              <span className="text-white font-medium">€{dep.toLocaleString('it-IT')}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">{t({ it: "Restituita dopo la riconsegna", en: "Refunded after drop-off" })}</p>
-                          </div>
-                        );
-                      })()}
-                      {/* DR7 Club subscription — separate, card-only */}
-                      {formData.extras.some(e => e.startsWith('subscription_')) && (
-                        <div className="mt-3 pt-3 border-t border-white/20 bg-white/5 rounded-lg p-3">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-white font-semibold">{t({ it: 'DR7 Club', en: 'DR7 Club' })}</span>
-                            <span className="text-white font-bold">
-                              {clubPrezzoScelto}
-                            </span>
-                          </div>
-                          <p className="text-xs text-white/70 mt-1">
-                            {formData.paymentMethod === 'credit'
-                              ? 'Riceverai un link di pagamento separato via email'
-                              : 'Incluso nel pagamento con carta'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </aside>
-              )}
-
-              <main className={step === 3 ? "lg:col-span-2" : ""}>
+            <div className="px-2 sm:px-4">
+            {/* 20/09/2026 (direzione): la colonna "RIEPILOGO COSTI" a sinistra
+                e' stata tolta. Dal 19/09 l'ultimo passo ha gia' la sua scheda
+                di riepilogo a destra, con le stesse voci: erano due riepiloghi
+                affiancati sulla stessa schermata. */}
+              <main>
                 <form onSubmit={handleSubmit}>
                   <AnimatePresence mode="wait">
                     <motion.div

@@ -103,6 +103,10 @@ export default {
           mineral: '#A19C92',
           metal: '#C9BEA8',
           gold: '#C8A24A',
+          // 20/09/2026 (direzione): l'oro del modello di checkout — piu' caldo e
+          // meno giallo di `gold`. Usato dalle schede del metodo di pagamento e
+          // dal tasto di conferma del carrello.
+          'gold-soft': '#CDB07E',
         },
       },
       transitionTimingFunction: {

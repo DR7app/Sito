@@ -521,15 +521,15 @@ const CheckoutPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => setMetodo('nexi')}
-                className={`relative text-left p-4 border transition-colors ${metodo === 'nexi' ? 'border-dr7-gold bg-white/[0.03]' : 'border-gray-700 hover:border-gray-500'}`}
+                className={`relative flex flex-col text-left p-5 sm:p-6 min-h-[150px] sm:min-h-[170px] border transition-colors ${metodo === 'nexi' ? 'border-dr7-gold-soft bg-white/[0.03]' : 'border-gray-700 hover:border-gray-500'}`}
               >
-                <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${metodo === 'nexi' ? 'border-dr7-gold bg-dr7-gold' : 'border-gray-600'}`}>
+                <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${metodo === 'nexi' ? 'border-dr7-gold-soft bg-dr7-gold-soft' : 'border-gray-600'}`}>
                   {metodo === 'nexi' && (
                     <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   )}
                 </span>
-                <svg className={`w-7 h-7 mb-3 ${metodo === 'nexi' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
-                <span className={`block text-sm font-bold ${metodo === 'nexi' ? 'text-white' : 'text-gray-300'}`}>
+                <svg className={`w-8 h-8 mb-auto ${metodo === 'nexi' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+                <span className={`block text-base font-bold mt-4 ${metodo === 'nexi' ? 'text-white' : 'text-gray-300'}`}>
                   {t({ it: 'Carta di credito/debito', en: 'Credit/debit card' })}
                 </span>
                 <span className="block text-xs text-gray-500 mt-1">
@@ -539,15 +539,15 @@ const CheckoutPage: React.FC = () => {
               <button
                 onClick={() => pagabileACredito && setMetodo('credit')}
                 disabled={!pagabileACredito}
-                className={`relative text-left p-4 border transition-colors disabled:opacity-40 ${metodo === 'credit' ? 'border-dr7-gold bg-white/[0.03]' : 'border-gray-700 enabled:hover:border-gray-500'}`}
+                className={`relative flex flex-col text-left p-5 sm:p-6 min-h-[150px] sm:min-h-[170px] border transition-colors disabled:opacity-40 ${metodo === 'credit' ? 'border-dr7-gold-soft bg-white/[0.03]' : 'border-gray-700 enabled:hover:border-gray-500'}`}
               >
-                <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${metodo === 'credit' ? 'border-dr7-gold bg-dr7-gold' : 'border-gray-600'}`}>
+                <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${metodo === 'credit' ? 'border-dr7-gold-soft bg-dr7-gold-soft' : 'border-gray-600'}`}>
                   {metodo === 'credit' && (
                     <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   )}
                 </span>
-                <svg className={`w-7 h-7 mb-3 ${metodo === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
-                <span className={`block text-sm font-bold ${metodo === 'credit' ? 'text-white' : 'text-gray-300'}`}>Credit Wallet</span>
+                <svg className={`w-8 h-8 mb-auto ${metodo === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
+                <span className={`block text-base font-bold mt-4 ${metodo === 'credit' ? 'text-white' : 'text-gray-300'}`}>Credit Wallet</span>
                 <span className="block text-xs text-gray-500 mt-1">
                   {saldo != null
                     ? `${t({ it: 'Disponibile', en: 'Available' })}: €${saldo.toFixed(2)}`
@@ -594,7 +594,7 @@ const CheckoutPage: React.FC = () => {
             <button
               onClick={() => void paga()}
               disabled={inCorso || nessunaSpunta || (metodo === 'credit' && !creditoBastante)}
-              className="flex-1 bg-dr7-gold text-black py-4 font-bold text-sm uppercase tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:hover:brightness-100"
+              className="flex-1 bg-gradient-to-r from-[#E4CC96] to-[#C0A278] text-black py-4 font-bold text-sm uppercase tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:hover:brightness-100"
             >
               {inCorso
                 ? (avanzamento || t({ it: 'Attendere…', en: 'Please wait…' }))

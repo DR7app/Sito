@@ -1762,6 +1762,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   /** Sappiamo gia' la residenza: non la chiediamo. */
   const residenzaNota = !!(customerProvinciaResidenza || '').trim() || documentiInArchivio || checkingDocs;
 
+  // 20/09/2026 (direzione): il codice fiscale serve alla FATTURA, e chi non e'
+  // italiano non ce l'ha. Nell'ultimo passo c'e' una spunta "Non sono
+  // italiano": chi la mette non si vede chiedere la tessera sanitaria.
+  // La spunta compare SOLO se non lo sappiamo gia': con il codice fiscale in
+  // scheda, un paese di residenza noto, la provincia italiana o i documenti in
+  // archivio, la domanda non si fa — la risposta ce l'abbiamo.
+  const [nonItaliano, setNonItaliano] = useState(false);
+  const nazionalitaNota = !!String(formData.codiceFiscale || '').trim()
+    || !!residenzaCountryCode
+    || !!(customerProvinciaResidenza || '').trim()
+    || documentiInArchivio
+    || checkingDocs;
+  /** Niente codice fiscale: o l'ha dichiarato, o la residenza e' fuori Italia. */
+  const senzaCodiceFiscale = (!nazionalitaNota && nonItaliano)
+    || (!!residenzaCountryCode && residenzaCountryCode !== 'it');
+
   /**
    * La patente e' gia' in archivio ma la data di conseguimento (categoria B)
    * non e' mai stata salvata: senza quella data la prenotazione richiedeva
@@ -7061,6 +7077,27 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
               </p>
 
+              {!nazionalitaNota && (
+                <div className="mb-4 flex items-start">
+                  <input
+                    type="checkbox"
+                    id="non-sono-italiano"
+                    checked={nonItaliano}
+                    onChange={(e) => setNonItaliano(e.target.checked)}
+                    className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white"
+                  />
+                  <label htmlFor="non-sono-italiano" className="ml-3 text-sm text-white">
+                    {t({ it: 'Non sono italiano', en: 'I am not Italian' })}
+                    <span className="block text-xs text-gray-500 mt-0.5">
+                      {t({
+                        it: 'Il codice fiscale serve solo per la fattura: se non ce l\'hai, non te lo chiediamo.',
+                        en: 'The Italian tax code is only needed for the invoice: if you do not have one, we will not ask for it.',
+                      })}
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {/* Documenti gia' in archivio: chi li ha caricati una volta non
                   li ricarica a ogni prenotazione. Servono tutti e tre. */}
               {/* 12/09/2026 — l'archivio basta SOLO se da li' e' gia' uscita
@@ -7107,7 +7144,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO", en: "4. TAX CODE CARD — BACK" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "6. CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "6. ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
-                    ] as const).map(({ campo, archivio, titolo, righe }) => (
+                    ] as const)
+                      // Senza codice fiscale non si chiede la tessera sanitaria.
+                      .filter(({ campo }) => !(senzaCodiceFiscale && (campo === 'cfImage' || campo === 'cfImageBack')))
+                      .map(({ campo, archivio, titolo, righe }) => (
                       archivio ? (
                         <div key={campo} className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
                           <p className="text-green-400 text-sm font-medium mb-1">✓ {titolo.replace(' *', '')}</p>

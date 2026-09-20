@@ -635,7 +635,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // packages from the start. Otherwise default behavior (jump to step 4
     // = "Prenota Ora" flow).
     if (initialSearchDates.preventivoId && !initialSearchDates.editMode) {
-      setTimeout(() => setStep(4), 100);
+      setTimeout(() => setStep(3), 100);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally runs once on mount only
@@ -667,7 +667,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   // Tier classification state
   const [driverTierInfo, setDriverTierInfo] = useState<TierClassification | null>(null);
-  const driverTier: DriverTier | null = driverTierInfo?.tier || null;
+  // 20/09/2026 (direzione): al primo passo il cliente dichiara la fascia d'eta'
+  // e la residenza, cosi' i prezzi sono giusti prima ancora di avere i
+  // documenti. E' una dichiarazione, non un dato: appena i documenti (o la
+  // scheda cliente) dicono altro, vince il dato vero e il prezzo si ricalcola.
+  const [fasciaDichiarata, setFasciaDichiarata] = useState<DriverTier | null>(null);
+  const [residenzaDichiarata, setResidenzaDichiarata] = useState<'RESIDENT' | 'NON_RESIDENT' | null>(null);
+  const driverTier: DriverTier | null = driverTierInfo?.tier || fasciaDichiarata;
+  /** I documenti dicono una fascia diversa da quella dichiarata al passo 1. */
+  const fasciaSmentita = !!fasciaDichiarata && !!driverTierInfo?.tier && driverTierInfo.tier !== fasciaDichiarata;
 
   // --- Centralina Pro is the ONLY pricing source ---
   // No legacy fallback: every price comes from the admin Centralina Pro tab.
@@ -786,9 +794,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const RESIDENT_PROVINCE_CODES = ['CA', 'SU'];
   const isNonResidentCustomer = (() => {
     const prov = (customerProvinciaResidenza || '').toUpperCase().trim();
-    if (!prov) return false;
-    return !RESIDENT_PROVINCE_CODES.includes(prov);
+    if (prov) return !RESIDENT_PROVINCE_CODES.includes(prov);
+    // 20/09/2026: senza provincia in scheda vale quanto dichiarato al passo 1.
+    if (residenzaDichiarata) return residenzaDichiarata === 'NON_RESIDENT';
+    return false;
   })();
+  /** La scheda cliente dice una residenza diversa da quella dichiarata. */
+  const residenzaSmentita = !!residenzaDichiarata
+    && !!(customerProvinciaResidenza || '').trim()
+    && ((residenzaDichiarata === 'NON_RESIDENT') !== isNonResidentCustomer);
   const residencySuffix: 'RESIDENT' | 'NON_RESIDENT' = isNonResidentCustomer ? 'NON_RESIDENT' : 'RESIDENT';
 
   // Read the no_deposit surcharge per day from Centralina Pro. The Pro overlay stores
@@ -2112,15 +2126,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       const years = calculateYearsSince(formData.licenseIssueDate);
       if (age > 0 && years >= 0) {
         const classification = classifyDriverTier(age, years);
+        // 20/09/2026: i documenti ora si caricano all'ULTIMO passo, a scelte
+        // gia' fatte. Azzerare assicurazione e cauzione a ogni rilettura
+        // svuotava il carrello sotto gli occhi del cliente: si azzerano solo
+        // se la fascia cambia davvero, perche' in quel caso i prezzi e le
+        // opzioni disponibili sono altri.
+        const fasciaCambiata = driverTierInfo?.tier !== classification.tier;
         setDriverTierInfo(classification);
-        // Reset insurance and tier-restricted options when tier changes
-        setFormData(prev => ({
-          ...prev,
-          insuranceOption: '',
-          depositOption: '',
-          // DR7 Flex available for both Fascia A and Fascia B (admin
-          // confirmed the option must be visible for TIER_1 too).
-        }));
+        if (fasciaCambiata) {
+          setFormData(prev => ({
+            ...prev,
+            insuranceOption: '',
+            depositOption: '',
+            // DR7 Flex available for both Fascia A and Fascia B (admin
+            // confirmed the option must be visible for TIER_1 too).
+          }));
+        }
       }
     }
   }, [formData.birthDate, formData.licenseIssueDate]);
@@ -3287,6 +3308,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!returnLocs.some(l => l.id === formData.returnLocation)) {
         newErrors.returnLocation = "Scegli il luogo di riconsegna: DR7 Cagliari o domicilio.";
       }
+      // 20/09/2026: fascia d'eta' e residenza servono per calcolare kasko e
+      // cauzione. Si chiedono solo a chi non le ha gia' in scheda cliente.
+      if (!driverTierInfo?.tier && !fasciaDichiarata) {
+        newErrors.fasciaDichiarata = "Indica l'età del conducente.";
+      }
+      if (!(customerProvinciaResidenza || '').trim() && !residenzaDichiarata) {
+        newErrors.residenzaDichiarata = "Indica la residenza del conducente.";
+      }
       // When coming from search, dates are already validated — skip the rest
       if (isFromSearch) {
         setErrors(newErrors);
@@ -3428,55 +3457,28 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         if (!formData.deliveryReturnKm || formData.deliveryReturnKm <= 0) newErrors.deliveryReturnKm = "Inserisci la distanza in km.";
       }
     }
+    // 20/09/2026: la validazione del conducente stava qui. Il passo e' stato
+    // tolto: nome, contatti, codice fiscale, residenza e documenti arrivano
+    // dalla scheda del cliente loggato e si correggono dal profilo.
     if (step === 2) {
-      const ly = calculateYearsSince(formData.licenseIssueDate);
-      if (!formData.firstName) newErrors.firstName = "Il nome è obbligatorio.";
-      if (!formData.lastName) newErrors.lastName = "Il cognome è obbligatorio.";
-      if (!formData.email) newErrors.email = "L'email è obbligatoria.";
-      if (!formData.phone) newErrors.phone = "Il telefono è obbligatorio.";
-      // Il codice fiscale è italiano: non richiederlo a chi ha la residenza
-      // all'estero (indirizzo selezionato fuori dall'Italia).
-      const isForeignResidence = !!residenzaCountryCode && residenzaCountryCode !== 'it';
-      if (!formData.codiceFiscale && !isForeignResidence) newErrors.codiceFiscale = "Il codice fiscale è obbligatorio per la fatturazione.";
-      // Residenza must be a COMPLETE Italian address — the SDI rejects
-      // (scarta) the fattura without a valid CAP + city. Either the
-      // customer picked a Nominatim suggestion (always well-formatted) OR
-      // they typed it manually; in both cases the final string must
-      // contain:
-      //   - a 5-digit CAP (Italian postal code)
-      //   - a house number (a separate digit token, not just the CAP)
-      //   - a street name (at least one 3+ letter word)
-      //   - reasonable length (>= 12 chars, common minimum for "Via X 1, 09100 Y")
-      // Stricter on what matters for the fattura (CAP + city/street + reasonable
-      // length); permissive on house number — Nominatim suggestions don't
-      // always include one (e.g. "Via Roma, 09100 Cagliari, Sardegna") and
-      // requiring it was rejecting valid dropdown picks.
-      const residenzaTrim = (formData.residenza || formData.address || '').trim();
-      // Indirizzo estero scelto dall'elenco: niente CAP italiano a 5 cifre
-      // (il codice postale estero arriva già con la selezione).
-      const isForeignAddress = !!residenzaCountryCode && residenzaCountryCode !== 'it';
-      const hasCap = /\b\d{5}\b/.test(residenzaTrim);
-      const hasStreetWord = /[A-Za-zÀ-ÿ]{3,}/.test(residenzaTrim);
-      const longEnough = residenzaTrim.length >= 10;
-      if (!residenzaTrim || !longEnough || !hasStreetWord) {
-        newErrors.residenza = "Seleziona l'indirizzo dall'elenco (necessario per la fattura).";
-      } else if (!isForeignAddress && !hasCap) {
-        newErrors.residenza = "Seleziona l'indirizzo dall'elenco (include il CAP, necessario per la fattura).";
-      }
-      if (!formData.birthDate) {
-        newErrors.birthDate = "La data di nascita è obbligatoria.";
-      } else {
-        // Age verification - must be at least 18 years old
-        const driverAge = calculateAgeFromDDMMYYYY(formData.birthDate);
-        if (driverAge < 18) {
-          newErrors.birthDate = "Devi avere almeno 18 anni per noleggiare un veicolo.";
+      const membershipTier = getMembershipTierName(user);
+      const skipsCauzione = membershipTier === 'gold' || membershipTier === 'platinum';
+      if (!skipsCauzione) {
+        const vTypeForDep = getVehicleType(item, categoryContext);
+        const activeTierForDep = driverTier || 'TIER_2';
+        const insOpts = getInsuranceForVehicle(vTypeForDep, activeTierForDep);
+        const rcaOpt = insOpts.find((o: any) => isRcaOpt(o));
+        const insIsRCA = isRcaSelected(insOpts, formData.insuranceOption);
+        const mandatoryRcaDeposit = insIsRCA && (rcaOpt?.mandatoryDeposit || 0) > 0;
+        if (!mandatoryRcaDeposit && !formData.depositOption) {
+          newErrors.depositOption = "Seleziona un'opzione per la cauzione.";
         }
       }
-      if (!formData.licenseNumber) newErrors.licenseNumber = "Il numero di patente è obbligatorio.";
-      if (!formData.licenseIssueDate) newErrors.licenseIssueDate = "La data di rilascio della patente è obbligatoria.";
-
-      // Le foto servono solo a chi non le ha gia' in archivio. Fronte e
-      // retro di tutti e tre i documenti, come per il secondo conducente.
+    }
+    if (step === 3) {
+      // 20/09/2026 (direzione): i documenti sono obbligatori e si caricano in
+      // questo ultimo passo. Fronte e retro di patente, identita' e codice
+      // fiscale — chi li ha gia' in archivio non li ricarica.
       if (!formData.licenseImage && !hasStoredDocs.licensePath) {
         newErrors.licenseImage = "La foto della patente (fronte) è obbligatoria.";
       }
@@ -3495,25 +3497,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!formData.cfImageBack && !hasStoredDocs.cfPath) {
         newErrors.cfImageBack = "La foto del codice fiscale (retro) è obbligatoria.";
       }
-
-      if (!formData.confirmsInformation) newErrors.confirmsInformation = "Devi confermare che le informazioni sono corrette.";
-
-      // Tier classification check — block if BLOCKED
-      if (driverTierInfo?.tier === 'BLOCKED') {
-        newErrors.tierBlocked = driverTierInfo.reason;
-      }
-
-      // License requirements: 3 years minimum, 5 years for BMW M4
+      // 20/09/2026: il secondo conducente si compila in questo passo, quindi
+      // qui si controlla. Regole invariate, comprese le patenti senza scadenza.
       const isBMW_M4 = item.name?.includes('BMW M4') || item.name?.includes('M4 Competition');
       const requiredYears = isBMW_M4 ? 5 : 3;
-
-      if (ly < requiredYears) {
-        newErrors.licenseIssueDate = isBMW_M4
-          ? "Per la BMW M4 è richiesta una patente con almeno 5 anni di anzianità."
-          : "È richiesta una patente con almeno 3 anni di anzianità.";
-      }
-
-      // Second driver validation — mandatory when checkbox is checked
       if (formData.addSecondDriver) {
         const sd = formData.secondDriver;
         if (!sd.firstName.trim()) newErrors['secondDriver.firstName'] = "Nome obbligatorio.";
@@ -3555,23 +3542,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         if (!sd.cfImageBack) newErrors['secondDriver.cfImageBack'] = "Codice fiscale (retro) obbligatorio.";
         if (!String(sd.codiceFiscale || '').trim()) newErrors['secondDriver.codiceFiscale'] = "Codice fiscale obbligatorio.";
       }
-    }
-    if (step === 3) {
-      const membershipTier = getMembershipTierName(user);
-      const skipsCauzione = membershipTier === 'gold' || membershipTier === 'platinum';
-      if (!skipsCauzione) {
-        const vTypeForDep = getVehicleType(item, categoryContext);
-        const activeTierForDep = driverTier || 'TIER_2';
-        const insOpts = getInsuranceForVehicle(vTypeForDep, activeTierForDep);
-        const rcaOpt = insOpts.find((o: any) => isRcaOpt(o));
-        const insIsRCA = isRcaSelected(insOpts, formData.insuranceOption);
-        const mandatoryRcaDeposit = insIsRCA && (rcaOpt?.mandatoryDeposit || 0) > 0;
-        if (!mandatoryRcaDeposit && !formData.depositOption) {
-          newErrors.depositOption = "Seleziona un'opzione per la cauzione.";
-        }
-      }
-    }
-    if (step === 4) {
       if (!formData.confirmsDocuments) {
         newErrors.confirmsDocuments = "Devi confermare che i documenti sono corretti.";
       }
@@ -5180,8 +5150,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const handleNext = () => {
     if (!validateStep()) return;
 
-    // Show wash upsell modal on Step 3 → 4 transition
-    if (step === 3) {
+    // Upsell lavaggio al passaggio Opzioni → Pagamento
+    if (step === 2) {
       setShowWashUpsell(true);
       return;
     }
@@ -5191,7 +5161,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   const handleWashUpsellAccept = () => {
     setShowWashUpsell(false);
-    if (clubBloccato) { setStep(4); return; }
+    if (clubBloccato) { setStep(3); return; }
     setShowSubscriptionUpsell(true);
   };
 
@@ -5207,7 +5177,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     setUpsellTargaLoading(false);
     setUpsellTargaManualCategory(null);
     setShowWashUpsell(false);
-    if (clubBloccato) { setStep(4); return; }
+    if (clubBloccato) { setStep(3); return; }
     setShowSubscriptionUpsell(true);
   };
 
@@ -5220,7 +5190,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         extras: [...prev.extras.filter(e => !e.startsWith('subscription_')), subExtra]
       }));
     }
-    setStep(4);
+    setStep(3);
   };
 
   const handleSubscriptionDecline = () => {
@@ -5230,7 +5200,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       ...prev,
       extras: prev.extras.filter(e => !e.startsWith('subscription_'))
     }));
-    setStep(4);
+    setStep(3);
   };
 
   const handleUpsellTargaSearch = async () => {
@@ -5294,12 +5264,163 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     );
   };
 
+  // 20/09/2026 (direzione): via il passo "Informazioni Conducente". I dati del
+  // conducente e i documenti arrivano dalla scheda del cliente loggato: chi
+  // prenota li ha gia' dati una volta e non li ridigita a ogni noleggio. Il
+  // percorso resta di tre passi.
   const steps = [
     { id: 1, name: t({ it: 'STEP 1: Date e Località', en: 'STEP 1: Dates and Location' }) },
-    { id: 2, name: t({ it: 'STEP 2: Informazioni Conducente', en: 'STEP 2: Driver Information' }) },
-    { id: 3, name: t({ it: 'STEP 3: Opzioni e Assicurazioni', en: 'STEP 3: Options and Insurance' }) },
-    { id: 4, name: t({ it: 'STEP 4: Pagamento e Conferma', en: 'STEP 4: Payment and Confirmation' }) }
+    { id: 2, name: t({ it: 'STEP 2: Opzioni e Assicurazioni', en: 'STEP 2: Options and Insurance' }) },
+    { id: 3, name: t({ it: 'STEP 3: Pagamento e Conferma', en: 'STEP 3: Payment and Confirmation' }) }
   ];
+
+  // 20/09/2026: questi due vivevano dentro il passo "Informazioni Conducente",
+  // che non esiste piu'. Servono ancora al modulo del SECONDO conducente, che
+  // ora sta nell'ultimo passo insieme ai documenti.
+        const scriviCampo = (driverType: 'main' | 'second', campo: string, valore: string) => {
+          setFormData(prev => driverType === 'main'
+            ? { ...prev, [campo]: valore }
+            : { ...prev, secondDriver: { ...prev.secondDriver, [campo]: valore } });
+        };
+
+        const renderDriverForm = (driverType: 'main' | 'second') => {
+          const driverData = driverType === 'main' ? formData : formData.secondDriver;
+          const prefix = driverType === 'main' ? '' : 'secondDriver.';
+
+          // 12/09/2026 — i dati del conducente arrivano dai documenti del
+          // punto A: quello che il sistema ha letto non si corregge a mano,
+          // altrimenti tanto valeva non chiedere le foto. Restano liberi
+          // email e telefono (su nessun documento) e i campi che la lettura
+          // non e' riuscita a riempire, cosi' nessuno resta bloccato.
+          const daDocumenti = driverType === 'main';
+          const letto = (v: unknown) => daDocumenti && !!String(v ?? '').trim();
+          const classeCampo = (bloccato: boolean, compatto = false) => {
+            const pad = compatto ? 'px-3 py-1.5' : 'px-3 py-2.5 min-h-[44px]';
+            return bloccato
+              ? `w-full bg-gray-900 border border-gray-700 rounded-md ${pad} mt-1 text-gray-300 text-sm cursor-not-allowed`
+              : `w-full bg-gray-800 border-gray-700 rounded-md ${pad} mt-1 text-white text-sm`;
+          };
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} readOnly={letto((driverData as any).firstName)} aria-readonly={letto((driverData as any).firstName)} autoComplete="given-name" className={classeCampo(letto((driverData as any).firstName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} readOnly={letto((driverData as any).lastName)} aria-readonly={letto((driverData as any).lastName)} autoComplete="family-name" className={classeCampo(letto((driverData as any).lastName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">Email *</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
+              {/* Codice fiscale, sesso e nascita: uguali per tutti e due i
+                  conducenti. Prima erano riservati al primo, e il codice
+                  fiscale del secondo lo ricopiava l'ufficio a mano sul
+                  contratto. `scriviCampo` scrive nella scheda giusta. */}
+              <>
+                <div>
+                  <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="text" name={`${prefix}codiceFiscale`} value={(driverData as any).codiceFiscale || ''} onChange={handleChange} readOnly={letto((driverData as any).codiceFiscale)} aria-readonly={letto((driverData as any).codiceFiscale)} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className={`flex-1 uppercase ${letto((driverData as any).codiceFiscale) ? 'bg-gray-900 border border-gray-700 rounded-md px-3 py-1.5 text-gray-300 text-sm cursor-not-allowed' : 'bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm'}`} />
+                    {!letto((driverData as any).codiceFiscale) && <CalcolaCFButton
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
+                      config={{
+                        getCognome: () => (driverData as any).lastName,
+                        getNome: () => (driverData as any).firstName,
+                        getDataNascita: () => (driverData as any).birthDate,
+                        getSesso: () => (driverData as any).sesso,
+                        getLuogoNascita: () => (driverData as any).luogoNascita,
+                        getCodiceFiscale: () => (driverData as any).codiceFiscale,
+                        setCodiceFiscale: (v) => scriviCampo(driverType, 'codiceFiscale', v),
+                        setSesso: (v) => scriviCampo(driverType, 'sesso', v),
+                        setDataNascita: (v) => scriviCampo(driverType, 'birthDate', v),
+                        setLuogoNascita: (v) => scriviCampo(driverType, 'luogoNascita', v),
+                        setProvinciaNascita: (v) => scriviCampo(driverType, 'provinciaNascita', v),
+                      }}
+                    />}
+                  </div>
+                  {errors[`${prefix}codiceFiscale`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}codiceFiscale`]}</p>}
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label>
+                  <select name={`${prefix}sesso`} value={(driverData as any).sesso || ''} onChange={handleChange} disabled={letto((driverData as any).sesso)} className={classeCampo(letto((driverData as any).sesso), true)}>
+                    <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
+                    <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
+                    <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
+                  </select>
+                </div>
+                <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name={`${prefix}luogoNascita`} value={(driverData as any).luogoNascita || ''} onChange={handleChange} readOnly={letto((driverData as any).luogoNascita)} aria-readonly={letto((driverData as any).luogoNascita)} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className={classeCampo(letto((driverData as any).luogoNascita), true)} /></div>
+                <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" value={(driverData as any).provinciaNascita || ''} onChange={(e) => scriviCampo(driverType, 'provinciaNascita', e.target.value.toUpperCase())} readOnly={letto((driverData as any).provinciaNascita)} aria-readonly={letto((driverData as any).provinciaNascita)} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className={`${classeCampo(letto((driverData as any).provinciaNascita), true)} uppercase`} /></div>
+              </>
+              <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} readOnly={letto((driverData as any).birthDate)} aria-readonly={letto((driverData as any).birthDate)} max={new Date().toISOString().split('T')[0]} className={classeCampo(letto((driverData as any).birthDate))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} readOnly={letto((driverData as any).licenseNumber)} aria-readonly={letto((driverData as any).licenseNumber)} className={classeCampo(letto((driverData as any).licenseNumber))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
+              {/* 12/09/2026 — la data della patente non si sceglie piu' a
+                  mano: la legge il sistema dal RETRO della patente (tabella
+                  categorie, riga B, colonna 10). Scritta a mano passava
+                  un'anzianita' inventata alla fascia A/B. */}
+              <div>
+                <label className="text-sm text-gray-400">{t({ it: "Data conseguimento patente B *", en: "Category B licence date *" })}</label>
+                <input
+                  type="text"
+                  readOnly
+                  aria-readonly="true"
+                  value={dataItaliana((driverData as any).licenseIssueDate)}
+                  placeholder={t({ it: "Si compila da sola", en: "Filled automatically" })}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2.5 mt-1 text-gray-300 text-sm min-h-[44px] cursor-not-allowed"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {(driverData as any).licenseIssueDate
+                    ? t({ it: "Letta dal retro della patente (categoria B).", en: "Read from the back of the licence (category B)." })
+                    : t({ it: "Carica il RETRO della patente: la data si compila da sola.", en: "Upload the BACK of the licence: the date fills in on its own." })}
+                </p>
+                {errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}
+              </div>
+              {driverType === 'main' && (
+                <div className="md:col-span-2">
+                  <label className="text-sm text-gray-400">{t({ it: "Indirizzo di residenza *", en: "Residential address *" })}</label>
+                  {/* Mirror the typed value into BOTH `address` (autocomplete UI
+                      state) and `residenza` (the field the validator and the
+                      cauzione/pricing logic actually read). Previously the
+                      input only wrote to `address`; validation checked
+                      `residenza` which was either empty or auto-filled from
+                      the saved profile, so customers could click Avanti
+                      without entering a real address even though it changes
+                      the cauzione price. */}
+                  <AddressAutocomplete
+                    value={formData.address || formData.residenza}
+                    onChange={(val) => {
+                      // Digitazione libera: l'eventuale paese di una selezione
+                      // precedente non vale più finché non si sceglie dall'elenco.
+                      setResidenzaCountryCode('');
+                      setFormData(prev => ({ ...prev, address: val, residenza: val }));
+                    }}
+                    onSelect={(d) => setResidenzaCountryCode((d.countryCode || '').toLowerCase())}
+                    className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm"
+                    placeholder={t({ it: "Via Roma 10, 09100 Cagliari", en: "Via Roma 10, 09100 Cagliari" })}
+                  />
+                  <p className="text-[11px] text-red-400 mt-1">
+                    Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
+                  </p>
+                  {(errors.residenza || errors.address) && <p className="text-xs text-red-400 mt-1">{errors.residenza || errors.address}</p>}
+                </div>
+              )}
+              {driverType === 'second' && (
+                <>
+                  <div>
+                    <label className="text-sm text-gray-400">{t({ it: "Data scadenza patente", en: "Licence expiry date" })}</label>
+                    <input
+                      type="text"
+                      readOnly
+                      aria-readonly="true"
+                      value={dataItaliana((driverData as any).licenseExpiryDate)}
+                      placeholder={t({ it: "Si compila da sola", en: "Filled automatically" })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2.5 mt-1 text-gray-300 text-sm min-h-[44px] cursor-not-allowed"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {t({ it: "Letta dal retro della patente (categoria B). Le patenti francesi non hanno scadenza: resta vuota.", en: "Read from the back of the licence (category B). French licences have no expiry date: it stays empty." })}
+                    </p>
+                    {errors[`${prefix}licenseExpiryDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseExpiryDate`]}</p>}
+                  </div>
+                  <div><label className="text-sm text-gray-400">{t({ it: "Paese di rilascio *", en: "Country of issue *" })}</label><input type="text" name={`${prefix}countryOfIssue`} value={(driverData as any).countryOfIssue} onChange={handleChange} placeholder={t({ it: "es. Italia", en: "e.g. Italy" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}countryOfIssue`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}countryOfIssue`]}</p>}</div>
+                </>
+              )}
+            </div>
+          );
+        };
 
   const renderStepContent = () => {
     // Insurance is now automatic (KASKO included) - no selection UI needed
@@ -5673,552 +5794,74 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </p>
               </div>
             </div>
+
+            {/* 20/09/2026 (direzione): chi guida e dove abita decidono kasko,
+                km, secondo guidatore e cauzione. Si chiede qui, al primo passo,
+                cosi' i prezzi del passo Opzioni sono gia' quelli giusti. Resta
+                una dichiarazione: i documenti caricati alla fine hanno l'ultima
+                parola e fanno ricalcolare il totale. */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">{t({ it: 'CHI GUIDA', en: 'WHO IS DRIVING' })}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-400 font-semibold mb-2">{t({ it: "Età del conducente *", en: "Driver's age *" })}</p>
+                  {([
+                    { id: 'TIER_2' as DriverTier, label: { it: '26 anni o più', en: '26 or over' } },
+                    { id: 'TIER_1' as DriverTier, label: { it: 'Meno di 26 anni', en: 'Under 26' } },
+                  ]).map(opzione => (
+                    <div key={opzione.id} className="flex items-start mt-2 p-2 rounded hover:bg-gray-800/30 transition-colors">
+                      <input
+                        type="radio"
+                        id={`fascia-${opzione.id}`}
+                        name="fasciaDichiarata"
+                        checked={(driverTierInfo?.tier || fasciaDichiarata) === opzione.id}
+                        onChange={() => setFasciaDichiarata(opzione.id)}
+                        disabled={!!driverTierInfo?.tier}
+                        className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 focus:ring-white disabled:opacity-60"
+                      />
+                      <label htmlFor={`fascia-${opzione.id}`} className="ml-2 text-white flex-1">{t(opzione.label)}</label>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 font-semibold mb-2">{t({ it: "Residenza *", en: "Residence *" })}</p>
+                  {([
+                    { id: 'RESIDENT' as const, label: { it: 'Residente in Sardegna', en: 'Resident in Sardinia' } },
+                    { id: 'NON_RESIDENT' as const, label: { it: 'Fuori dalla Sardegna o estero', en: 'Outside Sardinia or abroad' } },
+                  ]).map(opzione => (
+                    <div key={opzione.id} className="flex items-start mt-2 p-2 rounded hover:bg-gray-800/30 transition-colors">
+                      <input
+                        type="radio"
+                        id={`residenza-${opzione.id}`}
+                        name="residenzaDichiarata"
+                        checked={((customerProvinciaResidenza || '').trim()
+                          ? (isNonResidentCustomer ? 'NON_RESIDENT' : 'RESIDENT')
+                          : residenzaDichiarata) === opzione.id}
+                        onChange={() => setResidenzaDichiarata(opzione.id)}
+                        disabled={!!(customerProvinciaResidenza || '').trim()}
+                        className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 focus:ring-white disabled:opacity-60"
+                      />
+                      <label htmlFor={`residenza-${opzione.id}`} className="ml-2 text-white flex-1">{t(opzione.label)}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {(!!driverTierInfo?.tier || !!(customerProvinciaResidenza || '').trim()) && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {t({
+                    it: 'Presi dalla tua scheda cliente: per cambiarli aggiorna il profilo.',
+                    en: 'Taken from your customer profile: update your profile to change them.',
+                  })}
+                </p>
+              )}
+              {errors.fasciaDichiarata && <p className="text-xs text-red-400 mt-2">{errors.fasciaDichiarata}</p>}
+              {errors.residenzaDichiarata && <p className="text-xs text-red-400 mt-1">{errors.residenzaDichiarata}</p>}
+            </div>
             </>
             )}
           </div>
         );
-      case 2:
-        /**
-         * Scrive un campo nella scheda del conducente giusto: il primo sta
-         * alla radice del modulo, il secondo dentro `secondDriver`. Serve ai
-         * comandi che non passano da `handleChange` (calcolo del codice
-         * fiscale, compilazione automatica dai documenti).
-         */
-        const scriviCampo = (driverType: 'main' | 'second', campo: string, valore: string) => {
-          setFormData(prev => driverType === 'main'
-            ? { ...prev, [campo]: valore }
-            : { ...prev, secondDriver: { ...prev.secondDriver, [campo]: valore } });
-        };
-
-        const renderDriverForm = (driverType: 'main' | 'second') => {
-          const driverData = driverType === 'main' ? formData : formData.secondDriver;
-          const prefix = driverType === 'main' ? '' : 'secondDriver.';
-
-          // 12/09/2026 — i dati del conducente arrivano dai documenti del
-          // punto A: quello che il sistema ha letto non si corregge a mano,
-          // altrimenti tanto valeva non chiedere le foto. Restano liberi
-          // email e telefono (su nessun documento) e i campi che la lettura
-          // non e' riuscita a riempire, cosi' nessuno resta bloccato.
-          const daDocumenti = driverType === 'main';
-          const letto = (v: unknown) => daDocumenti && !!String(v ?? '').trim();
-          const classeCampo = (bloccato: boolean, compatto = false) => {
-            const pad = compatto ? 'px-3 py-1.5' : 'px-3 py-2.5 min-h-[44px]';
-            return bloccato
-              ? `w-full bg-gray-900 border border-gray-700 rounded-md ${pad} mt-1 text-gray-300 text-sm cursor-not-allowed`
-              : `w-full bg-gray-800 border-gray-700 rounded-md ${pad} mt-1 text-white text-sm`;
-          };
-
-          return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} readOnly={letto((driverData as any).firstName)} aria-readonly={letto((driverData as any).firstName)} autoComplete="given-name" className={classeCampo(letto((driverData as any).firstName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} readOnly={letto((driverData as any).lastName)} aria-readonly={letto((driverData as any).lastName)} autoComplete="family-name" className={classeCampo(letto((driverData as any).lastName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">Email *</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
-              {/* Codice fiscale, sesso e nascita: uguali per tutti e due i
-                  conducenti. Prima erano riservati al primo, e il codice
-                  fiscale del secondo lo ricopiava l'ufficio a mano sul
-                  contratto. `scriviCampo` scrive nella scheda giusta. */}
-              <>
-                <div>
-                  <label className="text-sm text-gray-400">{t({ it: "Codice Fiscale *", en: "Tax code *" })}</label>
-                  <div className="flex gap-2 mt-1">
-                    <input type="text" name={`${prefix}codiceFiscale`} value={(driverData as any).codiceFiscale || ''} onChange={handleChange} readOnly={letto((driverData as any).codiceFiscale)} aria-readonly={letto((driverData as any).codiceFiscale)} placeholder={t({ it: "es. RSSMRA85M01H501Z", en: "e.g. RSSMRA85M01H501Z" })} className={`flex-1 uppercase ${letto((driverData as any).codiceFiscale) ? 'bg-gray-900 border border-gray-700 rounded-md px-3 py-1.5 text-gray-300 text-sm cursor-not-allowed' : 'bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 text-white text-sm'}`} />
-                    {!letto((driverData as any).codiceFiscale) && <CalcolaCFButton
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium whitespace-nowrap transition-colors"
-                      config={{
-                        getCognome: () => (driverData as any).lastName,
-                        getNome: () => (driverData as any).firstName,
-                        getDataNascita: () => (driverData as any).birthDate,
-                        getSesso: () => (driverData as any).sesso,
-                        getLuogoNascita: () => (driverData as any).luogoNascita,
-                        getCodiceFiscale: () => (driverData as any).codiceFiscale,
-                        setCodiceFiscale: (v) => scriviCampo(driverType, 'codiceFiscale', v),
-                        setSesso: (v) => scriviCampo(driverType, 'sesso', v),
-                        setDataNascita: (v) => scriviCampo(driverType, 'birthDate', v),
-                        setLuogoNascita: (v) => scriviCampo(driverType, 'luogoNascita', v),
-                        setProvinciaNascita: (v) => scriviCampo(driverType, 'provinciaNascita', v),
-                      }}
-                    />}
-                  </div>
-                  {errors[`${prefix}codiceFiscale`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}codiceFiscale`]}</p>}
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400">{t({ it: "Sesso", en: "Gender" })}</label>
-                  <select name={`${prefix}sesso`} value={(driverData as any).sesso || ''} onChange={handleChange} disabled={letto((driverData as any).sesso)} className={classeCampo(letto((driverData as any).sesso), true)}>
-                    <option value="">{t({ it: "Seleziona...", en: "Select..." })}</option>
-                    <option value="M">{t({ it: "Maschio", en: "Male" })}</option>
-                    <option value="F">{t({ it: "Femmina", en: "Female" })}</option>
-                  </select>
-                </div>
-                <div><label className="text-sm text-gray-400">{t({ it: "Luogo di nascita", en: "Place of birth" })}</label><input type="text" name={`${prefix}luogoNascita`} value={(driverData as any).luogoNascita || ''} onChange={handleChange} readOnly={letto((driverData as any).luogoNascita)} aria-readonly={letto((driverData as any).luogoNascita)} placeholder={t({ it: "es. Cagliari", en: "e.g. Cagliari" })} className={classeCampo(letto((driverData as any).luogoNascita), true)} /></div>
-                <div><label className="text-sm text-gray-400">{t({ it: "Provincia di nascita", en: "Province of birth" })}</label><input type="text" value={(driverData as any).provinciaNascita || ''} onChange={(e) => scriviCampo(driverType, 'provinciaNascita', e.target.value.toUpperCase())} readOnly={letto((driverData as any).provinciaNascita)} aria-readonly={letto((driverData as any).provinciaNascita)} placeholder={t({ it: "es. CA", en: "e.g. CA" })} maxLength={2} className={`${classeCampo(letto((driverData as any).provinciaNascita), true)} uppercase`} /></div>
-              </>
-              <div><label className="text-sm text-gray-400">{t({ it: "Data di nascita *", en: "Date of birth *" })}</label><input type="date" name={`${prefix}birthDate`} value={(driverData as any).birthDate} onChange={handleChange} readOnly={letto((driverData as any).birthDate)} aria-readonly={letto((driverData as any).birthDate)} max={new Date().toISOString().split('T')[0]} className={classeCampo(letto((driverData as any).birthDate))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}birthDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}birthDate`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Numero patente *", en: "Driving licence number *" })}</label><input type="text" name={`${prefix}licenseNumber`} value={(driverData as any).licenseNumber} onChange={handleChange} readOnly={letto((driverData as any).licenseNumber)} aria-readonly={letto((driverData as any).licenseNumber)} className={classeCampo(letto((driverData as any).licenseNumber))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}licenseNumber`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseNumber`]}</p>}</div>
-              {/* 12/09/2026 — la data della patente non si sceglie piu' a
-                  mano: la legge il sistema dal RETRO della patente (tabella
-                  categorie, riga B, colonna 10). Scritta a mano passava
-                  un'anzianita' inventata alla fascia A/B. */}
-              <div>
-                <label className="text-sm text-gray-400">{t({ it: "Data conseguimento patente B *", en: "Category B licence date *" })}</label>
-                <input
-                  type="text"
-                  readOnly
-                  aria-readonly="true"
-                  value={dataItaliana((driverData as any).licenseIssueDate)}
-                  placeholder={t({ it: "Si compila da sola", en: "Filled automatically" })}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2.5 mt-1 text-gray-300 text-sm min-h-[44px] cursor-not-allowed"
-                />
-                <p className="text-[11px] text-gray-500 mt-1">
-                  {(driverData as any).licenseIssueDate
-                    ? t({ it: "Letta dal retro della patente (categoria B).", en: "Read from the back of the licence (category B)." })
-                    : t({ it: "Carica il RETRO della patente: la data si compila da sola.", en: "Upload the BACK of the licence: the date fills in on its own." })}
-                </p>
-                {errors[`${prefix}licenseIssueDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseIssueDate`]}</p>}
-              </div>
-              {driverType === 'main' && (
-                <div className="md:col-span-2">
-                  <label className="text-sm text-gray-400">{t({ it: "Indirizzo di residenza *", en: "Residential address *" })}</label>
-                  {/* Mirror the typed value into BOTH `address` (autocomplete UI
-                      state) and `residenza` (the field the validator and the
-                      cauzione/pricing logic actually read). Previously the
-                      input only wrote to `address`; validation checked
-                      `residenza` which was either empty or auto-filled from
-                      the saved profile, so customers could click Avanti
-                      without entering a real address even though it changes
-                      the cauzione price. */}
-                  <AddressAutocomplete
-                    value={formData.address || formData.residenza}
-                    onChange={(val) => {
-                      // Digitazione libera: l'eventuale paese di una selezione
-                      // precedente non vale più finché non si sceglie dall'elenco.
-                      setResidenzaCountryCode('');
-                      setFormData(prev => ({ ...prev, address: val, residenza: val }));
-                    }}
-                    onSelect={(d) => setResidenzaCountryCode((d.countryCode || '').toLowerCase())}
-                    className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm"
-                    placeholder={t({ it: "Via Roma 10, 09100 Cagliari", en: "Via Roma 10, 09100 Cagliari" })}
-                  />
-                  <p className="text-[11px] text-red-400 mt-1">
-                    Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
-                  </p>
-                  {(errors.residenza || errors.address) && <p className="text-xs text-red-400 mt-1">{errors.residenza || errors.address}</p>}
-                </div>
-              )}
-              {driverType === 'second' && (
-                <>
-                  <div>
-                    <label className="text-sm text-gray-400">{t({ it: "Data scadenza patente", en: "Licence expiry date" })}</label>
-                    <input
-                      type="text"
-                      readOnly
-                      aria-readonly="true"
-                      value={dataItaliana((driverData as any).licenseExpiryDate)}
-                      placeholder={t({ it: "Si compila da sola", en: "Filled automatically" })}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2.5 mt-1 text-gray-300 text-sm min-h-[44px] cursor-not-allowed"
-                    />
-                    <p className="text-[11px] text-gray-500 mt-1">
-                      {t({ it: "Letta dal retro della patente (categoria B). Le patenti francesi non hanno scadenza: resta vuota.", en: "Read from the back of the licence (category B). French licences have no expiry date: it stays empty." })}
-                    </p>
-                    {errors[`${prefix}licenseExpiryDate`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}licenseExpiryDate`]}</p>}
-                  </div>
-                  <div><label className="text-sm text-gray-400">{t({ it: "Paese di rilascio *", en: "Country of issue *" })}</label><input type="text" name={`${prefix}countryOfIssue`} value={(driverData as any).countryOfIssue} onChange={handleChange} placeholder={t({ it: "es. Italia", en: "e.g. Italy" })} className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}countryOfIssue`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}countryOfIssue`]}</p>}</div>
-                </>
-              )}
-            </div>
-          );
-        };
-
-        const driverAgeLocal = driverAge;
-        const licenseYearsLocal = licenseYears;
-
-        return (
-          <div className="space-y-8">
-            {/* Document Upload — FIRST, for automatic data extraction */}
-            <section>
-              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                A. CARICA DOCUMENTI
-                <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
-              </h3>
-              <p className="text-sm text-gray-400 mb-4">
-                Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
-              </p>
-
-              {/* Documenti gia' in archivio: chi li ha caricati una volta non
-                  li ricarica a ogni prenotazione. Servono tutti e tre. */}
-              {/* 12/09/2026 — l'archivio basta SOLO se da li' e' gia' uscita
-                  la data della categoria B. Senza quella data il campo e' di
-                  sola lettura e il cliente resterebbe bloccato: in quel caso
-                  gli si richiede la patente, fronte e retro. */}
-              {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath && !!formData.licenseIssueDate) ? (
-                <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-4 flex items-center mb-4">
-                  <div className="mr-3 bg-green-500/20 p-2 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-green-400 font-semibold">{t({ it: "Documenti già presenti in archivio", en: "Documents already on file" })}</p>
-                    <p className="text-sm text-gray-400">{t({ it: "Non è necessario caricare nuovamente i documenti.", en: "You do not need to upload the documents again." })}</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath && !formData.licenseIssueDate) && (
-                    <div className="bg-gray-800/60 border border-white/30 rounded-lg p-4 mb-4">
-                      <p className="text-white font-semibold">{t({ it: 'I tuoi documenti sono già in archivio', en: 'Your documents are already on file' })}</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        {t({
-                          it: 'Stiamo rileggendo la patente per la data di conseguimento. Se resta vuota, carica solo il RETRO della patente.',
-                          en: 'We are re-reading your licence for the date obtained. If it stays empty, upload just the BACK of the licence.',
-                        })}
-                      </p>
-                    </div>
-                  )}
-                  {/* 09/09/2026 — fronte E retro di patente, codice fiscale e
-                      carta d'identita', esattamente come si chiedono al
-                      secondo conducente e nella sezione Documenti
-                      dell'account. Il retro non e' un di piu': sulla patente
-                      porta la data reale di conseguimento (colonna 10,
-                      categoria B), sulla tessera sanitaria il codice a
-                      barre. */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {([
-                      { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "6. CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "6. ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
-                    ] as const).map(({ campo, archivio, titolo, righe }) => (
-                      archivio ? (
-                        <div key={campo} className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
-                          <p className="text-green-400 text-sm font-medium mb-1">✓ {titolo.replace(' *', '')}</p>
-                          <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
-                        </div>
-                      ) : (
-                        <div key={campo}>
-                          <DocumentUploader
-                            title={titolo}
-                            details={[...righe, t({ it: "Campo obbligatorio", en: "Required" })]}
-                            onFileChange={(file) => setFormData(prev => ({ ...prev, [campo]: file }))}
-                          />
-                          {errors[campo] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors[campo]}</p>}
-                        </div>
-                      )
-                    ))}
-                  </div>
-
-                  {/* La lettura parte DA SOLA appena una foto e' caricata: i
-                      campi qui sotto si riempiono senza premere niente. Il
-                      bottone resta per rileggere i documenti a mano. */}
-                  {[formData.licenseImage, formData.licenseImageBack, formData.cfImage, formData.cfImageBack, formData.idImage, formData.idImageBack].some(Boolean) && (
-                    <div className="mt-4">
-                      <CompilaButton
-                        auto
-                        tone="rosso"
-                        documents={[
-                          { file: formData.licenseImage, label: 'Patente (fronte)' },
-                          { file: formData.licenseImageBack, label: 'Patente (retro)' },
-                          { file: formData.cfImage, label: 'Codice Fiscale (fronte)' },
-                          { file: formData.cfImageBack, label: 'Codice Fiscale (retro)' },
-                          { file: formData.idImage, label: 'Documento Identità (fronte)' },
-                          { file: formData.idImageBack, label: 'Documento Identità (retro)' },
-                        ]}
-                        currentData={{
-                          nome: formData.firstName,
-                          cognome: formData.lastName,
-                          data_nascita: formData.birthDate,
-                          codice_fiscale: formData.codiceFiscale,
-                          patente_numero: formData.licenseNumber,
-                          // patente_rilascio NON va qui: il campo e' di sola
-                          // lettura, quindi ogni rilettura dei documenti deve
-                          // poterlo ricorreggere invece di essere scartata
-                          // perche' "gia' compilato".
-                        }}
-                        onDataExtracted={(data) => {
-                          setFormData(prev => {
-                            const agg: Record<string, unknown> = {};
-                            if (data.nome && !prev.firstName) agg.firstName = data.nome;
-                            if (data.cognome && !prev.lastName) agg.lastName = data.cognome;
-                            if (data.data_nascita && !prev.birthDate) agg.birthDate = data.data_nascita;
-                            if (data.sesso && !prev.sesso) agg.sesso = data.sesso;
-                            if (data.luogo_nascita && !prev.luogoNascita) agg.luogoNascita = data.luogo_nascita;
-                            if (data.provincia_nascita && !prev.provinciaNascita) agg.provinciaNascita = data.provincia_nascita;
-                            if (data.codice_fiscale && !prev.codiceFiscale) agg.codiceFiscale = data.codice_fiscale.toUpperCase();
-                            if (data.indirizzo && !prev.residenza) {
-                              const via = `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}`.trim();
-                              const citta = [data.codice_postale, data.citta_residenza, data.provincia_residenza].filter(Boolean).join(' ').trim();
-                              agg.residenza = [via, citta].filter(Boolean).join(', ');
-                              agg.address = agg.residenza;
-                              // Senza CAP o senza comune l'indirizzo non basta
-                              // per la fattura: lo si completa cercando il posto.
-                              if (!data.codice_postale || !data.citta_residenza) {
-                                const cercato = [via, data.citta_residenza || '', data.provincia_residenza || ''].filter(Boolean).join(' ').trim();
-                                void completaIndirizzoLetto(cercato).then(intero => {
-                                  if (intero) setFormData(p => ({ ...p, residenza: intero, address: intero }));
-                                });
-                              }
-                            }
-                            if (data.patente_numero && !prev.licenseNumber) agg.licenseNumber = data.patente_numero;
-                            // Anzianità patente: la data REALE di conseguimento sta sul
-                            // RETRO (colonna 10, categoria B). La 4a del fronte e' solo
-                            // l'emissione della tessera: si usa se il retro non si legge.
-                            const conseguimento = data.patente_conseguimento || data.patente_rilascio;
-                            if (conseguimento) {
-                              agg.licenseIssueDate = conseguimento;
-                              dataPatenteDallaScheda.current = false;
-                            }
-                            const letti = datiLettiDocumenti.current;
-                            if (data.patente_scadenza) letti.patenteScadenza = data.patente_scadenza;
-                            if (data.patente_ente) letti.patenteEnte = data.patente_ente;
-                            if (data.patente_tipo) letti.patenteTipo = data.patente_tipo;
-                            if (data.documento_tipo) letti.documentoTipo = data.documento_tipo;
-                            if (data.documento_numero) letti.documentoNumero = data.documento_numero;
-                            if (data.documento_rilascio) letti.documentoRilascio = data.documento_rilascio;
-                            if (data.numero_civico) letti.numeroCivico = data.numero_civico;
-                            if (data.codice_postale) letti.codicePostale = data.codice_postale;
-                            if (data.citta_residenza) letti.cittaResidenza = data.citta_residenza;
-                            if (data.provincia_residenza) letti.provinciaResidenza = data.provincia_residenza;
-                            if (data.indirizzo) letti.indirizzo = data.indirizzo;
-                            // Nessun codice fiscale sui documenti ma i dati per
-                            // calcolarlo si': meglio calcolarlo che lasciarlo vuoto.
-                            const cognome = (agg.lastName as string) || prev.lastName;
-                            const nome = (agg.firstName as string) || prev.firstName;
-                            const nascita = (agg.birthDate as string) || prev.birthDate;
-                            const sesso = (agg.sesso as string) || prev.sesso;
-                            const luogo = (agg.luogoNascita as string) || prev.luogoNascita;
-                            if (!prev.codiceFiscale && !agg.codiceFiscale && cognome && nome && nascita && sesso && luogo) {
-                              const calcolato = calcolaCodiceFiscale({
-                                cognome, nome, data_nascita: nascita,
-                                sesso: sesso as 'M' | 'F', luogo_nascita: luogo,
-                              });
-                              if (calcolato.codice_fiscale) agg.codiceFiscale = calcolato.codice_fiscale;
-                            }
-                            return { ...prev, ...agg };
-                          });
-                        }}
-                        onError={(err) => console.error('Compila error:', err)}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
-
-            {/* Main Driver Form — after documents for auto-fill */}
-            <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-2">{t({ it: "B. DATI CONDUCENTE", en: "B. DRIVER DETAILS" })}</h3>
-              <p className="text-sm text-gray-400 mb-4">
-                {t({
-                  it: 'I dati sono letti dai documenti caricati al punto A e non si modificano. Restano da compilare email e telefono.',
-                  en: 'These details are read from the documents uploaded in step A and cannot be edited. Only email and phone are left to fill in.',
-                })}
-              </p>
-              {renderDriverForm('main')}
-            </section>
-
-            {/* Automatic Validation & Tier Classification */}
-            <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "C. VERIFICA REQUISITI", en: "C. REQUIREMENTS CHECK" })}</h3>
-              <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 space-y-2">
-                <p>Età conducente: {driverAgeLocal || '--'} anni</p>
-                <p>Anzianità patente: {licenseYearsLocal || '--'} anni</p>
-                {driverTierInfo && (
-                  <div className={`mt-3 p-3 rounded-lg border ${
-                    driverTierInfo.tier === 'TIER_2' ? 'bg-green-900/20 border-green-600' :
-                    driverTierInfo.tier === 'TIER_1' ? 'bg-gray-800/40 border-white/30' :
-                    'bg-red-900/20 border-red-600'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-block px-2 py-0.5 text-xs font-bold ${
-                        driverTierInfo.tier === 'TIER_2' ? 'bg-green-600 text-white' :
-                        driverTierInfo.tier === 'TIER_1' ? 'bg-white text-black' :
-                        'bg-red-600 text-white'
-                      }`}>
-                        {driverTierInfo.tier === 'TIER_2' ? 'TIER 2' : driverTierInfo.tier === 'TIER_1' ? 'TIER 1' : 'NON IDONEO'}
-                      </span>
-                      <span className={`text-sm ${
-                        driverTierInfo.tier === 'BLOCKED' ? 'text-red-300 font-bold' : 'text-gray-300'
-                      }`}>
-                        {driverTierInfo.reason}
-                      </span>
-                    </div>
-                    {driverTierInfo.tier === 'BLOCKED' && (
-                      <p className="text-red-400 text-sm mt-2 font-semibold">
-                        Non è possibile procedere con la prenotazione.
-                      </p>
-                    )}
-                  </div>
-                )}
-                {(() => {
-                  const isBMW_M4 = item.name?.includes('BMW M4') || item.name?.includes('M4 Competition');
-                  const requiredYears = isBMW_M4 ? 5 : 3;
-
-                  if (licenseYearsLocal < requiredYears && formData.licenseIssueDate) {
-                    return (
-                      <p className="text-red-500 font-bold mt-2">
-                        ATTENZIONE: {isBMW_M4
-                          ? 'Per la BMW M4 è richiesta una patente con almeno 5 anni di anzianità.'
-                          : 'È richiesta una patente con almeno 3 anni di anzianità per noleggiare.'}
-                      </p>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-            </section>
-
-            {/* Second Driver */}
-            <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "D. SECONDO CONDUCENTE (OPZIONALE)", en: "D. SECOND DRIVER (OPTIONAL)" })}</h3>
-              <div className="flex items-start mb-4">
-                <input
-                  type="checkbox"
-                  name="addSecondDriver"
-                  checked={formData.addSecondDriver}
-                  onChange={handleChange}
-                  id="add-second-driver"
-                  className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 rounded focus:ring-white"
-                />
-                <label htmlFor="add-second-driver" className="ml-2 text-white">
-                  Aggiungi un secondo conducente autorizzato
-                </label>
-              </div>
-
-              <AnimatePresence>
-              {formData.addSecondDriver && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700 space-y-4">
-                  <p className="text-sm text-amber-300">{t({ it: "Tutti i campi sono obbligatori per il secondo conducente.", en: "All fields are required for the second driver." })}</p>
-
-                  {/* Documenti del secondo conducente.
-                      07/09/2026 - stanno PRIMA dei campi: si caricano le
-                      foto, si preme "Compila automaticamente" e il resto si
-                      riempie da solo. Chiedere prima i dati a mano e poi le
-                      foto voleva dire farli scrivere due volte.
-                      Fronte E retro per tutti e tre: il retro della patente
-                      porta la data reale di conseguimento (colonna 10), e
-                      il retro della tessera sanitaria il codice a barre. */}
-                  <div>
-                    <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                      {t({ it: "Documenti secondo conducente", en: "Second driver documents" })}
-                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {([
-                        { campo: 'licenseImage', titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: ["Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'licenseImageBack', titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'idImage', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: ["Documento valido", "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'idImageBack', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                      ] as const).map(({ campo, titolo, righe }) => (
-                        <div key={campo}>
-                          <DocumentUploader
-                            title={titolo}
-                            details={[...righe, t({ it: "Campo obbligatorio", en: "Required" })]}
-                            onFileChange={(file) => setFormData(prev => ({
-                              ...prev,
-                              secondDriver: { ...prev.secondDriver, [campo]: file },
-                            }))}
-                          />
-                          {errors[`secondDriver.${campo}`] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors[`secondDriver.${campo}`]}</p>}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Come per il primo conducente la lettura parte DA
-                        SOLA: le due date patente sono di sola lettura, quindi
-                        aspettare un click avrebbe lasciato il form bloccato. */}
-                    {([formData.secondDriver.licenseImage, formData.secondDriver.licenseImageBack, formData.secondDriver.idImage, formData.secondDriver.idImageBack, formData.secondDriver.cfImage, formData.secondDriver.cfImageBack].some(f => f instanceof File)) && (
-                      <div className="mt-4">
-                        <CompilaButton
-                          auto
-                          tone="rosso"
-                          documents={[
-                            { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente (fronte)' },
-                            { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: 'Patente Secondo Conducente (retro)' },
-                            { file: formData.secondDriver.idImage instanceof File ? formData.secondDriver.idImage : null, label: 'Documento Secondo Conducente (fronte)' },
-                            { file: formData.secondDriver.idImageBack instanceof File ? formData.secondDriver.idImageBack : null, label: 'Documento Secondo Conducente (retro)' },
-                            { file: formData.secondDriver.cfImage instanceof File ? formData.secondDriver.cfImage : null, label: 'Codice Fiscale Secondo Conducente (fronte)' },
-                            { file: formData.secondDriver.cfImageBack instanceof File ? formData.secondDriver.cfImageBack : null, label: 'Codice Fiscale Secondo Conducente (retro)' },
-                          ]}
-                          currentData={{
-                            nome: formData.secondDriver.firstName,
-                            cognome: formData.secondDriver.lastName,
-                            data_nascita: formData.secondDriver.birthDate,
-                            codice_fiscale: formData.secondDriver.codiceFiscale,
-                            patente_numero: formData.secondDriver.licenseNumber,
-                            // Le due date patente sono di sola lettura: si
-                            // lasciano fuori da currentData cosi' una nuova
-                            // lettura del retro puo' sempre correggerle.
-                          }}
-                          onDataExtracted={(data) => {
-                            setFormData(prev => {
-                              const sd = { ...prev.secondDriver };
-                              if (data.nome && !sd.firstName) sd.firstName = data.nome;
-                              if (data.cognome && !sd.lastName) sd.lastName = data.cognome;
-                              if (data.data_nascita && !sd.birthDate) sd.birthDate = data.data_nascita;
-                              if (data.sesso && !sd.sesso) sd.sesso = data.sesso;
-                              if (data.luogo_nascita && !sd.luogoNascita) sd.luogoNascita = data.luogo_nascita;
-                              if (data.codice_fiscale && !sd.codiceFiscale) sd.codiceFiscale = data.codice_fiscale.toUpperCase();
-                              if (data.patente_numero && !sd.licenseNumber) sd.licenseNumber = data.patente_numero;
-                              // Anzianita' di guida dalla data REALE di
-                              // conseguimento (retro, col.10 cat.B), non da
-                              // quella del duplicato.
-                              const conseguimento = data.patente_conseguimento || data.patente_rilascio;
-                              if (conseguimento) sd.licenseIssueDate = conseguimento;
-                              if (data.patente_scadenza) sd.licenseExpiryDate = data.patente_scadenza;
-                              if (data.patente_ente && !sd.countryOfIssue) sd.countryOfIssue = data.patente_ente;
-                              // Nessun codice fiscale sui documenti ma i dati
-                              // per calcolarlo si': lo si calcola invece di
-                              // lasciarlo vuoto.
-                              if (!sd.codiceFiscale && sd.lastName && sd.firstName && sd.birthDate && sd.sesso && sd.luogoNascita) {
-                                const calcolato = calcolaCodiceFiscale({
-                                  cognome: sd.lastName,
-                                  nome: sd.firstName,
-                                  data_nascita: sd.birthDate,
-                                  sesso: sd.sesso as 'M' | 'F',
-                                  luogo_nascita: sd.luogoNascita,
-                                });
-                                if (calcolato.codice_fiscale) sd.codiceFiscale = calcolato.codice_fiscale;
-                              }
-                              return { ...prev, secondDriver: sd };
-                            });
-                          }}
-                          onError={(err) => console.error('Compila second-driver error:', err)}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {renderDriverForm('second')}
-                </div>
-                </motion.div>
-              )}
-              </AnimatePresence>
-            </section>
-
-            {/* Sardinian residency question REMOVED — deposit now same for all */}
-
-            {/* Final Checkbox */}
-            <section className="border-t border-gray-700 pt-6">
-              <div className="flex items-start">
-                <input type="checkbox" name="confirmsInformation" checked={formData.confirmsInformation} onChange={handleChange} id="confirms-information" className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 rounded focus:ring-white" />
-                <label htmlFor="confirms-information" className="ml-2 text-white">{t({ it: "Dichiaro che i dati inseriti sono veritieri e conformi ai requisiti richiesti.", en: "I declare that the information provided is true and meets the required conditions." })}</label>
-              </div>
-              {errors.confirmsInformation && <p className="text-xs text-red-400 mt-1">{errors.confirmsInformation}</p>}
-            </section>
-          </div>
-        );
-      case 3: {
+      case 2: {
         const unlimitedOptions = getUnlimitedKmOptions(item.name);
         const isPremium = isPremiumVehicle(item.name);
         const displayVehicleType = getVehicleType(item);
@@ -7053,7 +6696,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           </div>
         );
       }
-      case 4:
+      case 3:
         // No Cauzione flow: save as preventivo (except Elite/Member who pay directly)
         if (formData.depositOption === 'no_deposit' && !isLoyalCustomer) {
           if (noCauzioneSaved) {
@@ -7322,6 +6965,342 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 )
               }
             </section >
+
+            {/* 20/09/2026 (direzione): i documenti si caricano QUI, in fondo,
+                dopo aver visto il totale. Se patente e documento dicono un'eta'
+                o una residenza diversa da quella dichiarata al passo 1, vincono
+                loro: fascia e cauzione si ricalcolano e il totale si aggiorna
+                da solo, con l'avviso qui sotto. */}
+            <section className="border-t border-gray-700 pt-6">
+              {(fasciaSmentita || residenzaSmentita) && (
+                <div className="mb-4 p-3 bg-amber-900/30 border border-amber-500/50 rounded">
+                  <p className="text-amber-300 text-sm font-semibold">
+                    {t({
+                      it: 'I documenti caricati non corrispondono a quanto dichiarato all\'inizio: il prezzo è stato ricalcolato.',
+                      en: 'The uploaded documents do not match what you declared at the start: the price has been recalculated.',
+                    })}
+                  </p>
+                  {fasciaSmentita && (
+                    <p className="text-amber-200 text-xs mt-1">
+                      {t({ it: 'Età del conducente', en: 'Driver age' })}: {driverTierInfo?.tier === 'TIER_1'
+                        ? t({ it: 'meno di 26 anni', en: 'under 26' })
+                        : t({ it: '26 anni o più', en: '26 or over' })}
+                    </p>
+                  )}
+                  {residenzaSmentita && (
+                    <p className="text-amber-200 text-xs mt-1">
+                      {t({ it: 'Residenza', en: 'Residence' })}: {isNonResidentCustomer
+                        ? t({ it: 'fuori dalla Sardegna', en: 'outside Sardinia' })
+                        : t({ it: 'in Sardegna', en: 'in Sardinia' })}
+                    </p>
+                  )}
+                </div>
+              )}
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                CARICA DOCUMENTI
+                <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
+              </h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
+              </p>
+
+              {/* Documenti gia' in archivio: chi li ha caricati una volta non
+                  li ricarica a ogni prenotazione. Servono tutti e tre. */}
+              {/* 12/09/2026 — l'archivio basta SOLO se da li' e' gia' uscita
+                  la data della categoria B. Senza quella data il campo e' di
+                  sola lettura e il cliente resterebbe bloccato: in quel caso
+                  gli si richiede la patente, fronte e retro. */}
+              {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath && !!formData.licenseIssueDate) ? (
+                <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-4 flex items-center mb-4">
+                  <div className="mr-3 bg-green-500/20 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-green-400 font-semibold">{t({ it: "Documenti già presenti in archivio", en: "Documents already on file" })}</p>
+                    <p className="text-sm text-gray-400">{t({ it: "Non è necessario caricare nuovamente i documenti.", en: "You do not need to upload the documents again." })}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {(hasStoredDocs.licensePath && hasStoredDocs.idPath && hasStoredDocs.cfPath && !formData.licenseIssueDate) && (
+                    <div className="bg-gray-800/60 border border-white/30 rounded-lg p-4 mb-4">
+                      <p className="text-white font-semibold">{t({ it: 'I tuoi documenti sono già in archivio', en: 'Your documents are already on file' })}</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {t({
+                          it: 'Stiamo rileggendo la patente per la data di conseguimento. Se resta vuota, carica solo il RETRO della patente.',
+                          en: 'We are re-reading your licence for the date obtained. If it stays empty, upload just the BACK of the licence.',
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {/* 09/09/2026 — fronte E retro di patente, codice fiscale e
+                      carta d'identita', esattamente come si chiedono al
+                      secondo conducente e nella sezione Documenti
+                      dell'account. Il retro non e' un di piu': sulla patente
+                      porta la data reale di conseguimento (colonna 10,
+                      categoria B), sulla tessera sanitaria il codice a
+                      barre. */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {([
+                      { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "6. CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "6. ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
+                    ] as const).map(({ campo, archivio, titolo, righe }) => (
+                      archivio ? (
+                        <div key={campo} className="bg-gray-800 border border-gray-700 rounded-lg p-4 opacity-75">
+                          <p className="text-green-400 text-sm font-medium mb-1">✓ {titolo.replace(' *', '')}</p>
+                          <p className="text-xs text-gray-500">{t({ it: "Già in archivio", en: "Already on file" })}</p>
+                        </div>
+                      ) : (
+                        <div key={campo}>
+                          <DocumentUploader
+                            title={titolo}
+                            details={[...righe, t({ it: "Campo obbligatorio", en: "Required" })]}
+                            onFileChange={(file) => setFormData(prev => ({ ...prev, [campo]: file }))}
+                          />
+                          {errors[campo] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors[campo]}</p>}
+                        </div>
+                      )
+                    ))}
+                  </div>
+
+                  {/* La lettura parte DA SOLA appena una foto e' caricata: i
+                      campi qui sotto si riempiono senza premere niente. Il
+                      bottone resta per rileggere i documenti a mano. */}
+                  {[formData.licenseImage, formData.licenseImageBack, formData.cfImage, formData.cfImageBack, formData.idImage, formData.idImageBack].some(Boolean) && (
+                    <div className="mt-4">
+                      <CompilaButton
+                        auto
+                        tone="rosso"
+                        documents={[
+                          { file: formData.licenseImage, label: 'Patente (fronte)' },
+                          { file: formData.licenseImageBack, label: 'Patente (retro)' },
+                          { file: formData.cfImage, label: 'Codice Fiscale (fronte)' },
+                          { file: formData.cfImageBack, label: 'Codice Fiscale (retro)' },
+                          { file: formData.idImage, label: 'Documento Identità (fronte)' },
+                          { file: formData.idImageBack, label: 'Documento Identità (retro)' },
+                        ]}
+                        currentData={{
+                          nome: formData.firstName,
+                          cognome: formData.lastName,
+                          data_nascita: formData.birthDate,
+                          codice_fiscale: formData.codiceFiscale,
+                          patente_numero: formData.licenseNumber,
+                          // patente_rilascio NON va qui: il campo e' di sola
+                          // lettura, quindi ogni rilettura dei documenti deve
+                          // poterlo ricorreggere invece di essere scartata
+                          // perche' "gia' compilato".
+                        }}
+                        onDataExtracted={(data) => {
+                          setFormData(prev => {
+                            const agg: Record<string, unknown> = {};
+                            if (data.nome && !prev.firstName) agg.firstName = data.nome;
+                            if (data.cognome && !prev.lastName) agg.lastName = data.cognome;
+                            if (data.data_nascita && !prev.birthDate) agg.birthDate = data.data_nascita;
+                            if (data.sesso && !prev.sesso) agg.sesso = data.sesso;
+                            if (data.luogo_nascita && !prev.luogoNascita) agg.luogoNascita = data.luogo_nascita;
+                            if (data.provincia_nascita && !prev.provinciaNascita) agg.provinciaNascita = data.provincia_nascita;
+                            if (data.codice_fiscale && !prev.codiceFiscale) agg.codiceFiscale = data.codice_fiscale.toUpperCase();
+                            if (data.indirizzo && !prev.residenza) {
+                              const via = `${data.indirizzo}${data.numero_civico ? ' ' + data.numero_civico : ''}`.trim();
+                              const citta = [data.codice_postale, data.citta_residenza, data.provincia_residenza].filter(Boolean).join(' ').trim();
+                              agg.residenza = [via, citta].filter(Boolean).join(', ');
+                              agg.address = agg.residenza;
+                              // Senza CAP o senza comune l'indirizzo non basta
+                              // per la fattura: lo si completa cercando il posto.
+                              if (!data.codice_postale || !data.citta_residenza) {
+                                const cercato = [via, data.citta_residenza || '', data.provincia_residenza || ''].filter(Boolean).join(' ').trim();
+                                void completaIndirizzoLetto(cercato).then(intero => {
+                                  if (intero) setFormData(p => ({ ...p, residenza: intero, address: intero }));
+                                });
+                              }
+                            }
+                            if (data.patente_numero && !prev.licenseNumber) agg.licenseNumber = data.patente_numero;
+                            // Anzianità patente: la data REALE di conseguimento sta sul
+                            // RETRO (colonna 10, categoria B). La 4a del fronte e' solo
+                            // l'emissione della tessera: si usa se il retro non si legge.
+                            const conseguimento = data.patente_conseguimento || data.patente_rilascio;
+                            if (conseguimento) {
+                              agg.licenseIssueDate = conseguimento;
+                              dataPatenteDallaScheda.current = false;
+                            }
+                            const letti = datiLettiDocumenti.current;
+                            if (data.patente_scadenza) letti.patenteScadenza = data.patente_scadenza;
+                            if (data.patente_ente) letti.patenteEnte = data.patente_ente;
+                            if (data.patente_tipo) letti.patenteTipo = data.patente_tipo;
+                            if (data.documento_tipo) letti.documentoTipo = data.documento_tipo;
+                            if (data.documento_numero) letti.documentoNumero = data.documento_numero;
+                            if (data.documento_rilascio) letti.documentoRilascio = data.documento_rilascio;
+                            if (data.numero_civico) letti.numeroCivico = data.numero_civico;
+                            if (data.codice_postale) letti.codicePostale = data.codice_postale;
+                            if (data.citta_residenza) letti.cittaResidenza = data.citta_residenza;
+                            if (data.provincia_residenza) letti.provinciaResidenza = data.provincia_residenza;
+                            if (data.indirizzo) letti.indirizzo = data.indirizzo;
+                            // Nessun codice fiscale sui documenti ma i dati per
+                            // calcolarlo si': meglio calcolarlo che lasciarlo vuoto.
+                            const cognome = (agg.lastName as string) || prev.lastName;
+                            const nome = (agg.firstName as string) || prev.firstName;
+                            const nascita = (agg.birthDate as string) || prev.birthDate;
+                            const sesso = (agg.sesso as string) || prev.sesso;
+                            const luogo = (agg.luogoNascita as string) || prev.luogoNascita;
+                            if (!prev.codiceFiscale && !agg.codiceFiscale && cognome && nome && nascita && sesso && luogo) {
+                              const calcolato = calcolaCodiceFiscale({
+                                cognome, nome, data_nascita: nascita,
+                                sesso: sesso as 'M' | 'F', luogo_nascita: luogo,
+                              });
+                              if (calcolato.codice_fiscale) agg.codiceFiscale = calcolato.codice_fiscale;
+                            }
+                            return { ...prev, ...agg };
+                          });
+                        }}
+                        onError={(err) => console.error('Compila error:', err)}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+
+            <section className="border-t border-gray-700 pt-6">
+              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "SECONDO CONDUCENTE (OPZIONALE)", en: "SECOND DRIVER (OPTIONAL)" })}</h3>
+              <div className="flex items-start mb-4">
+                <input
+                  type="checkbox"
+                  name="addSecondDriver"
+                  checked={formData.addSecondDriver}
+                  onChange={handleChange}
+                  id="add-second-driver"
+                  className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 rounded focus:ring-white"
+                />
+                <label htmlFor="add-second-driver" className="ml-2 text-white">
+                  Aggiungi un secondo conducente autorizzato
+                </label>
+              </div>
+
+              <AnimatePresence>
+              {formData.addSecondDriver && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700 space-y-4">
+                  <p className="text-sm text-amber-300">{t({ it: "Tutti i campi sono obbligatori per il secondo conducente.", en: "All fields are required for the second driver." })}</p>
+
+                  {/* Documenti del secondo conducente.
+                      07/09/2026 - stanno PRIMA dei campi: si caricano le
+                      foto, si preme "Compila automaticamente" e il resto si
+                      riempie da solo. Chiedere prima i dati a mano e poi le
+                      foto voleva dire farli scrivere due volte.
+                      Fronte E retro per tutti e tre: il retro della patente
+                      porta la data reale di conseguimento (colonna 10), e
+                      il retro della tessera sanitaria il codice a barre. */}
+                  <div>
+                    <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                      {t({ it: "Documenti secondo conducente", en: "Second driver documents" })}
+                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {([
+                        { campo: 'licenseImage', titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: ["Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'licenseImageBack', titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'idImage', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: ["Documento valido", "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'idImageBack', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                      ] as const).map(({ campo, titolo, righe }) => (
+                        <div key={campo}>
+                          <DocumentUploader
+                            title={titolo}
+                            details={[...righe, t({ it: "Campo obbligatorio", en: "Required" })]}
+                            onFileChange={(file) => setFormData(prev => ({
+                              ...prev,
+                              secondDriver: { ...prev.secondDriver, [campo]: file },
+                            }))}
+                          />
+                          {errors[`secondDriver.${campo}`] && <p className="text-xs text-red-400 mt-1 font-semibold">⚠ {errors[`secondDriver.${campo}`]}</p>}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Come per il primo conducente la lettura parte DA
+                        SOLA: le due date patente sono di sola lettura, quindi
+                        aspettare un click avrebbe lasciato il form bloccato. */}
+                    {([formData.secondDriver.licenseImage, formData.secondDriver.licenseImageBack, formData.secondDriver.idImage, formData.secondDriver.idImageBack, formData.secondDriver.cfImage, formData.secondDriver.cfImageBack].some(f => f instanceof File)) && (
+                      <div className="mt-4">
+                        <CompilaButton
+                          auto
+                          tone="rosso"
+                          documents={[
+                            { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente (fronte)' },
+                            { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: 'Patente Secondo Conducente (retro)' },
+                            { file: formData.secondDriver.idImage instanceof File ? formData.secondDriver.idImage : null, label: 'Documento Secondo Conducente (fronte)' },
+                            { file: formData.secondDriver.idImageBack instanceof File ? formData.secondDriver.idImageBack : null, label: 'Documento Secondo Conducente (retro)' },
+                            { file: formData.secondDriver.cfImage instanceof File ? formData.secondDriver.cfImage : null, label: 'Codice Fiscale Secondo Conducente (fronte)' },
+                            { file: formData.secondDriver.cfImageBack instanceof File ? formData.secondDriver.cfImageBack : null, label: 'Codice Fiscale Secondo Conducente (retro)' },
+                          ]}
+                          currentData={{
+                            nome: formData.secondDriver.firstName,
+                            cognome: formData.secondDriver.lastName,
+                            data_nascita: formData.secondDriver.birthDate,
+                            codice_fiscale: formData.secondDriver.codiceFiscale,
+                            patente_numero: formData.secondDriver.licenseNumber,
+                            // Le due date patente sono di sola lettura: si
+                            // lasciano fuori da currentData cosi' una nuova
+                            // lettura del retro puo' sempre correggerle.
+                          }}
+                          onDataExtracted={(data) => {
+                            setFormData(prev => {
+                              const sd = { ...prev.secondDriver };
+                              if (data.nome && !sd.firstName) sd.firstName = data.nome;
+                              if (data.cognome && !sd.lastName) sd.lastName = data.cognome;
+                              if (data.data_nascita && !sd.birthDate) sd.birthDate = data.data_nascita;
+                              if (data.sesso && !sd.sesso) sd.sesso = data.sesso;
+                              if (data.luogo_nascita && !sd.luogoNascita) sd.luogoNascita = data.luogo_nascita;
+                              if (data.codice_fiscale && !sd.codiceFiscale) sd.codiceFiscale = data.codice_fiscale.toUpperCase();
+                              if (data.patente_numero && !sd.licenseNumber) sd.licenseNumber = data.patente_numero;
+                              // Anzianita' di guida dalla data REALE di
+                              // conseguimento (retro, col.10 cat.B), non da
+                              // quella del duplicato.
+                              const conseguimento = data.patente_conseguimento || data.patente_rilascio;
+                              if (conseguimento) sd.licenseIssueDate = conseguimento;
+                              if (data.patente_scadenza) sd.licenseExpiryDate = data.patente_scadenza;
+                              if (data.patente_ente && !sd.countryOfIssue) sd.countryOfIssue = data.patente_ente;
+                              // Nessun codice fiscale sui documenti ma i dati
+                              // per calcolarlo si': lo si calcola invece di
+                              // lasciarlo vuoto.
+                              if (!sd.codiceFiscale && sd.lastName && sd.firstName && sd.birthDate && sd.sesso && sd.luogoNascita) {
+                                const calcolato = calcolaCodiceFiscale({
+                                  cognome: sd.lastName,
+                                  nome: sd.firstName,
+                                  data_nascita: sd.birthDate,
+                                  sesso: sd.sesso as 'M' | 'F',
+                                  luogo_nascita: sd.luogoNascita,
+                                });
+                                if (calcolato.codice_fiscale) sd.codiceFiscale = calcolato.codice_fiscale;
+                              }
+                              return { ...prev, secondDriver: sd };
+                            });
+                          }}
+                          onError={(err) => console.error('Compila second-driver error:', err)}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {renderDriverForm('second')}
+                </div>
+                </motion.div>
+              )}
+              </AnimatePresence>
+            </section>
             <section className="border-t border-gray-700 pt-6">
               <h3 className="text-lg font-bold text-white mb-4 uppercase">{t({ it: "Conferme Finali", en: "Final confirmations" })}</h3>
               <div className="space-y-4">
@@ -8364,8 +8343,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               </div>
             </div>
 
-            <div className={step === 4 ? "lg:grid lg:grid-cols-3 lg:gap-8 px-2 sm:px-4" : "px-2 sm:px-4"}>
-              {step === 4 && (
+            <div className={step === 3 ? "lg:grid lg:grid-cols-3 lg:gap-8 px-2 sm:px-4" : "px-2 sm:px-4"}>
+              {step === 3 && (
                 <aside className="hidden lg:block lg:col-span-1 lg:sticky lg:top-32 self-start mb-8 lg:mb-0">
                   <div className="bg-gray-900/50 p-6 rounded-lg border border-gray-800">
                     <p className="text-xs text-green-400 font-medium mb-2">{t({ it: "Prezzo dinamico attivo, blocca ORA, potrebbe aumentare", en: "Dynamic pricing active — lock it in NOW, it may rise" })}</p>
@@ -8567,7 +8546,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </aside>
               )}
 
-              <main className={step === 4 ? "lg:col-span-2" : ""}>
+              <main className={step === 3 ? "lg:col-span-2" : ""}>
                 <form onSubmit={handleSubmit}>
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -8653,18 +8632,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         type="button"
                         onClick={handleNext}
                         className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold hover:bg-gray-200 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={(step === 1 && !isFromSearch && isCheckingAvailability) || (step === 1 && !!availabilityError) || (!!prevenditaScelta && (!!prevenditaErrore || prevenditaInVerifica)) || (licenseYears < 3 && step === 2) || (step === 2 && !formData.confirmsInformation) || (step === 2 && (() => {
-                          // Keep this check in sync with the Step 2 residenza
-                          // validator. Strict on CAP + street/city + length;
-                          // permissive on house number so Nominatim picks
-                          // without a civico still pass.
-                          const r = (formData.residenza || formData.address || '').trim();
-                          const isForeignAddress = !!residenzaCountryCode && residenzaCountryCode !== 'it';
-                          if (!r || r.length < 10) return true;
-                          if (!isForeignAddress && !/\b\d{5}\b/.test(r)) return true;
-                          if (!/[A-Za-zÀ-ÿ]{3,}/.test(r)) return true;
-                          return false;
-                        })())}
+                        // 20/09/2026: tolti i blocchi legati al passo del
+                        // conducente (anzianita' patente, conferma dati,
+                        // residenza): quel passo non esiste piu'.
+                        disabled={(step === 1 && !isFromSearch && isCheckingAvailability) || (step === 1 && !!availabilityError) || (!!prevenditaScelta && (!!prevenditaErrore || prevenditaInVerifica))}
                       >
                         Continua
                       </button>

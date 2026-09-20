@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { tipoDaEtichetta } from '../../utils/tipoCategoria';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Link } from 'react-router-dom';
@@ -217,15 +218,6 @@ function impostaEtichetteCategoria(cats: Array<{ id: string; label: string }> | 
   }
   ETICHETTE_CATEGORIA = nuove;
 }
-function tipoDaEtichetta(label: string): 'UTILITARIA' | 'FURGONE' | 'SUPERCAR' | null {
-  const l = String(label || '').toLowerCase();
-  if (!l) return null;
-  if (l.includes('furgon') || l.includes('flotta') || l.includes('aziendal') || l.includes('van')) return 'FURGONE';
-  if (l.includes('urban') || l.includes('utilitar') || l.includes('city')) return 'UTILITARIA';
-  if (l.includes('supercar') || l.includes('hypercar') || l.includes('exotic') || l.includes('luxury') || l.includes('suv')) return 'SUPERCAR';
-  return null;
-}
-
 function getVehicleType(item: RentalItem, categoryContext?: string): 'UTILITARIA' | 'FURGONE' | 'V_CLASS' | 'SUPERCAR' {
   if (!item || !item.name) return 'SUPERCAR';
 

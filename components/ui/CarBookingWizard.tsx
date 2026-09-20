@@ -1750,6 +1750,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const datiLettiDocumenti = useRef<Record<string, string>>({});
   const [checkingDocs, setCheckingDocs] = useState(false);
 
+  // 20/09/2026 (direzione): a documenti gia' in archivio non si richiede nulla.
+  // Eta' e residenza si leggono da patente, documento e scheda cliente — la
+  // rilettura della patente qui sotto riempie `licenseIssueDate`, e da li'
+  // esce la fascia. Le due domande del passo 1 servono solo a chi prenota
+  // senza documenti caricati: senza di loro i prezzi di kasko, km e cauzione
+  // sarebbero calcolati alla cieca.
+  const documentiInArchivio = !!hasStoredDocs.licensePath && !!hasStoredDocs.idPath;
+  /** Sappiamo gia' la fascia: non la chiediamo. */
+  const fasciaNota = !!driverTierInfo?.tier || documentiInArchivio || checkingDocs;
+  /** Sappiamo gia' la residenza: non la chiediamo. */
+  const residenzaNota = !!(customerProvinciaResidenza || '').trim() || documentiInArchivio || checkingDocs;
+
   /**
    * La patente e' gia' in archivio ma la data di conseguimento (categoria B)
    * non e' mai stata salvata: senza quella data la prenotazione richiedeva
@@ -3310,10 +3322,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       }
       // 20/09/2026: fascia d'eta' e residenza servono per calcolare kasko e
       // cauzione. Si chiedono solo a chi non le ha gia' in scheda cliente.
-      if (!driverTierInfo?.tier && !fasciaDichiarata) {
+      if (!fasciaNota && !fasciaDichiarata) {
         newErrors.fasciaDichiarata = "Indica l'età del conducente.";
       }
-      if (!(customerProvinciaResidenza || '').trim() && !residenzaDichiarata) {
+      if (!residenzaNota && !residenzaDichiarata) {
         newErrors.residenzaDichiarata = "Indica la residenza del conducente.";
       }
       // When coming from search, dates are already validated — skip the rest
@@ -5800,9 +5812,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 cosi' i prezzi del passo Opzioni sono gia' quelli giusti. Resta
                 una dichiarazione: i documenti caricati alla fine hanno l'ultima
                 parola e fanno ricalcolare il totale. */}
+            {(!fasciaNota || !residenzaNota) && (
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">{t({ it: 'CHI GUIDA', en: 'WHO IS DRIVING' })}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {!fasciaNota && (
                 <div>
                   <p className="text-sm text-gray-400 font-semibold mb-2">{t({ it: "Età del conducente *", en: "Driver's age *" })}</p>
                   {([
@@ -5823,6 +5837,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </div>
                   ))}
                 </div>
+                )}
+                {!residenzaNota && (
                 <div>
                   <p className="text-sm text-gray-400 font-semibold mb-2">{t({ it: "Residenza *", en: "Residence *" })}</p>
                   {([
@@ -5845,18 +5861,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </div>
                   ))}
                 </div>
+                )}
               </div>
-              {(!!driverTierInfo?.tier || !!(customerProvinciaResidenza || '').trim()) && (
-                <p className="text-xs text-gray-500 mt-2">
-                  {t({
-                    it: 'Presi dalla tua scheda cliente: per cambiarli aggiorna il profilo.',
-                    en: 'Taken from your customer profile: update your profile to change them.',
-                  })}
-                </p>
-              )}
+              <p className="text-xs text-gray-500 mt-2">
+                {t({
+                  it: 'Servono a calcolare assicurazione, chilometri e cauzione. I documenti caricati alla fine confermano il dato.',
+                  en: 'Used to work out insurance, mileage and deposit. The documents uploaded at the end confirm it.',
+                })}
+              </p>
               {errors.fasciaDichiarata && <p className="text-xs text-red-400 mt-2">{errors.fasciaDichiarata}</p>}
               {errors.residenzaDichiarata && <p className="text-xs text-red-400 mt-1">{errors.residenzaDichiarata}</p>}
             </div>
+            )}
             </>
             )}
           </div>

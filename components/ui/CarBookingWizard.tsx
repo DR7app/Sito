@@ -195,6 +195,37 @@ function pickDepositOptions(
   return primary || []
 }
 
+/**
+ * 20/09/2026 (direzione): il tipo di veicolo si legge dall'ETICHETTA della
+ * categoria scritta in Centralina Pro, non dal suo id.
+ *
+ * Gli id sono storici e non dicono piu' quello che contengono: `urban` e'
+ * etichettato "Hypercar" (M8 800cv, GLE 63, SL55, Macan GTS), `aziendali` e'
+ * "Supercar" (RS3, A45S, Cayenne S), `scooter` e' "Urban" (Ypsilon, Yaris).
+ * Leggendo l'id, una RS3 passava per furgone e una M8 per utilitaria.
+ *
+ * Non si rinomina nulla: la Centralina e la tab Veicoli restano come sono, e'
+ * il codice che smette di indovinare. Etichetta sconosciuta o categorie non
+ * ancora caricate = si ricade esattamente sul comportamento di prima.
+ */
+let ETICHETTE_CATEGORIA: Record<string, string> = {};
+function impostaEtichetteCategoria(cats: Array<{ id: string; label: string }> | undefined) {
+  if (!cats || cats.length === 0) return;
+  const nuove: Record<string, string> = {};
+  for (const c of cats) {
+    if (c && c.id) nuove[String(c.id).toLowerCase().trim()] = String(c.label ?? '');
+  }
+  ETICHETTE_CATEGORIA = nuove;
+}
+function tipoDaEtichetta(label: string): 'UTILITARIA' | 'FURGONE' | 'SUPERCAR' | null {
+  const l = String(label || '').toLowerCase();
+  if (!l) return null;
+  if (l.includes('furgon') || l.includes('flotta') || l.includes('aziendal') || l.includes('van')) return 'FURGONE';
+  if (l.includes('urban') || l.includes('utilitar') || l.includes('city')) return 'UTILITARIA';
+  if (l.includes('supercar') || l.includes('hypercar') || l.includes('exotic') || l.includes('luxury') || l.includes('suv')) return 'SUPERCAR';
+  return null;
+}
+
 function getVehicleType(item: RentalItem, categoryContext?: string): 'UTILITARIA' | 'FURGONE' | 'V_CLASS' | 'SUPERCAR' {
   if (!item || !item.name) return 'SUPERCAR';
 
@@ -212,6 +243,18 @@ function getVehicleType(item: RentalItem, categoryContext?: string): 'UTILITARIA
   // tags a vehicle as 'aziendali', it's aziendali regardless of its name.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dbCat = String(((item as any).category ?? '')).toLowerCase().trim();
+
+  // Prima l'etichetta della categoria: e' quella che l'operatore vede e
+  // mantiene nella tab Veicoli, ed e' l'unica che dice davvero cos'e'.
+  const tipoEtichetta = tipoDaEtichetta(ETICHETTE_CATEGORIA[dbCat] || '');
+  if (tipoEtichetta === 'FURGONE') {
+    const n = item.name.toLowerCase();
+    if (n.includes('vito') || n.includes('v class') || n.includes('v-class') || n.includes('classe v')) return 'V_CLASS';
+    return 'FURGONE';
+  }
+  if (tipoEtichetta) return tipoEtichetta;
+
+  // Senza etichetta utile si resta sul vecchio riconoscimento per id.
   if (dbCat === 'aziendali' || dbCat === 'furgone') {
     const n = item.name.toLowerCase();
     if (n.includes('vito') || n.includes('v class') || n.includes('v-class') || n.includes('classe v')) return 'V_CLASS';
@@ -335,8 +378,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     return () => { c = true; };
   }, []);
 
+  // --- Centralina Pro is the ONLY pricing source ---
+  // No legacy fallback: every price comes from the admin Centralina Pro tab.
+  // 20/09/2026: la lettura sta QUI, prima di `vehicleType`, perche' il tipo di
+  // veicolo si ricava dall'etichetta della categoria. Piu' in basso sarebbe
+  // usata prima di esistere e il wizard non aprirebbe.
+  const { overlay: configOverlay, snapshot: proSnapshot } = useCentralinaProOverlay();
+  // Le etichette delle categorie servono a getVehicleType, che sta fuori dal
+  // componente: si passano appena la Centralina e' caricata.
+  impostaEtichetteCategoria(proSnapshot?.categories);
+
   // Determine vehicle type
-  const vehicleType = useMemo(() => getVehicleType(item, categoryContext), [item, categoryContext]);
+  const vehicleType = useMemo(() => getVehicleType(item, categoryContext), [item, categoryContext, proSnapshot]);
   const isUrbanOrCorporate = vehicleType === 'UTILITARIA' || vehicleType === 'FURGONE' || vehicleType === 'V_CLASS';
 
   // Urban/Corporate fleet availability deadline (removed — no longer restricted)
@@ -677,9 +730,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   /** I documenti dicono una fascia diversa da quella dichiarata al passo 1. */
   const fasciaSmentita = !!fasciaDichiarata && !!driverTierInfo?.tier && driverTierInfo.tier !== fasciaDichiarata;
 
-  // --- Centralina Pro is the ONLY pricing source ---
-  // No legacy fallback: every price comes from the admin Centralina Pro tab.
-  const { overlay: configOverlay, snapshot: proSnapshot } = useCentralinaProOverlay();
 
   // ──────────────────────────────────────────────────────────────────
   // Every pricing value below comes STRICTLY from Centralina Pro.

@@ -635,7 +635,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // packages from the start. Otherwise default behavior (jump to step 4
     // = "Prenota Ora" flow).
     if (initialSearchDates.preventivoId && !initialSearchDates.editMode) {
-      setTimeout(() => setStep(3), 100);
+      setTimeout(() => setStep(2), 100);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally runs once on mount only
@@ -3472,7 +3472,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // 20/09/2026: la validazione del conducente stava qui. Il passo e' stato
     // tolto: nome, contatti, codice fiscale, residenza e documenti arrivano
     // dalla scheda del cliente loggato e si correggono dal profilo.
-    if (step === 2) {
+    // 20/09/2026: la cauzione si sceglie nel passo 1 insieme alle opzioni.
+    if (step === 1) {
       const membershipTier = getMembershipTierName(user);
       const skipsCauzione = membershipTier === 'gold' || membershipTier === 'platinum';
       if (!skipsCauzione) {
@@ -3487,7 +3488,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         }
       }
     }
-    if (step === 3) {
+    if (step === 2) {
       // 20/09/2026 (direzione): i documenti sono obbligatori e si caricano in
       // questo ultimo passo. Fronte e retro di patente, identita' e codice
       // fiscale — chi li ha gia' in archivio non li ricarica.
@@ -3503,12 +3504,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (!formData.idImageBack && !hasStoredDocs.idPath) {
         newErrors.idImageBack = "La foto del documento d'identità (retro) è obbligatoria.";
       }
-      if (!formData.cfImage && !hasStoredDocs.cfPath) {
-        newErrors.cfImage = "La foto del codice fiscale (fronte) è obbligatoria.";
-      }
-      if (!formData.cfImageBack && !hasStoredDocs.cfPath) {
-        newErrors.cfImageBack = "La foto del codice fiscale (retro) è obbligatoria.";
-      }
+      // 20/09/2026 (direzione): il codice fiscale NON blocca la prenotazione.
+      // Obbligatori restano patente e documento d'identita'. La tessera
+      // sanitaria si puo' caricare, non si pretende.
       // 20/09/2026: il secondo conducente si compila in questo passo, quindi
       // qui si controlla. Regole invariate, comprese le patenti senza scadenza.
       const isBMW_M4 = item.name?.includes('BMW M4') || item.name?.includes('M4 Competition');
@@ -3550,9 +3548,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         if (!sd.licenseImageBack) newErrors['secondDriver.licenseImageBack'] = "Patente (retro) obbligatoria.";
         if (!sd.idImage) newErrors['secondDriver.idImage'] = "Documento (fronte) obbligatorio.";
         if (!sd.idImageBack) newErrors['secondDriver.idImageBack'] = "Documento (retro) obbligatorio.";
-        if (!sd.cfImage) newErrors['secondDriver.cfImage'] = "Codice fiscale (fronte) obbligatorio.";
-        if (!sd.cfImageBack) newErrors['secondDriver.cfImageBack'] = "Codice fiscale (retro) obbligatorio.";
-        if (!String(sd.codiceFiscale || '').trim()) newErrors['secondDriver.codiceFiscale'] = "Codice fiscale obbligatorio.";
+        // 20/09/2026 (direzione): nemmeno per il secondo conducente il codice
+        // fiscale e' obbligatorio.
       }
       if (!formData.confirmsDocuments) {
         newErrors.confirmsDocuments = "Devi confermare che i documenti sono corretti.";
@@ -5162,8 +5159,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const handleNext = () => {
     if (!validateStep()) return;
 
-    // Upsell lavaggio al passaggio Opzioni → Pagamento
-    if (step === 2) {
+    // Upsell lavaggio al passaggio Opzioni → Pagamento (ora 1 → 2)
+    if (step === 1) {
       setShowWashUpsell(true);
       return;
     }
@@ -5173,7 +5170,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   const handleWashUpsellAccept = () => {
     setShowWashUpsell(false);
-    if (clubBloccato) { setStep(3); return; }
+    if (clubBloccato) { setStep(2); return; }
     setShowSubscriptionUpsell(true);
   };
 
@@ -5189,7 +5186,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     setUpsellTargaLoading(false);
     setUpsellTargaManualCategory(null);
     setShowWashUpsell(false);
-    if (clubBloccato) { setStep(3); return; }
+    if (clubBloccato) { setStep(2); return; }
     setShowSubscriptionUpsell(true);
   };
 
@@ -5202,7 +5199,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         extras: [...prev.extras.filter(e => !e.startsWith('subscription_')), subExtra]
       }));
     }
-    setStep(3);
+    setStep(2);
   };
 
   const handleSubscriptionDecline = () => {
@@ -5212,7 +5209,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       ...prev,
       extras: prev.extras.filter(e => !e.startsWith('subscription_'))
     }));
-    setStep(3);
+    setStep(2);
   };
 
   const handleUpsellTargaSearch = async () => {
@@ -5281,9 +5278,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // prenota li ha gia' dati una volta e non li ridigita a ogni noleggio. Il
   // percorso resta di tre passi.
   const steps = [
-    { id: 1, name: t({ it: 'STEP 1: Date e Località', en: 'STEP 1: Dates and Location' }) },
-    { id: 2, name: t({ it: 'STEP 2: Opzioni e Assicurazioni', en: 'STEP 2: Options and Insurance' }) },
-    { id: 3, name: t({ it: 'STEP 3: Pagamento e Conferma', en: 'STEP 3: Payment and Confirmation' }) }
+    { id: 1, name: t({ it: 'STEP 1: Date, Località e Opzioni', en: 'STEP 1: Dates, Location and Options' }) },
+    { id: 2, name: t({ it: 'STEP 2: Pagamento e Conferma', en: 'STEP 2: Payment and Confirmation' }) }
   ];
 
   // 20/09/2026: questi due vivevano dentro il passo "Informazioni Conducente",
@@ -5439,8 +5435,46 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
 
     switch (step) {
-      case 1:
+      // 20/09/2026 (direzione): date, luoghi e opzioni stanno su un passo
+      // solo. Il percorso e' due passi: cosa prenoti, poi come paghi.
+      case 1: {
+        const unlimitedOptions = getUnlimitedKmOptions(item.name);
+        const isPremium = isPremiumVehicle(item.name);
+        const displayVehicleType = getVehicleType(item);
+        const activeTier = driverTier || 'TIER_2'; // fallback
+        const tierPricing = ACTIVE_TIER_PRICING[activeTier] || ACTIVE_TIER_PRICING.TIER_2;
+        // Insurance options from Centralina per vehicle category
+        const insuranceOptions = getInsuranceForVehicle(displayVehicleType, activeTier);
+        // Deposit options from Centralina Pro (per-category). RESIDENT o NON_RESIDENT
+        // a seconda dell'indirizzo del cliente (provincia CA/SU = residente).
+        const depositKey = `${activeTier}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
+        const rawDepositOptions = pickDepositOptions(configOverlay, displayVehicleType, depositKey, (item as any).category);
+        // Ensure "Nessuna cauzione" is always offered as a request for Fascia B as well —
+        // Centralina Pro only lists no_deposit for Fascia A, but Fascia B must still be
+        // able to submit a request. Borrow the Fascia A config when missing.
+        // NB: i clienti NON residenti NON hanno mai l'opzione "Nessuna cauzione"
+        // (cauzione non-residente = solo carta), quindi non la prendiamo in prestito.
+        const depositOptions = (() => {
+          const hasNoDeposit = rawDepositOptions.some((o: { id: string }) => o.id === 'no_deposit');
+          if (hasNoDeposit || isNonResidentCustomer) return rawDepositOptions;
+          // If Centralina Pro defines no_deposit on Fascia A, mirror that exact entry to
+          // Fascia B (so Fascia B can also request it). NO hardcoded fallback — if Pro
+          // hasn't configured it anywhere, the option simply isn't offered and the admin
+          // must add it via Centralina Pro > Cauzioni.
+          const fasciaA = pickDepositOptions(configOverlay, displayVehicleType, 'TIER_2_RESIDENT', (item as any).category);
+          const fasciaAnoDep = fasciaA.find((o: { id: string }) => o.id === 'no_deposit');
+          if (!fasciaAnoDep) return rawDepositOptions;
+          return [fasciaAnoDep, ...rawDepositOptions];
+        })();
+        const experienceServices = ACTIVE_EXPERIENCE_SERVICES.filter(s => !s.tierOnly || s.tierOnly === activeTier);
+
+        // Check if "no deposit" requires Kasko (cannot select no_deposit with RCA only)
+        const selectedInsuranceIsRCA = isRcaSelected(insuranceOptions, formData.insuranceOption);
+        const noDepositRequiresKasko = formData.depositOption === 'no_deposit' && selectedInsuranceIsRCA;
+
+        // VIP view removed — all customers use standard flow
         return (
+          <div className="space-y-10">
           <div className="space-y-6">
             {/* ── Prevendita in uso ──────────────────────────────────────────
                 Resta visibile per tutto lo step 1: il cliente deve sapere che
@@ -5876,44 +5910,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             </>
             )}
           </div>
-        );
-      case 2: {
-        const unlimitedOptions = getUnlimitedKmOptions(item.name);
-        const isPremium = isPremiumVehicle(item.name);
-        const displayVehicleType = getVehicleType(item);
-        const activeTier = driverTier || 'TIER_2'; // fallback
-        const tierPricing = ACTIVE_TIER_PRICING[activeTier] || ACTIVE_TIER_PRICING.TIER_2;
-        // Insurance options from Centralina per vehicle category
-        const insuranceOptions = getInsuranceForVehicle(displayVehicleType, activeTier);
-        // Deposit options from Centralina Pro (per-category). RESIDENT o NON_RESIDENT
-        // a seconda dell'indirizzo del cliente (provincia CA/SU = residente).
-        const depositKey = `${activeTier}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
-        const rawDepositOptions = pickDepositOptions(configOverlay, displayVehicleType, depositKey, (item as any).category);
-        // Ensure "Nessuna cauzione" is always offered as a request for Fascia B as well —
-        // Centralina Pro only lists no_deposit for Fascia A, but Fascia B must still be
-        // able to submit a request. Borrow the Fascia A config when missing.
-        // NB: i clienti NON residenti NON hanno mai l'opzione "Nessuna cauzione"
-        // (cauzione non-residente = solo carta), quindi non la prendiamo in prestito.
-        const depositOptions = (() => {
-          const hasNoDeposit = rawDepositOptions.some((o: { id: string }) => o.id === 'no_deposit');
-          if (hasNoDeposit || isNonResidentCustomer) return rawDepositOptions;
-          // If Centralina Pro defines no_deposit on Fascia A, mirror that exact entry to
-          // Fascia B (so Fascia B can also request it). NO hardcoded fallback — if Pro
-          // hasn't configured it anywhere, the option simply isn't offered and the admin
-          // must add it via Centralina Pro > Cauzioni.
-          const fasciaA = pickDepositOptions(configOverlay, displayVehicleType, 'TIER_2_RESIDENT', (item as any).category);
-          const fasciaAnoDep = fasciaA.find((o: { id: string }) => o.id === 'no_deposit');
-          if (!fasciaAnoDep) return rawDepositOptions;
-          return [fasciaAnoDep, ...rawDepositOptions];
-        })();
-        const experienceServices = ACTIVE_EXPERIENCE_SERVICES.filter(s => !s.tierOnly || s.tierOnly === activeTier);
-
-        // Check if "no deposit" requires Kasko (cannot select no_deposit with RCA only)
-        const selectedInsuranceIsRCA = isRcaSelected(insuranceOptions, formData.insuranceOption);
-        const noDepositRequiresKasko = formData.depositOption === 'no_deposit' && selectedInsuranceIsRCA;
-
-        // VIP view removed — all customers use standard flow
-        return (
           <div className="space-y-8">
             {/* === A. ASSICURAZIONE (tier-conditional) === */}
             <section>
@@ -6234,8 +6230,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 non appare. */}
             {(tierPricing.lavaggio > 0 || tierPricing.secondDriverPerDay > 0) && (
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-4">{t({ it: "C. SERVIZI AGGIUNTIVI", en: "C. ADDITIONAL SERVICES" })}</h3>
-              <div className="space-y-3">
+              {/* 20/09/2026 (direzione): i servizi si aprono con la freccia. Il
+                  passo 1 ora porta date, luoghi e opzioni: chiusi, si vede
+                  tutto senza scorrere mezzo schermo. */}
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                  <h3 className="text-lg font-bold text-white">{t({ it: "C. SERVIZI AGGIUNTIVI", en: "C. ADDITIONAL SERVICES" })}</h3>
+                  <svg className="w-5 h-5 shrink-0 text-gray-400 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </summary>
+              <div className="space-y-3 mt-4">
                 {/* Lavaggio finale — solo se prezzo > 0 */}
                 {tierPricing.lavaggio > 0 && (
                 <div className={`flex items-center p-3 rounded-md border ${'bg-gray-800/50 border-gray-700'}`}>
@@ -6262,6 +6265,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
                 )}
               </div>
+              </details>
             </section>
             )}
 
@@ -6654,9 +6658,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* === F. SERVIZI EXPERIENCE (hidden for VIP) === */}
             <section className="border-t border-gray-700 pt-6">
-              <h3 className="text-lg font-bold text-white mb-2">{t({ it: "F. SERVIZI EXPERIENCE", en: "F. EXPERIENCE SERVICES" })}</h3>
-              <p className="text-sm text-gray-400 mb-4">{t({ it: "Personalizza la tua esperienza con servizi esclusivi.", en: "Personalise your experience with exclusive services." })}</p>
-              <div className="space-y-3">
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{t({ it: "F. SERVIZI EXPERIENCE", en: "F. EXPERIENCE SERVICES" })}</h3>
+                    <p className="text-sm text-gray-400">{t({ it: "Personalizza la tua esperienza con servizi esclusivi.", en: "Personalise your experience with exclusive services." })}</p>
+                  </div>
+                  <svg className="w-5 h-5 shrink-0 text-gray-400 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </summary>
+              <div className="space-y-3 mt-4">
                 {experienceServices.map(svc => {
                   const qty = formData.selectedExperiences[svc.id] || 0;
                   const isSelected = qty > 0;
@@ -6705,14 +6715,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   );
                 })}
               </div>
+              </details>
             </section>
 
             {/* DR7 FLEX rimosso come addon dedicato — ora è un servizio
                  in EXPERIENCE_SERVICES via Centralina Pro. */}
           </div>
+          </div>
         );
       }
-      case 3:
+      case 2:
         // No Cauzione flow: save as preventivo (except Elite/Member who pay directly)
         if (formData.depositOption === 'no_deposit' && !isLoyalCustomer) {
           if (noCauzioneSaved) {
@@ -6993,35 +7005,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {/* 20/09/2026: si chiamava "METODO DI PAGAMENTO" come il
                         titolo sopra, e il titolo compariva due volte di fila. */}
                     <h4 className="text-base font-semibold text-white mb-3">{t({ it: "DETTAGLI PAGAMENTO", en: "PAYMENT DETAILS" })}</h4>
-                    <div className="p-4 bg-gray-800 rounded-lg">
-                      <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-                        {/* 20/09/2026: i marchi erano tracciati a mano e PayPal
-                            usciva come due segni illeggibili. Ora ogni marchio sta
-                            nella sua targhetta bianca, stessa altezza, come nel
-                            modello della direzione. */}
-                        <span className="inline-flex items-center justify-center h-8 w-14 rounded bg-white" aria-label="Mastercard">
-                          <svg viewBox="0 0 48 30" className="h-5" role="img">
-                            <circle cx="19" cy="15" r="10" fill="#EB001B" />
-                            <circle cx="29" cy="15" r="10" fill="#F79E1B" />
-                            <path d="M24 7.2a10 10 0 000 15.6 10 10 0 000-15.6z" fill="#FF5F00" />
-                          </svg>
-                        </span>
-                        <span className="inline-flex items-center justify-center h-8 w-14 rounded bg-white" aria-label="Visa">
-                          <span className="text-[13px] font-bold italic tracking-tight text-[#1434CB]">VISA</span>
-                        </span>
-                        <span className="inline-flex items-center justify-center h-8 w-14 rounded bg-[#006FCF]" aria-label="American Express">
-                          {/* Il blu del marchio con la cornice bianca della
-                              tessera: a questa altezza "AMERICAN EXPRESS" per
-                              esteso non si leggerebbe. */}
-                          <span className="inline-flex items-center justify-center h-6 w-12 border border-white/80 rounded-[2px]">
-                            <span className="text-[10px] font-bold tracking-[0.06em] text-white">AMEX</span>
-                          </span>
-                        </span>
-                        <span className="inline-flex items-center justify-center h-8 w-16 rounded bg-white" aria-label="PayPal">
-                          <span className="text-[12px] font-bold italic tracking-tight">
-                            <span className="text-[#003087]">Pay</span><span className="text-[#009CDE]">Pal</span>
-                          </span>
-                        </span>
+                    <div>
+                      <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+                        {/* 20/09/2026 (direzione): i marchi esatti mandati dalla
+                            direzione — Mastercard, Visa, American Express. Niente
+                            PayPal: non si accetta. */}
+                        <svg viewBox="0 0 131.39 86.9" className="h-7" aria-label="Mastercard" role="img"><rect width="131.39" height="86.9" rx="8" fill="#000"/><circle cx="48.37" cy="43.45" r="27.5" fill="#eb001b"/><circle cx="83.02" cy="43.45" r="27.5" fill="#f79e1b"/><path d="M65.7 20.8a27.4 27.4 0 0 0-10.2 21.4c0 8.6 3.9 16.3 10.2 21.4a27.4 27.4 0 0 0 10.2-21.4c0-8.6-3.9-16.3-10.2-21.4Z" fill="#ff5f00"/></svg>
+                        <svg viewBox="0 0 780 500" className="h-7" aria-label="Visa" role="img"><path d="M293.2 348.7l33.4-195.8h53.4l-33.4 195.8zM541.4 157.6a131.8 131.8 0 0 0-48.4-8.8c-53.2 0-90.7 27-91 65.7-.3 28.6 26.8 44.6 47.2 54.1 21 9.7 28 16 27.9 24.7-.1 13.3-16.7 19.4-32.2 19.4-21.5 0-32.9-3-50.6-10.4l-6.9-3.2-7.5 44.5c12.6 5.5 35.8 10.3 59.9 10.6 56.6 0 93.3-26.7 93.7-68 .2-22.7-14.2-40-45.3-54.2-18.9-9.2-30.4-15.4-30.3-24.7 0-8.3 9.8-17.2 30.9-17.2 17.6-.3 30.4 3.6 40.4 7.6l4.8 2.3 7.3-42.4z" fill="#1434cb"/><path d="M630.6 152.9h-41.6c-12.9 0-22.5 3.5-28.2 16.5l-79.9 182.3h56.5s9.2-24.5 11.3-29.9h69.1c1.6 7 6.5 29.9 6.5 29.9h50l-43.6-198.8zm-66.4 128.3c4.5-11.5 21.5-55.8 21.5-55.8-.3.5 4.4-11.5 7.1-19l3.6 17.2s10.3 47.6 12.5 57.6h-44.7zM232.8 152.9l-52.8 133.5-5.6-27.5c-9.8-31.5-40.2-65.7-74.3-82.8l48.2 172.4 57 0 84.7-195.8h-57.2z" fill="#1434cb"/><path d="M131.9 152.9H46.5l-.7 3.8c67.6 16.5 112.3 56.3 130.9 104.2l-18.9-91.6c-3.2-12.5-12.8-16-25.9-16.4z" fill="#f7a600"/></svg>
+                        <svg viewBox="0 0 60 40" className="h-7" aria-label="American Express" role="img"><rect width="60" height="40" rx="5" fill="#1F72CD"/><rect x="8" y="12.5" width="44" height="15" rx="2" fill="none" stroke="#fff" strokeWidth="1.5"/><text x="30" y="23.6" textAnchor="middle" fontFamily="Helvetica, Arial, sans-serif" fontSize="9" fontWeight="bold" letterSpacing="0.6" fill="#fff">AMEX</text></svg>
                       </div>
                       <p className="text-gray-400 text-sm text-center">
                         Sarai reindirizzato a una pagina di pagamento sicura per completare la transazione.

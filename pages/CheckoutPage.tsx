@@ -339,7 +339,7 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-black pt-32 pb-20 px-4 sm:px-6">
-      <div className="container mx-auto max-w-3xl">
+      <div className="container mx-auto max-w-6xl">
         {/* Passi: sul telefono restano su una riga sola, senza andare a capo */}
         <div className="flex items-center gap-2 sm:gap-3 mb-8 overflow-x-auto">
           {PASSI.map((p, i) => (
@@ -358,11 +358,16 @@ const CheckoutPage: React.FC = () => {
             </button>
           ))}
         </div>
-
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-8 uppercase tracking-[0.18em]">
           {t(nomePasso[passo])}
         </h1>
 
+        {/* 20/09/2026 (direzione): checkout del carrello su due colonne, come la
+            prenotazione del sito. A sinistra il passo corrente, a destra la scheda
+            del riepilogo col totale sempre in vista. Solo impaginazione: articoli,
+            metodi di pagamento, controlli e chiamate sono gli stessi di prima. */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] gap-6 lg:gap-8 items-start">
+          <div className="min-w-0">
         {passo === 'riepilogo' && (
           <div className="space-y-3 mb-8">
             <p className="text-gray-400 text-sm">
@@ -408,7 +413,6 @@ const CheckoutPage: React.FC = () => {
             ))}
           </div>
         )}
-
         {passo === 'cliente' && (
           <div className="bg-gray-900/50 border border-gray-800 p-4 sm:p-6 mb-8 space-y-4">
             <p className="text-gray-400 text-sm">
@@ -507,26 +511,48 @@ const CheckoutPage: React.FC = () => {
             </div>
           </div>
         )}
-
         {passo === 'pagamento' && (
           <div className="bg-gray-900/50 border border-gray-800 p-4 sm:p-6 mb-8">
             <h2 className="text-white font-bold mb-4 uppercase tracking-[0.18em] text-sm">
               {t({ it: 'Metodo di pagamento', en: 'Payment method' })}
             </h2>
-            <div className="flex gap-3">
+            {/* 20/09/2026: due schede al posto dei due bottoni piatti — stessa
+                scelta, stessi stati, solo piu' leggibile. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => setMetodo('nexi')}
-                className={`flex-1 py-3 text-sm font-semibold border ${metodo === 'nexi' ? 'border-white text-white' : 'border-gray-700 text-gray-400'}`}
+                className={`relative text-left p-4 border transition-colors ${metodo === 'nexi' ? 'border-dr7-gold bg-white/[0.03]' : 'border-gray-700 hover:border-gray-500'}`}
               >
-                {t({ it: 'Carta', en: 'Card' })}
+                <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${metodo === 'nexi' ? 'border-dr7-gold bg-dr7-gold' : 'border-gray-600'}`}>
+                  {metodo === 'nexi' && (
+                    <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  )}
+                </span>
+                <svg className={`w-7 h-7 mb-3 ${metodo === 'nexi' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+                <span className={`block text-sm font-bold ${metodo === 'nexi' ? 'text-white' : 'text-gray-300'}`}>
+                  {t({ it: 'Carta di credito/debito', en: 'Credit/debit card' })}
+                </span>
+                <span className="block text-xs text-gray-500 mt-1">
+                  {t({ it: 'Paga in modo sicuro con la tua carta', en: 'Pay securely with your card' })}
+                </span>
               </button>
               <button
                 onClick={() => pagabileACredito && setMetodo('credit')}
                 disabled={!pagabileACredito}
-                className={`flex-1 py-3 text-sm font-semibold border disabled:opacity-40 ${metodo === 'credit' ? 'border-white text-white' : 'border-gray-700 text-gray-400'}`}
+                className={`relative text-left p-4 border transition-colors disabled:opacity-40 ${metodo === 'credit' ? 'border-dr7-gold bg-white/[0.03]' : 'border-gray-700 enabled:hover:border-gray-500'}`}
               >
-                {t({ it: 'Credit Wallet', en: 'Credit Wallet' })}
-                {saldo != null && <span className="block text-xs font-normal mt-1">€{saldo.toFixed(2)}</span>}
+                <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border flex items-center justify-center ${metodo === 'credit' ? 'border-dr7-gold bg-dr7-gold' : 'border-gray-600'}`}>
+                  {metodo === 'credit' && (
+                    <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  )}
+                </span>
+                <svg className={`w-7 h-7 mb-3 ${metodo === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
+                <span className={`block text-sm font-bold ${metodo === 'credit' ? 'text-white' : 'text-gray-300'}`}>Credit Wallet</span>
+                <span className="block text-xs text-gray-500 mt-1">
+                  {saldo != null
+                    ? `${t({ it: 'Disponibile', en: 'Available' })}: €${saldo.toFixed(2)}`
+                    : t({ it: 'Usa il tuo credito DR7', en: 'Use your DR7 credit' })}
+                </span>
               </button>
             </div>
             {!pagabileACredito && (
@@ -544,23 +570,9 @@ const CheckoutPage: React.FC = () => {
             )}
           </div>
         )}
-
-        <div className="flex justify-between items-center mb-6">
-          <span className="text-base sm:text-lg text-white uppercase tracking-[0.18em]">
-            {t({ it: 'Totale', en: 'Total' })}
-            {articoliSelezionati.length !== articoli.length && (
-              <span className="block text-[11px] tracking-normal text-gray-500 normal-case">
-                {articoliSelezionati.length}/{articoli.length} {t({ it: 'articoli selezionati', en: 'items selected' })}
-              </span>
-            )}
-          </span>
-          <span className="text-2xl sm:text-3xl font-bold text-white">{euro(totaleCents)}</span>
-        </div>
-
         {errore && (
           <div className="border border-red-500/40 bg-red-500/10 text-red-300 text-sm p-4 mb-6">{errore}</div>
         )}
-
         <div className="flex flex-col sm:flex-row gap-3">
           {indicePasso > 0 && !inCorso && (
             <button
@@ -582,7 +594,7 @@ const CheckoutPage: React.FC = () => {
             <button
               onClick={() => void paga()}
               disabled={inCorso || nessunaSpunta || (metodo === 'credit' && !creditoBastante)}
-              className="flex-1 bg-white text-black py-4 font-bold text-sm uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex-1 bg-dr7-gold text-black py-4 font-bold text-sm uppercase tracking-[0.2em] hover:brightness-110 transition-all disabled:opacity-50 disabled:hover:brightness-100"
             >
               {inCorso
                 ? (avanzamento || t({ it: 'Attendere…', en: 'Please wait…' }))
@@ -590,12 +602,55 @@ const CheckoutPage: React.FC = () => {
             </button>
           )}
         </div>
-
         {!inCorso && passo === 'riepilogo' && (
           <button onClick={() => void svuota()} className="w-full text-gray-500 hover:text-gray-300 text-xs uppercase tracking-[0.2em] mt-6">
             {t({ it: 'Svuota il carrello', en: 'Empty the cart' })}
           </button>
         )}
+          </div>
+
+          <aside className="min-w-0 lg:sticky lg:top-28">
+            <div className="border border-gray-800 bg-gray-900/60">
+              <div className="px-5 py-4 border-b border-gray-800">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-dr7-gold">{t({ it: 'Riepilogo ordine', en: 'Order summary' })}</p>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {articoliSelezionati.map(articolo => (
+                  <div key={articolo.id} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white leading-snug">{articolo.titolo}</p>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500 mt-0.5">
+                        {etichettaTipo(articolo.tipo, lang === 'it' ? 'it' : 'en')}
+                      </p>
+                    </div>
+                    <span className="text-sm text-white tabular-nums shrink-0">{euro(articolo.prezzoCents)}</span>
+                  </div>
+                ))}
+                {articoliSelezionati.length === 0 && (
+                  <p className="text-sm text-gray-500">{t({ it: 'Nessun articolo selezionato.', en: 'No item selected.' })}</p>
+                )}
+              </div>
+              <div className="px-5 py-4 border-t border-gray-800 flex items-end justify-between gap-3">
+                <span className="text-sm text-white uppercase tracking-[0.18em]">
+                  {t({ it: 'Totale', en: 'Total' })}
+                  {articoliSelezionati.length !== articoli.length && (
+                    <span className="block text-[11px] tracking-normal text-gray-500 normal-case mt-1">
+                      {articoliSelezionati.length}/{articoli.length} {t({ it: 'articoli selezionati', en: 'items selected' })}
+                    </span>
+                  )}
+                </span>
+                <span className="text-2xl font-bold text-white tabular-nums">{euro(totaleCents)}</span>
+              </div>
+              <div className="px-5 py-4 border-t border-gray-800 flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 text-dr7-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <div>
+                  <p className="text-xs font-semibold text-white">{t({ it: 'Pagamento sicuro', en: 'Secure payment' })}</p>
+                  <p className="text-[11px] text-gray-500">{t({ it: 'I tuoi dati sono protetti', en: 'Your data is protected' })}</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </motion.div>
   );

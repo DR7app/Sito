@@ -1456,6 +1456,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // Fetch credit balance with safe fallback
   useEffect(() => {
     const fetchBalance = async () => {
+      if (!user?.id) {
+        // 21/09/2026: senza utente l'effetto usciva lasciando isLoadingBalance
+        // a true (valore iniziale): il pannello del Credit Wallet restava con
+        // la rotellina e il saldo non compariva mai.
+        setCreditBalance(0);
+        setIsLoadingBalance(false);
+        return;
+      }
       if (user?.id) {
         setIsLoadingBalance(true);
         try {
@@ -3780,7 +3788,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         // 'delivery_distance_km' column of 'bookings' in the schema cache". I
         // chilometri della consegna viaggiano in booking_details, dove sta gia'
         // il resto dei dati della consegna.
-        delivery_fee: deliveryFee || null,
+        delivery_fee: deliveryFee || 0, // NOT NULL a database: 0, mai null
         price_total: eurosToCents(grandTotal),
         currency: currency.toUpperCase(),
         status: 'pending',
@@ -4509,7 +4517,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           pickup_location: formData.pickupLocation,
           dropoff_location: formData.returnLocation,
           delivery_address: formData.deliveryAddress || null,
-          delivery_fee: deliveryFee || null,
+          delivery_fee: deliveryFee || 0, // NOT NULL a database: 0, mai null
           price_total: eurosToCents(grandTotal),
           currency: currency.toUpperCase(),
           booking_source: 'website',
@@ -4894,7 +4902,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           pickup_location: formData.pickupLocation,
           dropoff_location: formData.returnLocation,
           delivery_address: formData.deliveryAddress || null,
-          delivery_fee: deliveryFee || null,
+          delivery_fee: deliveryFee || 0, // NOT NULL a database: 0, mai null
           price_total: eurosToCents(grandTotal), // Store in cents
           currency: 'EUR',
           status: 'pending',
@@ -7952,7 +7960,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     // to hide the amount line entirely from the recap. The
                     // customer still picked an explicit option (€1000 / €2000 /
                     // €4999) and expects to see what they chose.
-                    if (formData.depositOption) {
+                    // 21/09/2026: la riga compariva SOLO con un'opzione scelta.
+                    // Su una categoria con cauzione unica (o quando l'elenco si
+                    // ricarica e la scelta non si ritrova) il riepilogo non
+                    // diceva piu' quanto si lascia al ritiro. Ora basta che una
+                    // cauzione ci sia.
+                    const cauzioneEffettiva = Number(getDeposit() || 0);
+                    if (formData.depositOption || cauzioneEffettiva > 0) {
                       const depKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
                       const opts = pickDepositOptions(configOverlay, vehicleType, depKey, (item as any).category);
                       const opt = opts.find((d: { id: string }) => d.id === formData.depositOption);
@@ -7962,7 +7976,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       // riepilogo non c'era piu' scritto quanto si lascia al
                       // ritiro. Si ripiega sulla cauzione effettiva, la stessa
                       // che usava la colonna tolta il 20/09.
-                      const optAmount = Number(opt?.amount || 0) || Number(getDeposit() || 0);
+                      const optAmount = Number(opt?.amount || 0) || cauzioneEffettiva;
                       const optLabel = opt?.label || formData.depositOption;
                       return (
                         <div className="mt-3 p-3 bg-gray-700/50 rounded-lg">
@@ -7975,7 +7989,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           ) : (
                             <p className="text-sm text-gray-400 mt-1">{t({ it: "Importo da confermare", en: "Amount to be confirmed" })}</p>
                           )}
-                          {!isUrbanOrCorporate && (
+                          {!isUrbanOrCorporate && optLabel && (
                             <p className="text-sm text-gray-400 mt-1">Tipo: {optLabel}</p>
                           )}
                         </div>

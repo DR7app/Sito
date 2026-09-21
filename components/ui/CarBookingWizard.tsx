@@ -7308,6 +7308,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       porta la data reale di conseguimento (colonna 10,
                       categoria B), sulla tessera sanitaria il codice a
                       barre. */}
+                  {!!hasStoredDocs.licensePath && !formData.licenseIssueDate && (
+                    <p className="mb-4 text-xs text-amber-300">
+                      {t({
+                        it: "Dalla patente in archivio non si è letta la data di conseguimento: la trovi nel campo qui sotto, puoi scriverla a mano.",
+                        en: "The issue date could not be read from the licence on file: you can type it in the field below.",
+                      })}
+                    </p>
+                  )}
                   {/* 21/09/2026 (direzione): niente numeri davanti ai titoli.
                       Con "Non sono italiano" le due caselle del codice fiscale
                       spariscono e restavano 1, 2, 5, 6 — sembrava mancasse
@@ -7315,7 +7323,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {([
                       { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
+                      // 21/09/2026 (direzione): il retro era considerato "da
+                      // caricare" finche' non ne usciva la DATA. Se la lettura
+                      // non la trovava, il riquadro tornava a chiederlo a ogni
+                      // giro — all'infinito, con il file gia' in archivio. Il
+                      // documento c'e' o non c'e': se c'e', non si richiede. La
+                      // data mancante si segnala sotto, una volta sola.
+                      { campo: 'licenseImageBack', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
                       { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },

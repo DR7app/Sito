@@ -7322,6 +7322,25 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               )}
             </section>
 
+            {/* 21/09/2026: i dati del conducente tornano visibili QUI, sotto i
+                documenti che li riempiono. Tolto il passo "Informazioni
+                Conducente", la lettura dei documenti non aveva piu' dove
+                mostrarsi: si caricavano patente e carta d'identita', si
+                premeva Compila e non succedeva niente sotto gli occhi del
+                cliente. I campi letti restano bloccati, quelli vuoti si
+                completano a mano — senza, contratto e fattura partono con i
+                buchi. */}
+            <section className="border-t border-gray-700 pt-6">
+              <h3 className="text-lg font-bold text-white mb-2">{t({ it: "DATI DEL CONDUCENTE", en: "DRIVER DETAILS" })}</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                {t({
+                  it: 'Letti dai documenti caricati qui sopra e dalla tua scheda cliente. Quelli gia' + "\u2019" + 'compilati non si modificano: restano da completare solo gli eventuali campi vuoti.',
+                  en: 'Read from the documents above and from your customer profile. Filled fields are locked: only the empty ones are left to complete.',
+                })}
+              </p>
+              {renderDriverForm('main')}
+            </section>
+
             <section className="border-t border-gray-700 pt-6">
               <h3 className="text-lg font-bold text-white mb-4">{t({ it: "SECONDO CONDUCENTE (OPZIONALE)", en: "SECOND DRIVER (OPTIONAL)" })}</h3>
               <div className="flex items-start mb-4">

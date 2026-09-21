@@ -1811,6 +1811,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // scheda, un paese di residenza noto, la provincia italiana o i documenti in
   // archivio, la domanda non si fa — la risposta ce l'abbiamo.
   const [nonItaliano, setNonItaliano] = useState(false);
+  // 21/09/2026 (direzione): il modulo del secondo conducente non si chiede: i
+  // suoi documenti portano tutto e la lettura li estrae. Si apre solo se
+  // qualcosa manca davvero, o se si vuole correggere a mano.
+  const [secondoAMano, setSecondoAMano] = useState(false);
   const nazionalitaNota = !!String(formData.codiceFiscale || '').trim()
     || !!residenzaCountryCode
     || !!(customerProvinciaResidenza || '').trim()
@@ -2946,6 +2950,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const extrasUpsellCost = selectedUpsellExtras.reduce((sum, svc) => sum + roundToTwoDecimals(svc.price * 0.90), 0);
   const totalWashUpsellCost = roundToTwoDecimals(washUpsellCost + extrasUpsellCost);
   const grandTotal = finalPriceWithBirthdayDiscount + totalWashUpsellCost;
+  /** Credit Wallet scelto ma saldo sotto l'importo da pagare davvero. */
+  const creditoNonBasta = formData.paymentMethod === 'credit' && !isLoadingBalance && creditBalance < grandTotal;
 
   // Calculate dynamic wallet credit for subscription upsell
   // Based on ~8-12% of booking total, rounded to look natural (not generic)
@@ -3769,7 +3775,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         pickup_location: formData.pickupLocation,
         dropoff_location: formData.returnLocation,
         delivery_address: formData.deliveryAddress || null,
-        delivery_distance_km: deliveryInfo?.roundTripKm || null,
+        // 21/09/2026: `delivery_distance_km` NON esiste nella tabella bookings —
+        // PostgREST rifiutava l'INTERA prenotazione con "Could not find the
+        // 'delivery_distance_km' column of 'bookings' in the schema cache". I
+        // chilometri della consegna viaggiano in booking_details, dove sta gia'
+        // il resto dei dati della consegna.
         delivery_fee: deliveryFee || null,
         price_total: eurosToCents(grandTotal),
         currency: currency.toUpperCase(),
@@ -3798,6 +3808,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         customer_phone: rPhone,
         booking_details: {
           ...dettagliPrevendita,
+          // I chilometri della consegna stanno qui: in `bookings` non c'e' una
+          // colonna per loro (vedi la nota sopra su delivery_distance_km).
+          ...(deliveryInfo?.roundTripKm ? { delivery_distance_km: deliveryInfo.roundTripKm } : {}),
           customer: {
             fullName: rFullName,
             firstName: rFirstName,
@@ -4496,7 +4509,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           pickup_location: formData.pickupLocation,
           dropoff_location: formData.returnLocation,
           delivery_address: formData.deliveryAddress || null,
-          delivery_distance_km: deliveryInfo?.roundTripKm || null,
           delivery_fee: deliveryFee || null,
           price_total: eurosToCents(grandTotal),
           currency: currency.toUpperCase(),
@@ -4882,7 +4894,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           pickup_location: formData.pickupLocation,
           dropoff_location: formData.returnLocation,
           delivery_address: formData.deliveryAddress || null,
-          delivery_distance_km: deliveryInfo?.roundTripKm || null,
           delivery_fee: deliveryFee || null,
           price_total: eurosToCents(grandTotal), // Store in cents
           currency: 'EUR',
@@ -7058,8 +7069,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       <>
                         <p className="text-sm text-gray-400 mb-2">{t({ it: "Saldo Disponibile", en: "Available Balance" })}</p>
                         <p className="text-4xl font-bold text-white mb-4">€{creditBalance.toFixed(2)}</p>
-                        {creditBalance < total ? (
-                          <p className="text-sm text-red-400">Credito insufficiente. Richiesto: €{total.toFixed(2)}</p>
+                        {/* 21/09/2026: confrontava il saldo con `total`, cioe'
+                            l'importo PRIMA di sconti, sconto compleanno e
+                            lavaggio aggiunto. Il debito vero e' grandTotal, lo
+                            stesso che controlla il salvataggio: il pannello
+                            poteva dire "saldo sufficiente" e poi rifiutare. */}
+                        {creditoNonBasta ? (
+                          <p className="text-sm text-red-400">Credito insufficiente. Richiesto: €{grandTotal.toFixed(2)}</p>
                         ) : (
                           <p className="text-sm text-green-400">{t({ it: "✓ Saldo sufficiente", en: "✓ Sufficient balance" })}</p>
                         )}
@@ -7474,7 +7490,54 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     )}
                   </div>
 
-                  {renderDriverForm('second')}
+                  {/* 21/09/2026 (direzione): con i documenti caricati qui sopra
+                      i dati si estraggono da soli — chiedere di nuovo nome,
+                      email, codice fiscale e patente era far riscrivere quello
+                      che c'e' gia' scritto. Il modulo compare solo se manca
+                      qualcosa (altrimenti il salvataggio si bloccherebbe su
+                      campi invisibili) o se si chiede di correggere. */}
+                  {(() => {
+                    const sd = formData.secondDriver;
+                    const manca = (v: unknown) => !String(v ?? '').trim();
+                    const incompleto = manca(sd.firstName) || manca(sd.lastName) || manca(sd.email)
+                      || manca(sd.phone) || manca(sd.birthDate) || manca(sd.licenseNumber)
+                      || manca(sd.licenseIssueDate) || manca(sd.countryOfIssue);
+                    if (!incompleto && !secondoAMano) {
+                      return (
+                        <div className="mt-4 p-4 rounded-lg border border-gray-700 bg-gray-900/40">
+                          <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">
+                            {t({ it: 'Letti dai documenti', en: 'Read from the documents' })}
+                          </p>
+                          <p className="text-white font-semibold">{sd.firstName} {sd.lastName}</p>
+                          <p className="text-sm text-gray-400">{sd.email} · {sd.phone}</p>
+                          <p className="text-sm text-gray-400">
+                            {t({ it: 'Nato il', en: 'Born' })} {sd.birthDate} · {t({ it: 'patente', en: 'licence' })} {sd.licenseNumber}
+                            {sd.licenseIssueDate ? ` (${t({ it: 'conseguita il', en: 'issued' })} ${sd.licenseIssueDate})` : ''}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setSecondoAMano(true)}
+                            className="mt-3 text-xs underline text-gray-400 hover:text-white"
+                          >
+                            {t({ it: 'Correggi a mano', en: 'Edit manually' })}
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <>
+                        {incompleto && (
+                          <p className="mt-4 text-xs text-amber-300">
+                            {t({
+                              it: 'Alcuni dati non si sono letti dai documenti: completa solo i campi vuoti qui sotto.',
+                              en: 'Some details could not be read from the documents: fill in the empty fields below.',
+                            })}
+                          </p>
+                        )}
+                        {renderDriverForm('second')}
+                      </>
+                    );
+                  })()}
                 </div>
                 </motion.div>
               )}
@@ -7893,13 +7956,24 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       const depKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
                       const opts = pickDepositOptions(configOverlay, vehicleType, depKey, (item as any).category);
                       const opt = opts.find((d: { id: string }) => d.id === formData.depositOption);
-                      const optAmount = Number(opt?.amount || 0);
+                      // 21/09/2026: se l'opzione non si ritrova nell'elenco
+                      // corrente (id di una categoria diversa, elenco
+                      // ricaricato) l'importo restava 0 e la riga spariva: nel
+                      // riepilogo non c'era piu' scritto quanto si lascia al
+                      // ritiro. Si ripiega sulla cauzione effettiva, la stessa
+                      // che usava la colonna tolta il 20/09.
+                      const optAmount = Number(opt?.amount || 0) || Number(getDeposit() || 0);
                       const optLabel = opt?.label || formData.depositOption;
                       return (
                         <div className="mt-3 p-3 bg-gray-700/50 rounded-lg">
                           <p className="text-sm font-semibold text-white">{t({ it: "CAUZIONE AL RITIRO", en: "DEPOSIT AT PICK-UP" })}</p>
-                          {optAmount > 0 && (
-                            <p className="text-sm text-gray-300 mt-1">Importo: €{optAmount.toLocaleString()}</p>
+                          {optAmount > 0 ? (
+                            <>
+                              <p className="text-sm text-gray-300 mt-1">Importo: €{optAmount.toLocaleString('it-IT')}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t({ it: "Restituita dopo la riconsegna", en: "Refunded after drop-off" })}</p>
+                            </>
+                          ) : (
+                            <p className="text-sm text-gray-400 mt-1">{t({ it: "Importo da confermare", en: "Amount to be confirmed" })}</p>
                           )}
                           {!isUrbanOrCorporate && (
                             <p className="text-sm text-gray-400 mt-1">Tipo: {optLabel}</p>
@@ -8676,12 +8750,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <div className="flex flex-col sm:flex-row gap-3 w-full">
                             <button
                               type="submit"
-                              disabled={isProcessing || !formData.agreesToTerms || !formData.agreesToPrivacy || !formData.confirmsDocuments}
+                              // 21/09/2026: col Credit Wallet senza saldo il tasto
+                              // restava attivo e l'errore arrivava solo dopo il
+                              // tentativo di salvataggio.
+                              disabled={isProcessing || !formData.agreesToTerms || !formData.agreesToPrivacy || !formData.confirmsDocuments || creditoNonBasta}
                               className="flex-1 px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold hover:bg-gray-200 transition-colors flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
                               {isProcessing ? 'Elaborazione in corso...' : 'CONFERMA PRENOTAZIONE'}
                             </button>
+                            {creditoNonBasta && (
+                              <p className="w-full text-xs text-red-400 text-center sm:text-left">
+                                {t({ it: 'Credito insufficiente per questa prenotazione: scegli la carta o ricarica il wallet.', en: 'Not enough credit for this booking: pay by card or top up your wallet.' })}
+                              </p>
+                            )}
                             {/* Stesso noleggio, pagato dopo insieme al resto
                                 del carrello. Non blocca il mezzo: il mezzo si
                                 blocca quando si paga. */}

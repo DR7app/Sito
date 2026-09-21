@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { noteDaMostrare } from '../../utils/noteDocumenti'
 import { useTranslation } from '../../hooks/useTranslation';
 
 export interface ExtractedData {
@@ -349,7 +350,11 @@ export default function CompilaButton({
         delete merged.codice_fiscale
       }
 
-      setExtractionNotes(notes)
+      // 21/09/2026: si mostrano solo le note che segnalano un problema vero.
+      // Caricando la tessera sanitaria alla casella giusta comparivano avvisi
+      // gialli perche' il lettore constatava che non e' una carta d'identita'
+      // e che non porta l'indirizzo — vero, e del tutto normale.
+      setExtractionNotes(noteDaMostrare(notes))
 
       // Find conflicts with existing data
       const foundConflicts = findConflicts(currentData, merged)

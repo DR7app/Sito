@@ -1790,6 +1790,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [percorsiPatente, setPercorsiPatente] = useState<string[]>([]);
   const [urlPatenteArchivio, setUrlPatenteArchivio] = useState<string[]>([]);
   const letturaArchivioFatta = useRef(false);
+  // 21/09/2026 (direzione): con i documenti gia' in archivio i dati devono
+  // comparire da soli. Fino a oggi si rileggeva SOLO la patente: chi aveva la
+  // scheda cliente incompleta si ritrovava codice fiscale, data e luogo di
+  // nascita vuoti pur avendo tessera sanitaria e carta d'identita' caricate.
+  const [urlIdentitaArchivio, setUrlIdentitaArchivio] = useState<string[]>([]);
+  const [urlCfArchivio, setUrlCfArchivio] = useState<string[]>([]);
+  const letturaAnagraficaFatta = useRef(false);
   // Data di conseguimento presa dalla scheda cliente (non letta ora dai
   // documenti): se la scheda ha la data di emissione della tessera invece
   // di quella del retro, la patente risulta piu' giovane del vero e va
@@ -1888,6 +1895,48 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     })();
   }, [percorsiPatente, urlPatenteArchivio, formData.licenseIssueDate]);
 
+  // Anagrafica dai documenti in archivio: codice fiscale, data e luogo di
+  // nascita, sesso, residenza. Si legge una volta sola e SOLO cio' che manca:
+  // quello che la scheda cliente ha gia' non si tocca.
+  useEffect(() => {
+    if (letturaAnagraficaFatta.current) return;
+    const daLeggere = [...urlCfArchivio, ...urlIdentitaArchivio].filter(Boolean);
+    if (daLeggere.length === 0) return;
+    const manca = (v: unknown) => !String(v ?? '').trim();
+    if (!manca(formData.codiceFiscale) && !manca(formData.birthDate) && !manca(formData.luogoNascita)) return;
+    letturaAnagraficaFatta.current = true;
+    (async () => {
+      for (const url of daLeggere) {
+        try {
+          const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/extract-document-data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl: url }),
+          });
+          if (!res.ok) continue;
+          const json = await res.json();
+          const dati = json.data || json.extractedData;
+          if (!dati) continue;
+          const indirizzoLetto = [
+            [dati.indirizzo, dati.numero_civico].filter(Boolean).join(' ').trim(),
+            [dati.codice_postale, dati.citta_residenza, dati.provincia_residenza].filter(Boolean).join(' ').trim(),
+          ].filter(Boolean).join(', ');
+          setFormData(prev => ({
+            ...prev,
+            codiceFiscale: prev.codiceFiscale || (dati.codice_fiscale || '').toUpperCase(),
+            birthDate: prev.birthDate || dati.data_nascita || '',
+            sesso: prev.sesso || dati.sesso || '',
+            luogoNascita: prev.luogoNascita || dati.luogo_nascita || '',
+            provinciaNascita: prev.provinciaNascita || String(dati.provincia_nascita || '').toUpperCase(),
+            residenza: prev.residenza || indirizzoLetto,
+          }));
+        } catch (err) {
+          console.warn('Rilettura anagrafica dall\'archivio non riuscita:', err);
+        }
+      }
+    })();
+  }, [urlCfArchivio, urlIdentitaArchivio, formData.codiceFiscale, formData.birthDate, formData.luogoNascita]);
+
   // Indirizzo di residenza in una riga sola, dalla scheda cliente.
   const indirizzoCompleto = (c: Record<string, any>): string => {
     const via = [c.indirizzo, c.numero_civico].filter(Boolean).join(' ').trim();
@@ -1950,6 +1999,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 });
                 setUrlPatenteArchivio((j.patente || []).map((d: any) => d.url).filter(Boolean));
                 setPercorsiPatente((j.patente || []).map((d: any) => d.percorso));
+                setUrlIdentitaArchivio((j.identita || []).map((d: any) => d.url).filter(Boolean));
+                setUrlCfArchivio((j.codiceFiscale || []).map((d: any) => d.url).filter(Boolean));
                 setCheckingDocs(false);
                 return;
               }

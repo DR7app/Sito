@@ -1826,10 +1826,6 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // scheda, un paese di residenza noto, la provincia italiana o i documenti in
   // archivio, la domanda non si fa — la risposta ce l'abbiamo.
   const [nonItaliano, setNonItaliano] = useState(false);
-  // 21/09/2026 (direzione): il modulo del secondo conducente non si chiede: i
-  // suoi documenti portano tutto e la lettura li estrae. Si apre solo se
-  // qualcosa manca davvero, o se si vuole correggere a mano.
-  const [secondoAMano, setSecondoAMano] = useState(false);
   const nazionalitaNota = !!String(formData.codiceFiscale || '').trim()
     || !!residenzaCountryCode
     || !!(customerProvinciaResidenza || '').trim()
@@ -7549,54 +7545,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     )}
                   </div>
 
-                  {/* 21/09/2026 (direzione): con i documenti caricati qui sopra
-                      i dati si estraggono da soli — chiedere di nuovo nome,
-                      email, codice fiscale e patente era far riscrivere quello
-                      che c'e' gia' scritto. Il modulo compare solo se manca
-                      qualcosa (altrimenti il salvataggio si bloccherebbe su
-                      campi invisibili) o se si chiede di correggere. */}
-                  {(() => {
-                    const sd = formData.secondDriver;
-                    const manca = (v: unknown) => !String(v ?? '').trim();
-                    const incompleto = manca(sd.firstName) || manca(sd.lastName) || manca(sd.email)
-                      || manca(sd.phone) || manca(sd.birthDate) || manca(sd.licenseNumber)
-                      || manca(sd.licenseIssueDate) || manca(sd.countryOfIssue);
-                    if (!incompleto && !secondoAMano) {
-                      return (
-                        <div className="mt-4 p-4 rounded-lg border border-gray-700 bg-gray-900/40">
-                          <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">
-                            {t({ it: 'Letti dai documenti', en: 'Read from the documents' })}
-                          </p>
-                          <p className="text-white font-semibold">{sd.firstName} {sd.lastName}</p>
-                          <p className="text-sm text-gray-400">{sd.email} · {sd.phone}</p>
-                          <p className="text-sm text-gray-400">
-                            {t({ it: 'Nato il', en: 'Born' })} {sd.birthDate} · {t({ it: 'patente', en: 'licence' })} {sd.licenseNumber}
-                            {sd.licenseIssueDate ? ` (${t({ it: 'conseguita il', en: 'issued' })} ${sd.licenseIssueDate})` : ''}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setSecondoAMano(true)}
-                            className="mt-3 text-xs underline text-gray-400 hover:text-white"
-                          >
-                            {t({ it: 'Correggi a mano', en: 'Edit manually' })}
-                          </button>
-                        </div>
-                      );
-                    }
-                    return (
-                      <>
-                        {incompleto && (
-                          <p className="mt-4 text-xs text-amber-300">
-                            {t({
-                              it: 'Alcuni dati non si sono letti dai documenti: completa solo i campi vuoti qui sotto.',
-                              en: 'Some details could not be read from the documents: fill in the empty fields below.',
-                            })}
-                          </p>
-                        )}
-                        {renderDriverForm('second')}
-                      </>
-                    );
-                  })()}
+                  {/* 21/09/2026 (direzione): il modulo del secondo conducente
+                      RESTA. Si riempie da solo: il bottone Compila qui sopra
+                      e' in modalita' `auto`, quindi appena si caricano i suoi
+                      documenti i campi si popolano e si bloccano. Quello che
+                      non si e' letto resta scrivibile. */}
+                  {renderDriverForm('second')}
                 </div>
                 </motion.div>
               )}

@@ -1857,6 +1857,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             return firmato?.signedUrl || null;
           }))).filter(Boolean) as string[];
 
+      // 21/09/2026: si leggevano le immagini una alla volta e ci si fermava
+      // alla PRIMA che dava una data. Se in archivio il fronte viene prima, la
+      // data presa era quella del campo 4a — che sulla patente italiana e' la
+      // categoria piu' recente (A2 il 30/08/2024), non la B. Risultato: tre
+      // anni di patente in meno, e quindi la fascia e il prezzo sbagliati.
+      // Ora si leggono TUTTE le facce e si sceglie: prima chi ha visto la
+      // tabella delle categorie sul retro, poi la data piu' VECCHIA.
+      const letture: { conseguimento: string; dalRetro: boolean; dati: Record<string, string> }[] = [];
       for (const url of daLeggere) {
         try {
           const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/extract-document-data`, {
@@ -1870,24 +1878,31 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           if (!dati) continue;
           const conseguimento = dati.patente_conseguimento || dati.patente_rilascio;
           if (conseguimento) {
-            setFormData(prev => ({
-              ...prev,
-              // Vince la data piu' vecchia: il retro dice da quando si guida,
-              // la tessera solo quando e' stata stampata.
-              licenseIssueDate: !prev.licenseIssueDate || (dataPatenteDallaScheda.current && conseguimento < prev.licenseIssueDate)
-                ? conseguimento
-                : prev.licenseIssueDate,
-              licenseNumber: prev.licenseNumber || dati.patente_numero || '',
-            }));
-            if (dati.patente_scadenza) datiLettiDocumenti.current.patenteScadenza = dati.patente_scadenza;
-            if (dati.patente_ente) datiLettiDocumenti.current.patenteEnte = dati.patente_ente;
-            if (dati.patente_tipo) datiLettiDocumenti.current.patenteTipo = dati.patente_tipo;
-            return;
+            letture.push({ conseguimento, dalRetro: dati.patente_date_dal_retro === true, dati });
           }
         } catch (err) {
           console.warn('Rilettura patente in archivio non riuscita:', err);
         }
       }
+      if (letture.length === 0) return;
+      const dalRetro = letture.filter(l => l.dalRetro);
+      const candidate = dalRetro.length > 0 ? dalRetro : letture;
+      const scelta = candidate.reduce((piuVecchia, l) => l.conseguimento < piuVecchia.conseguimento ? l : piuVecchia);
+      console.info('[patente archivio] conseguimento scelto:', scelta.conseguimento,
+        scelta.dalRetro ? '(dal retro)' : '(dal fronte)', 'fra', letture.map(l => l.conseguimento).join(', '));
+      setFormData(prev => ({
+        ...prev,
+        licenseIssueDate: !prev.licenseIssueDate || (dataPatenteDallaScheda.current && scelta.conseguimento < prev.licenseIssueDate)
+          ? scelta.conseguimento
+          : prev.licenseIssueDate,
+        licenseNumber: prev.licenseNumber || letture.map(l => l.dati.patente_numero).find(Boolean) || '',
+      }));
+      const conScadenza = letture.map(l => l.dati).find(d => d.patente_scadenza);
+      if (conScadenza?.patente_scadenza) datiLettiDocumenti.current.patenteScadenza = conScadenza.patente_scadenza;
+      const conEnte = letture.map(l => l.dati).find(d => d.patente_ente);
+      if (conEnte?.patente_ente) datiLettiDocumenti.current.patenteEnte = conEnte.patente_ente;
+      const conTipo = letture.map(l => l.dati).find(d => d.patente_tipo);
+      if (conTipo?.patente_tipo) datiLettiDocumenti.current.patenteTipo = conTipo.patente_tipo;
     })();
   }, [percorsiPatente, urlPatenteArchivio, formData.licenseIssueDate]);
 
@@ -5537,9 +5552,25 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-1.5 mt-1 text-white text-sm"
                     placeholder={t({ it: "Via Roma 10, 09100 Cagliari", en: "Via Roma 10, 09100 Cagliari" })}
                   />
-                  <p className="text-[11px] text-red-400 mt-1">
-                    Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
-                  </p>
+                  {/* 21/09/2026 (direzione): l'avviso era sempre acceso, anche
+                      con l'indirizzo gia' scritto per intero — sembrava un
+                      errore quando non c'era niente da correggere. Ora compare
+                      solo se manca davvero quello che serve alla fattura: CAP,
+                      via e una lunghezza sensata. Stessa regola del controllo
+                      che blocca il salvataggio. */}
+                  {(() => {
+                    const r = String(formData.residenza || formData.address || '').trim();
+                    const estero = !!residenzaCountryCode && residenzaCountryCode !== 'it';
+                    const incompleto = !r || r.length < 10
+                      || (!estero && !/\b\d{5}\b/.test(r))
+                      || !/[A-Za-zÀ-ÿ]{3,}/.test(r);
+                    if (!incompleto) return null;
+                    return (
+                      <p className="text-[11px] text-red-400 mt-1">
+                        Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
+                      </p>
+                    );
+                  })()}
                   {(errors.residenza || errors.address) && <p className="text-xs text-red-400 mt-1">{errors.residenza || errors.address}</p>}
                 </div>
               )}

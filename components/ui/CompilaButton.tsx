@@ -350,11 +350,11 @@ export default function CompilaButton({
         delete merged.codice_fiscale
       }
 
-      // 21/09/2026: si mostrano solo le note che segnalano un problema vero.
-      // Caricando la tessera sanitaria alla casella giusta comparivano avvisi
-      // gialli perche' il lettore constatava che non e' una carta d'identita'
-      // e che non porta l'indirizzo — vero, e del tutto normale.
-      setExtractionNotes(noteDaMostrare(notes))
+      // Le note restano per la console: aiutano a capire una lettura storta.
+      // A schermo non si mostrano piu' (vedi il commento nel render).
+      const daMostrare = noteDaMostrare(notes)
+      if (daMostrare.length > 0) console.info('[Compila] note della lettura:', daMostrare)
+      setExtractionNotes(daMostrare)
 
       // Find conflicts with existing data
       const foundConflicts = findConflicts(currentData, merged)
@@ -466,20 +466,15 @@ export default function CompilaButton({
           : label || (auto ? 'Rileggi i documenti' : 'Compila automaticamente')}
       </button>
 
-      {/* Extraction notes */}
-      {extractionNotes.length > 0 && !showConflicts && (
-        <div className="mt-2 space-y-1">
-          {extractionNotes.map((note, i) => (
-            <p key={i} className={`text-xs ${
-              note.includes('SCADUT') ? 'text-red-400 font-semibold' :
-              note.includes('Non leggibile') || note.includes('Impossibile') ? 'text-red-400' :
-              'text-yellow-400'
-            }`}>
-              {note}
-            </p>
-          ))}
-        </div>
-      )}
+      {/* 21/09/2026 (direzione): le note del lettore non si mostrano piu' al
+          cliente. Raccontavano cosa NON c'e' in ogni singola immagine ("solo
+          il fronte", "l'indirizzo non e' sulla tessera", "CAP inferito") —
+          vero per ogni file preso da solo, senza senso dopo l'unione, e
+          comunque inutile: il cliente sa cosa c'e' sui suoi documenti. Alla
+          lettura si chiede una cosa sola, confermare o ricalcolare il prezzo.
+          Restano: il popup dei conflitti, e gli errori veri via onError
+          (documento illeggibile, formato non supportato). Le note continuano
+          a finire in console per chi deve capire una lettura andata storta. */}
 
       {/* Conflict resolution modal */}
       {showConflicts && conflicts.length > 0 && (
@@ -507,14 +502,6 @@ export default function CompilaButton({
                 </div>
               ))}
             </div>
-
-            {extractionNotes.length > 0 && (
-              <div className="space-y-1">
-                {extractionNotes.map((note, i) => (
-                  <p key={i} className="text-xs text-yellow-400">{note}</p>
-                ))}
-              </div>
-            )}
 
             <div className="flex gap-3 pt-2">
               <button

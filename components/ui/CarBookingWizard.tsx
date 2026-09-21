@@ -7564,6 +7564,23 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <p className="font-bold text-base text-white mb-2">{t({ it: "DETTAGLIO COSTI", en: "COST BREAKDOWN" })}</p>
                   <hr className="border-gray-600 mb-2" />
 
+                  {/* 21/09/2026 (direzione): la fascia che ha fatto il prezzo,
+                      scritta accanto ai costi. Kasko, km, secondo guidatore e
+                      cauzione cambiano con l'eta' del conducente: se i
+                      documenti la correggono, qui si vede subito con quale
+                      fascia e' stato calcolato il totale. */}
+                  {driverTier && (
+                    <div className="flex justify-between text-xs text-gray-400 mb-1">
+                      <span>{t({ it: 'Prezzi per conducente', en: 'Priced for driver' })}</span>
+                      <span className={driverTierInfo?.tier ? 'text-gray-300' : 'text-amber-300'}>
+                        {driverTier === 'TIER_1'
+                          ? t({ it: 'meno di 26 anni o patente recente', en: 'under 26 or recent licence' })
+                          : t({ it: '26 anni o più', en: '26 or over' })}
+                        {!driverTierInfo?.tier && ` — ${t({ it: 'dichiarato', en: 'declared' })}`}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Noleggio base */}
                   <div className="flex justify-between">
                     <span>Noleggio ({Math.max(1, duration.days)} gg × {effectivePricePerDay ? formatPrice(effectivePricePerDay) : '€0'})</span>
@@ -7947,8 +7964,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       Maggiori informazioni
                     </summary>
                     <div className="mt-3 pl-4 space-y-3 border-l-2 border-gray-600">
+                      {/* 21/09/2026 (direzione): leggeva driverTierInfo, cioe' la
+                          fascia ricavata dai DOCUMENTI. Senza documenti letti era
+                          nulla e il ternario cadeva su "Tier 2": chi dichiarava
+                          "meno di 26 anni" si vedeva scritto Tier 2 mentre il
+                          prezzo — giustamente — usava la fascia dichiarata. Ora
+                          si legge driverTier, la stessa che fa kasko, km,
+                          secondo guidatore e cauzione. */}
                       <p className="text-sm text-gray-300">
-                        Profilo conducente: {driverTierInfo?.tier === 'TIER_1' ? 'Tier 1 (21-25 anni o patente 3-4 anni)' : 'Tier 2 (26-69 anni, patente 5+ anni)'}
+                        Profilo conducente: {driverTier === 'TIER_1'
+                          ? 'Tier 1 (21-25 anni o patente 3-4 anni)'
+                          : driverTier === 'TIER_2'
+                            ? 'Tier 2 (26-69 anni, patente 5+ anni)'
+                            : 'da confermare dai documenti'}
+                        {driverTier && !driverTierInfo?.tier && ' — dichiarato, in attesa dei documenti'}
                       </p>
                       <p className="text-sm text-gray-300">
                         Prenotazione soggetta a verifica documenti. Se i documenti non sono validi, la prenotazione potrà essere annullata.

@@ -7191,14 +7191,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       porta la data reale di conseguimento (colonna 10,
                       categoria B), sulla tessera sanitaria il codice a
                       barre. */}
+                  {/* 21/09/2026 (direzione): niente numeri davanti ai titoli.
+                      Con "Non sono italiano" le due caselle del codice fiscale
+                      spariscono e restavano 1, 2, 5, 6 — sembrava mancasse
+                      qualcosa. */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {([
-                      { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "1. PATENTE — FRONTE *", en: "1. LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "2. PATENTE — RETRO *", en: "2. LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "3. CODICE FISCALE — FRONTE *", en: "3. TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "4. CODICE FISCALE — RETRO *", en: "4. TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "5. CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "5. ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
-                      { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "6. CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "6. ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImage', archivio: !!hasStoredDocs.licensePath, titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'licenseImageBack', archivio: hasStoredDocs.licensePath && !!formData.licenseIssueDate, titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImage', archivio: hasStoredDocs.cfPath, titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'cfImageBack', archivio: hasStoredDocs.cfPath, titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'idImage', archivio: hasStoredDocs.idPath, titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), "JPG, PNG, PDF (max 5MB)"] },
+                      { campo: 'idImageBack', archivio: hasStoredDocs.idPath, titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "JPG, PNG, PDF (max 5MB)"] },
                     ] as const)
                       // Senza codice fiscale non si chiede la tessera sanitaria.
                       .filter(({ campo }) => !(senzaCodiceFiscale && (campo === 'cfImage' || campo === 'cfImageBack')))

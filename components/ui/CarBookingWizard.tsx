@@ -3298,6 +3298,37 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     }
   };
 
+  // 21/09/2026 (direzione): la scheda cliente si completa appena i documenti
+  // sono stati letti, non solo a prenotazione andata a buon fine. Prima la
+  // chiamata stava solo in fondo ai due rami che salvano: se la prenotazione
+  // si fermava per strada — o se il cliente sceglieva "No Cauzione" o metteva
+  // nel carrello — i dati letti dai documenti restavano nella pagina e il
+  // profilo del cliente restava vuoto. Quello che il cliente da' una volta,
+  // in qualunque punto, deve arrivare alla sua scheda.
+  const firmaSchedaSalvata = useRef('');
+  useEffect(() => {
+    if (!user?.id) return;
+    const campi = [
+      formData.codiceFiscale, formData.birthDate, formData.licenseNumber,
+      formData.licenseIssueDate, formData.residenza, formData.luogoNascita,
+      formData.provinciaNascita, formData.sesso,
+    ];
+    if (campi.every(v => !String(v ?? '').trim())) return;
+    const firma = campi.join('|');
+    if (firma === firmaSchedaSalvata.current) return;
+    // Si aspetta che la lettura abbia finito di riempire i campi, per non
+    // mandare la scheda a meta' a ogni tasto premuto.
+    const attesa = setTimeout(() => {
+      firmaSchedaSalvata.current = firma;
+      void salvaSchedaCliente();
+    }, 2500);
+    return () => clearTimeout(attesa);
+  }, [
+    user?.id, formData.codiceFiscale, formData.birthDate, formData.licenseNumber,
+    formData.licenseIssueDate, formData.residenza, formData.luogoNascita,
+    formData.provinciaNascita, formData.sesso,
+  ]);
+
   // Upload (File or dataURL) via Netlify function to handle CORS
   const uploadToBucket = async (bucket: string, userId: string, fileOrDataUrl: File | string | null, prefix: string): Promise<string> => {
     if (!fileOrDataUrl) {
@@ -7051,6 +7082,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     };
                     const { error } = await supabase.from('bookings').insert(bookingData);
                     if (error) throw error;
+                    if (user?.id) void salvaSchedaCliente();
 
                     // Send WhatsApp to admin
                     const msg = `*RICHIESTA NO CAUZIONE DAL SITO*\n\n`

@@ -5234,12 +5234,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         console.log("Pending booking created in bookings table:", insertedPendingBooking.id);
 
         // Also store in pending_nexi_bookings as backup for PaymentSuccessPage fallback
-        await supabase
-          .from('pending_nexi_bookings')
-          .insert({
-            nexi_order_id: nexiOrderId,
-            booking_data: { ...bookingData, booking_id: insertedPendingBooking.id }
-          }).catch(e => console.warn("pending_nexi_bookings backup insert failed:", e));
+        // 21/09/2026: c'era un `.catch()` attaccato alla query. Il builder di
+        // Supabase e' un thenable, non una Promise: `.catch` non esiste e
+        // l'intera prenotazione moriva QUI, dopo essere gia' stata scritta —
+        // "insert(...).catch is not a function". Il backup non deve poter far
+        // fallire nulla: si prova, e se non riesce si annota e si prosegue.
+        try {
+          const { error: erroreBackup } = await supabase
+            .from('pending_nexi_bookings')
+            .insert({
+              nexi_order_id: nexiOrderId,
+              booking_data: { ...bookingData, booking_id: insertedPendingBooking.id }
+            });
+          if (erroreBackup) console.warn('pending_nexi_bookings backup insert failed:', erroreBackup);
+        } catch (e) {
+          console.warn('pending_nexi_bookings backup insert failed:', e);
+        }
 
         // 4. Validate amount before calling Nexi
         const amountCents = eurosToCents(grandTotal);

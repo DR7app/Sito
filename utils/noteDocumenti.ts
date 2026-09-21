@@ -18,11 +18,42 @@
 /** Se compare una di queste, la frase e' un problema e si mostra comunque. */
 const PAROLE_ALLARME = /scadut|illeggibil|non leggibil|bassa affidabilit|non corrispond|difform|errore|sfocat|manca la foto|non valid/i
 
-/** Constatazioni normali per il tipo di documento caricato. */
-const RUMORE = /nessun documento di identit|non riportat|non presente sul documento|non presente nell'immagine|cap inferit|cap dedott|tessera europea|solo team|non e' un documento di identit/i
+/**
+ * Constatazioni normali. Due famiglie:
+ *  - il documento non contiene quel dato per natura (la tessera sanitaria non
+ *    e' una carta d'identita', non porta l'indirizzo);
+ *  - l'immagine e' UNA sola faccia. Ogni file viene letto per conto suo,
+ *    quindi il lettore dice sempre "il retro non c'e'" guardando il fronte.
+ *    Dopo l'unione delle letture il dato c'e', e l'avviso non ha piu' senso.
+ */
+const RUMORE = new RegExp([
+  "nessun documento di identit",
+  "non e' un documento di identit",
+  "non riportat",
+  "non present",            // "non presente sul documento", "non presente nell'immagine"
+  "non incluso",
+  "non (e' |è )?visibile",
+  "non disponibil",
+  "solo (il |la )?(fronte|retro)",
+  "solo fronte",
+  "solo tessera",
+  "solo team",
+  "tessera europea",
+  "inferit",                 // "CAP inferito dalla citta' di nascita"
+  "dedott",                  // "data di nascita dedotta dal codice fiscale"
+  "estratt",                 // "numero documento estratto dalla MRZ"
+  "prese dai campi",
+  "prese dalla riga",
+].join('|'), 'i')
 
-/** Frasi che si limitano a dire CHE COS'E' il documento. */
-const SOLO_DESCRIZIONE = /^(tessera sanitaria|codice fiscale|carta d'identit|carta di identit|patente|passaporto|team)\b[^.]*$/i
+/** Frasi che si limitano a dire CHE COS'E' il documento o a elencare un dato. */
+const SOLO_DESCRIZIONE = new RegExp([
+  "^(tessera sanitaria|codice fiscale|carta d'identit|carta di identit|patente|passaporto|team)\\b[^.]*$",
+  "^immagine (contiene|del)\\b",
+  // Niente \\b in coda: "present" seguito da "e" non e' un confine di parola,
+  // e "Codice 12 presente:" sfuggiva al filtro.
+  "^(categorie con date|numero tessera|numero documento|ente|istituzione|scadenza tessera|scadenza|cap di|codice \\d+ present)",
+].join('|'), 'i')
 
 function frasiUtili(testo: string): string[] {
   return testo

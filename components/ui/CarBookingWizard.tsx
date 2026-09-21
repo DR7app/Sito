@@ -4384,7 +4384,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         no_cauzione_daily: noDepositSurcharge,
         no_cauzione_total: noDepositSurcharge * duration.days,
         lavaggio_fee: lavaggioFee,
-        delivery_fee: deliveryFee,
+        delivery_fee: deliveryFee || 0, // NOT NULL: mai undefined/null
         pickup_fee: pickupFee,
         subtotal: grandTotal,
         sconto: membershipDiscount,
@@ -7013,6 +7013,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       dropoff_date: dropoffDateTime.toISOString(),
                       pickup_location: formData.pickupLocation,
                       dropoff_location: formData.returnLocation,
+                      // 21/09/2026: questo ramo non mandava delivery_fee, che a
+                      // database e' NOT NULL senza default: la richiesta "No
+                      // Cauzione" non si salvava mai.
+                      delivery_fee: deliveryFee || 0,
+                      delivery_address: formData.deliveryAddress || null,
                       price_total: Math.round(grandTotal * 100),
                       currency: 'EUR',
                       status: 'pending',

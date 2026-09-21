@@ -104,7 +104,7 @@ export const handler: Handler = async (event) => {
         const horizonEnd = endDate ? new Date(endDate) : new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
         // Fetch vehicle metadata for unavailability blocks
-        const vehiclesMetaUrl = `${SUPABASE_URL}/rest/v1/vehicles?select=id,metadata&id=in.(${vehicleIds.join(',')})`;
+        const vehiclesMetaUrl = `${SUPABASE_URL}/rest/v1/vehicles?select=id,metadata,display_name&id=in.(${vehicleIds.join(',')})`;
         const vehiclesMetaResponse = await fetch(vehiclesMetaUrl, {
             headers: {
                 'apikey': SUPABASE_SERVICE_ROLE_KEY!,
@@ -126,6 +126,51 @@ export const handler: Handler = async (event) => {
         });
 
         let bookings = await bookingsResponse.json();
+
+        // 21/09/2026 (direzione): prenotazioni SENZA vehicle_id ne' targa.
+        // Il calendario cercava solo per id e per targa, quindi una riga con
+        // entrambi vuoti non compariva: il giorno restava bianco mentre il
+        // wizard — che confronta anche il nome — lo rifiutava. Due schermate
+        // che si contraddicono davanti al cliente.
+        // Qui si recuperano SOLO le righe orfane (vehicle_id nullo) col nome
+        // del mezzo: non si rischia di bloccare i gemelli di un gruppo, che
+        // hanno il loro id.
+        const nomiMezzi = (Array.isArray(vehiclesMeta) ? vehiclesMeta : [])
+            .map((v: any) => v?.display_name)
+            .filter((n: any) => typeof n === 'string' && n.trim() !== '');
+        if (nomiMezzi.length > 0) {
+            try {
+                const perNome = nomiMezzi.map((n: string) => `"${n.replace(/"/g, '')}"`).join(',');
+                const orfaneUrl = `${SUPABASE_URL}/rest/v1/bookings?select=pickup_date,dropoff_date,vehicle_id,vehicle_plate,vehicle_name,service_type&vehicle_id=is.null&vehicle_name=in.(${encodeURIComponent(perNome)})&status=not.in.(cancelled,annullata,completed,completata,expired)&dropoff_date=gte.${horizonStart.toISOString()}&pickup_date=lte.${horizonEnd.toISOString()}`;
+                const orfaneRes = await fetch(orfaneUrl, {
+                    headers: {
+                        'apikey': SUPABASE_SERVICE_ROLE_KEY!,
+                        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (orfaneRes.ok) {
+                    const orfane = await orfaneRes.json();
+                    if (Array.isArray(orfane) && orfane.length > 0) {
+                        const perId = new Map<string, string>();
+                        for (const v of (Array.isArray(vehiclesMeta) ? vehiclesMeta : [])) {
+                            if (v?.display_name && v?.id) perId.set(String(v.display_name), String(v.id));
+                        }
+                        // Si attribuiscono al mezzo che porta quel nome, cosi'
+                        // entrano nel calcolo delle finestre come le altre.
+                        const adottate = orfane
+                            .map((b: any) => ({ ...b, vehicle_id: perId.get(String(b.vehicle_name)) }))
+                            .filter((b: any) => !!b.vehicle_id);
+                        if (adottate.length > 0) {
+                            console.log(`[getAvailabilityWindows] ${adottate.length} prenotazioni senza vehicle_id recuperate dal nome`);
+                            bookings = [...(bookings || []), ...adottate];
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[getAvailabilityWindows] recupero prenotazioni orfane non riuscito:', err);
+            }
+        }
 
         // Also fetch bookings by plate (targa) to catch mismatched vehicle_id
         const plates = vehiclePlates || [];

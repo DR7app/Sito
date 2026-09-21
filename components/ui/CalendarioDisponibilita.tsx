@@ -138,6 +138,15 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     () => (item as { plates?: string[] }).plates || [],
     [item],
   );
+  // 21/09/2026 (direzione): si manda anche il NOME del mezzo. L'id di questa
+  // scheda non e' sempre quello della riga `vehicles` (dipende da come la
+  // vetrina costruisce l'elenco), e allora la richiesta tornava vuota: il
+  // calendario mostrava tutto bianco mentre il wizard — che confronta pure il
+  // nome — rifiutava quelle stesse date. Due schermate, due risposte.
+  const vehicleNames = useMemo(
+    () => [String((item as { name?: string }).name || '')].filter(n => n.trim() !== ''),
+    [item],
+  );
 
   useEffect(() => {
     let annullato = false;
@@ -163,6 +172,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
             body: JSON.stringify({
               vehicleIds,
               vehiclePlates,
+              vehicleNames,
               startDate: new Date().toISOString(),
               endDate: new Date(msDaYmdOra(orizzonteYmd, '23:59')).toISOString(),
             }),
@@ -192,7 +202,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
     })();
 
     return () => { annullato = true; };
-  }, [vehicleIds, vehiclePlates, orizzonteYmd]);
+  }, [vehicleIds, vehiclePlates, vehicleNames, orizzonteYmd]);
 
 
   // ─── Selezione ─────────────────────────────────────────────────────────

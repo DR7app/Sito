@@ -87,7 +87,7 @@ export const handler: Handler = async (event) => {
     }
 
     try {
-        const { vehicleIds, vehiclePlates, startDate, endDate } = JSON.parse(event.body || '{}');
+        const { vehicleIds, vehiclePlates, vehicleNames, startDate, endDate } = JSON.parse(event.body || '{}');
 
         if (!vehicleIds || vehicleIds.length === 0) {
             return {
@@ -135,13 +135,20 @@ export const handler: Handler = async (event) => {
         // Qui si recuperano SOLO le righe orfane (vehicle_id nullo) col nome
         // del mezzo: non si rischia di bloccare i gemelli di un gruppo, che
         // hanno il loro id.
-        const nomiMezzi = (Array.isArray(vehiclesMeta) ? vehiclesMeta : [])
-            .map((v: any) => v?.display_name)
-            .filter((n: any) => typeof n === 'string' && n.trim() !== '');
+        // I nomi arrivano dal chiamante (la scheda del mezzo) e, in piu', dalla
+        // riga `vehicles`: cosi' si coprono sia le prenotazioni orfane sia il
+        // caso in cui l'id mandato non sia quello della flotta.
+        const nomiMezzi = Array.from(new Set([
+            ...(Array.isArray(vehicleNames) ? vehicleNames : []),
+            ...(Array.isArray(vehiclesMeta) ? vehiclesMeta : []).map((v: any) => v?.display_name),
+        ].filter((n: any) => typeof n === 'string' && n.trim() !== '')));
         if (nomiMezzi.length > 0) {
             try {
                 const perNome = nomiMezzi.map((n: string) => `"${n.replace(/"/g, '')}"`).join(',');
-                const orfaneUrl = `${SUPABASE_URL}/rest/v1/bookings?select=pickup_date,dropoff_date,vehicle_id,vehicle_plate,vehicle_name,service_type&vehicle_id=is.null&vehicle_name=in.(${encodeURIComponent(perNome)})&status=not.in.(cancelled,annullata,completed,completata,expired)&dropoff_date=gte.${horizonStart.toISOString()}&pickup_date=lte.${horizonEnd.toISOString()}`;
+                // Tutte le prenotazioni di quel NOME, non solo le orfane: se
+                // l'id mandato non e' quello della flotta, per id non torna
+                // niente e il calendario resterebbe bianco.
+                const orfaneUrl = `${SUPABASE_URL}/rest/v1/bookings?select=pickup_date,dropoff_date,vehicle_id,vehicle_plate,vehicle_name,service_type&vehicle_name=in.(${encodeURIComponent(perNome)})&status=not.in.(cancelled,annullata,completed,completata,expired)&dropoff_date=gte.${horizonStart.toISOString()}&pickup_date=lte.${horizonEnd.toISOString()}`;
                 const orfaneRes = await fetch(orfaneUrl, {
                     headers: {
                         'apikey': SUPABASE_SERVICE_ROLE_KEY!,
@@ -158,11 +165,14 @@ export const handler: Handler = async (event) => {
                         }
                         // Si attribuiscono al mezzo che porta quel nome, cosi'
                         // entrano nel calcolo delle finestre come le altre.
+                        const idPrincipale = (Array.isArray(vehicleIds) && vehicleIds[0]) ? String(vehicleIds[0]) : '';
+                        const gia = new Set((bookings || []).map((b: any) => `${b.pickup_date}_${b.dropoff_date}`));
                         const adottate = orfane
-                            .map((b: any) => ({ ...b, vehicle_id: perId.get(String(b.vehicle_name)) }))
+                            .filter((b: any) => !gia.has(`${b.pickup_date}_${b.dropoff_date}`))
+                            .map((b: any) => ({ ...b, vehicle_id: perId.get(String(b.vehicle_name)) || idPrincipale }))
                             .filter((b: any) => !!b.vehicle_id);
                         if (adottate.length > 0) {
-                            console.log(`[getAvailabilityWindows] ${adottate.length} prenotazioni senza vehicle_id recuperate dal nome`);
+                            console.log(`[getAvailabilityWindows] ${adottate.length} prenotazioni recuperate dal nome del mezzo`);
                             bookings = [...(bookings || []), ...adottate];
                         }
                     }

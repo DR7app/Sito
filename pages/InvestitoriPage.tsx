@@ -407,10 +407,10 @@ const InvestitoriPage: React.FC = () => {
             <motion.div {...fadeUp} className="grid grid-cols-2 items-center gap-x-8 gap-y-10 sm:grid-cols-3">
               {loghi.map(l => {
                 const segno = l.logo
-                  ? <img src={l.logo} alt={l.nome} loading="lazy" className="mx-auto max-h-10 w-auto max-w-[140px] object-contain opacity-90" />
+                  ? <img src={l.logo} alt={l.nome} loading="lazy" className="mx-auto max-h-9 w-auto max-w-[150px] object-contain opacity-75 transition-opacity duration-300 group-hover:opacity-100" />
                   : <span className="block text-center font-serif text-xl text-white/90">{l.nome}</span>;
                 return l.link
-                  ? <a key={l.id} href={l.link} target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-70">{segno}</a>
+                  ? <a key={l.id} href={l.link} target="_blank" rel="noopener noreferrer" title={l.nome} className="group block">{segno}</a>
                   : <div key={l.id}>{segno}</div>;
               })}
             </motion.div>

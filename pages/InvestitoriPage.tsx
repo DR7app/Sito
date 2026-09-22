@@ -149,6 +149,17 @@ const SchedaNumero: React.FC<{ n: IrNumero; lang: string }> = ({ n, lang }) => (
   </div>
 );
 
+// Colonne secondo quante schede ci sono: due azionisti non restano stretti a
+// sinistra in una griglia da cinque. Classi scritte per intero per Tailwind.
+const GRIGLIA_AZIONISTI: Record<number, string> = {
+  0: '',
+  1: 'sm:max-w-[260px] sm:grid-cols-1',
+  2: 'sm:max-w-[540px] sm:grid-cols-2',
+  3: 'sm:grid-cols-3 lg:max-w-[820px]',
+  4: 'sm:grid-cols-2 lg:grid-cols-4',
+  5: 'sm:grid-cols-3 lg:grid-cols-5',
+};
+
 const SchedaAzionista: React.FC<{ a: IrAzionista; lang: string; riservatoLabel: string }> = ({ a, lang, riservatoLabel }) => (
   <div className="w-[62vw] max-w-[220px] shrink-0 snap-start border border-white/[0.1] bg-white/[0.02] sm:w-auto sm:max-w-none">
     <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-b from-white/[0.04] to-transparent">
@@ -283,7 +294,7 @@ const InvestitoriPage: React.FC = () => {
               <div><Eyebrow>{tx('ir_azionisti_eyebrow')}</Eyebrow><Titolo className="mt-4">{tx('ir_azionisti_titolo')}</Titolo></div>
               {tx('ir_azionisti_testo') && <p className="text-[13px] leading-relaxed text-white/60">{tx('ir_azionisti_testo')}</p>}
             </motion.div>
-            <motion.div {...fadeUp} className="-mx-6 mt-12 flex snap-x gap-4 overflow-x-auto px-6 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-5">
+            <motion.div {...fadeUp} className={`-mx-6 mt-12 flex snap-x gap-4 overflow-x-auto px-6 pb-2 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 ${GRIGLIA_AZIONISTI[Math.min(azionisti.length, 5)]}`}>
               {azionisti.map(a => <SchedaAzionista key={a.id} a={a} lang={lang} riservatoLabel={t({ it: 'Investitore privato', en: 'Private investor' })} />)}
             </motion.div>
           </div>

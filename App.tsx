@@ -385,6 +385,7 @@ const AnimatedRoutes = () => {
 
         <Route path="/about" element={<WbOppure><AboutPage /></WbOppure>} />
         <Route path="/investitori" element={<InvestitoriPage />} />
+        <Route path="/investor-relations" element={<InvestitoriPage />} />
         <Route path="/token" element={<TokenPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />

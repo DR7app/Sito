@@ -1625,7 +1625,6 @@ export interface InvestitoriCopy {
   ir_numeri_eyebrow_it?: string; ir_numeri_eyebrow_en?: string;
   ir_numeri_titolo_it?: string; ir_numeri_titolo_en?: string;
   ir_numeri_testo_it?: string; ir_numeri_testo_en?: string;
-  ir_numeri?: IrNumero[];
   // La nostra crescita (grafico)
   ir_crescita_titolo_it?: string; ir_crescita_titolo_en?: string;
   ir_crescita_ricavi_it?: string; ir_crescita_ricavi_en?: string;
@@ -3781,14 +3780,6 @@ const DEFAULT_INVESTITORI: InvestitoriCopy = {
   ir_numeri_titolo_it: 'Crescita costante, basi solide.', ir_numeri_titolo_en: 'Steady growth, solid foundations.',
   ir_numeri_testo_it: 'Risultati concreti, una gestione efficiente e una strategia di crescita sostenibile. Questi sono i numeri che raccontano il nostro percorso.',
   ir_numeri_testo_en: 'Concrete results, efficient management and a sustainable growth strategy. These are the numbers that tell our story.',
-  ir_numeri: [
-    { id: 'ricavi', icona: 'ricavi', valore: '€ 1,5 M', label_it: 'Ricavi 2026', label_en: 'Revenue 2026', nota_it: '(da 30/06)', nota_en: '(to 30/06)' },
-    { id: 'utile', icona: 'utile', valore: '€ 500 K', label_it: 'Utile netto 2026', label_en: 'Net profit 2026', nota_it: '(da 30/06)', nota_en: '(to 30/06)' },
-    { id: 'clienti', icona: 'clienti', valore: '> 2.000', label_it: 'Clienti attivi', label_en: 'Active customers', nota_it: '(tutti i servizi)', nota_en: '(all services)' },
-    { id: 'parco', icona: 'auto', valore: '> € 3 M', label_it: 'Valore parco auto', label_en: 'Fleet value' },
-    { id: 'patrimonio', icona: 'patrimonio', valore: '> € 6 M', label_it: 'Patrimonio netto', label_en: 'Net equity' },
-    { id: 'sedi', icona: 'sedi', valore: '5', label_it: 'Sedi operative', label_en: 'Operating sites', nota_it: '(Cagliari, Iglesias, Olbia, Nuoro, Sassari)', nota_en: '(Cagliari, Iglesias, Olbia, Nuoro, Sassari)' },
-  ],
   ir_crescita_titolo_it: 'La nostra crescita', ir_crescita_titolo_en: 'Our growth',
   ir_crescita_ricavi_it: 'Ricavi', ir_crescita_ricavi_en: 'Revenue',
   ir_crescita_utile_it: 'Utile netto', ir_crescita_utile_en: 'Net profit',

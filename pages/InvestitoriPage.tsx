@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  getInvestitoriCopy, bilingual, bilingualList,
-  type InvestitoriCopy, type IrNumero, type IrBarra, type IrAzionista, type IrDocumento,
+  getInvestitoriCopy, getHomeCopy, bilingual, bilingualList,
+  type InvestitoriCopy, type HomeMetric, type IrNumero, type IrBarra, type IrAzionista, type IrDocumento,
 } from '../utils/siteCopy';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAspetto } from '../hooks/useAspetto';
+import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
 
 /**
  * Investor Relations — 22/09/2026.
@@ -140,12 +141,18 @@ const Grafico: React.FC<{ barre: IrBarra[]; lang: string; ricaviLabel: string; u
   );
 };
 
-const SchedaNumero: React.FC<{ n: IrNumero; lang: string }> = ({ n, lang }) => (
-  <div className="border-white/[0.08] px-1 py-4 sm:px-5 lg:border-l lg:first:border-l-0 lg:first:pl-0">
-    <Icona nome={n.icona} />
-    <p className="mt-4 font-serif text-[1.7rem] leading-none text-white">{n.valore}</p>
-    <p className="mt-2 text-[12px] text-white/80">{bilingual(n, 'label', lang)}</p>
-    {bilingual(n, 'nota', lang) && <p className="mt-0.5 text-[11px] text-white/45">{bilingual(n, 'nota', lang)}</p>}
+// I numeri sono quelli della Home (Admin > Sito > Home): una cifra sola per
+// tutto il sito. L'icona si sceglie dall'id della metrica.
+const ICONA_METRICA: Record<string, string> = {
+  contratti: 'documento', clienti: 'clienti', fatturato: 'ricavi', parco: 'auto',
+  patrimonio: 'patrimonio', capitale: 'capitale', recensioni: 'round', brand: 'utile', azienda: 'patrimonio',
+};
+
+const SchedaNumero: React.FC<{ m: HomeMetric; lang: string }> = ({ m, lang }) => (
+  <div className="border-t border-white/[0.08] pt-5">
+    <Icona nome={ICONA_METRICA[m.id] || 'round'} />
+    <p className="mt-4 font-serif text-[1.7rem] leading-none text-white">{m.value}</p>
+    <p className="mt-2 text-[12px] text-white/80">{bilingual(m, 'label', lang)}</p>
   </div>
 );
 
@@ -201,10 +208,13 @@ const InvestitoriPage: React.FC = () => {
   const aspetto = useAspetto();
   const { t, lang } = useTranslation();
   const [copy, setCopy] = useState<InvestitoriCopy | null>(null);
+  const [metriche, setMetriche] = useState<HomeMetric[]>([]);
+  const reviewCount = useReviewCount();
 
   useEffect(() => {
     let cancelled = false;
     getInvestitoriCopy().then((c) => { if (!cancelled) setCopy(c); });
+    getHomeCopy().then((h) => { if (!cancelled) setMetriche(h.metrics || []); });
     return () => { cancelled = true; };
   }, []);
 
@@ -216,7 +226,11 @@ const InvestitoriPage: React.FC = () => {
   // "Manifesta il tuo interesse": WhatsApp se c'e', altrimenti email.
   const contatto = (copy.cta_whatsapp_url || '').trim() || (email ? `${mailto}?subject=${encodeURIComponent('Investor Relations DR7')}` : '/contact');
 
-  const numeri = copy.ir_numeri || [];
+  // Come sulla Home: finche' il conteggio delle recensioni non si sa, quella
+  // metrica non si mostra.
+  const numeri = metriche
+    .map((m) => ({ ...m, value: risolviReviewCount(m.value, reviewCount) }))
+    .filter((m): m is HomeMetric => m.value !== null);
   const barre = (copy.ir_crescita || []).filter(b => b.anno);
   const azionisti = copy.ir_azionisti || [];
   const stat = copy.ir_privati_stat || [];
@@ -254,8 +268,8 @@ const InvestitoriPage: React.FC = () => {
               <div><Eyebrow>{tx('ir_numeri_eyebrow')}</Eyebrow><Titolo className="mt-4">{tx('ir_numeri_titolo')}</Titolo></div>
               {tx('ir_numeri_testo') && <p className="text-[13px] leading-relaxed text-white/60">{tx('ir_numeri_testo')}</p>}
             </motion.div>
-            <motion.div {...fadeUp} className="mt-12 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
-              {numeri.map(n => <SchedaNumero key={n.id} n={n} lang={lang} />)}
+            <motion.div {...fadeUp} className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+              {numeri.map(m => <SchedaNumero key={m.id} m={m} lang={lang} />)}
             </motion.div>
           </div>
         </Sezione>

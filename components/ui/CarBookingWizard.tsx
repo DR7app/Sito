@@ -2215,56 +2215,43 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // Return time auto-calculation: default to pickupTime - 1h30 (22h30 = 1 day)
   // Snaps to nearest valid return slot if calculated time is outside valid slots
   useEffect(() => {
-    if (formData.pickupTime && formData.pickupDate && formData.returnDate) {
-      // Calculate ideal return time: pickup - 1h30
-      const [hours, minutes] = formData.pickupTime.split(':').map(Number);
-      const tempDate = new Date(2000, 0, 1, hours, minutes);
-      tempDate.setHours(tempDate.getHours() - 1);
-      tempDate.setMinutes(tempDate.getMinutes() - 30);
-      const idealReturn = `${String(tempDate.getHours()).padStart(2, '0')}:${String(tempDate.getMinutes()).padStart(2, '0')}`;
-
-      // Get valid return times for the return date
-      const validTimes = getValidReturnTimes(formData.returnDate);
+    // 22/09/2026: tutto dentro l'aggiornamento, sullo stato vero. Prima i
+    // conti si facevano su formData del disegno precedente e l'effetto
+    // sovrascriveva la riconsegna scelta nel calendario disponibilita'.
+    // Si propone "ritiro - 1h30" solo se l'ora attuale non e' piu' valida:
+    // l'ora che il cliente ha scelto (ed e' prenotabile) resta la sua.
+    setFormData(prev => {
+      if (!prev.pickupTime || !prev.pickupDate || !prev.returnDate) return prev;
+      const validTimes = computeValidReturnTimes(prev.returnDate, prev.pickupDate, prev.pickupTime);
       if (validTimes.length === 0) {
-        // No valid times available — clear the return time
-        setFormData(prev => ({ ...prev, returnTime: '' }));
-        return;
+        return prev.returnTime ? { ...prev, returnTime: '' } : prev;
       }
+      if (validTimes.includes(prev.returnTime)) return prev;
 
       // Noleggio in giornata (2026-09-12): l'ora ideale "ritiro - 1h30"
-      // cadrebbe PRIMA del ritiro, e lo snap sceglierebbe la prima fascia
-      // subito dopo il ritiro (noleggio di 15 minuti). Si tiene quindi l'ora
-      // gia' scelta se e' ancora valida, altrimenti l'ultima fascia utile
-      // della giornata.
-      if (formData.returnDate === formData.pickupDate) {
-        const scelta = validTimes.includes(formData.returnTime)
-          ? formData.returnTime
-          : validTimes[validTimes.length - 1];
-        if (scelta !== formData.returnTime) {
-          setFormData(prev => ({ ...prev, returnTime: scelta }));
-        }
-        return;
+      // cadrebbe PRIMA del ritiro: si prende l'ultima fascia utile della
+      // giornata.
+      if (prev.returnDate === prev.pickupDate) {
+        return { ...prev, returnTime: validTimes[validTimes.length - 1] };
       }
 
-      // If ideal time is in valid slots, use it
-      if (validTimes.includes(idealReturn)) {
-        setFormData(prev => ({ ...prev, returnTime: idealReturn }));
-      } else {
-        // Snap to nearest valid slot that's <= ideal time, or first available
-        const idealMinutes = tempDate.getHours() * 60 + tempDate.getMinutes();
-        const closest = validTimes.reduce((best, time) => {
-          const [h, m] = time.split(':').map(Number);
-          const tMin = h * 60 + m;
-          const [bh, bm] = best.split(':').map(Number);
-          const bMin = bh * 60 + bm;
-          // Prefer times <= ideal, closest to ideal
-          if (tMin <= idealMinutes && (bMin > idealMinutes || tMin > bMin)) return time;
-          if (bMin > idealMinutes && tMin < bMin) return time;
-          return best;
-        }, validTimes[0]);
-        setFormData(prev => ({ ...prev, returnTime: closest }));
-      }
-    }
+      // Ora ideale: ritiro - 1h30; se non e' prenotabile, la fascia valida
+      // piu' vicina che non la supera, altrimenti la prima disponibile.
+      const [hours, minutes] = prev.pickupTime.split(':').map(Number);
+      const idealMinutes = hours * 60 + minutes - 90;
+      const idealReturn = `${String(Math.floor(((idealMinutes % 1440) + 1440) % 1440 / 60)).padStart(2, '0')}:${String((((idealMinutes % 60) + 60) % 60)).padStart(2, '0')}`;
+      if (validTimes.includes(idealReturn)) return { ...prev, returnTime: idealReturn };
+      const closest = validTimes.reduce((best, time) => {
+        const [h, m] = time.split(':').map(Number);
+        const tMin = h * 60 + m;
+        const [bh, bm] = best.split(':').map(Number);
+        const bMin = bh * 60 + bm;
+        if (tMin <= idealMinutes && (bMin > idealMinutes || tMin > bMin)) return time;
+        if (bMin > idealMinutes && tMin < bMin) return time;
+        return best;
+      }, validTimes[0]);
+      return { ...prev, returnTime: closest };
+    });
   }, [formData.pickupTime, formData.pickupDate, formData.returnDate, availabilityWindows]);
 
   // Classify driver tier when age/license changes
@@ -3053,13 +3040,23 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     : `${clubMonthlyLabel}${t({ it: '/mese', en: '/month' })}`;
 
   // Forcer horaires valides et pas de dimanche
+  // 22/09/2026: il controllo si fa dentro l'aggiornamento, sullo stato vero.
+  // Prima leggeva formData del primo disegno (data di oggi, 10:30): aprendo il
+  // wizard dal calendario disponibilita', questo effetto girava DOPO quello
+  // che mette le date scelte e le sovrascriveva col primo orario libero di
+  // OGGI (ora attuale + 1h). Ritiro 17:00 diventava 16:45 o 18:30 a seconda
+  // dell'ora, e la riconsegna seguiva (ritiro - 1h30).
   useEffect(() => {
-    const validTimes = getValidPickupTimes(formData.pickupDate);
-    if (validTimes.length > 0 && !validTimes.includes(formData.pickupTime)) {
-      setFormData(prev => ({ ...prev, pickupTime: validTimes[0] }));
-    } else if (validTimes.length === 0 && formData.pickupTime) {
-      setFormData(prev => ({ ...prev, pickupTime: '' }));
-    }
+    setFormData(prev => {
+      const validTimes = getValidPickupTimes(prev.pickupDate);
+      if (validTimes.length > 0 && !validTimes.includes(prev.pickupTime)) {
+        return { ...prev, pickupTime: validTimes[0] };
+      }
+      if (validTimes.length === 0 && prev.pickupTime) {
+        return { ...prev, pickupTime: '' };
+      }
+      return prev;
+    });
   }, [formData.pickupDate]);
 
 

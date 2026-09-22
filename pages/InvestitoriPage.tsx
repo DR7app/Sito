@@ -119,13 +119,14 @@ const Grafico: React.FC<{ barre: IrBarra[]; lang: string; ricaviLabel: string; u
                 />
               </div>
               {conUtile && (
-                <div className="flex h-full w-full max-w-[28px] flex-col justify-end">
+                <div className="flex h-full w-full max-w-[64px] flex-col justify-end">
+                  <span className="mb-1.5 text-center text-[11px] text-white/60">{euroCorto(b.utile || 0, lang)}</span>
                   <motion.div
                     initial={{ height: 0 }}
                     whileInView={{ height: `${((b.utile || 0) / max) * 100}%` }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.9, delay: 0.1, ease: 'easeOut' }}
-                    className="bg-white/30"
+                    className="bg-white/25"
                     title={`${utileLabel}: ${euroCorto(b.utile || 0, lang)}`}
                   />
                 </div>
@@ -186,6 +187,34 @@ const SchedaAzionista: React.FC<{ a: IrAzionista; lang: string; riservatoLabel: 
     </div>
   </div>
 );
+
+// Pochi azionisti (1-2): una scheda larga su una riga invece di un
+// rettangolo alto e solo. Stessi dati, stessa regola riservato / foto / iniziali.
+const RigaAzionista: React.FC<{ a: IrAzionista; lang: string; riservatoLabel: string }> = ({ a, lang, riservatoLabel }) => {
+  const iniziali = a.nome.split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  const dettagli = [bilingual(a, 'ruolo', lang), bilingual(a, 'da', lang)].filter(Boolean);
+  return (
+    <div className="flex items-center gap-5 border border-white/[0.1] bg-white/[0.02] px-5 py-5 sm:gap-7 sm:px-8 sm:py-6">
+      <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border sm:h-20 sm:w-20" style={{ borderColor: `${GOLD}66` }}>
+        {a.riservato
+          ? <Icona nome="lucchetto" className="h-7 w-7" />
+          : a.foto
+            ? <img src={a.foto} alt={a.nome} loading="lazy" className="h-full w-full object-cover" />
+            : <span className="font-serif text-2xl" style={{ color: GOLD }}>{iniziali}</span>}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className={a.riservato ? 't-nav text-[12px] uppercase tracking-[0.22em] text-white' : 'text-[17px] text-white'}>
+          {a.riservato ? (a.nome || riservatoLabel) : a.nome}
+        </p>
+        {dettagli.length > 0 && (
+          <p className="mt-1.5 text-[13px] text-white/55">
+            {dettagli.map((d, i) => <React.Fragment key={i}>{i > 0 && <span className="mx-2 text-white/25">·</span>}{d}</React.Fragment>)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SchedaDocumento: React.FC<{ d: IrDocumento; lang: string; mailto: string }> = ({ d, lang, mailto }) => {
   const titolo = bilingual(d, 'titolo', lang);
@@ -308,9 +337,15 @@ const InvestitoriPage: React.FC = () => {
               <div><Eyebrow>{tx('ir_azionisti_eyebrow')}</Eyebrow><Titolo className="mt-4">{tx('ir_azionisti_titolo')}</Titolo></div>
               {tx('ir_azionisti_testo') && <p className="text-[13px] leading-relaxed text-white/60">{tx('ir_azionisti_testo')}</p>}
             </motion.div>
-            <motion.div {...fadeUp} className={`-mx-6 mt-12 flex snap-x gap-4 overflow-x-auto px-6 pb-2 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 ${GRIGLIA_AZIONISTI[Math.min(azionisti.length, 5)]}`}>
-              {azionisti.map(a => <SchedaAzionista key={a.id} a={a} lang={lang} riservatoLabel={t({ it: 'Investitore privato', en: 'Private investor' })} />)}
-            </motion.div>
+            {azionisti.length < 3 ? (
+              <motion.div {...fadeUp} className={`mt-12 grid gap-4 ${azionisti.length === 2 ? 'md:grid-cols-2' : 'max-w-2xl'}`}>
+                {azionisti.map(a => <RigaAzionista key={a.id} a={a} lang={lang} riservatoLabel={t({ it: 'Investitore privato', en: 'Private investor' })} />)}
+              </motion.div>
+            ) : (
+              <motion.div {...fadeUp} className={`-mx-6 mt-12 flex snap-x gap-4 overflow-x-auto px-6 pb-2 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 ${GRIGLIA_AZIONISTI[Math.min(azionisti.length, 5)]}`}>
+                {azionisti.map(a => <SchedaAzionista key={a.id} a={a} lang={lang} riservatoLabel={t({ it: 'Investitore privato', en: 'Private investor' })} />)}
+              </motion.div>
+            )}
           </div>
         </Sezione>
       )}

@@ -233,12 +233,6 @@ const InvestitoriPage: React.FC = () => {
             {tx('ir_hero_bottone') && <div className="mt-8"><BottoneOro href={contatto}>{tx('ir_hero_bottone')}</BottoneOro></div>}
           </motion.div>
         </div>
-        {tx('ir_hero_badge') && (
-          <div className="absolute bottom-24 right-6 z-10 hidden text-right md:block lg:right-16">
-            <p className="font-serif text-4xl tracking-tight">DR7</p>
-            <p className="t-nav mt-1 text-[10px] uppercase tracking-[0.3em] text-white/70">{tx('ir_hero_badge')}</p>
-          </div>
-        )}
       </section>
 
       {/* I nostri numeri */}

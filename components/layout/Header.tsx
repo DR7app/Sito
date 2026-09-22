@@ -124,7 +124,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
       title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
       subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },
     { to: '/investitori', img: mi('menu_investitori_img', '/menu-business.jpeg'), Icon: TrendingUpIcon,
-      title: mc('menu_investitori_title_it', 'menu_investitori_title_en', 'Relazioni con gli Investitori', 'Investor Relations'),
+      title: mc('menu_investitori_title_it', 'menu_investitori_title_en', 'Relazioni Investitori', 'Investor Relations'),
       subtitle: mc('menu_investitori_sub_it', 'menu_investitori_sub_en', 'Numeri, azionisti e governance di DR7 S.p.A.', 'Figures, shareholders and governance of DR7 S.p.A.') },
     { to: '/token', img: mi('menu_digital_img', '/menu-digital.jpeg'), Icon: CubeTransparentIcon,
       title: mc('menu_digital_title_it', 'menu_digital_title_en', 'Innovazione Digitale', 'Digital Innovation'),

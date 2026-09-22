@@ -6,6 +6,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
 import { getFranchisingCopy, DEFAULT_FRANCHISING, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
 import { useFilmato } from '../hooks/useFilmato';
+import { useAspetto } from '../hooks/useAspetto';
 
 /**
  * Le icone della pagina Business.
@@ -58,6 +59,7 @@ const BenefitIcon: React.FC<{ icon: FranchisingBenefitIcon }> = ({ icon }) => {
 };
 
 const FranchisingPage: React.FC = () => {
+  const aspetto = useAspetto();
     const { t, lang } = useTranslation();
     // Il conteggio delle recensioni arriva da Google, come in home e nella
     // vetrina: un hook solo per tutto il sito (hooks/useReviewCount.ts).
@@ -107,7 +109,7 @@ const FranchisingPage: React.FC = () => {
                     galleggia nella pagina invece di stare dentro a un
                     riquadro appoggiato sopra al filmato. */}
                 <div>
-                    <img src="/franchising-hero.jpeg" alt="" loading="lazy" decoding="async" className="foto-fusa block h-auto w-full" />
+                    <img src={aspetto.img_franchising_hero} alt="" loading="lazy" decoding="async" className="foto-fusa block h-auto w-full" />
                 </div>
 
                 {/* Dichiarazione d'apertura */}

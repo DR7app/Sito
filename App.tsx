@@ -69,7 +69,7 @@ import { getAspettoCopy, DEFAULT_ASPETTO, type AspettoCopy } from './utils/siteC
 import MarketingConsentModal from './components/ui/MarketingConsentModal';
 import { supabase } from './supabaseClient';
 import { resolveFlottaCategories } from './utils/flottaConfig';
-import { HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider, Helmet } from 'react-helmet-async';
 // Website Builder (04/09/2026). `WbOppure` avvolge le pagine React
 // esistenti: le sostituisce SOLO se nel gestionale esiste una pagina
 // pubblicata con l'interruttore "prende il posto" acceso. Finche' quello
@@ -458,6 +458,15 @@ const MainContent = () => {
 
   return (
     <>
+      {/* Titolo, descrizione e anteprima di condivisione di ripiego, da
+          Sito > Aspetto & Funzionalita'. Le pagine con SEOHead le sostituiscono
+          con le proprie (react-helmet: vince il piu' interno). */}
+      <Helmet>
+        <title>{aspetto.seo_title}</title>
+        <meta name="description" content={aspetto.seo_description} />
+        <meta property="og:image" content={aspetto.seo_og_image} />
+        <meta name="twitter:image" content={aspetto.seo_og_image} />
+      </Helmet>
       <div className="bg-black min-h-screen font-sans antialiased relative overflow-x-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-grid-white/[0.05] z-0"></div>
         <div className="relative z-10 flex flex-col min-h-screen">

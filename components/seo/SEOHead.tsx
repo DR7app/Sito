@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useAspetto } from '../../hooks/useAspetto';
 
 interface SEOHeadProps {
   title: string;
@@ -13,9 +14,13 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   title,
   description,
   canonical,
-  ogImage = 'https://dr7.app/DR7logo1.png',
+  ogImage: ogImageProp,
   jsonLd,
 }) => {
+  // Anteprima di condivisione: quella della pagina se ne ha una, altrimenti
+  // quella scelta in Sito > Aspetto & Funzionalita'.
+  const aspetto = useAspetto();
+  const ogImage = ogImageProp || aspetto.seo_og_image;
   const fullCanonical = canonical.startsWith('http')
     ? canonical
     : `https://dr7.app${canonical}`;

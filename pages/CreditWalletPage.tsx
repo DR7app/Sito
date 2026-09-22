@@ -16,6 +16,7 @@ import {
 import SfondoVideo from '../components/ui/SfondoVideo';
 import { useFilmato } from '../hooks/useFilmato';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
+import { useAspetto } from '../hooks/useAspetto';
 
 // I pacchetti arrivano dal CMS (admin > Sito > Credit Wallet, salvati in
 // centralina_pro_config.site_copy.creditWallet.packages). getCreditWalletCopy
@@ -37,14 +38,13 @@ import { useTestiCarrello } from '../hooks/useTestiCarrello';
 const formatAmount = (n: number, lang: 'it' | 'en'): string =>
   n.toLocaleString(lang === 'it' ? 'it-IT' : 'en-GB', { maximumFractionDigits: 2, useGrouping: true });
 
-// Sfondi decorativi delle card: scenografia, non contenuto. Restano nel
-// codice perche' non c'e' nulla da scrivere in gestionale — sono i quattro
-// mondi DR7 (strada, dimora, mare, volo) che scorrono sotto ai numeri.
+// Sfondi decorativi delle card: i quattro mondi DR7 (strada, dimora, mare,
+// volo) che scorrono sotto ai numeri. Dal 22/09/2026 si scelgono in
+// Sito > Aspetto & Funzionalita' (img_wallet_card_1..4).
 //
 // Solo scatti PULITI: mezzo repertorio (supercar, urus, luxury, i listini)
 // ha titoli e prezzi stampati dentro al fotogramma, e sotto ai numeri di un
 // pacchetto uscivano due tariffe diverse nello stesso riquadro.
-const SFONDI_CARD = ['/collezione.jpeg', '/villa.jpeg', '/yacht1.jpeg', '/privatejet.jpeg'];
 
 // ─── Icone (tratto sottile, oro) ───────────────────────────────────────────
 // Inline come nel resto del sito: sono nove disegni, una libreria intera
@@ -134,6 +134,9 @@ const PackageCard: React.FC<{
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
   const oro = !!pkg.popular;
+  // Gli sfondi delle carte si scelgono in Sito > Aspetto & Funzionalita'.
+  const aspetto = useAspetto();
+  const sfondi = [aspetto.img_wallet_card_1, aspetto.img_wallet_card_2, aspetto.img_wallet_card_3, aspetto.img_wallet_card_4].filter(Boolean);
 
   return (
     <motion.div
@@ -144,7 +147,7 @@ const PackageCard: React.FC<{
     >
       {/* La scena scorre sotto ai numeri: si intuisce, non si guarda. */}
       <img
-        src={SFONDI_CARD[indice % SFONDI_CARD.length]}
+        src={sfondi[indice % sfondi.length]}
         alt=""
         aria-hidden="true"
         loading="lazy"
@@ -204,6 +207,7 @@ const PackageCard: React.FC<{
 
 
 const CreditWalletPage: React.FC = () => {
+  const aspetto = useAspetto();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, lang } = useTranslation();
@@ -515,7 +519,7 @@ const CreditWalletPage: React.FC = () => {
       {/* ─── Dove si spende: la fascia sul mare ─────────────────────────── */}
       <section className="relative isolate overflow-hidden">
         <img
-          src="/yacht.jpeg"
+          src={aspetto.img_wallet_foto}
           alt=""
           aria-hidden="true"
           loading="lazy"

@@ -57,6 +57,18 @@ const TemaVars = () => {
         if (link.href !== href) link.href = href;
       }
 
+      // Il marmo oro di cornici, menu e fondo pagina: styles/index.css lo
+      // legge come var(--img-marmo-oro) con il file di sempre come ripiego.
+      if (a.img_marmo_oro) r.setProperty('--img-marmo-oro', `url("${a.img_marmo_oro.replace(/"/g, '%22')}")`);
+
+      // Icona della scheda e della schermata Home: i <link> di index.html si
+      // aggiornano sul posto invece di aggiungerne altri.
+      if (a.favicon_url) {
+        document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((l) => {
+          if (l.getAttribute('href') !== a.favicon_url) l.href = a.favicon_url;
+        });
+      }
+
       const raggio = DEFAULT_TEMA_RAGGIO[a.tema_raggio] || DEFAULT_TEMA_RAGGIO.morbido;
       r.setProperty('--r-xs', raggio.xs);
       r.setProperty('--r-sm', raggio.sm);

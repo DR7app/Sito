@@ -54,6 +54,7 @@ import {
 } from '../../utils/prevendite';
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 import { datiPatenteScheda, luogoNascitaScheda } from '../../utils/datiPatenteScheda';
+import { useAspetto } from '../../hooks/useAspetto';
 
 // Filter out dummy/placeholder names from auth profiles (e.g. "No Name", "User", "Test")
 const DUMMY_NAMES = ['no name', 'no-name', 'noname', 'user', 'test', 'unknown', 'n/a', 'none', 'cliente'];
@@ -348,6 +349,7 @@ interface CarBookingWizardProps {
 }
 
 const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryContext, onBookingComplete, onClose }) => {
+  const aspetto = useAspetto();
   const { t, lang, getTranslated } = useTranslation();
   // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
   // una casella sola per tutti i punti in cui si aggiunge qualcosa.
@@ -8265,7 +8267,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   >
                     {/* Header image */}
                     <img
-                      src="/prime-wash-header.jpeg"
+                      src={aspetto.img_lavaggio_testata}
                       alt={t({ it: "Lavaggio & Meccanica", en: "Car Wash & Mechanics" })}
                       className="w-full h-48 sm:h-56 object-cover rounded-xl mb-5"
                     />
@@ -8404,7 +8406,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             >
                               <RiquadroCatalogo
                                 src={svc.image}
-                                fallback="/luxurywash.jpeg"
+                                fallback={aspetto.img_lavaggio_ripiego}
                                 larghezza={400}
                                 alt={svc.name}
                               />
@@ -8443,7 +8445,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               >
                                 <RiquadroCatalogo
                                   src={svc.image}
-                                  fallback="/luxurywash.jpeg"
+                                  fallback={aspetto.img_lavaggio_ripiego}
                                   larghezza={400}
                                   alt={svc.name}
                                 />

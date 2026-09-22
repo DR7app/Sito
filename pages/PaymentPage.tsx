@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from '../hooks/useTranslation'
 import { getPaymentCopy, type PaymentCopy } from '../utils/siteCopy'
+import { useAspetto } from '../hooks/useAspetto';
 
 type PayState = 'loading' | 'ready' | 'checking' | 'blocked' | 'confirming' | 'success' | 'error' | 'cancelled'
 
@@ -10,6 +11,7 @@ type PayState = 'loading' | 'ready' | 'checking' | 'blocked' | 'confirming' | 's
 const ADMIN_BASE = 'https://platform.dr7ai.com'
 
 export default function PaymentPage() {
+  const aspetto = useAspetto();
   const { lang } = useTranslation()
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('sessionId')
@@ -138,7 +140,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center p-4">
       <div className="mb-8 text-center">
-        <img src="/DR7logo1.png" alt="DR7" className="h-12 mx-auto mb-2" />
+        <img src={aspetto.logo_url} alt="DR7" className="h-12 mx-auto mb-2" />
         <p className="text-gray-400 text-sm">{c('subtitle_it', 'subtitle_en')}</p>
       </div>
 

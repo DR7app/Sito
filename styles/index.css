@@ -242,7 +242,7 @@ body {
 .marmo-menu {
   background-image:
     linear-gradient(rgba(6, 6, 7, 0.34), rgba(6, 6, 7, 0.42)),
-    url('/marmo-oro.jpg');
+    var(--img-marmo-oro, url('/marmo-oro.jpg'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -257,7 +257,7 @@ body {
      passano le lettere, non su tutta la superficie. */
   background-image:
     linear-gradient(to bottom right, rgba(6, 6, 7, 0.72), rgba(6, 6, 7, 0.42) 55%, rgba(6, 6, 7, 0.2)),
-    url('/marmo-oro.jpg');
+    var(--img-marmo-oro, url('/marmo-oro.jpg'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -274,7 +274,7 @@ body {
      piccolo: contatti, voci, note legali. */
   background-image:
     linear-gradient(rgba(4, 4, 5, 0.34), rgba(4, 4, 5, 0.52) 45%, rgba(4, 4, 5, 0.8)),
-    url('/marmo-oro.jpg');
+    var(--img-marmo-oro, url('/marmo-oro.jpg'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -293,7 +293,7 @@ body {
 .marmo-carta {
   background-image:
     linear-gradient(to bottom right, rgba(6, 6, 7, 0.9), rgba(6, 6, 7, 0.78) 55%, rgba(6, 6, 7, 0.62)),
-    url('/marmo-oro.jpg');
+    var(--img-marmo-oro, url('/marmo-oro.jpg'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

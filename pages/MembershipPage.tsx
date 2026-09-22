@@ -18,6 +18,7 @@ import ClubIcona from '../components/ui/ClubIcona';
 import type { MembershipTier } from '../types';
 import SfondoVideo from '../components/ui/SfondoVideo';
 import { useFilmato } from '../hooks/useFilmato';
+import { useAspetto } from '../hooks/useAspetto';
 
 /**
  * DR7 Club.
@@ -52,6 +53,7 @@ const ColonnaLaterale: React.FC<{ righe: string[]; allinea: 'left' | 'right' }> 
 );
 
 const MembershipPage: React.FC = () => {
+  const aspetto = useAspetto();
     const { lang } = useTranslation();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -195,7 +197,7 @@ const MembershipPage: React.FC = () => {
             {/* ═══ LA CARTA E IL PIANO ════════════════════════════════════ */}
             <section className="relative isolate overflow-hidden border-b border-white/10 bg-black">
                 <img
-                    src="/marmo-nero.jpeg"
+                    src={aspetto.img_marmo_nero}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
@@ -532,7 +534,7 @@ const MembershipPage: React.FC = () => {
             {/* ═══ LA FIRMA ═══════════════════════════════════════════════ */}
             <section className="relative isolate overflow-hidden border-t border-white/10 bg-black">
                 <img
-                    src="/marmo-nero.jpeg"
+                    src={aspetto.img_marmo_nero}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
@@ -557,7 +559,7 @@ const MembershipPage: React.FC = () => {
                                 il marchio oro su fondo trasparente, il secondo
                                 porta dentro un quadrato nero pieno che sul
                                 marmo si vedrebbe come una toppa. */}
-                            <img src="/DR7logo1.png" alt="DR7" loading="lazy" className="mx-auto h-9 w-auto" />
+                            <img src={aspetto.logo_url} alt="DR7" loading="lazy" className="mx-auto h-9 w-auto" />
                             {copy.closing_wordmark && (
                                 <p className="mt-3 text-[11px] uppercase tracking-[0.34em] text-dr7-gold">
                                     {copy.closing_wordmark}

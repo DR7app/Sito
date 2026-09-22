@@ -8,6 +8,7 @@ import { dateLocale } from '../../utils/i18nDate';
 import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 import { useCarrello } from '../../hooks/useCarrello';
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
+import { useAspetto } from '../../hooks/useAspetto';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -61,6 +62,7 @@ const HELI_407_SEATS: Record<number, { x: number; y: number }> = {
 };
 
 export default function TourBookingModal({ item, waHref, onClose, selectedDuration }: Props) {
+  const aspetto = useAspetto();
   const { t, lang } = useTranslation();
   // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
   // una casella sola per tutti i punti in cui si aggiunge qualcosa.
@@ -407,7 +409,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                   <div className="mt-2 text-gray-400 text-sm">{t({ it: "Caricamento posti…", en: "Loading seats…" })}</div>
                 ) : item.service_type === 'heli_rental' && seats.some(s => HELI_407_SEATS[s.seat_position]) ? (
                   <div className="mt-3 relative mx-auto w-full max-w-[260px] select-none">
-                    <img src="/heli-407-seatmap.png" alt={t({ it: "Mappa posti elicottero", en: "Helicopter seat map" })} draggable={false}
+                    <img src={aspetto.img_heli_mappa_posti} alt={t({ it: "Mappa posti elicottero", en: "Helicopter seat map" })} draggable={false}
                       className="w-full rounded-xl border border-gray-800" />
                     {seats.map(s => {
                       const posn = HELI_407_SEATS[s.seat_position];

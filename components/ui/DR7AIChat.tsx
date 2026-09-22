@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useAspetto } from '../../hooks/useAspetto';
 
 interface Message {
   id: string;
@@ -77,6 +78,7 @@ interface DR7AIChatProps {
 }
 
 const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
+  const aspetto = useAspetto();
   const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -198,7 +200,7 @@ const DR7AIChat: React.FC<DR7AIChatProps> = ({ isOpen, onClose }) => {
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-black bg-dr7-obsidian flex items-center justify-center">
                 <img
-                  src="/DR7logo.png"
+                  src={aspetto.logo_url}
                   alt="DR7"
                   className="w-8 h-8 object-contain"
                 />

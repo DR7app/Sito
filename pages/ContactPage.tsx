@@ -45,8 +45,9 @@ const ContactPage: React.FC = () => {
             name: 'DR7',
             legalName: 'Dubai Rent 7.0 S.p.A.',
             image: 'https://dr7.app/DR7logo1.png',
-            telephone: '+39 345 790 5205',
-            email: 'info@dr7.app',
+            // Stessi recapiti di Sito > Contatti, per Google come per il visitatore.
+            telephone: copy?.phone_display || '+39 345 790 5205',
+            email: copy?.email_address || 'info@dr7.app',
             url: 'https://dr7.app',
             address: {
               '@type': 'PostalAddress',

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getInvestitoriCopy, bilingual, bilingualList, type InvestitoriCopy } from '../utils/siteCopy';
 import { useTranslation } from '../hooks/useTranslation';
+import { useAspetto } from '../hooks/useAspetto';
 
 const InvestitoriPage: React.FC = () => {
+  const aspetto = useAspetto();
   const { t, lang } = useTranslation();
   const [copy, setCopy] = useState<InvestitoriCopy | null>(null);
 
@@ -31,7 +33,7 @@ const InvestitoriPage: React.FC = () => {
     >
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
-        <img src="/investor-hero.jpeg" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={aspetto.img_investitori_hero} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/65 to-black"></div>
         <div className="container mx-auto px-6 relative z-10">
           <motion.div

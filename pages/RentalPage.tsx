@@ -17,6 +17,7 @@ import RentalSearchBar, { type SearchParams } from '../components/ui/RentalSearc
 import RentalFilters from '../components/ui/RentalFilters';
 import { useSearchAvailability } from '../hooks/useSearchAvailability';
 import { getFlottaVisibleCategoryIds } from '../utils/siteCopy';
+import { useContactInfo } from '../hooks/useContactInfo';
 
 interface RentalPageProps {
   categoryId: 'cars' | 'urban-cars' | 'corporate-fleet' | 'yachts' | 'villas' | 'jets' | 'helicopters';
@@ -658,7 +659,14 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
 
 // ─── RentalPage ──────────────────────────────────────────────────────────────
 
+/** Link WhatsApp con un messaggio gia' scritto. */
+function conTesto(whatsappUrl: string, testo: string): string {
+  return whatsappUrl + (whatsappUrl.includes('?') ? '&' : '?') + 'text=' + encodeURIComponent(testo);
+}
+
 const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
+  // Numero WhatsApp da Sito > Contatti, come il resto del sito.
+  const contatti = useContactInfo();
   // Live pickup locations from Sito CMS — fall back to constants until loaded.
   const [pickupLocs, setPickupLocs] = useState(DEFAULT_PICKUP_LOCATIONS);
   useEffect(() => { let c = false; getPickupLocations().then(l => { if (!c) setPickupLocs(l); }); return () => { c = true; }; }, []);
@@ -1128,7 +1136,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                 </div>
               </div>
               <button
-                onClick={() => window.open('https://wa.me/393457905205?text=' + encodeURIComponent('Ciao, vorrei richiedere un preventivo per un Jet Privato.'), '_blank')}
+                onClick={() => window.open(conTesto(contatti.whatsapp_url, t({ it: "Ciao, vorrei richiedere un preventivo per un Jet Privato.", en: "Hello, I would like a quote for a private jet." })), '_blank')}
                 className="w-full bg-white text-black px-6 py-4 font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
               >
                 {t({ it: "Richiedi Preventivo Jet", en: "Request a Jet Quote" })}
@@ -1164,7 +1172,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                 </div>
               </div>
               <button
-                onClick={() => window.open('https://wa.me/393457905205?text=' + encodeURIComponent('Ciao, vorrei richiedere un preventivo per un Elicottero.'), '_blank')}
+                onClick={() => window.open(conTesto(contatti.whatsapp_url, t({ it: "Ciao, vorrei richiedere un preventivo per un Elicottero.", en: "Hello, I would like a quote for a helicopter." })), '_blank')}
                 className="w-full bg-white text-black px-6 py-4 font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
               >
                 {t({ it: "Richiedi Preventivo Elicottero", en: "Request a Helicopter Quote" })}
@@ -1281,7 +1289,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                       msg += `Tipo imbarcazione: ${get('boatType')}\n`;
                       msg += `Lunghezza: ${get('minLength')}m - ${get('maxLength')}m\n`;
                       msg += `Budget: €${get('minPrice')} - €${get('maxPrice')}`;
-                      window.open(`https://wa.me/393457905205?text=${encodeURIComponent(msg)}`, '_blank');
+                      window.open(conTesto(contatti.whatsapp_url, msg), '_blank');
                     }}
                     className="space-y-5"
                   >

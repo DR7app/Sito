@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   UserCircleIcon,
   CarIcon, AnchorIcon, PaperAirplaneIcon, HomeIcon,
-  SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon, WalletIcon,
+  SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon, WalletIcon, GiftIcon,
 } from '../icons/Icons';
 import CercaSedi from '../ui/CercaSedi';
 import { getHeaderCopy, getAspettoCopy, DEFAULT_ASPETTO, type HeaderCopy, type AspettoCopy } from '../../utils/siteCopy';
@@ -103,6 +103,11 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/prime-wash', img: mi('menu_servizi_img', '/servizi-lavaggio.jpeg'), Icon: SparklesIcon,
       title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanics'),
       subtitle: mc('menu_servizi_sub_it', 'menu_servizi_sub_en', 'Lavaggio auto premium e officina meccanica', 'Premium car wash and mechanical workshop') },
+    // Prevendita e Promozioni: la vetrina dei pacchetti pagati in anticipo
+    // (/prevendite). Stesso nome della sezione del gestionale.
+    { to: '/prevendite', img: mi('menu_prevendite_img', '/menu-club.jpeg'), Icon: GiftIcon,
+      title: mc('menu_prevendite_title_it', 'menu_prevendite_title_en', 'Prevendita e Promozioni', 'Presales & Promotions'),
+      subtitle: mc('menu_prevendite_sub_it', 'menu_prevendite_sub_en', 'Pacchetti pagati in anticipo e offerte esclusive', 'Prepaid packages and exclusive offers') },
     { to: '/credit-wallet', img: mi('menu_wallet_img', '/menu-club.jpeg'), Icon: WalletIcon,
       title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'),
       subtitle: mc('menu_wallet_sub_it', 'menu_wallet_sub_en', 'Il tuo credito DR7 Wallet per prenotare e ricaricare', 'Your DR7 Wallet credit to book and top up') },

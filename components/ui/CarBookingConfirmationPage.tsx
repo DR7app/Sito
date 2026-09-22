@@ -128,7 +128,7 @@ const CarBookingConfirmationPage: React.FC = () => {
               <span>{t({ it: 'Tel:', en: 'Phone:' })} {contact.phone_display}</span>
             </div>
             <div className="flex items-center space-x-4 mt-2">
-              <span>Email: {contact.email_address}</span>
+              <span>{t({ it: "Email:", en: "Email:" })} {contact.email_address}</span>
             </div>
           </div>
         </div>

@@ -427,12 +427,12 @@ const ProfileSettings = () => {
                 console.error("Failed to update auth metadata:", authError);
             }
 
-            setSuccessMessage('Modifiche salvate con successo!');
+            setSuccessMessage(t({ it: 'Modifiche salvate con successo!', en: 'Changes saved successfully!' }));
             setSuccessError(false);
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (error: any) {
             console.error("Failed to update profile", error);
-            setSuccessMessage(error?.message || 'Errore nel salvare le modifiche');
+            setSuccessMessage(error?.message || t({ it: 'Errore nel salvare le modifiche', en: 'Error saving the changes' }));
             setSuccessError(true);
         } finally {
             setIsSubmitting(false);
@@ -470,7 +470,7 @@ const ProfileSettings = () => {
                                             className="flex items-baseline gap-3 group disabled:cursor-default"
                                         >
                                             <span className="text-sm text-gray-400 w-40 text-left flex items-center gap-1">
-                                                Bonus
+                                                {t({ it: 'Bonus', en: 'Bonus' })}
                                                 {bonusBreakdown.length > 0 && (
                                                     <span className={`text-yellow-400 transition-transform inline-block ${showBonusBreakdown ? 'rotate-90' : ''}`}>›</span>
                                                 )}
@@ -514,7 +514,7 @@ const ProfileSettings = () => {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
                                         )}
-                                        {statusDef?.label || 'New Entry'}
+                                        {statusDef?.label || t({ it: 'New Entry', en: 'New Entry' })}
                                     </div>
                                     {clubPlan && (
                                         <div className="flex items-center gap-2 border border-[#2d8a7e]/40 px-4 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-300">
@@ -529,7 +529,7 @@ const ProfileSettings = () => {
                                         onClick={() => navigate('/credit-wallet')}
                                         className="border border-white bg-white px-6 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-black transition-colors duration-500 ease-editorial hover:bg-transparent hover:text-white"
                                     >
-                                        Ricarica
+                                        {t({ it: 'Ricarica', en: 'Top up' })}
                                     </button>
                                 </div>
                             </div>
@@ -541,7 +541,7 @@ const ProfileSettings = () => {
                                     <div>
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-semibold text-gray-300">
-                                                {showAllTransactions ? 'Tutte le Transazioni' : 'Ultime Transazioni'}
+                                                {showAllTransactions ? t({ it: 'Tutte le Transazioni', en: 'All Transactions' }) : t({ it: 'Ultime Transazioni', en: 'Recent Transactions' })}
                                                 {showAllTransactions && allTransactions && (
                                                     <span className="text-gray-500 font-normal ml-2">({allTransactions.length})</span>
                                                 )}
@@ -567,7 +567,7 @@ const ProfileSettings = () => {
                                                 disabled={loadingAllTx}
                                                 className="text-xs font-semibold text-white/70 hover:text-white transition-colors"
                                             >
-                                                {loadingAllTx ? 'Caricamento…' : showAllTransactions ? 'Mostra solo ultime ▲' : 'Mostra tutte ▼'}
+                                                {loadingAllTx ? t({ it: 'Caricamento…', en: 'Loading…' }) : showAllTransactions ? t({ it: 'Mostra solo ultime ▲', en: 'Show recent only ▲' }) : t({ it: 'Mostra tutte ▼', en: 'Show all ▼' })}
                                             </button>
                                         </div>
                                         <div className={`space-y-2 ${showAllTransactions ? 'max-h-96 overflow-y-auto pr-2' : ''}`}>
@@ -596,7 +596,7 @@ const ProfileSettings = () => {
                                                             {transaction.transaction_type === 'credit' ? '+' : '-'}€{transaction.amount.toFixed(2)}
                                                         </p>
                                                         <p className="text-xs text-gray-500">
-                                                            Saldo: €{transaction.balance_after.toFixed(2)}
+                                                            {t({ it: 'Saldo:', en: 'Balance:' })} €{transaction.balance_after.toFixed(2)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -622,7 +622,7 @@ const ProfileSettings = () => {
                         <div className="p-4 md:p-6 border-b border-gray-800 flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
                                 <span className="border border-[#2d8a7e]/40 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-emerald-300">
-                                    Fidelity Card
+                                    {t({ it: 'Fidelity Card', en: 'Fidelity Card' })}
                                 </span>
                                 <div>
                                     <p className="text-white font-bold">{t({ it: "Programma Fedeltà Lavaggio", en: "Car Wash Loyalty Programme" })}</p>
@@ -645,11 +645,11 @@ const ProfileSettings = () => {
                             </div>
                             <div className="flex items-center justify-between mt-3 text-xs">
                                 <span className="text-gray-400">
-                                    Mancano <span className="text-white font-semibold">{Math.max(0, FIDELITY_MAX - points)}</span> punti al prossimo buono
+                                    {t({ it: 'Mancano', en: 'Another' })} <span className="text-white font-semibold">{Math.max(0, FIDELITY_MAX - points)}</span> {t({ it: 'punti al prossimo buono', en: 'points to your next voucher' })}
                                 </span>
                                 {lifetime > 0 && (
                                     <span className="text-gray-500">
-                                        Totale punti guadagnati: <span className="text-gray-300 font-semibold">{lifetime}</span>
+                                        {t({ it: 'Totale punti guadagnati:', en: 'Total points earned:' })} <span className="text-gray-300 font-semibold">{lifetime}</span>
                                     </span>
                                 )}
                             </div>

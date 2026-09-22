@@ -20,7 +20,7 @@ interface ContractInfo {
 
 export default function FirmaPage() {
     const { token } = useParams<{ token: string }>()
-    const { lang } = useTranslation()
+    const { lang, t } = useTranslation()
     const [status, setStatus] = useState<SigningStatus>('loading')
     const [signerName, setSignerName] = useState('')
     const [signerEmail, setSignerEmail] = useState('')
@@ -542,7 +542,7 @@ export default function FirmaPage() {
 
             {/* Footer */}
             <div className="text-center py-6 text-xs text-gray-400">
-                Dubai rent 7.0 S.p.A. - Via del Fangario 25, 09122 Cagliari (CA) - P.IVA 04104640927
+                {t({ it: 'Dubai rent 7.0 S.p.A. - Via del Fangario 25, 09122 Cagliari (CA) - P.IVA 04104640927', en: 'Dubai rent 7.0 S.p.A. - Via del Fangario 25, 09122 Cagliari (CA) - P.IVA 04104640927' })}
             </div>
         </div>
     )

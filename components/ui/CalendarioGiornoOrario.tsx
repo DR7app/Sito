@@ -39,8 +39,14 @@ interface Props {
   attendiOrari?: () => Promise<unknown>;
   dataIniziale?: string;
   oraIniziale?: string;
-  titolo?: Bilingue;
-  sottotitolo?: Bilingue;
+  /**
+   * Titolo e sottotitolo: di norma una stringa gia' tradotta dal chiamante
+   * (con t e un oggetto it/en scritto li', cosi' il testo e' modificabile dal
+   * gestionale). Un oggetto { it, en } resta accettato e si mostra nella
+   * lingua corrente.
+   */
+  titolo?: string | Bilingue;
+  sottotitolo?: string | Bilingue;
   /**
    * Una domanda in piu' da fare NEL calendario, sopra il mese. La usa il
    * preventivo Aria per chiedere se il volo e' solo andata o andata e
@@ -66,7 +72,7 @@ const CalendarioGiornoOrario: React.FC<Props> = ({
   dataIniziale, oraIniziale, titolo, sottotitolo, intestazione,
   chiudiDopoLaScelta = true, onConferma,
 }) => {
-  const { t, lang } = useTranslation();
+  const { t, lang, getTranslated } = useTranslation();
   const it = lang === 'it';
   const locale = it ? 'it-IT' : 'en-GB';
 
@@ -165,11 +171,11 @@ const CalendarioGiornoOrario: React.FC<Props> = ({
             </button>
 
             <h3 className="mb-1 font-serif text-[24px] text-white">
-              {titolo ? t(titolo) : t({ it: 'Scegli prima il giorno', en: 'Pick your day first' })}
+              {titolo ? getTranslated(titolo) : t({ it: 'Scegli prima il giorno', en: 'Pick your day first' })}
             </h3>
             <p className="mb-6 text-[12px] text-white/40">
               {sottotitolo
-                ? t(sottotitolo)
+                ? getTranslated(sottotitolo)
                 : t({ it: 'Poi ti mostriamo gli orari liberi di quel giorno.', en: 'We then show the times free on that day.' })}
             </p>
 
@@ -242,9 +248,7 @@ const CalendarioGiornoOrario: React.FC<Props> = ({
                   <div className="mt-8 border-t border-white/10 pt-6">
                     {griglia.length === 0 ? (
                       <p className="text-[13px] text-amber-300">
-                        {it
-                          ? 'In questo giorno non ci sono orari liberi: scegline un altro qui sopra.'
-                          : 'No free time on this day: pick another one above.'}
+                        {t({ it: 'In questo giorno non ci sono orari liberi: scegline un altro qui sopra.', en: 'No free time on this day: pick another one above.' })}
                       </p>
                     ) : (
                       <>

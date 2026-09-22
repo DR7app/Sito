@@ -76,9 +76,11 @@ const ReferralProgram: React.FC = () => {
     }
   };
 
-  const shareText = `Ciao! Ti invito su DR7 — usa il mio link per registrarti: ${referralLink}\n\nSe ricarichi il wallet con almeno €100, io ricevo un bonus di €50 e tu entri nel mondo DR7.`;
+  // Il messaggio lo riceve l'amico invitato: resta in italiano anche col sito
+  // in inglese (en = it), ma passa da t() per essere riscrivibile dal gestionale.
+  const shareText = `${t({ it: 'Ciao! Ti invito su DR7 — usa il mio link per registrarti:', en: 'Ciao! Ti invito su DR7 — usa il mio link per registrarti:' })} ${referralLink}\n\n${t({ it: 'Se ricarichi il wallet con almeno €100, io ricevo un bonus di €50 e tu entri nel mondo DR7.', en: 'Se ricarichi il wallet con almeno €100, io ricevo un bonus di €50 e tu entri nel mondo DR7.' })}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-  const emailHref = `mailto:?subject=${encodeURIComponent('Entra in DR7')}&body=${encodeURIComponent(shareText)}`;
+  const emailHref = `mailto:?subject=${encodeURIComponent(t({ it: 'Entra in DR7', en: 'Entra in DR7' }))}&body=${encodeURIComponent(shareText)}`;
 
   if (loading) {
     return (

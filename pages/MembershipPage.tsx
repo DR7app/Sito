@@ -54,7 +54,7 @@ const ColonnaLaterale: React.FC<{ righe: string[]; allinea: 'left' | 'right' }> 
 
 const MembershipPage: React.FC = () => {
   const aspetto = useAspetto();
-    const { lang } = useTranslation();
+    const { lang, t } = useTranslation();
     const navigate = useNavigate();
     const { user } = useAuth();
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
@@ -100,7 +100,7 @@ const MembershipPage: React.FC = () => {
     if (!copy) {
         return (
             <div className="bg-black min-h-screen flex items-center justify-center">
-                <p className="text-gray-500 text-sm">{lang === 'it' ? 'Caricamento…' : 'Loading…'}</p>
+                <p className="text-gray-500 text-sm">{t({ it: 'Caricamento…', en: 'Loading…' })}</p>
             </div>
         );
     }

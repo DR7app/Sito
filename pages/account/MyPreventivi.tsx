@@ -62,19 +62,21 @@ interface RichiestaVolo {
   created_at: string;
 }
 
-const STATUS_VOLO: Record<string, { label: { it: string; en: string }; color: string }> = {
-  pending: { label: { it: 'In attesa', en: 'Pending' }, color: 'bg-yellow-500/15 text-yellow-400' },
-  quoted: { label: { it: 'Preventivato', en: 'Quoted' }, color: 'bg-blue-500/15 text-blue-400' },
-  accepted: { label: { it: 'Accettato', en: 'Accepted' }, color: 'bg-green-500/15 text-green-400' },
-  rejected: { label: { it: 'Rifiutato', en: 'Rejected' }, color: 'bg-red-500/15 text-red-400' },
+// Solo i colori: le etichette sono dentro al componente (etichettaVolo /
+// etichettaPreventivo), un testo per caso passato da t(), riscrivibili dal gestionale.
+const STATUS_VOLO: Record<string, { color: string }> = {
+  pending: { color: 'bg-yellow-500/15 text-yellow-400' },
+  quoted: { color: 'bg-blue-500/15 text-blue-400' },
+  accepted: { color: 'bg-green-500/15 text-green-400' },
+  rejected: { color: 'bg-red-500/15 text-red-400' },
 };
 
-const STATUS_LABELS: Record<string, { label: { it: string; en: string }; color: string }> = {
-  bozza: { label: { it: 'In attesa', en: 'Pending' }, color: 'bg-yellow-500/15 text-yellow-400' },
-  inviato: { label: { it: 'Inviato', en: 'Sent' }, color: 'bg-blue-500/15 text-blue-400' },
-  accettato: { label: { it: 'Accettato', en: 'Accepted' }, color: 'bg-green-500/15 text-green-400' },
-  rifiutato: { label: { it: 'Rifiutato', en: 'Rejected' }, color: 'bg-red-500/15 text-red-400' },
-  scaduto: { label: { it: 'Scaduto', en: 'Expired' }, color: 'bg-gray-500/15 text-gray-400' },
+const STATUS_LABELS: Record<string, { color: string }> = {
+  bozza: { color: 'bg-yellow-500/15 text-yellow-400' },
+  inviato: { color: 'bg-blue-500/15 text-blue-400' },
+  accettato: { color: 'bg-green-500/15 text-green-400' },
+  rifiutato: { color: 'bg-red-500/15 text-red-400' },
+  scaduto: { color: 'bg-gray-500/15 text-gray-400' },
 };
 
 /**
@@ -134,6 +136,25 @@ function resolveInsuranceLabel(
 
 const MyPreventivi: React.FC = () => {
   const { t, lang } = useTranslation();
+
+  // Stesso ripiego delle mappe dei colori: stato sconosciuto = "In attesa".
+  const etichettaVolo = (status: string): string => {
+    switch (status) {
+      case 'quoted': return t({ it: 'Preventivato', en: 'Quoted' });
+      case 'accepted': return t({ it: 'Accettato', en: 'Accepted' });
+      case 'rejected': return t({ it: 'Rifiutato', en: 'Rejected' });
+      default: return t({ it: 'In attesa', en: 'Pending' });
+    }
+  };
+  const etichettaPreventivo = (status: string): string => {
+    switch (status) {
+      case 'inviato': return t({ it: 'Inviato', en: 'Sent' });
+      case 'accettato': return t({ it: 'Accettato', en: 'Accepted' });
+      case 'rifiutato': return t({ it: 'Rifiutato', en: 'Rejected' });
+      case 'scaduto': return t({ it: 'Scaduto', en: 'Expired' });
+      default: return t({ it: 'In attesa', en: 'Pending' });
+    }
+  };
   const { user } = useAuth();
   const { overlay: proOverlay } = useCentralinaProOverlay();
   const [preventivi, setPreventivi] = useState<Preventivo[]>([]);
@@ -230,7 +251,7 @@ const MyPreventivi: React.FC = () => {
                     </h3>
                     <p className="text-sm text-gray-400 mt-0.5">{mezzo}</p>
                   </div>
-                  <span className={`text-xs font-semibold px-3 py-1 ${stato.color}`}>{t(stato.label)}</span>
+                  <span className={`text-xs font-semibold px-3 py-1 ${stato.color}`}>{etichettaVolo(v.status)}</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
@@ -289,7 +310,7 @@ const MyPreventivi: React.FC = () => {
                     </p>
                   </div>
                   <span className={`text-xs font-semibold px-3 py-1 ${statusInfo.color}`}>
-                    {t(statusInfo.label)}
+                    {etichettaPreventivo(p.status)}
                   </span>
                 </div>
 

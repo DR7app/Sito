@@ -672,8 +672,8 @@ const SignUpPage: React.FC = () => {
                       { file: docsPrecompila.patenteBack, label: 'Patente (retro)' },
                       { file: docsPrecompila.cartaIdentitaFront, label: "Carta d'identita' (fronte)" },
                       { file: docsPrecompila.cartaIdentitaBack, label: "Carta d'identita' (retro)" },
-                      { file: docsPrecompila.codiceFiscaleFront, label: 'Codice fiscale (fronte)' },
-                      { file: docsPrecompila.codiceFiscaleBack, label: 'Codice fiscale (retro)' },
+                      { file: docsPrecompila.codiceFiscaleFront, label: t({ it: 'Codice fiscale (fronte)', en: 'Tax code (front)' }) },
+                      { file: docsPrecompila.codiceFiscaleBack, label: t({ it: 'Codice fiscale (retro)', en: 'Tax code (back)' }) },
                     ]}
                     currentData={{
                       nome: tipoCliente === 'azienda' ? formData.rappresentanteNome : formData.nome,

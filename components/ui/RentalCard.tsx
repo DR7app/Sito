@@ -185,13 +185,13 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
                       <div className="t-meta mt-2.5" style={{ color: 'var(--fg-dim)' }}>
                         {totalDays} {totalDays === 1 ? t({ it: "giorno", en: "day" }) : t({ it: "giorni", en: "days" })}
                         {item.pricePerDay && (
-                          <> — {formatPrice(item.pricePerDay[currency])}/giorno</>
+                          <> — {formatPrice(item.pricePerDay[currency])}/{t({ it: "giorno", en: "day" })}</>
                         )}
                       </div>
                     </div>
                   ) : marketingPrice ? (
                     <div className="flex flex-wrap items-baseline gap-x-2.5">
-                      <span className="t-eyebrow">Da</span>
+                      <span className="t-eyebrow">{t({ it: "Da", en: "From" })}</span>
                       <span className="t-h2">{formatPrice(marketingPrice)}</span>
                       <span className="t-eyebrow">/{t('per_day')}</span>
                       {marketingTooltip && (
@@ -225,7 +225,7 @@ const RentalCard: React.FC<RentalCardProps> = ({ item, onBook, marketingPrice, m
                   <div className="flex flex-col gap-2.5">
                     {availableFrom && (
                       <span className="t-meta" style={{ color: 'var(--c-metal)' }}>
-                        Disponibile dalle {new Date(availableFrom).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })}
+                        {t({ it: "Disponibile dalle", en: "Available from" })} {new Date(availableFrom).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })}
                       </span>
                     )}
                     <button

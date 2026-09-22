@@ -24,6 +24,7 @@ import {
 } from '../../utils/lavaggioHours';
 import { valutaSlot, type PrenotazioneLavaggio } from '../../utils/lavaggioSlotRules';
 import CalendarioGiornoOrario, { ymdLocale } from './CalendarioGiornoOrario';
+import { useTranslation } from '../../hooks/useTranslation';
 
 /** Quanti giorni avanti si puo' prenotare: un anno. Con due mesi il
  *  calendario si fermava a inizio novembre e chi voleva prenotare per le
@@ -63,6 +64,7 @@ function durataDaPrezzo(euro: number): number {
 const CalendarioLavaggio: React.FC<Props> = ({
   aperto, onClose, durataMinuti, minDate, bloccato, onConferma, dataIniziale, oraIniziale,
 }) => {
+  const { t } = useTranslation();
   const [prenotazioni, setPrenotazioni] = useState<PrenotazioneLavaggio[]>([]);
 
   // Le prenotazioni di tutto l'orizzonte in UNA lettura: servono per spegnere
@@ -147,11 +149,8 @@ const CalendarioLavaggio: React.FC<Props> = ({
       attendiOrari={orariLavaggioPronti}
       dataIniziale={dataIniziale}
       oraIniziale={oraIniziale}
-      titolo={{ it: 'Scegli il giorno', en: 'Pick your day' }}
-      sottotitolo={{
-        it: `Poi ti mostriamo gli orari liberi di quel giorno. Servizio da ${durataTesto}.`,
-        en: `We then show the times free on that day. Service takes ${durataTesto}.`,
-      }}
+      titolo={t({ it: 'Scegli il giorno', en: 'Pick your day' })}
+      sottotitolo={`${t({ it: 'Poi ti mostriamo gli orari liberi di quel giorno. Servizio da', en: 'We then show the times free on that day. Service takes' })} ${durataTesto}.`}
       onConferma={onConferma}
     />
   );

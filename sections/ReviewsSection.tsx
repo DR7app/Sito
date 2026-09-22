@@ -296,7 +296,7 @@ const fallbackReviews = [
 ];
 
 export default function ReviewsSection({ titolo, sottotitolo, immagine }: { titolo: string; sottotitolo: string; immagine?: string }) {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>(fallbackReviews);
   // Il conteggio NON e' scritto qui: arriva da Google (Places, campo
   // `user_ratings_total`) a ogni caricamento della pagina, quindi il numero
@@ -332,8 +332,6 @@ export default function ReviewsSection({ titolo, sottotitolo, immagine }: { tito
 
     loadReviews();
   }, []);
-
-  const it = lang === 'it';
 
   // Dati strutturati: il voto medio e le recensioni per i motori di ricerca.
   // Stavano nella fascia scorrevole; la fascia non c'e' piu', questi restano.
@@ -380,25 +378,25 @@ export default function ReviewsSection({ titolo, sottotitolo, immagine }: { tito
         immagine={immagine}
         lingua={lang}
         testi={{
-          occhiello: it ? 'Le nostre esperienze' : 'Our experiences',
-          esperienze: it ? 'esperienze.' : 'experiences.',
+          occhiello: t({ it: "Le nostre esperienze", en: "Our experiences" }),
+          esperienze: t({ it: "esperienze.", en: "experiences." }),
           verificateSuGoogle: (n) => n > 0
-            ? (it ? `${n} recensioni verificate su Google` : `${n} verified reviews on Google`)
-            : (it ? 'Recensioni verificate su Google' : 'Verified reviews on Google'),
-          leggiTutte: it ? 'Leggi tutte le recensioni' : 'Read all reviews',
-          recensioneVerificata: it ? 'Recensione verificata' : 'Verified review',
-          statoPaesi: it ? 'Clienti' : 'Guests',
-          statoPaesiNota: it ? 'da oltre 20 paesi' : 'from over 20 countries',
+            ? `${n} ${t({ it: "recensioni verificate su Google", en: "verified reviews on Google" })}`
+            : t({ it: "Recensioni verificate su Google", en: "Verified reviews on Google" }),
+          leggiTutte: t({ it: "Leggi tutte le recensioni", en: "Read all reviews" }),
+          recensioneVerificata: t({ it: "Recensione verificata", en: "Verified review" }),
+          statoPaesi: t({ it: "Clienti", en: "Guests" }),
+          statoPaesiNota: t({ it: "da oltre 20 paesi", en: "from over 20 countries" }),
           statoRecensioni: (n) => n > 0
-            ? (it ? `${n} recensioni` : `${n} reviews`)
-            : (it ? 'Recensioni' : 'Reviews'),
-          statoRecensioniNota: it ? 'verificate' : 'verified',
+            ? `${n} ${t({ it: "recensioni", en: "reviews" })}`
+            : t({ it: "Recensioni", en: "Reviews" }),
+          statoRecensioniNota: t({ it: "verificate", en: "verified" }),
           statoVoto: `${ratingSummary.ratingValue.toFixed(1)}/5`,
-          statoVotoNota: it ? 'valutazione media' : 'average rating',
-          statoStandard: it ? 'Un solo' : 'One',
-          statoStandardNota: it ? 'standard' : 'standard',
-          precedente: it ? 'Precedente' : 'Previous',
-          successiva: it ? 'Successiva' : 'Next',
+          statoVotoNota: t({ it: "valutazione media", en: "average rating" }),
+          statoStandard: t({ it: "Un solo", en: "One" }),
+          statoStandardNota: t({ it: "standard", en: "standard" }),
+          precedente: t({ it: "Precedente", en: "Previous" }),
+          successiva: t({ it: "Successiva", en: "Next" }),
         }}
       />
     </>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getClubTiers, type ClubTierDef } from '../../utils/dr7club';
-// `t` qui e' gia' il livello dentro il ciclo: la traduzione si chiama `tr`.
+// Nel ciclo il livello si chiama `livello`: `t` resta la traduzione, cosi'
+// il catalogo testi del gestionale vede le stringhe di questo riquadro.
 import { useTranslation } from '../../hooks/useTranslation';
 import { Shell, Eyebrow, SeamRule } from '../editorial/primitives';
 import Reveal from '../editorial/Reveal';
@@ -34,12 +35,12 @@ type Props = {
  * ciascuno vorrebbe dire trenta colori: la gerarchia si legge se ne spicca uno.
  */
 const ClubTiersBoard: React.FC<Props> = ({ lang, eyebrow, title, note, currentTier, bare }) => {
-  const { t: tr } = useTranslation();
+  const { t } = useTranslation();
   const [tiers, setTiers] = useState<ClubTierDef[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    getClubTiers().then((t) => { if (!cancelled) setTiers(t); });
+    getClubTiers().then((lista) => { if (!cancelled) setTiers(lista); });
     return () => { cancelled = true; };
   }, []);
 
@@ -52,11 +53,11 @@ const ClubTiersBoard: React.FC<Props> = ({ lang, eyebrow, title, note, currentTi
 
   const griglia = (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-    {tiers.map((t, i) => {
-      const isTop = t.tier === top;
-      const isMine = !!currentTier && t.tier === currentTier;
+    {tiers.map((livello, i) => {
+      const isTop = livello.tier === top;
+      const isMine = !!currentTier && livello.tier === currentTier;
       return (
-        <Reveal key={t.tier} delay={Math.min(i, 12) * 35}>
+        <Reveal key={livello.tier} delay={Math.min(i, 12) * 35}>
           <div
             className={`h-full border p-4 transition-colors duration-500 ease-editorial ${
               isTop
@@ -73,19 +74,19 @@ const ClubTiersBoard: React.FC<Props> = ({ lang, eyebrow, title, note, currentTi
               className="mt-2 block font-serif text-3xl leading-none"
               style={{ color: isTop ? 'var(--c-metal)' : 'var(--fg)' }}
             >
-              {t.rewardPercent}%
+              {livello.rewardPercent}%
             </span>
             <span className="mt-3 block text-[12px] leading-tight" style={{ color: 'var(--fg-dim)' }}>
-              {t.label}
+              {livello.label}
             </span>
             <span className="t-meta mt-2 block text-[10px]" style={{ color: 'var(--fg-dim)', opacity: 0.75 }}>
-              {t.max === Infinity
-                ? `${tr({ it: 'da', en: 'from' })} €${nf.format(t.min)}`
-                : `€${nf.format(t.min)} – €${nf.format(t.max)}`}
+              {livello.max === Infinity
+                ? `${t({ it: 'da', en: 'from' })} €${nf.format(livello.min)}`
+                : `€${nf.format(livello.min)} – €${nf.format(livello.max)}`}
             </span>
             {isMine && (
               <span className="t-eyebrow mt-3 block" style={{ color: 'var(--c-metal)' }}>
-                {tr({ it: 'Il tuo livello', en: 'Your tier' })}
+                {t({ it: 'Il tuo livello', en: 'Your tier' })}
               </span>
             )}
           </div>

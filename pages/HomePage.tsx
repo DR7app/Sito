@@ -28,6 +28,7 @@ import MediaVideo from '../components/editorial/MediaVideo';
 /* ── Atto 01 — Arrivo ─────────────────────────────────────────────────── */
 
 const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) => {
+  const { t } = useTranslation();
   const slides: HomeSlide[] = copy.hero_slides;
   const [active, setActive] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -37,8 +38,8 @@ const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) =
   useEffect(() => {
     if (slides.length <= 1) return;
     const ms = Math.max(2, copy.hero_autoplay_seconds) * 1000;
-    const t = setInterval(() => setActive((p) => (p + 1) % slides.length), ms);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setActive((p) => (p + 1) % slides.length), ms);
+    return () => clearInterval(timer);
   }, [slides.length, copy.hero_autoplay_seconds]);
 
   const onTouchStart = (e: React.TouchEvent) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
@@ -120,7 +121,7 @@ const Hero: React.FC<{ copy: HomeCopy; lang: 'it' | 'en' }> = ({ copy, lang }) =
             <button
               key={s.id}
               onClick={() => setActive(i)}
-              aria-label={`${lang === 'it' ? 'Scena' : 'Scene'} ${i + 1}`}
+              aria-label={`${t({ it: 'Scena', en: 'Scene' })} ${i + 1}`}
               className={`h-px transition-all duration-editorial ease-editorial ${i === active ? 'w-16 bg-white' : 'w-8 bg-white/30 hover:bg-white/70'}`}
             />
           ))}

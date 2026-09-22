@@ -330,10 +330,12 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const nomePasso: Record<Passo, { it: string; en: string }> = {
-    riepilogo: { it: 'Riepilogo', en: 'Summary' },
-    cliente: { it: 'Dati cliente', en: 'Your details' },
-    pagamento: { it: 'Pagamento', en: 'Payment' },
+  const nomePasso = (p: Passo): string => {
+    switch (p) {
+      case 'riepilogo': return t({ it: 'Riepilogo', en: 'Summary' });
+      case 'cliente': return t({ it: 'Dati cliente', en: 'Your details' });
+      case 'pagamento': return t({ it: 'Pagamento', en: 'Payment' });
+    }
   };
   const indicePasso = PASSI.indexOf(passo);
 
@@ -354,12 +356,12 @@ const CheckoutPage: React.FC = () => {
               <span className={`w-6 h-6 flex items-center justify-center border ${i <= indicePasso ? 'border-white text-white' : 'border-gray-700'}`}>
                 {i + 1}
               </span>
-              <span className="hidden sm:inline">{t(nomePasso[p])}</span>
+              <span className="hidden sm:inline">{nomePasso(p)}</span>
             </button>
           ))}
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-8 uppercase tracking-[0.18em]">
-          {t(nomePasso[passo])}
+          {nomePasso(passo)}
         </h1>
 
         {/* 20/09/2026 (direzione): checkout del carrello su due colonne, come la
@@ -484,7 +486,7 @@ const CheckoutPage: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className={etichetta}>CAP</label>
+                      <label className={etichetta}>{t({ it: 'CAP', en: 'Postal code' })}</label>
                       <input className={campo} value={cliente.aziendaCap || ''} onChange={e => scrivi('aziendaCap', e.target.value)} />
                     </div>
                     <div>
@@ -502,7 +504,7 @@ const CheckoutPage: React.FC = () => {
                       <input className={`${campo} uppercase`} value={cliente.aziendaSdi || ''} onChange={e => scrivi('aziendaSdi', e.target.value.toUpperCase())} />
                     </div>
                     <div>
-                      <label className={etichetta}>PEC</label>
+                      <label className={etichetta}>{t({ it: 'PEC', en: 'PEC' })}</label>
                       <input type="email" className={campo} value={cliente.aziendaPec || ''} onChange={e => scrivi('aziendaPec', e.target.value)} />
                     </div>
                   </div>
@@ -547,7 +549,7 @@ const CheckoutPage: React.FC = () => {
                   )}
                 </span>
                 <svg className={`w-8 h-8 mb-auto ${metodo === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
-                <span className={`block text-base font-bold mt-4 ${metodo === 'credit' ? 'text-white' : 'text-gray-300'}`}>Credit Wallet</span>
+                <span className={`block text-base font-bold mt-4 ${metodo === 'credit' ? 'text-white' : 'text-gray-300'}`}>{t({ it: 'Credit Wallet', en: 'Credit Wallet' })}</span>
                 <span className="block text-xs text-gray-500 mt-1">
                   {saldo != null
                     ? `${t({ it: 'Disponibile', en: 'Available' })}: €${saldo.toFixed(2)}`

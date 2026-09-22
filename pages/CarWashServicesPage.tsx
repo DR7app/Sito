@@ -533,9 +533,7 @@ const CarWashServicesPage: React.FC = () => {
       // All'apertura automatica non si urla: manca il lavaggio principale,
       // il cliente e' ancora nel catalogo e lo sceglie adesso.
       if (!opzioni?.silenzioso) {
-        alert(lang === 'it'
-          ? 'I servizi Extra Care richiedono la selezione di un lavaggio principale.'
-          : 'Extra Care services require selecting a main wash service.');
+        alert(t({ it: 'I servizi Extra Care richiedono la selezione di un lavaggio principale.', en: 'Extra Care services require selecting a main wash service.' }));
       }
       return;
     }
@@ -586,6 +584,16 @@ const CarWashServicesPage: React.FC = () => {
     : getMeccanicaServices(meccanicaCategory);
 
   const currentCategories = mainTab === 'lavaggio' ? LAVAGGIO_CATEGORIES : MECCANICA_CATEGORIES;
+  // Nomi delle categorie passati da t() uno per uno: cosi' il gestionale li
+  // trova e li puo' riscrivere.
+  const nomeCategoria = (id: LavaggioCategory | MeccanicaCategory): string => {
+    switch (id) {
+      case 'wash': return t({ it: 'LAVAGGIO', en: 'CAR WASH' });
+      case 'moto': return t({ it: 'MOTO EXPERIENCE', en: 'MOTO EXPERIENCE' });
+      case 'tech': return t({ it: 'TECH SERVICE', en: 'TECH SERVICE' });
+      default: return '';
+    }
+  };
   const activeCategory = mainTab === 'lavaggio' ? lavaggioCategory : meccanicaCategory;
 
   return (
@@ -740,7 +748,7 @@ const CarWashServicesPage: React.FC = () => {
                 : 'bg-transparent text-white border-2 border-white hover:bg-white/10'
             }`}
           >
-            LAVAGGIO
+            {t({ it: 'LAVAGGIO', en: 'CAR WASH' })}
           </button>
           <button
             onClick={() => setMainTab('meccanica')}
@@ -750,7 +758,7 @@ const CarWashServicesPage: React.FC = () => {
                 : 'bg-transparent text-white border-2 border-white hover:bg-white/10'
             }`}
           >
-            MECCANICA
+            {t({ it: 'MECCANICA', en: 'MECHANICS' })}
           </button>
         </div>
       </div>
@@ -771,9 +779,9 @@ const CarWashServicesPage: React.FC = () => {
                   : 'bg-gray-900/50 text-white border border-gray-700 hover:border-white'
               }`}
             >
-              <span>{lang === 'it' ? cat.name : cat.nameEn}</span>
+              <span>{nomeCategoria(cat.id) || (lang === 'it' ? cat.name : cat.nameEn)}</span>
               {cat.subtitle && (
-                <span className="hidden sm:inline text-[10px] ml-1 opacity-70">({cat.subtitle})</span>
+                <span className="hidden sm:inline text-[10px] ml-1 opacity-70">({t({ it: 'manodopera', en: 'labour' })})</span>
               )}
             </button>
           ))}

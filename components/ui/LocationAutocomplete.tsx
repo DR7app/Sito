@@ -241,7 +241,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
           {/* Local results header */}
           {localResults.length > 0 && (
             <div className="px-3 py-1.5 text-[10px] font-bold text-white/20 uppercase tracking-widest bg-white/[0.02]">
-              Località DR7
+              {t({ it: "Località DR7", en: "DR7 locations" })}
             </div>
           )}
           {displayItems.filter(d => d.source === 'local').map((item, i) => {
@@ -267,7 +267,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
           {/* Nominatim results */}
           {displayItems.some(d => d.source === 'nominatim') && (
             <div className="px-3 py-1.5 text-[10px] font-bold text-white/20 uppercase tracking-widest bg-white/[0.02] border-t border-white/5">
-              Indirizzi
+              {t({ it: "Indirizzi", en: "Addresses" })}
             </div>
           )}
           {displayItems.filter(d => d.source === 'nominatim').map((item, i) => {

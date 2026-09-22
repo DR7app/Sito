@@ -251,7 +251,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                   </svg>
                   <span className="relative inline-flex h-9 items-center justify-center px-4">
                     <span className="absolute inset-0 border border-white/20 transition-colors duration-standard group-hover:border-white/50" />
-                    <span className="t-nav relative">{isIt ? 'Chiudi' : 'Close'}</span>
+                    <span className="t-nav relative">{t({ it: "Chiudi", en: "Close" })}</span>
                   </span>
                 </button>
 

@@ -183,7 +183,7 @@ const DR7Club = () => {
       })
 
       const nexiData = await nexiResponse.json()
-      if (!nexiResponse.ok) throw new Error(nexiData.error || 'Errore creazione pagamento')
+      if (!nexiResponse.ok) throw new Error(nexiData.error || t({ it: 'Errore creazione pagamento', en: 'Error creating the payment' }))
 
       // 4. Save order reference + nexi_order_id for callback matching
       await supabase
@@ -197,7 +197,7 @@ const DR7Club = () => {
       // 5. Redirect to Nexi payment page
       window.location.href = nexiData.paymentUrl
     } catch (err: any) {
-      setSubscribeError(err.message || 'Errore durante il pagamento')
+      setSubscribeError(err.message || t({ it: 'Errore durante il pagamento', en: 'Error during payment' }))
       setSubscribing(false)
     }
   }
@@ -466,16 +466,19 @@ const DR7Club = () => {
           </p>
           <div className="space-y-2">
             {creditiVincolati.map(l => {
-              const NOMI: Record<string, { it: string; en: string }> = {
-                rental: { it: 'Noleggio Terra', en: 'Car rental' },
-                boat_rental: { it: 'Noleggio Mare', en: 'Boat rental' },
-                heli_rental: { it: 'Noleggio Aria', en: 'Helicopter' },
-                stay_rental: { it: 'Soggiorni', en: 'Stays' },
-                car_wash: { it: 'Lavaggio & Meccanica', en: 'Wash & mechanics' },
+              const nomeServizio = (x: string): string => {
+                switch (x) {
+                  case 'rental': return t({ it: 'Noleggio Terra', en: 'Car rental' })
+                  case 'boat_rental': return t({ it: 'Noleggio Mare', en: 'Boat rental' })
+                  case 'heli_rental': return t({ it: 'Noleggio Aria', en: 'Helicopter' })
+                  case 'stay_rental': return t({ it: 'Soggiorni', en: 'Stays' })
+                  case 'car_wash': return t({ it: 'Lavaggio & Meccanica', en: 'Wash & mechanics' })
+                  default: return x
+                }
               }
               const dove = !l.servizi || l.servizi.length === 0
                 ? t({ it: 'Tutti i servizi', en: 'All services' })
-                : l.servizi.map(x => (NOMI[x] ? t(NOMI[x]) : x)).join(' · ')
+                : l.servizi.map(nomeServizio).join(' · ')
               return (
                 <div key={l.id} className="rounded-lg border border-emerald-700/40 bg-emerald-900/10 p-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">

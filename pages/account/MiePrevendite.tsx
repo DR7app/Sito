@@ -53,11 +53,15 @@ const MiePrevendite: React.FC = () => {
     }
   }
 
-  const etichettaStato: Record<string, { it: string; en: string }> = {
-    attiva: { it: 'Attiva', en: 'Active' },
-    terminata: { it: 'Terminata', en: 'Finished' },
-    scaduta: { it: 'Scaduta', en: 'Expired' },
-    bloccata: { it: 'Bloccata', en: 'Blocked' },
+  // Un letterale per caso: cosi' ogni etichetta e' riscrivibile dal gestionale.
+  const etichettaStato = (stato: string): string => {
+    switch (stato) {
+      case 'attiva': return t({ it: 'Attiva', en: 'Active' });
+      case 'terminata': return t({ it: 'Terminata', en: 'Finished' });
+      case 'scaduta': return t({ it: 'Scaduta', en: 'Expired' });
+      case 'bloccata': return t({ it: 'Bloccata', en: 'Blocked' });
+      default: return '';
+    }
   };
 
   const coloreStato: Record<string, string> = {
@@ -131,7 +135,7 @@ const MiePrevendite: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <h3 className="text-lg font-bold text-white">{pc.nome}</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${coloreStato[stato]}`}>
-                    {t(etichettaStato[stato])}
+                    {etichettaStato(stato)}
                   </span>
                 </div>
 

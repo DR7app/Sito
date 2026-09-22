@@ -39,10 +39,10 @@ const FAQPage: React.FC = () => {
                     {/* Hero */}
                     <div className="text-center mb-14">
                         <p className="uppercase tracking-[0.3em] text-xs text-gray-500 mb-3">
-                            {copy ? (lang === 'it' ? copy.eyebrow_it : copy.eyebrow_en) : 'DR7 · Support'}
+                            {copy ? (lang === 'it' ? copy.eyebrow_it : copy.eyebrow_en) : t({ it: 'DR7 · Support', en: 'DR7 · Support' })}
                         </p>
                         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                            {copy ? (lang === 'it' ? copy.page_title_it : copy.page_title_en) : (lang === 'it' ? 'Domande Frequenti' : 'FAQ')}
+                            {copy ? (lang === 'it' ? copy.page_title_it : copy.page_title_en) : t({ it: 'Domande Frequenti', en: 'FAQ' })}
                         </h1>
                         <p className="text-gray-400 text-base md:text-lg">
                             {copy ? (lang === 'it' ? copy.subtitle_it : copy.subtitle_en) : ''}
@@ -52,7 +52,7 @@ const FAQPage: React.FC = () => {
                     {/* Accordion */}
                     {entries === null && (
                         <div className="text-center text-gray-500 py-16 text-sm">
-                            {lang === 'it' ? 'Caricamento…' : 'Loading…'}
+                            {t({ it: 'Caricamento…', en: 'Loading…' })}
                         </div>
                     )}
 
@@ -134,7 +134,7 @@ const FAQPage: React.FC = () => {
                     {entries !== null && entries.length > 0 && (
                         <div className="mt-14 text-center">
                             <p className="text-gray-400 text-sm mb-2">
-                                {lang === 'it' ? 'Non hai trovato la risposta?' : "Didn’t find the answer?"}
+                                {t({ it: 'Non hai trovato la risposta?', en: "Didn’t find the answer?" })}
                             </p>
                             <a
                                 href="mailto:info@dr7.app"

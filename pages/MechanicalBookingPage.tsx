@@ -93,8 +93,8 @@ const MechanicalBookingPage: React.FC = () => {
   const discountedPrice = Math.max(0, basePrice - discountAmount);
 
   const validateDiscountCode = async () => {
-    if (!discountCode.trim()) { setDiscountCodeError('Inserisci un codice sconto'); return; }
-    if (!user) { setDiscountCodeError('Devi effettuare il login per utilizzare un codice sconto'); return; }
+    if (!discountCode.trim()) { setDiscountCodeError(t({ it: 'Inserisci un codice sconto', en: 'Enter a discount code' })); return; }
+    if (!user) { setDiscountCodeError(t({ it: 'Devi effettuare il login per utilizzare un codice sconto', en: 'You must log in to use a discount code' })); return; }
     setIsValidatingCode(true);
     setDiscountCodeError(null);
     try {
@@ -107,7 +107,7 @@ const MechanicalBookingPage: React.FC = () => {
         body: JSON.stringify({ code: discountCode.trim().toUpperCase(), userId: user.id, serviceType: 'mechanical' }),
       });
       const result = await response.json();
-      if (!response.ok || !result.valid) { setDiscountCodeError(result.message || 'Codice non valido'); setIsValidatingCode(false); return; }
+      if (!response.ok || !result.valid) { setDiscountCodeError(result.message || t({ it: 'Codice non valido', en: 'Invalid code' })); setIsValidatingCode(false); return; }
       const data = { ...result, ...(result.discountCode || {}) };
       // The validate function returns value_type / value_amount (not
       // discount_type / discount_amount). Postgres NUMERIC arrives as
@@ -118,7 +118,7 @@ const MechanicalBookingPage: React.FC = () => {
         : 'fixed' as const;
       setAppliedDiscount({ code: discountCode.trim().toUpperCase(), amount: amt, type });
       setDiscountCodeError(null);
-    } catch { setDiscountCodeError('Errore nella verifica del codice'); }
+    } catch { setDiscountCodeError(t({ it: 'Errore nella verifica del codice', en: 'Error verifying the code' })); }
     setIsValidatingCode(false);
   };
 
@@ -238,9 +238,7 @@ const MechanicalBookingPage: React.FC = () => {
     if (name === 'appointmentDate' && value && value < minDate) {
       setErrors(prev => ({
         ...prev,
-        appointmentDate: lang === 'it'
-          ? 'Non puoi selezionare date passate. Seleziona da oggi in poi.'
-          : 'You cannot select past dates. Select from today onwards.'
+        appointmentDate: t({ it: 'Non puoi selezionare date passate. Seleziona da oggi in poi.', en: 'You cannot select past dates. Select from today onwards.' })
       }));
       setFormData(prev => ({ ...prev, appointmentDate: '' }));
       return;
@@ -440,7 +438,7 @@ const MechanicalBookingPage: React.FC = () => {
         : '';
       await aggiungiArticolo({
         tipo: 'meccanica',
-        titolo: dati.service_name || (lang === 'it' ? 'Servizio meccanico' : 'Mechanical service'),
+        titolo: dati.service_name || t({ it: 'Servizio meccanico', en: 'Mechanical service' }),
         sottotitolo: [quando, dati.vehicle_name].filter(Boolean).join(' · '),
         prezzoCents: dati.price_total,
         dati: { booking: dati },
@@ -558,7 +556,7 @@ const MechanicalBookingPage: React.FC = () => {
         if (pendingError) {
           console.error('Database error:', pendingError);
           clearTimeout(safetyTimer);
-          setPaymentError(`Errore database: ${pendingError.message}`);
+          setPaymentError(`${t({ it: 'Errore database:', en: 'Database error:' })} ${pendingError.message}`);
           isSubmittingRef.current = false;
           setIsProcessing(false);
           return;
@@ -771,9 +769,7 @@ const MechanicalBookingPage: React.FC = () => {
               {t({ it: 'Accesso Richiesto', en: 'Login Required' })}
             </h2>
             <p className="text-gray-400 mb-8">
-              {lang === 'it'
-                ? 'Devi essere registrato e aver effettuato l\'accesso per prenotare questo servizio.'
-                : 'You must be registered and logged in to book this service.'}
+              {t({ it: 'Devi essere registrato e aver effettuato l\'accesso per prenotare questo servizio.', en: 'You must be registered and logged in to book this service.' })}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -1061,7 +1057,7 @@ const MechanicalBookingPage: React.FC = () => {
                               : 'bg-gray-900 text-gray-500 border-2 border-red-500 cursor-not-allowed opacity-60'
                           }
                         `}
-                        title={!slot.available ? (lang === 'it' ? `Non disponibile` : `Unavailable`) : ''}
+                        title={!slot.available ? t({ it: 'Non disponibile', en: 'Unavailable' }) : ''}
                       >
                         {slot.time}
                       </button>
@@ -1117,7 +1113,7 @@ const MechanicalBookingPage: React.FC = () => {
                     disabled={isValidatingCode || !discountCode.trim()}
                     className="px-4 py-2 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 text-sm"
                   >
-                    {isValidatingCode ? '...' : 'Applica'}
+                    {isValidatingCode ? '...' : t({ it: 'Applica', en: 'Apply' })}
                   </button>
                 </div>
               )}
@@ -1132,7 +1128,7 @@ const MechanicalBookingPage: React.FC = () => {
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between items-center mb-3 text-green-400">
-                  <span>Sconto ({appliedDiscount?.code})</span>
+                  <span>{t({ it: 'Sconto', en: 'Discount' })} ({appliedDiscount?.code})</span>
                   <span>-€{discountAmount.toFixed(2)}</span>
                 </div>
               )}
@@ -1281,9 +1277,7 @@ const MechanicalBookingPage: React.FC = () => {
                           {t({ it: 'Pagamento Sicuro con Nexi', en: 'Secure Payment with Nexi' })}
                         </h3>
                         <p className="text-gray-400 text-sm">
-                          {lang === 'it'
-                            ? 'Sarai reindirizzato alla pagina di pagamento sicura di Nexi per completare la prenotazione.'
-                            : 'You will be redirected to Nexi\'s secure payment page to complete your booking.'}
+                          {t({ it: 'Sarai reindirizzato alla pagina di pagamento sicura di Nexi per completare la prenotazione.', en: 'You will be redirected to Nexi\'s secure payment page to complete your booking.' })}
                         </p>
                       </div>
                     </div>
@@ -1303,13 +1297,11 @@ const MechanicalBookingPage: React.FC = () => {
                   >
                     {isProcessing
                       ? (t({ it: 'Reindirizzamento...', en: 'Redirecting...' }))
-                      : (lang === 'it' ? `Procedi al Pagamento €${discountedPrice.toFixed(2)}` : `Proceed to Payment €${discountedPrice.toFixed(2)}`)}
+                      : (<>{t({ it: 'Procedi al Pagamento', en: 'Proceed to Payment' })} €{discountedPrice.toFixed(2)}</>)}
                   </button>
 
                   <p className="text-xs text-gray-400 text-center mt-4">
-                    {lang === 'it'
-                      ? 'Pagamento sicuro elaborato da Nexi'
-                      : 'Secure payment processed by Nexi'}
+                    {t({ it: 'Pagamento sicuro elaborato da Nexi', en: 'Secure payment processed by Nexi' })}
                   </p>
                 </>
               ) : paymentMethod === 'credit' ? (
@@ -1355,14 +1347,12 @@ const MechanicalBookingPage: React.FC = () => {
                       ? (t({ it: 'Elaborazione...', en: 'Processing...' }))
                       : creditBalance < discountedPrice
                         ? (t({ it: 'Credito Insufficiente', en: 'Insufficient Credit' }))
-                        : (lang === 'it' ? `Paga con Credit Wallet` : `Pay with Credit Wallet`)}
+                        : t({ it: 'Paga con Credit Wallet', en: 'Pay with Credit Wallet' })}
                   </button>
 
                   {creditBalance < discountedPrice && (
                     <p className="text-xs text-gray-400 text-center mt-4">
-                      {lang === 'it'
-                        ? 'Ricarica il tuo Credit Wallet per completare questa prenotazione'
-                        : 'Recharge your Credit Wallet to complete this booking'}
+                      {t({ it: 'Ricarica il tuo Credit Wallet per completare questa prenotazione', en: 'Recharge your Credit Wallet to complete this booking' })}
                     </p>
                   )}
                 </>

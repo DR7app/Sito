@@ -221,7 +221,7 @@ const MyBookings = () => {
     };
     return (
       <span className={`px-2.5 py-1 text-xs font-semibold ${colors[paymentStatus] || 'bg-gray-500/20 text-gray-400'}`}>
-        {isPaid ? 'Pagato' : paymentStatus === 'pending' ? 'In attesa' : paymentStatus}
+        {isPaid ? t({ it: 'Pagato', en: 'Paid' }) : paymentStatus === 'pending' ? t({ it: 'In attesa', en: 'Pending' }) : paymentStatus}
       </span>
     );
   };
@@ -245,7 +245,7 @@ const MyBookings = () => {
     const daysUntilPickup = (pickup.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
 
     if (daysUntilPickup <= 0) {
-      return { canCancel: false, hasFlex: false, refundPercent: 0, penaltyPercent: 0, refundMethod: 'wallet', message: 'Non è più possibile cancellare questa prenotazione.' };
+      return { canCancel: false, hasFlex: false, refundPercent: 0, penaltyPercent: 0, refundMethod: 'wallet', message: t({ it: 'Non è più possibile cancellare questa prenotazione.', en: 'This booking can no longer be cancelled.' }) };
     }
 
     // Unified rule pick from Centralina Pro Automazioni (incl. Standard / DR7 Flex / Prime Flex / Elite).
@@ -260,8 +260,8 @@ const MyBookings = () => {
     if (rule) {
       const penalty = Math.max(0, 100 - rule.refundPercent);
       const dest = rule.refundMethod === 'card'
-        ? 'rimborsato sulla carta originale (gestito manualmente da DR7 entro 7 giorni)'
-        : 'come credito DR7 Wallet';
+        ? t({ it: 'rimborsato sulla carta originale (gestito manualmente da DR7 entro 7 giorni)', en: 'refunded to the original card (handled manually by DR7 within 7 days)' })
+        : t({ it: 'come credito DR7 Wallet', en: 'as DR7 Wallet credit' });
       // hasFlex flag is preserved for downstream UI/messages that special-case Flex copy.
       const isFlexRule = rule.requiresService === 'dr7_flex' || rule.requiresService === 'prime_flex' || rule.requiresService === 'elite';
       return {
@@ -270,7 +270,7 @@ const MyBookings = () => {
         refundPercent: rule.refundPercent,
         penaltyPercent: penalty,
         refundMethod: rule.refundMethod,
-        message: `${rule.label}: rimborso del ${rule.refundPercent}% ${dest}${penalty > 0 ? ` (penale ${penalty}%)` : ''}.`,
+        message: `${rule.label}: ${t({ it: 'rimborso del', en: 'refund of' })} ${rule.refundPercent}% ${dest}${penalty > 0 ? ` (${t({ it: 'penale', en: 'penalty' })} ${penalty}%)` : ''}.`,
       };
     }
 
@@ -287,8 +287,8 @@ const MyBookings = () => {
       penaltyPercent: 0,
       refundMethod: 'wallet',
       message: minNotice > 0
-        ? `Meno di ${minNotice} giorni dal servizio: cancellazione non disponibile salvo DR7 Flex / Elite.`
-        : 'Cancellazione non disponibile per questa prenotazione.',
+        ? `${t({ it: 'Meno di', en: 'Less than' })} ${minNotice} ${t({ it: 'giorni dal servizio: cancellazione non disponibile salvo DR7 Flex / Elite.', en: 'days before the service: cancellation not available except with DR7 Flex / Elite.' })}`
+        : t({ it: 'Cancellazione non disponibile per questa prenotazione.', en: 'Cancellation not available for this booking.' }),
     };
   };
 
@@ -480,9 +480,9 @@ const MyBookings = () => {
           : b
       ));
       setModifyingBooking(null);
-      setCancelSuccess('Appuntamento modificato con successo!');
+      setCancelSuccess(t({ it: 'Appuntamento modificato con successo!', en: 'Appointment changed successfully!' }));
     } catch (err: any) {
-      setModifyError(err.message || 'Errore durante la modifica');
+      setModifyError(err.message || t({ it: 'Errore durante la modifica', en: 'Error while changing the booking' }));
     } finally {
       setModifySaving(false);
     }
@@ -491,7 +491,7 @@ const MyBookings = () => {
   const handleRentalModify = async () => {
     if (!modifyingBooking) return;
     if (!rentalPickupDate || !rentalPickupTime || !rentalDropoffDate || !rentalDropoffTime || !rentalPickupLocation || !rentalDropoffLocation) {
-      setModifyError('Compila tutti i campi.');
+      setModifyError(t({ it: 'Compila tutti i campi.', en: 'Please fill in all fields.' }));
       return;
     }
     setModifySaving(true);
@@ -749,10 +749,10 @@ const MyBookings = () => {
       ));
       setModifyingBooking(null);
       setCancelSuccess(diffEur > 0
-        ? `Prenotazione modificata. Differenza di €${diffEur.toFixed(2)} addebitata dal wallet.`
-        : 'Prenotazione modificata con successo.');
+        ? `${t({ it: 'Prenotazione modificata. Differenza di', en: 'Booking changed. A difference of' })} €${diffEur.toFixed(2)} ${t({ it: 'addebitata dal wallet.', en: 'was charged to your wallet.' })}`
+        : t({ it: 'Prenotazione modificata con successo.', en: 'Booking changed successfully.' }));
     } catch (err: any) {
-      setModifyError(err.message || 'Errore durante la modifica.');
+      setModifyError(err.message || t({ it: 'Errore durante la modifica.', en: 'Error while changing the booking.' }));
     } finally {
       setModifySaving(false);
     }
@@ -865,12 +865,12 @@ const MyBookings = () => {
       setCancelSuccess(
         policy.refundPercent > 0
           ? policy.refundMethod === 'card'
-            ? `Prenotazione cancellata. DR7 processerà il rimborso del ${policy.refundPercent}% sulla tua carta entro 7 giorni lavorativi.`
-            : `Prenotazione cancellata. Rimborso del ${policy.refundPercent}% accreditato sul tuo DR7 Wallet.`
-          : 'Prenotazione cancellata.'
+            ? `${t({ it: 'Prenotazione cancellata. DR7 processerà il rimborso del', en: 'Booking cancelled. DR7 will process the refund of' })} ${policy.refundPercent}% ${t({ it: 'sulla tua carta entro 7 giorni lavorativi.', en: 'to your card within 7 working days.' })}`
+            : `${t({ it: 'Prenotazione cancellata. Rimborso del', en: 'Booking cancelled. Refund of' })} ${policy.refundPercent}% ${t({ it: 'accreditato sul tuo DR7 Wallet.', en: 'credited to your DR7 Wallet.' })}`
+          : t({ it: 'Prenotazione cancellata.', en: 'Booking cancelled.' })
       );
     } catch (err: any) {
-      setCancelError(err.message || 'Errore durante la cancellazione');
+      setCancelError(err.message || t({ it: 'Errore durante la cancellazione', en: 'Error while cancelling' }));
     } finally {
       setCancellingId(null);
       setConfirmCancelId(null);
@@ -1109,7 +1109,7 @@ const MyBookings = () => {
                           }}
                           className="px-4 py-2 bg-transparent border border-blue-500/50 text-blue-400 hover:bg-blue-500/10 text-sm font-medium transition-colors"
                         >
-                          {booking.service_type === 'car_rental' ? 'Modifica prenotazione' : 'Modifica appuntamento'}
+                          {booking.service_type === 'car_rental' ? t({ it: 'Modifica prenotazione', en: 'Change booking' }) : t({ it: 'Modifica appuntamento', en: 'Change appointment' })}
                         </button>
                       </div>
                     )}
@@ -1124,7 +1124,7 @@ const MyBookings = () => {
                                 {getCancelPolicy(booking).message}
                               </p>
                               <p className="text-amber-200/70 text-xs mt-1">
-                                Sei sicuro di voler cancellare questa prenotazione?
+                                {t({ it: 'Sei sicuro di voler cancellare questa prenotazione?', en: 'Are you sure you want to cancel this booking?' })}
                               </p>
                             </div>
                             <div className="flex gap-3">
@@ -1133,7 +1133,7 @@ const MyBookings = () => {
                                 disabled={cancellingId === booking.id}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
                               >
-                                {cancellingId === booking.id ? 'Cancellazione...' : 'Conferma cancellazione'}
+                                {cancellingId === booking.id ? t({ it: 'Cancellazione...', en: 'Cancelling...' }) : t({ it: 'Conferma cancellazione', en: 'Confirm cancellation' })}
                               </button>
                               <button
                                 onClick={() => setConfirmCancelId(null)}
@@ -1148,7 +1148,7 @@ const MyBookings = () => {
                             onClick={() => { setConfirmCancelId(booking.id); setCancelError(null); setCancelSuccess(null); }}
                             className="px-4 py-2 bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/10 text-sm font-medium transition-colors"
                           >
-                            Cancella prenotazione
+                            {t({ it: 'Cancella prenotazione', en: 'Cancel booking' })}
                           </button>
                         )}
                       </div>
@@ -1174,14 +1174,10 @@ const MyBookings = () => {
           <div className="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg">
 
             <h3 className="text-lg font-semibold text-white">
-              {lang === 'it'
-                ? 'Nessuna prenotazione ancora'
-                : 'No bookings yet'}
+              {t({ it: 'Nessuna prenotazione ancora', en: 'No bookings yet' })}
             </h3>
             <p className="text-gray-400 mt-1">
-              {lang === 'it'
-                ? 'Le tue prenotazioni appariranno qui'
-                : 'Your bookings will appear here'}
+              {t({ it: 'Le tue prenotazioni appariranno qui', en: 'Your bookings will appear here' })}
             </p>
             <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
               <Link

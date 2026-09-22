@@ -60,7 +60,7 @@ const MembershipEnrollmentPage: React.FC = () => {
 
             await aggiungiArticolo({
                 tipo: 'membership',
-                titolo: `${tier.name[lang]} — ${billingCycle === 'monthly' ? (lang === 'it' ? 'Mensile' : 'Monthly') : (lang === 'it' ? 'Annuale' : 'Annual')}`,
+                titolo: `${tier.name[lang]} — ${billingCycle === 'monthly' ? t({ it: 'Mensile', en: 'Monthly' }) : t({ it: 'Annuale', en: 'Annual' })}`,
                 prezzoCents: Math.round(price * 100),
                 dati: {
                     purchase: {
@@ -128,7 +128,7 @@ const MembershipEnrollmentPage: React.FC = () => {
 
             if (dbError) {
                 console.error('Supabase error:', dbError);
-                throw new Error(`Errore nel salvataggio: ${dbError.message}`);
+                throw new Error(`${t({ it: 'Errore nel salvataggio:', en: 'Error while saving:' })} ${dbError.message}`);
             }
 
             // 2. Generate nexi_order_id (same format as car/carwash bookings)
@@ -155,14 +155,14 @@ const MembershipEnrollmentPage: React.FC = () => {
             });
 
             const nexiData = await nexiResponse.json();
-            if (!nexiResponse.ok) throw new Error(nexiData.error || 'Pagamento non riuscito');
+            if (!nexiResponse.ok) throw new Error(nexiData.error || t({ it: 'Pagamento non riuscito', en: 'Payment failed' }));
 
             sessionStorage.setItem('dr7_pending_order', nexiOrderId);
             sessionStorage.setItem('dr7_pending_type', 'membership');
 
             window.location.href = nexiData.paymentUrl;
         } catch (error: any) {
-            setPaymentError(error.message || 'Pagamento non riuscito');
+            setPaymentError(error.message || t({ it: 'Pagamento non riuscito', en: 'Payment failed' }));
             setIsProcessing(false);
         }
     };
@@ -221,9 +221,9 @@ const MembershipEnrollmentPage: React.FC = () => {
                         </div>
                         {billingCycle === 'annually' && (
                             <p className="text-green-400 text-xs text-right">
-                                {lang === 'it'
-                                    ? `Risparmi €${((tier.price.monthly.eur * 12) - price).toFixed(2).replace('.', ',')} rispetto al mensile`
-                                    : `Save €${((tier.price.monthly.eur * 12) - price).toFixed(2)} vs monthly`}
+                                {t({ it: 'Risparmi', en: 'Save' })} €{lang === 'it'
+                                    ? ((tier.price.monthly.eur * 12) - price).toFixed(2).replace('.', ',')
+                                    : ((tier.price.monthly.eur * 12) - price).toFixed(2)} {t({ it: 'rispetto al mensile', en: 'vs monthly' })}
                             </p>
                         )}
                     </div>
@@ -232,9 +232,7 @@ const MembershipEnrollmentPage: React.FC = () => {
                     <form onSubmit={handleConfirm}>
                         <div className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-center mb-4">
                             <p className="text-gray-300 text-sm">
-                                {lang === 'it'
-                                    ? 'Verrai reindirizzato alla pagina di pagamento sicura Nexi'
-                                    : 'You will be redirected to Nexi secure payment page'}
+                                {t({ it: 'Verrai reindirizzato alla pagina di pagamento sicura Nexi', en: 'You will be redirected to Nexi secure payment page' })}
                             </p>
                             <p className="text-gray-500 text-xs mt-1">
                                 {t({ it: 'Pagamento protetto e certificato', en: 'Protected and certified payment' })}
@@ -242,10 +240,9 @@ const MembershipEnrollmentPage: React.FC = () => {
                         </div>
                         <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-4 mb-4">
                             <p className="text-blue-300 text-xs">
-                                {lang === 'it'
-                                    ? `Abbonamento con rinnovo automatico ${billingCycle === 'monthly' ? 'mensile' : 'annuale'}. Puoi cancellare in qualsiasi momento dalla tua area personale.`
-                                    : `Auto-renewing ${billingCycle === 'monthly' ? 'monthly' : 'annual'} subscription. You can cancel anytime from your account page.`
-                                }
+                                {billingCycle === 'monthly'
+                                    ? t({ it: 'Abbonamento con rinnovo automatico mensile. Puoi cancellare in qualsiasi momento dalla tua area personale.', en: 'Auto-renewing monthly subscription. You can cancel anytime from your account page.' })
+                                    : t({ it: 'Abbonamento con rinnovo automatico annuale. Puoi cancellare in qualsiasi momento dalla tua area personale.', en: 'Auto-renewing annual subscription. You can cancel anytime from your account page.' })}
                             </p>
                         </div>
                         {paymentError && <p className="text-xs text-red-400 mb-3">{paymentError}</p>}

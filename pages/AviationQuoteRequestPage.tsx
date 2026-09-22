@@ -219,7 +219,7 @@ const AviationQuoteRequestPage: React.FC = () => {
     const quanti = n > 10
       ? tx('field_luggage_count_max_option_it', 'field_luggage_count_max_option_en')
       : String(n);
-    const parola = lang === 'it' ? (n === 1 ? 'bagaglio' : 'bagagli') : (n === 1 ? 'bag' : 'bags');
+    const parola = n === 1 ? t({ it: 'bagaglio', en: 'bag' }) : t({ it: 'bagagli', en: 'bags' });
     return formData.luggage_weight
       ? `${quanti} ${parola} · ${formData.luggage_weight}`
       : `${quanti} ${parola}`;
@@ -238,14 +238,13 @@ const AviationQuoteRequestPage: React.FC = () => {
   // lines in the message).
   function applyVars(s: string): string {
     const returnLine = formData.return_date
-      ? (lang === 'it' ? `Data ritorno: ${dataEuropea(formData.return_date)}\n` : `Return date: ${dataEuropea(formData.return_date)}\n`)
+      ? `${t({ it: 'Data ritorno:', en: 'Return date:' })} ${dataEuropea(formData.return_date)}\n`
       : '';
     const notesLine = formData.notes
-      ? (lang === 'it' ? `\nNote: ${formData.notes}\n` : `\nNotes: ${formData.notes}\n`)
+      ? `\n${t({ it: 'Note:', en: 'Notes:' })} ${formData.notes}\n`
       : '';
-    const isIt = lang === 'it';
-    const si = isIt ? 'Sì' : 'Yes';
-    const no = isIt ? 'No' : 'No';
+    const si = t({ it: 'Sì', en: 'Yes' });
+    const no = t({ it: 'No', en: 'No' });
     const vars: Record<string, string> = {
       '{service}': serviceType,
       '{nome}': formData.customer_name,
@@ -330,7 +329,7 @@ const AviationQuoteRequestPage: React.FC = () => {
         <div className="max-w-2xl mx-auto flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-white text-lg">{tx('loading_it', 'loading_en', lang === 'it' ? 'Caricamento...' : 'Loading...')}</p>
+            <p className="text-white text-lg">{tx('loading_it', 'loading_en', t({ it: 'Caricamento...', en: 'Loading...' }))}</p>
           </div>
         </div>
       </div>
@@ -393,9 +392,9 @@ const AviationQuoteRequestPage: React.FC = () => {
               {lang === 'it' ? copy.alert_success_it : copy.alert_success_en}
             </p>
             <p className="text-gray-500 text-sm mb-8">
-              {lang === 'it'
-                ? `Abbiamo registrato la richiesta per ${serviceType.toLowerCase()}${mezzoScelto ? ` — ${mezzoScelto}` : ''}. Ti rispondiamo ai contatti che ci hai lasciato.`
-                : `We have logged your ${serviceType.toLowerCase()} request${mezzoScelto ? ` — ${mezzoScelto}` : ''}. We will reply using the contacts you left us.`}
+              {t({ it: 'Abbiamo registrato la richiesta per', en: 'We have logged your request for' })}{' '}
+              {serviceType.toLowerCase()}{mezzoScelto ? ` — ${mezzoScelto}` : ''}
+              {t({ it: '. Ti rispondiamo ai contatti che ci hai lasciato.', en: '. We will reply using the contacts you left us.' })}
             </p>
             <button
               onClick={() => navigate('/')}
@@ -741,11 +740,11 @@ const AviationQuoteRequestPage: React.FC = () => {
           attendiOrari={nienteDaAspettare}
           dataIniziale={formData.departure_date}
           oraIniziale={formData.departure_time}
-          titolo={{ it: 'Andata: scegli il giorno', en: 'Outbound: choose the day' }}
-          sottotitolo={{
+          titolo={t({ it: 'Andata: scegli il giorno', en: 'Outbound: choose the day' })}
+          sottotitolo={t({
             it: "Poi l'orario di partenza. E' una richiesta: confermiamo noi in preventivo.",
             en: 'Then the departure time. It is a request: we confirm it in the quote.',
-          }}
+          })}
           intestazione={sceltaViaggio}
           chiudiDopoLaScelta={false}
           onConferma={(data, ora) => {
@@ -771,11 +770,11 @@ const AviationQuoteRequestPage: React.FC = () => {
           attendiOrari={nienteDaAspettare}
           dataIniziale={formData.return_date}
           oraIniziale={formData.return_time}
-          titolo={{ it: 'Ritorno: scegli il giorno', en: 'Return: choose the day' }}
-          sottotitolo={{
+          titolo={t({ it: 'Ritorno: scegli il giorno', en: 'Return: choose the day' })}
+          sottotitolo={t({
             it: "Poi l'orario di rientro. E' una richiesta: confermiamo noi in preventivo.",
             en: 'Then the return time. It is a request: we confirm it in the quote.',
-          }}
+          })}
           intestazione={
             <button
               type="button"

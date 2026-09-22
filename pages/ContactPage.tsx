@@ -7,7 +7,7 @@ import { trackPhoneCall } from '../utils/analytics';
 import { useFilmato } from '../hooks/useFilmato';
 
 const ContactPage: React.FC = () => {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const [copy, setCopy] = useState<ContactCopy | null>(null);
   // Il filmato dell'apertura, scelto da Sito > Aspetto & Funzionalita'.
   const filmato = useFilmato('contatti');
@@ -28,8 +28,8 @@ const ContactPage: React.FC = () => {
       className="min-h-screen"
     >
       <SEOHead
-        title={lang === 'it' ? 'Contatti DR7 | Prenota Auto di Lusso e Servizi in Sardegna' : 'Contact DR7 | Book Luxury Cars & Services in Sardinia'}
-        description={lang === 'it' ? 'Contatta DR7 per noleggio auto di lusso, esperienze in supercar e servizi di autolavaggio premium in Sardegna. Chiama, scrivi su WhatsApp o vieni a trovarci a Cagliari.' : 'Get in touch with DR7 for luxury car rentals, supercar experiences, and premium car wash services in Sardinia. Call, WhatsApp, or visit us in Cagliari.'}
+        title={t({ it: 'Contatti DR7 | Prenota Auto di Lusso e Servizi in Sardegna', en: 'Contact DR7 | Book Luxury Cars & Services in Sardinia' })}
+        description={t({ it: 'Contatta DR7 per noleggio auto di lusso, esperienze in supercar e servizi di autolavaggio premium in Sardegna. Chiama, scrivi su WhatsApp o vieni a trovarci a Cagliari.', en: 'Get in touch with DR7 for luxury car rentals, supercar experiences, and premium car wash services in Sardinia. Call, WhatsApp, or visit us in Cagliari.' })}
         canonical="/contact"
         jsonLd={[
           {
@@ -102,7 +102,7 @@ const ContactPage: React.FC = () => {
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/20 to-black/70" />
 
         {!copy ? (
-          <p className="w-full text-center text-gray-300 text-sm">{lang === 'it' ? 'Caricamento…' : 'Loading…'}</p>
+          <p className="w-full text-center text-gray-300 text-sm">{t({ it: 'Caricamento…', en: 'Loading…' })}</p>
         ) : (
           <>
             {/* Le firme agli angoli. Sono la voce del marchio, uguali nelle

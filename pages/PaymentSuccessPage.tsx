@@ -99,7 +99,7 @@ function premiaPuntiLavaggio(base: string, booking: { id?: string; service_type?
 
 const PaymentSuccessPage: React.FC = () => {
     const navigate = useNavigate();
-    const { lang } = useTranslation();
+    const { lang, t } = useTranslation();
     const [searchParams] = useSearchParams();
     const contact = useContactInfo();
     const { ricarica: ricaricaCarrello } = useCarrello();
@@ -911,13 +911,13 @@ const PaymentSuccessPage: React.FC = () => {
                                 amount: walletInfo?.receivedAmount?.toFixed(2) || '',
                             })
                             : purchaseType === 'prevendita'
-                            ? (lang === 'it'
-                                ? `Prevendita attiva: ${prevenditaInfo?.nome || ''}. Hai ${prevenditaInfo?.utilizzi ?? 0} utilizzi disponibili, li trovi in Le Mie Prevendite.`
-                                : `Pre-sale active: ${prevenditaInfo?.nome || ''}. You have ${prevenditaInfo?.utilizzi ?? 0} uses available under My Pre-sales.`)
+                            ? (<>
+                                {t({ it: 'Prevendita attiva:', en: 'Pre-sale active:' })} {prevenditaInfo?.nome || ''}. {t({ it: 'Hai', en: 'You have' })} {prevenditaInfo?.utilizzi ?? 0} {t({ it: 'utilizzi disponibili, li trovi in Le Mie Prevendite.', en: 'uses available under My Pre-sales.' })}
+                            </>)
                             : purchaseType === 'carrello'
-                            ? (lang === 'it'
-                                ? `Ordine completato: ${articoliCarrello} ${articoliCarrello === 1 ? 'servizio confermato' : 'servizi confermati'}. Li trovi tutti nella tua area cliente.`
-                                : `Order complete: ${articoliCarrello} ${articoliCarrello === 1 ? 'service confirmed' : 'services confirmed'}. You will find them all in your account.`)
+                            ? (<>
+                                {t({ it: 'Ordine completato:', en: 'Order complete:' })} {articoliCarrello} {articoliCarrello === 1 ? t({ it: 'servizio confermato', en: 'service confirmed' }) : t({ it: 'servizi confermati', en: 'services confirmed' })}. {t({ it: 'Li trovi tutti nella tua area cliente.', en: 'You will find them all in your account.' })}
+                            </>)
                             : s('body_generic_it', 'body_generic_en')}
                     </p>
 
@@ -979,7 +979,7 @@ const PaymentSuccessPage: React.FC = () => {
                                 onClick={() => navigate('/account/prevendite')}
                                 className="w-full bg-gray-100 text-gray-700 py-3 px-6 font-semibold hover:bg-gray-200 transition-all"
                             >
-                                {lang === 'it' ? 'Vai a Le Mie Prevendite' : 'Go to My Pre-sales'}
+                                {t({ it: 'Vai a Le Mie Prevendite', en: 'Go to My Pre-sales' })}
                             </button>
                         ) : purchaseType === 'wallet' ? (
                             <button

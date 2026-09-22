@@ -23,9 +23,13 @@ interface Bilingual { it: string; en: string }
 
 interface NoleggioServicePageProps {
   serviceType: NoleggioServiceType;
-  title: Bilingual;    // "Noleggio Mare" / "Sea Rentals"
-  subtitle: Bilingual; // tagline
-  asset: Bilingual;    // "la barca" / "the boat"
+  /**
+   * "la barca" / "the boat": entra solo nel messaggio WhatsApp a DR7, che
+   * resta in italiano. Titolo e sottotitolo della pagina non arrivano piu'
+   * da qui: sono scritti sotto con t e i due testi, cosi' si cambiano dal
+   * gestionale (Sito > Testi).
+   */
+  asset: Bilingual;
   /** Filmato di apertura, se la sezione ne ha uno (file in /public). */
   heroVideo?: { src: string; poster?: string; adatta?: 'riempi' | 'intero' };
 }
@@ -34,8 +38,18 @@ function eur(cents: number): string {
   return (cents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 }
 
-export default function NoleggioServicePage({ serviceType, title, subtitle, asset, heroVideo }: NoleggioServicePageProps) {
-  const { t, getTranslated } = useTranslation();
+export default function NoleggioServicePage({ serviceType, asset, heroVideo }: NoleggioServicePageProps) {
+  const { t } = useTranslation();
+  const titolo = serviceType === 'boat_rental'
+    ? t({ it: "Noleggio Mare", en: "Sea Rentals" })
+    : serviceType === 'heli_rental'
+      ? t({ it: "Noleggio Aria", en: "Air Rentals" })
+      : t({ it: "Soggiorni & Ospitalità", en: "Stays & Hospitality" });
+  const sottotitolo = serviceType === 'boat_rental'
+    ? t({ it: "La nostra selezione di imbarcazioni per il tuo charter in Sardegna.", en: "Our selection of boats for your charter in Sardinia." })
+    : serviceType === 'heli_rental'
+      ? t({ it: "Elicotteri e voli privati su misura, con il nostro servizio dedicato.", en: "Helicopters and bespoke private flights, with our dedicated service." })
+      : t({ it: "Case, ville e alloggi selezionati per il tuo soggiorno in Sardegna.", en: "Selected homes, villas and accommodation for your stay in Sardinia." });
   const { items, loading } = useNoleggioCatalog(serviceType);
 
   // 10/09/2026 — il filmato dell'apertura si sceglie da Sito > Aspetto &
@@ -131,16 +145,16 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
     return (
       <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
         {apertura && (
-          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={getTranslated(title)} senzaVelo={apertura.senzaVelo} compatta>
+          <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} ariaLabel={titolo} senzaVelo={apertura.senzaVelo} compatta>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-              <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+              <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{titolo}</h1>
             </div>
           </SfondoVideo>
         )}
         <div className={`max-w-3xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-2' : 'pt-28'}`}>
           {!heroVideo && (
             <header className="text-center">
-              <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
+              <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{titolo}</h1>
             </header>
           )}
           <div className="mt-6 border border-gray-800 rounded-lg bg-black/70 px-6 py-14 text-center">
@@ -162,18 +176,18 @@ export default function NoleggioServicePage({ serviceType, title, subtitle, asse
   return (
     <div className={`text-white min-h-screen ${heroVideo ? "" : "bg-black"}`}>
       {apertura && (
-        <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} senzaVelo={apertura.senzaVelo} ariaLabel={getTranslated(title)}>
+        <SfondoVideo src={apertura.src} poster={apertura.poster} adatta={apertura.adatta} senzaVelo={apertura.senzaVelo} ariaLabel={titolo}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
-            <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{titolo}</h1>
+            <p className="mt-3 text-gray-300 max-w-2xl mx-auto">{sottotitolo}</p>
           </div>
         </SfondoVideo>
       )}
       <div className={`max-w-6xl mx-auto px-4 sm:px-6 pb-20 ${heroVideo ? 'pt-12' : 'pt-28'}`}>
         {!heroVideo && (
           <header className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{getTranslated(title)}</h1>
-            <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{getTranslated(subtitle)}</p>
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight">{titolo}</h1>
+            <p className="mt-3 text-gray-400 max-w-2xl mx-auto">{sottotitolo}</p>
           </header>
         )}
 

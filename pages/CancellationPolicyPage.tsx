@@ -13,7 +13,7 @@ import {
 } from '../utils/siteCopy';
 
 const CancellationPolicyPage = () => {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   // Pull the "main" rule (highest threshold) from Centralina Pro to drive
   // the displayed numbers. Operators edit the rules in admin > Centralina
   // Pro > Automazioni > "Regole di cancellazione". Static text comes from
@@ -29,9 +29,7 @@ const CancellationPolicyPage = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const daysWord = lang === 'it'
-    ? `${thresholdDays} (${thresholdDays === 1 ? 'un' : thresholdDays}) giorn${thresholdDays === 1 ? 'o' : 'i'}`
-    : `${thresholdDays} (${thresholdDays === 1 ? 'one' : thresholdDays}) day${thresholdDays === 1 ? '' : 's'}`;
+  const daysWord = `${thresholdDays} (${thresholdDays === 1 ? t({ it: 'un', en: 'one' }) : thresholdDays}) ${thresholdDays === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })}`;
 
   const placeholders: CancellazionePlaceholderValues = {
     thresholdDays,
@@ -69,7 +67,7 @@ const CancellationPolicyPage = () => {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-6">
-            {copy ? tx(copy.page_title_it, copy.page_title_en) : (lang === 'it' ? 'Caricamento…' : 'Loading…')}
+            {copy ? tx(copy.page_title_it, copy.page_title_en) : t({ it: 'Caricamento…', en: 'Loading…' })}
           </h1>
           <p className="text-center text-gray-400 text-sm mb-12">DR7</p>
 

@@ -109,13 +109,13 @@ const MarketingConsentModal: React.FC<MarketingConsentModalProps> = ({ isOpen, o
                                     disabled={isSaving}
                                     className="w-full py-3.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
-                                    {isSaving ? 'Salvataggio...' : 'Acconsento'}
+                                    {isSaving ? t({ it: 'Salvataggio...', en: 'Saving...' }) : t({ it: 'Acconsento', en: 'I agree' })}
                                 </button>
                                 <button
                                     onClick={onClose}
                                     className="w-full py-3 text-gray-500 font-medium hover:text-white transition-colors text-sm"
                                 >
-                                    Non accetto, grazie
+                                    {t({ it: "Non accetto, grazie", en: "No, thank you" })}
                                 </button>
                             </div>
                         </div>

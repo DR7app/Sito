@@ -56,7 +56,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onFileChange, title
             <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
           </div>
           <button type="button" onClick={handleRemove} className="p-1 text-gray-400 hover:text-white">
-            Remove
+            {t({ it: "Remove", en: "Remove" })}
           </button>
         </div>
       ) : (

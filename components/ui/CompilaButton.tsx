@@ -194,38 +194,6 @@ function findConflicts(
   return conflicts
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  nome: 'Nome',
-  cognome: 'Cognome',
-  sesso: 'Sesso',
-  data_nascita: 'Data di nascita',
-  luogo_nascita: 'Luogo di nascita',
-  provincia_nascita: 'Provincia nascita',
-  codice_fiscale: 'Codice fiscale',
-  indirizzo: 'Indirizzo',
-  numero_civico: 'N. civico',
-  codice_postale: 'CAP',
-  citta_residenza: 'Città residenza',
-  provincia_residenza: 'Provincia residenza',
-  documento_tipo: 'Tipo documento',
-  documento_numero: 'N. documento',
-  documento_rilascio: 'Rilascio documento',
-  documento_scadenza: 'Scadenza documento',
-  documento_ente: 'Ente rilascio',
-  patente_numero: 'N. patente',
-  patente_tipo: 'Tipo patente',
-  patente_rilascio: 'Rilascio patente',
-  patente_scadenza: 'Scadenza patente',
-  patente_ente: 'Ente patente',
-  nautica_numero: 'N. patente nautica',
-  nautica_categoria: 'Categoria nautica',
-  nautica_limite: 'Limite dalla costa',
-  nautica_abilitazione: 'Abilitazione nautica',
-  nautica_rilascio: 'Rilascio patente nautica',
-  nautica_scadenza: 'Scadenza patente nautica',
-  nautica_ente: 'Ente patente nautica',
-}
-
 export default function CompilaButton({
   documents,
   auto = false,
@@ -238,6 +206,37 @@ export default function CompilaButton({
   disabled = false,
 }: CompilaButtonProps) {
   const { t } = useTranslation()
+  const FIELD_LABELS: Record<string, string> = {
+    nome: t({ it: 'Nome', en: 'First name' }),
+    cognome: t({ it: 'Cognome', en: 'Last name' }),
+    sesso: t({ it: 'Sesso', en: 'Sex' }),
+    data_nascita: t({ it: 'Data di nascita', en: 'Date of birth' }),
+    luogo_nascita: t({ it: 'Luogo di nascita', en: 'Place of birth' }),
+    provincia_nascita: t({ it: 'Provincia nascita', en: 'Province of birth' }),
+    codice_fiscale: t({ it: 'Codice fiscale', en: 'Tax code' }),
+    indirizzo: t({ it: 'Indirizzo', en: 'Address' }),
+    numero_civico: t({ it: 'N. civico', en: 'House no.' }),
+    codice_postale: t({ it: 'CAP', en: 'Postcode' }),
+    citta_residenza: t({ it: 'Città residenza', en: 'City of residence' }),
+    provincia_residenza: t({ it: 'Provincia residenza', en: 'Province of residence' }),
+    documento_tipo: t({ it: 'Tipo documento', en: 'Document type' }),
+    documento_numero: t({ it: 'N. documento', en: 'Document no.' }),
+    documento_rilascio: t({ it: 'Rilascio documento', en: 'Document issue date' }),
+    documento_scadenza: t({ it: 'Scadenza documento', en: 'Document expiry date' }),
+    documento_ente: t({ it: 'Ente rilascio', en: 'Issuing authority' }),
+    patente_numero: t({ it: 'N. patente', en: 'Licence no.' }),
+    patente_tipo: t({ it: 'Tipo patente', en: 'Licence type' }),
+    patente_rilascio: t({ it: 'Rilascio patente', en: 'Licence issue date' }),
+    patente_scadenza: t({ it: 'Scadenza patente', en: 'Licence expiry date' }),
+    patente_ente: t({ it: 'Ente patente', en: 'Licence authority' }),
+    nautica_numero: t({ it: 'N. patente nautica', en: 'Boat licence no.' }),
+    nautica_categoria: t({ it: 'Categoria nautica', en: 'Boat licence category' }),
+    nautica_limite: t({ it: 'Limite dalla costa', en: 'Distance from shore limit' }),
+    nautica_abilitazione: t({ it: 'Abilitazione nautica', en: 'Boat licence qualification' }),
+    nautica_rilascio: t({ it: 'Rilascio patente nautica', en: 'Boat licence issue date' }),
+    nautica_scadenza: t({ it: 'Scadenza patente nautica', en: 'Boat licence expiry date' }),
+    nautica_ente: t({ it: 'Ente patente nautica', en: 'Boat licence authority' }),
+  }
   const [isExtracting, setIsExtracting] = useState(false)
   const [conflicts, setConflicts] = useState<DataConflict[]>([])
   const [showConflicts, setShowConflicts] = useState(false)
@@ -249,7 +248,7 @@ export default function CompilaButton({
   const handleCompila = async (soloQuesti?: DocumentInput[], automatico = false) => {
     const daLeggere = soloQuesti || validDocs
     if (daLeggere.length === 0) {
-      onError?.('Carica almeno un documento prima di premere Compila automaticamente')
+      onError?.(t({ it: 'Carica almeno un documento prima di premere Compila automaticamente', en: 'Upload at least one document before pressing Auto-fill' }))
       return
     }
 
@@ -285,9 +284,9 @@ export default function CompilaButton({
             const estratto = json.data || json.extractedData
             if (res.ok && estratto) {
               results.push(estratto)
-              if (estratto.notes) notes.push(`${doc.label || 'Documento'}: ${estratto.notes}`)
+              if (estratto.notes) notes.push(`${doc.label || t({ it: 'Documento', en: 'Document' })}: ${estratto.notes}`)
             } else {
-              notes.push(`${doc.label || 'Documento'}: ${json.error || 'Non leggibile'}`)
+              notes.push(`${doc.label || t({ it: 'Documento', en: 'Document' })}: ${json.error || t({ it: 'Non leggibile', en: 'Not readable' })}`)
             }
             continue
           } else {
@@ -307,10 +306,10 @@ export default function CompilaButton({
 
         if (res.ok && estratto) {
           results.push(estratto)
-          if (estratto.notes) notes.push(`${doc.label || 'Documento'}: ${estratto.notes}`)
-          if (estratto.confidence === 'low') notes.push(`${doc.label || 'Documento'}: Lettura a bassa affidabilità`)
+          if (estratto.notes) notes.push(`${doc.label || t({ it: 'Documento', en: 'Document' })}: ${estratto.notes}`)
+          if (estratto.confidence === 'low') notes.push(`${doc.label || t({ it: 'Documento', en: 'Document' })}: ${t({ it: 'Lettura a bassa affidabilità', en: 'Low-confidence reading' })}`)
         } else {
-          notes.push(`${doc.label || 'Documento'}: ${json.error || 'Impossibile estrarre i dati'}`)
+          notes.push(`${doc.label || t({ it: 'Documento', en: 'Document' })}: ${json.error || t({ it: 'Impossibile estrarre i dati', en: 'Unable to extract the data' })}`)
         }
       }
 
@@ -320,10 +319,10 @@ export default function CompilaButton({
         // "impossibile": senza il motivo il cliente ricarica la stessa foto.
         console.error('[CompilaButton] nessun dato estratto. Note:', notes)
         const primaNota = notes[0] || ''
-        const altre = notes.length > 1 ? ` (+${notes.length - 1} altri)` : ''
+        const altre = notes.length > 1 ? ` (+${notes.length - 1} ${t({ it: 'altri', en: 'more' })})` : ''
         onError?.(primaNota
-          ? `Lettura non riuscita — ${primaNota}${altre}`
-          : 'Impossibile estrarre dati dai documenti caricati')
+          ? `${t({ it: 'Lettura non riuscita —', en: 'Reading failed —' })} ${primaNota}${altre}`
+          : t({ it: 'Impossibile estrarre dati dai documenti caricati', en: 'Unable to extract data from the uploaded documents' }))
         setExtractionNotes(notes)
         setIsExtracting(false)
         return
@@ -376,7 +375,7 @@ export default function CompilaButton({
         onDataExtracted(safeData, [])
       }
     } catch (err: any) {
-      onError?.(err.message || 'Errore durante la lettura del documento')
+      onError?.(err.message || t({ it: 'Errore durante la lettura del documento', en: 'Error while reading the document' }))
     } finally {
       setIsExtracting(false)
     }
@@ -462,8 +461,8 @@ export default function CompilaButton({
         } ${className}`}
       >
         {isExtracting
-          ? 'Lettura in corso...'
-          : label || (auto ? 'Rileggi i documenti' : 'Compila automaticamente')}
+          ? t({ it: 'Lettura in corso...', en: 'Reading...' })
+          : label || (auto ? t({ it: 'Rileggi i documenti', en: 'Re-read the documents' }) : t({ it: 'Compila automaticamente', en: 'Auto-fill' }))}
       </button>
 
       {/* 21/09/2026 (direzione): le note del lettore non si mostrano piu' al
@@ -508,19 +507,19 @@ export default function CompilaButton({
                 onClick={handleApplyWithOverwrite}
                 className="flex-1 px-4 py-2 bg-yellow-600 text-white font-semibold text-sm hover:bg-yellow-500"
               >
-                Usa dati documento
+                {t({ it: 'Usa dati documento', en: 'Use document data' })}
               </button>
               <button
                 onClick={handleApplyKeepExisting}
                 className="flex-1 px-4 py-2 bg-gray-700 text-white font-semibold text-sm hover:bg-gray-600"
               >
-                Mantieni attuali
+                {t({ it: 'Mantieni attuali', en: 'Keep current' })}
               </button>
               <button
                 onClick={() => { setShowConflicts(false); setPendingData(null); setConflicts([]); }}
                 className="px-4 py-2 bg-gray-800 text-gray-400 text-sm hover:bg-gray-700"
               >
-                Annulla
+                {t({ it: 'Annulla', en: 'Cancel' })}
               </button>
             </div>
           </div>

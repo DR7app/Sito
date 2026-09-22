@@ -1442,12 +1442,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           setDeliveryError(null);
         } else {
           const err = await res.json();
-          setDeliveryError(err.error || 'Errore nel calcolo della distanza');
+          setDeliveryError(err.error || t({ it: 'Errore nel calcolo della distanza', en: 'Error calculating the distance' }));
           setDeliveryInfo(null);
         }
       } catch (err) {
         console.warn('Delivery distance calculation failed:', err);
-        setDeliveryError('Impossibile calcolare la distanza. Riprova.');
+        setDeliveryError(t({ it: 'Impossibile calcolare la distanza. Riprova.', en: 'Unable to calculate the distance. Please try again.' }));
         setDeliveryInfo(null);
       } finally {
         setIsCalculatingDelivery(false);
@@ -2394,7 +2394,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             setFormData(prev => ({ ...prev, pickupTime: adjustedTime }));
             setAvailabilityError(null);
             setPartialUnavailabilityWarning(
-              `Questo veicolo sarà disponibile dalle ${adjustedTime}. L'orario di ritiro è stato aggiornato automaticamente.`
+              `${t({ it: 'Questo veicolo sarà disponibile dalle', en: 'This vehicle will be available from' })} ${adjustedTime}. ${t({ it: "L'orario di ritiro è stato aggiornato automaticamente.", en: 'The pick-up time has been updated automatically.' })}`
             );
           } else {
             const conflictEndFormatted = conflictEnd.toLocaleDateString('it-IT', {
@@ -2404,7 +2404,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome'
             });
             setAvailabilityError(
-              `Veicolo non disponibile per le date selezionate. Già prenotato fino al ${conflictEndFormatted} alle ${conflictTimeFormatted}.`
+              `${t({ it: 'Veicolo non disponibile per le date selezionate. Già prenotato fino al', en: 'Vehicle not available for the selected dates. Already booked until' })} ${conflictEndFormatted} ${t({ it: 'alle', en: 'at' })} ${conflictTimeFormatted}.`
             );
             setIsCheckingAvailability(false);
             return;
@@ -2421,7 +2421,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
         if (partialInfo.isPartiallyUnavailable && partialInfo.availableAfter) {
           setPartialUnavailabilityWarning(
-            `Attenzione: questo veicolo sara disponibile dopo le ${partialInfo.availableAfter}.`
+            `${t({ it: 'Attenzione: questo veicolo sara disponibile dopo le', en: 'Note: this vehicle will be available after' })} ${partialInfo.availableAfter}.`
           );
         }
 
@@ -2435,7 +2435,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           const daysDiff = (mustReturnBy.getTime() - new Date(dropoffDateTime).getTime()) / (1000 * 60 * 60 * 24);
           if (daysDiff < 3) {
             setPartialUnavailabilityWarning(
-              `Questo veicolo ha una prenotazione successiva. Riconsegna entro il ${mustReturnDate} alle ${mustReturnTime} o prima.`
+              `${t({ it: 'Questo veicolo ha una prenotazione successiva. Riconsegna entro il', en: 'This vehicle has a following booking. Return by' })} ${mustReturnDate} ${t({ it: 'alle', en: 'at' })} ${mustReturnTime} ${t({ it: 'o prima.', en: 'or earlier.' })}`
             );
           }
         }
@@ -2494,7 +2494,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       item?.name || null,
     ).then(esito => {
       if (annullato) return;
-      setPrevenditaErrore(esito.ok ? null : (esito.errore || 'Prevendita non utilizzabile per queste date'));
+      setPrevenditaErrore(esito.ok ? null : (esito.errore || t({ it: 'Prevendita non utilizzabile per queste date', en: 'Pre-sale not usable for these dates' })));
       setPrevenditaInVerifica(false);
     });
     return () => { annullato = true; };
@@ -3161,12 +3161,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     if (name === 'pickupDate') {
       const currentDate = new Date().toISOString().split('T')[0];
       if (value < currentDate) {
-        setErrors(prev => ({ ...prev, pickupDate: "Non puoi selezionare una data passata." }));
+        setErrors(prev => ({ ...prev, pickupDate: t({ it: "Non puoi selezionare una data passata.", en: "You cannot select a past date." }) }));
         return; // Don't update the form data
       }
       const dayOfWeek = getDayOfWeek(value);
       if (dayOfWeek === 0) {
-        setErrors(prev => ({ ...prev, pickupDate: "Siamo chiusi la domenica. Seleziona un altro giorno per il ritiro." }));
+        setErrors(prev => ({ ...prev, pickupDate: t({ it: "Siamo chiusi la domenica. Seleziona un altro giorno per il ritiro.", en: "We are closed on Sundays. Please select another day for pick-up." }) }));
       } else {
         setErrors(prev => ({ ...prev, pickupDate: "" }));
       }
@@ -3205,7 +3205,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     if (name === 'returnDate' && value) {
       const dayOfWeek = getDayOfWeek(value);
       if (dayOfWeek === 0) {
-        setErrors(prev => ({ ...prev, returnDate: "Siamo chiusi la domenica. Seleziona un altro giorno per la riconsegna." }));
+        setErrors(prev => ({ ...prev, returnDate: t({ it: "Siamo chiusi la domenica. Seleziona un altro giorno per la riconsegna.", en: "We are closed on Sundays. Please select another day for drop-off." }) }));
       } else {
         setErrors(prev => ({ ...prev, returnDate: '' }));
       }
@@ -3484,18 +3484,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // che non sono gli id di questa schermata, quindi non valgono come
       // scelta — si accetta solo un id presente fra le opzioni mostrate.
       if (!pickupLocs.some(l => l.id === formData.pickupLocation)) {
-        newErrors.pickupLocation = "Scegli il luogo di ritiro: DR7 Cagliari o domicilio.";
+        newErrors.pickupLocation = t({ it: "Scegli il luogo di ritiro: DR7 Cagliari o domicilio.", en: "Choose the pick-up location: DR7 Cagliari or your address." });
       }
       if (!returnLocs.some(l => l.id === formData.returnLocation)) {
-        newErrors.returnLocation = "Scegli il luogo di riconsegna: DR7 Cagliari o domicilio.";
+        newErrors.returnLocation = t({ it: "Scegli il luogo di riconsegna: DR7 Cagliari o domicilio.", en: "Choose the drop-off location: DR7 Cagliari or your address." });
       }
       // 20/09/2026: fascia d'eta' e residenza servono per calcolare kasko e
       // cauzione. Si chiedono solo a chi non le ha gia' in scheda cliente.
       if (!fasciaNota && !fasciaDichiarata) {
-        newErrors.fasciaDichiarata = "Indica l'età del conducente.";
+        newErrors.fasciaDichiarata = t({ it: "Indica l'età del conducente.", en: "Enter the driver's age." });
       }
       if (!residenzaNota && !residenzaDichiarata) {
-        newErrors.residenzaDichiarata = "Indica la residenza del conducente.";
+        newErrors.residenzaDichiarata = t({ it: "Indica la residenza del conducente.", en: "Enter the driver's residence." });
       }
       // When coming from search, dates are already validated — skip the rest
       if (isFromSearch) {
@@ -3503,10 +3503,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         return Object.keys(newErrors).length === 0;
       }
       if (!formData.pickupDate || formData.pickupDate.trim() === '') {
-        newErrors.pickupDate = "La data di ritiro è obbligatoria.";
+        newErrors.pickupDate = t({ it: "La data di ritiro è obbligatoria.", en: "The pick-up date is required." });
       }
       if (!formData.returnDate || formData.returnDate.trim() === '') {
-        newErrors.returnDate = "La data di riconsegna è obbligatoria.";
+        newErrors.returnDate = t({ it: "La data di riconsegna è obbligatoria.", en: "The drop-off date is required." });
       }
       // Block urban/corporate vehicles after March 25
       if (isUtilitaria && formData.returnDate > UTILITARIE_MAX_DATE) {
@@ -3540,9 +3540,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         // Reject only when the return is strictly BEFORE the pickup date,
         // or when chronologically the return time is at/before pickup time.
         if (formData.returnDate < formData.pickupDate) {
-          newErrors.date = "La data di riconsegna non può essere precedente al ritiro.";
+          newErrors.date = t({ it: "La data di riconsegna non può essere precedente al ritiro.", en: "The drop-off date cannot be before the pick-up." });
         } else if (diffMs <= 0) {
-          newErrors.date = "L'ora di riconsegna deve essere successiva al ritiro.";
+          newErrors.date = t({ it: "L'ora di riconsegna deve essere successiva al ritiro.", en: "The drop-off time must be after the pick-up." });
         } else if (rentalDays < 0.99 && !isFridayToSaturday && !isSameDay) {
           // Check if this is a constrained availability window
           let isConstrainedSlot = false;
@@ -3566,14 +3566,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 const startDateStr = windowStart.toLocaleDateString(dateLocale(lang), { day: 'numeric', month: 'short' });
                 const endDateStr = windowEnd.toLocaleDateString(dateLocale(lang), { day: 'numeric', month: 'short' });
                 setShortSlotWarning(
-                  `Attenzione: questo veicolo è disponibile solo per questo slot ridotto (${startDateStr} ${startStr} → ${endDateStr} ${endStr}).`
+                  `${t({ it: 'Attenzione: questo veicolo è disponibile solo per questo slot ridotto', en: 'Note: this vehicle is only available for this shorter slot' })} (${startDateStr} ${startStr} → ${endDateStr} ${endStr}).`
                 );
               }
             }
           }
 
           if (!isConstrainedSlot) {
-            newErrors.date = "Il noleggio minimo è di 1 giorno (22h30).";
+            newErrors.date = t({ it: "Il noleggio minimo è di 1 giorno (22h30).", en: "The minimum rental is 1 day (22h30)." });
             setShortSlotWarning(null);
           }
         } else {
@@ -3583,13 +3583,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         // Check minimum rental duration of 2 hours for airport drop-offs
         const isAirportDropoff = formData.returnLocation === 'cagliari_airport';
         if (isAirportDropoff && diffHours < 2) {
-          newErrors.returnTime = "Per la riconsegna in aeroporto, la durata minima del noleggio è di 2 ore.";
+          newErrors.returnTime = t({ it: "Per la riconsegna in aeroporto, la durata minima del noleggio è di 2 ore.", en: "For airport drop-off, the minimum rental duration is 2 hours." });
         }
 
         // Check Sunday drop-off (CLOSED)
         // returnDayOfWeek already declared above
         if (returnDayOfWeek === 0) { // Sunday = 0
-          newErrors.returnDate = "Siamo chiusi la domenica. Seleziona un altro giorno per la riconsegna.";
+          newErrors.returnDate = t({ it: "Siamo chiusi la domenica. Seleziona un altro giorno per la riconsegna.", en: "We are closed on Sundays. Please select another day for drop-off." });
         }
 
         // Check Saturday drop-off time limits
@@ -3601,12 +3601,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           if (isAirportDropoff) {
             // Airport: maximum 11:00
             if (returnTimeInMinutes > 11 * 60) {
-              newErrors.returnTime = "Il sabato, la riconsegna in aeroporto deve essere entro le 11:00.";
+              newErrors.returnTime = t({ it: "Il sabato, la riconsegna in aeroporto deve essere entro le 11:00.", en: "On Saturdays, airport drop-off must be by 11:00." });
             }
           } else {
             // Office Saturday: 09:00–15:00 single window (no afternoon return)
             if (returnTimeInMinutes < 9 * 60 || returnTimeInMinutes > 15 * 60) {
-              newErrors.returnTime = "Il sabato, la riconsegna in ufficio è dalle 09:00 alle 15:00.";
+              newErrors.returnTime = t({ it: "Il sabato, la riconsegna in ufficio è dalle 09:00 alle 15:00.", en: "On Saturdays, office drop-off is from 09:00 to 15:00." });
             }
           }
         }
@@ -3614,7 +3614,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         // Server-side availability check (checkVehicleAvailability) handles conflict detection
       }
       if (formData.pickupDate && getDayOfWeek(formData.pickupDate) === 0) {
-        newErrors.pickupDate = "Siamo chiusi la domenica. Seleziona un altro giorno per il ritiro.";
+        newErrors.pickupDate = t({ it: "Siamo chiusi la domenica. Seleziona un altro giorno per il ritiro.", en: "We are closed on Sundays. Please select another day for pick-up." });
       }
 
       // Availability error is shown as a warning near date inputs (line ~3966).
@@ -3622,20 +3622,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Delivery address validation
       if (formData.pickupLocation === 'home_delivery') {
-        if (!formData.deliveryPickupVia?.trim()) newErrors.deliveryPickupVia = "Via obbligatoria.";
-        if (!formData.deliveryPickupNumero?.trim()) newErrors.deliveryPickupNumero = "Numero civico obbligatorio.";
-        if (!formData.deliveryPickupCap?.trim()) newErrors.deliveryPickupCap = "CAP obbligatorio.";
-        if (!formData.deliveryPickupCitta?.trim()) newErrors.deliveryPickupCitta = "Città obbligatoria.";
-        if (!formData.deliveryPickupProvincia?.trim()) newErrors.deliveryPickupProvincia = "Provincia obbligatoria.";
-        if (!formData.deliveryPickupKm || formData.deliveryPickupKm <= 0) newErrors.deliveryPickupKm = "Inserisci la distanza in km.";
+        if (!formData.deliveryPickupVia?.trim()) newErrors.deliveryPickupVia = t({ it: "Via obbligatoria.", en: "Street is required." });
+        if (!formData.deliveryPickupNumero?.trim()) newErrors.deliveryPickupNumero = t({ it: "Numero civico obbligatorio.", en: "House number is required." });
+        if (!formData.deliveryPickupCap?.trim()) newErrors.deliveryPickupCap = t({ it: "CAP obbligatorio.", en: "Postcode is required." });
+        if (!formData.deliveryPickupCitta?.trim()) newErrors.deliveryPickupCitta = t({ it: "Città obbligatoria.", en: "City is required." });
+        if (!formData.deliveryPickupProvincia?.trim()) newErrors.deliveryPickupProvincia = t({ it: "Provincia obbligatoria.", en: "Province is required." });
+        if (!formData.deliveryPickupKm || formData.deliveryPickupKm <= 0) newErrors.deliveryPickupKm = t({ it: "Inserisci la distanza in km.", en: "Enter the distance in km." });
       }
       if (formData.returnLocation === 'home_delivery') {
-        if (!formData.deliveryReturnVia?.trim()) newErrors.deliveryReturnVia = "Via obbligatoria.";
-        if (!formData.deliveryReturnNumero?.trim()) newErrors.deliveryReturnNumero = "Numero civico obbligatorio.";
-        if (!formData.deliveryReturnCap?.trim()) newErrors.deliveryReturnCap = "CAP obbligatorio.";
-        if (!formData.deliveryReturnCitta?.trim()) newErrors.deliveryReturnCitta = "Città obbligatoria.";
-        if (!formData.deliveryReturnProvincia?.trim()) newErrors.deliveryReturnProvincia = "Provincia obbligatoria.";
-        if (!formData.deliveryReturnKm || formData.deliveryReturnKm <= 0) newErrors.deliveryReturnKm = "Inserisci la distanza in km.";
+        if (!formData.deliveryReturnVia?.trim()) newErrors.deliveryReturnVia = t({ it: "Via obbligatoria.", en: "Street is required." });
+        if (!formData.deliveryReturnNumero?.trim()) newErrors.deliveryReturnNumero = t({ it: "Numero civico obbligatorio.", en: "House number is required." });
+        if (!formData.deliveryReturnCap?.trim()) newErrors.deliveryReturnCap = t({ it: "CAP obbligatorio.", en: "Postcode is required." });
+        if (!formData.deliveryReturnCitta?.trim()) newErrors.deliveryReturnCitta = t({ it: "Città obbligatoria.", en: "City is required." });
+        if (!formData.deliveryReturnProvincia?.trim()) newErrors.deliveryReturnProvincia = t({ it: "Provincia obbligatoria.", en: "Province is required." });
+        if (!formData.deliveryReturnKm || formData.deliveryReturnKm <= 0) newErrors.deliveryReturnKm = t({ it: "Inserisci la distanza in km.", en: "Enter the distance in km." });
       }
     }
     // 20/09/2026: la validazione del conducente stava qui. Il passo e' stato
@@ -3653,7 +3653,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const insIsRCA = isRcaSelected(insOpts, formData.insuranceOption);
         const mandatoryRcaDeposit = insIsRCA && (rcaOpt?.mandatoryDeposit || 0) > 0;
         if (!mandatoryRcaDeposit && !formData.depositOption) {
-          newErrors.depositOption = "Seleziona un'opzione per la cauzione.";
+          newErrors.depositOption = t({ it: "Seleziona un'opzione per la cauzione.", en: "Select a deposit option." });
         }
       }
     }
@@ -3662,26 +3662,26 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // questo ultimo passo. Fronte e retro di patente, identita' e codice
       // fiscale — chi li ha gia' in archivio non li ricarica.
       if (!formData.licenseImage && !hasStoredDocs.licensePath) {
-        newErrors.licenseImage = "La foto della patente (fronte) è obbligatoria.";
+        newErrors.licenseImage = t({ it: "La foto della patente (fronte) è obbligatoria.", en: "A photo of the driving licence (front) is required." });
       }
       if (!formData.licenseImageBack && !hasStoredDocs.licensePath) {
-        newErrors.licenseImageBack = "La foto della patente (retro) è obbligatoria.";
+        newErrors.licenseImageBack = t({ it: "La foto della patente (retro) è obbligatoria.", en: "A photo of the driving licence (back) is required." });
       }
       if (!formData.idImage && !hasStoredDocs.idPath) {
-        newErrors.idImage = "La foto del documento d'identità (fronte) è obbligatoria.";
+        newErrors.idImage = t({ it: "La foto del documento d'identità (fronte) è obbligatoria.", en: "A photo of the ID document (front) is required." });
       }
       if (!formData.idImageBack && !hasStoredDocs.idPath) {
-        newErrors.idImageBack = "La foto del documento d'identità (retro) è obbligatoria.";
+        newErrors.idImageBack = t({ it: "La foto del documento d'identità (retro) è obbligatoria.", en: "A photo of the ID document (back) is required." });
       }
       // 20/09/2026 (direzione): il codice fiscale e' obbligatorio per chi e'
       // italiano — serve alla fattura. Chi ha spuntato "Non sono italiano" (o
       // ha la residenza fuori Italia) non se lo vede nemmeno chiedere.
       if (!senzaCodiceFiscale) {
         if (!formData.cfImage && !hasStoredDocs.cfPath) {
-          newErrors.cfImage = "La foto del codice fiscale (fronte) è obbligatoria.";
+          newErrors.cfImage = t({ it: "La foto del codice fiscale (fronte) è obbligatoria.", en: "A photo of the tax code card (front) is required." });
         }
         if (!formData.cfImageBack && !hasStoredDocs.cfPath) {
-          newErrors.cfImageBack = "La foto del codice fiscale (retro) è obbligatoria.";
+          newErrors.cfImageBack = t({ it: "La foto del codice fiscale (retro) è obbligatoria.", en: "A photo of the tax code card (back) is required." });
         }
       }
       // 20/09/2026: il secondo conducente si compila in questo passo, quindi
@@ -3690,25 +3690,25 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       const requiredYears = isBMW_M4 ? 5 : 3;
       if (formData.addSecondDriver) {
         const sd = formData.secondDriver;
-        if (!sd.firstName.trim()) newErrors['secondDriver.firstName'] = "Nome obbligatorio.";
-        if (!sd.lastName.trim()) newErrors['secondDriver.lastName'] = "Cognome obbligatorio.";
-        if (!sd.email.trim()) newErrors['secondDriver.email'] = "Email obbligatoria.";
-        if (!sd.phone.trim()) newErrors['secondDriver.phone'] = "Telefono obbligatorio.";
+        if (!sd.firstName.trim()) newErrors['secondDriver.firstName'] = t({ it: "Nome obbligatorio.", en: "First name is required." });
+        if (!sd.lastName.trim()) newErrors['secondDriver.lastName'] = t({ it: "Cognome obbligatorio.", en: "Last name is required." });
+        if (!sd.email.trim()) newErrors['secondDriver.email'] = t({ it: "Email obbligatoria.", en: "Email is required." });
+        if (!sd.phone.trim()) newErrors['secondDriver.phone'] = t({ it: "Telefono obbligatorio.", en: "Phone is required." });
         if (!sd.birthDate) {
-          newErrors['secondDriver.birthDate'] = "Data di nascita obbligatoria.";
+          newErrors['secondDriver.birthDate'] = t({ it: "Data di nascita obbligatoria.", en: "Date of birth is required." });
         } else {
           const sdAge = calculateAgeFromDDMMYYYY(sd.birthDate);
-          if (sdAge < 18) newErrors['secondDriver.birthDate'] = "Il secondo conducente deve avere almeno 18 anni.";
+          if (sdAge < 18) newErrors['secondDriver.birthDate'] = t({ it: "Il secondo conducente deve avere almeno 18 anni.", en: "The second driver must be at least 18 years old." });
         }
-        if (!sd.licenseNumber.trim()) newErrors['secondDriver.licenseNumber'] = "Numero patente obbligatorio.";
+        if (!sd.licenseNumber.trim()) newErrors['secondDriver.licenseNumber'] = t({ it: "Numero patente obbligatorio.", en: "Licence number is required." });
         if (!sd.licenseIssueDate) {
-          newErrors['secondDriver.licenseIssueDate'] = "Data rilascio patente obbligatoria.";
+          newErrors['secondDriver.licenseIssueDate'] = t({ it: "Data rilascio patente obbligatoria.", en: "Licence issue date is required." });
         } else {
           const sdLicenseYears = calculateYearsSince(sd.licenseIssueDate);
           if (sdLicenseYears < requiredYears) {
             newErrors['secondDriver.licenseIssueDate'] = isBMW_M4
-              ? "Per la BMW M4 è richiesta una patente con almeno 5 anni di anzianità."
-              : "È richiesta una patente con almeno 3 anni di anzianità.";
+              ? t({ it: "Per la BMW M4 è richiesta una patente con almeno 5 anni di anzianità.", en: "The BMW M4 requires a licence held for at least 5 years." })
+              : t({ it: "È richiesta una patente con almeno 3 anni di anzianità.", en: "A licence held for at least 3 years is required." });
           }
         }
         // La scadenza NON e' obbligatoria: le patenti francesi (modello
@@ -3717,30 +3717,30 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         if (sd.licenseExpiryDate) {
           const today = new Date().toISOString().split('T')[0];
           if (sd.licenseExpiryDate < today) {
-            newErrors['secondDriver.licenseExpiryDate'] = "La patente è scaduta.";
+            newErrors['secondDriver.licenseExpiryDate'] = t({ it: "La patente è scaduta.", en: "The licence has expired." });
           }
         }
-        if (!sd.countryOfIssue) newErrors['secondDriver.countryOfIssue'] = "Il paese di rilascio è obbligatorio.";
-        if (!sd.licenseImage) newErrors['secondDriver.licenseImage'] = "Patente (fronte) obbligatoria.";
-        if (!sd.licenseImageBack) newErrors['secondDriver.licenseImageBack'] = "Patente (retro) obbligatoria.";
-        if (!sd.idImage) newErrors['secondDriver.idImage'] = "Documento (fronte) obbligatorio.";
-        if (!sd.idImageBack) newErrors['secondDriver.idImageBack'] = "Documento (retro) obbligatorio.";
+        if (!sd.countryOfIssue) newErrors['secondDriver.countryOfIssue'] = t({ it: "Il paese di rilascio è obbligatorio.", en: "The country of issue is required." });
+        if (!sd.licenseImage) newErrors['secondDriver.licenseImage'] = t({ it: "Patente (fronte) obbligatoria.", en: "Licence (front) is required." });
+        if (!sd.licenseImageBack) newErrors['secondDriver.licenseImageBack'] = t({ it: "Patente (retro) obbligatoria.", en: "Licence (back) is required." });
+        if (!sd.idImage) newErrors['secondDriver.idImage'] = t({ it: "Documento (fronte) obbligatorio.", en: "ID document (front) is required." });
+        if (!sd.idImageBack) newErrors['secondDriver.idImageBack'] = t({ it: "Documento (retro) obbligatorio.", en: "ID document (back) is required." });
         // 20/09/2026 (direzione): stessa regola del primo conducente — se e'
         // italiano il codice fiscale serve, altrimenti non si chiede.
         if (!senzaCodiceFiscale) {
-          if (!sd.cfImage) newErrors['secondDriver.cfImage'] = "Codice fiscale (fronte) obbligatorio.";
-          if (!sd.cfImageBack) newErrors['secondDriver.cfImageBack'] = "Codice fiscale (retro) obbligatorio.";
-          if (!String(sd.codiceFiscale || '').trim()) newErrors['secondDriver.codiceFiscale'] = "Codice fiscale obbligatorio.";
+          if (!sd.cfImage) newErrors['secondDriver.cfImage'] = t({ it: "Codice fiscale (fronte) obbligatorio.", en: "Tax code card (front) is required." });
+          if (!sd.cfImageBack) newErrors['secondDriver.cfImageBack'] = t({ it: "Codice fiscale (retro) obbligatorio.", en: "Tax code card (back) is required." });
+          if (!String(sd.codiceFiscale || '').trim()) newErrors['secondDriver.codiceFiscale'] = t({ it: "Codice fiscale obbligatorio.", en: "Tax code is required." });
         }
       }
       if (!formData.confirmsDocuments) {
-        newErrors.confirmsDocuments = "Devi confermare che i documenti sono corretti.";
+        newErrors.confirmsDocuments = t({ it: "Devi confermare che i documenti sono corretti.", en: "You must confirm that the documents are correct." });
       }
       if (!formData.agreesToTerms) {
-        newErrors.agreesToTerms = "Devi accettare i termini e le condizioni.";
+        newErrors.agreesToTerms = t({ it: "Devi accettare i termini e le condizioni.", en: "You must accept the terms and conditions." });
       }
       if (!formData.agreesToPrivacy) {
-        newErrors.agreesToPrivacy = "Devi accettare l'informativa sulla privacy.";
+        newErrors.agreesToPrivacy = t({ it: "Devi accettare l'informativa sulla privacy.", en: "You must accept the privacy policy." });
       }
     }
     setErrors(newErrors);
@@ -3755,13 +3755,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
    */
   const finalizeBooking = async (paymentIntentId?: string) => {
     if (!user) {
-      setErrors(prev => ({ ...prev, form: "You must be logged in to book." }));
+      setErrors(prev => ({ ...prev, form: t({ it: "You must be logged in to book.", en: "You must be logged in to book." }) }));
       setIsProcessing(false);
       return;
     }
 
     if (!formData.pickupDate || !formData.returnDate) {
-      setErrors(prev => ({ ...prev, form: "Pickup and return dates are required." }));
+      setErrors(prev => ({ ...prev, form: t({ it: "Pickup and return dates are required.", en: "Pickup and return dates are required." }) }));
       setIsProcessing(false);
       return;
     }
@@ -3779,7 +3779,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (preInsertConflicts.length > 0) {
         const first = preInsertConflicts[0] as { _checkFailed?: boolean; availableFrom?: string; _availableFrom?: string }
         if (first?._checkFailed) {
-          setErrors(prev => ({ ...prev, form: 'Impossibile verificare la disponibilità in questo momento. Riprova fra qualche secondo.' }));
+          setErrors(prev => ({ ...prev, form: t({ it: 'Impossibile verificare la disponibilità in questo momento. Riprova fra qualche secondo.', en: 'Unable to check availability right now. Please try again in a few seconds.' }) }));
           setIsProcessing(false);
           return;
         }
@@ -3787,9 +3787,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const availFrom = first?.availableFrom || first?._availableFrom;
         if (availFrom) {
           const availTime = new Date(availFrom).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Rome' });
-          setErrors(prev => ({ ...prev, form: `Il veicolo non è disponibile a quest\'orario. Disponibile dalle ${availTime}.` }));
+          setErrors(prev => ({ ...prev, form: `${t({ it: "Il veicolo non è disponibile a quest'orario. Disponibile dalle", en: 'The vehicle is not available at this time. Available from' })} ${availTime}.` }));
         } else {
-          setErrors(prev => ({ ...prev, form: 'Il veicolo è stato appena prenotato da un altro utente. Seleziona date diverse.' }));
+          setErrors(prev => ({ ...prev, form: t({ it: 'Il veicolo è stato appena prenotato da un altro utente. Seleziona date diverse.', en: 'The vehicle has just been booked by another user. Please select different dates.' }) }));
         }
         setIsProcessing(false);
         return;
@@ -3798,7 +3798,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // Anche un'eccezione qui blocca il booking: meglio errore inviato al
       // cliente che booking-fantasma su auto gia' occupata.
       console.warn('[finalizeBooking] Pre-insert availability re-check failed:', e);
-      setErrors(prev => ({ ...prev, form: 'Impossibile verificare la disponibilità. Riprova fra qualche secondo.' }));
+      setErrors(prev => ({ ...prev, form: t({ it: 'Impossibile verificare la disponibilità. Riprova fra qualche secondo.', en: 'Unable to check availability. Please try again in a few seconds.' }) }));
       setIsProcessing(false);
       return;
     }
@@ -4140,7 +4140,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       setIsProcessing(false);
 
     } catch (e: any) {
-      setErrors(prev => ({ ...prev, form: `Booking failed: ${e.message}` }));
+      setErrors(prev => ({ ...prev, form: `${t({ it: 'Booking failed:', en: 'Booking failed:' })} ${e.message}` }));
       setIsProcessing(false);
     }
   };
@@ -4148,13 +4148,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // Validate discount code (supports both birthday codes and marketing codes)
   const validateDiscountCode = async () => {
     if (!discountCode.trim()) {
-      setDiscountCodeError('Inserisci un codice sconto');
+      setDiscountCodeError(t({ it: 'Inserisci un codice sconto', en: 'Enter a discount code' }));
       return;
     }
 
     // Check if user is logged in
     if (!user) {
-      setDiscountCodeError('Devi effettuare il login per utilizzare un codice sconto');
+      setDiscountCodeError(t({ it: 'Devi effettuare il login per utilizzare un codice sconto', en: 'You must log in to use a discount code' }));
       return;
     }
 
@@ -4190,7 +4190,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       const rawResult = await response.json();
 
       if (!response.ok || !rawResult.valid) {
-        setDiscountCodeError(rawResult.message || rawResult.error || 'Codice non valido');
+        setDiscountCodeError(rawResult.message || rawResult.error || t({ it: 'Codice non valido', en: 'Invalid code' }));
         setDiscountCodeValid(false);
         setAppliedDiscount(null);
         return;
@@ -4201,7 +4201,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Check if rental credit is already used (for birthday codes)
       if (result.code_type === 'birthday' && result.rental_used) {
-        setDiscountCodeError('Il credito noleggio di questo codice è già stato utilizzato');
+        setDiscountCodeError(t({ it: 'Il credito noleggio di questo codice è già stato utilizzato', en: 'The rental credit of this code has already been used' }));
         setDiscountCodeValid(false);
         setAppliedDiscount(null);
         return;
@@ -4224,7 +4224,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         );
 
         if (!emailMatch && !phoneMatch) {
-          setDiscountCodeError('Questo codice sconto è riservato a un altro cliente. Verifica di aver effettuato il login con lo stesso account.');
+          setDiscountCodeError(t({ it: 'Questo codice sconto è riservato a un altro cliente. Verifica di aver effettuato il login con lo stesso account.', en: 'This discount code is reserved for another customer. Make sure you are logged in with the same account.' }));
           setDiscountCodeValid(false);
           setAppliedDiscount(null);
           return;
@@ -4259,7 +4259,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
     } catch (error: any) {
       console.error('Error validating discount code:', error);
-      setDiscountCodeError('Errore nella verifica del codice');
+      setDiscountCodeError(t({ it: 'Errore nella verifica del codice', en: 'Error verifying the code' }));
       setDiscountCodeValid(false);
     } finally {
       setIsValidatingCode(false);
@@ -4468,7 +4468,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || 'Errore salvataggio preventivo');
+        throw new Error(err.error || t({ it: 'Errore salvataggio preventivo', en: 'Error saving the quote' }));
       }
 
       setPreventivoSaved(true);
@@ -4552,7 +4552,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // Credit wallet requires login
     if (normalizedPaymentMethod === 'credit' && !user?.id) {
       clearTimeout(safetyTimer);
-      setPaymentError('Devi effettuare il login per procedere.');
+      setPaymentError(t({ it: 'Devi effettuare il login per procedere.', en: 'You must log in to continue.' }));
       isSubmittingRef.current = false;
       setIsProcessing(false);
       return;
@@ -4564,7 +4564,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       const hasBalance = await hasSufficientBalance(user.id, grandTotal);
       if (!hasBalance) {
         clearTimeout(safetyTimer);
-        setPaymentError(`Credito insufficiente. Saldo attuale: €${creditBalance.toFixed(2)}, Richiesto: €${grandTotal.toFixed(2)}`);
+        setPaymentError(`${t({ it: 'Credito insufficiente. Saldo attuale:', en: 'Insufficient credit. Current balance:' })} €${creditBalance.toFixed(2)}, ${t({ it: 'Richiesto:', en: 'Required:' })} €${grandTotal.toFixed(2)}`);
         isSubmittingRef.current = false;
         setIsProcessing(false);
         return;
@@ -4890,13 +4890,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         } else {
           // RPC returned but success was not true
           console.warn("RPC returned success: false", data);
-          setPaymentError(data?.message || "Prenotazione fallita. Riprova o contatta il supporto.");
+          setPaymentError(data?.message || t({ it: "Prenotazione fallita. Riprova o contatta il supporto.", en: "Booking failed. Please try again or contact support." }));
           setIsProcessing(false);
         }
 
       } catch (err: any) {
         console.error("Catch Error during booking:", err);
-        setPaymentError(err.message || "Errore sconosciuto durante la prenotazione.");
+        setPaymentError(err.message || t({ it: "Errore sconosciuto durante la prenotazione.", en: "Unknown error during booking." }));
         setIsProcessing(false);
       }
     } else if (normalizedPaymentMethod === 'nexi') {
@@ -4934,9 +4934,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             const availFrom = first?.availableFrom || first?._availableFrom
             if (availFrom) {
               const availTime = new Date(availFrom).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Rome' })
-              setPaymentError(`Il veicolo non è disponibile a quest'orario. Disponibile dalle ${availTime}.`)
+              setPaymentError(`${t({ it: "Il veicolo non è disponibile a quest'orario. Disponibile dalle", en: 'The vehicle is not available at this time. Available from' })} ${availTime}.`)
             } else {
-              setPaymentError('Il veicolo è stato appena prenotato da un altro utente. Seleziona date diverse.')
+              setPaymentError(t({ it: 'Il veicolo è stato appena prenotato da un altro utente. Seleziona date diverse.', en: 'The vehicle has just been booked by another user. Please select different dates.' }))
             }
             setIsProcessing(false)
             return
@@ -5162,7 +5162,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
           if (insertError) {
             console.error("Booking INSERT failed:", insertError);
-            throw new Error(`Errore salvataggio prenotazione: ${insertError.message}`);
+            throw new Error(`${t({ it: 'Errore salvataggio prenotazione:', en: 'Error saving the booking:' })} ${insertError.message}`);
           }
 
           console.log("Zero-total booking created:", insertedBooking.id);
@@ -5263,7 +5263,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
         if (bookingInsertError) {
           console.error("Booking INSERT failed:", bookingInsertError);
-          throw new Error(`Errore salvataggio prenotazione: ${bookingInsertError.message}`);
+          throw new Error(`${t({ it: 'Errore salvataggio prenotazione:', en: 'Error saving the booking:' })} ${bookingInsertError.message}`);
         }
 
         console.log("Pending booking created in bookings table:", insertedPendingBooking.id);
@@ -5310,7 +5310,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const nexiData = await nexiResponse.json();
 
         if (!nexiResponse.ok) {
-          throw new Error(nexiData.error || "Errore durante l'inizializzazione del pagamento");
+          throw new Error(nexiData.error || t({ it: "Errore durante l'inizializzazione del pagamento", en: "Error initialising the payment" }));
         }
 
         if (!nexiData.paymentUrl) {
@@ -5329,7 +5329,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       } catch (err: any) {
         console.error("Booking Error:", err.message || err, { code: err?.code, details: err?.details, hint: err?.hint });
-        setPaymentError(err.message || "Si è verificato un errore durante la prenotazione.");
+        setPaymentError(err.message || t({ it: "Si è verificato un errore durante la prenotazione.", en: "An error occurred during the booking." }));
         isSubmittingRef.current = false;
         setIsProcessing(false);
       }
@@ -5412,7 +5412,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const handleUpsellTargaSearch = async () => {
     const plate = normalizePlate(upsellTargaInput);
     if (!isValidItalianPlate(plate)) {
-      setUpsellTargaError('Targa non valida. Inserisci una targa italiana (es. EX117YA).');
+      setUpsellTargaError(t({ it: 'Targa non valida. Inserisci una targa italiana (es. EX117YA).', en: 'Invalid plate. Enter an Italian plate (e.g. EX117YA).' }));
       return;
     }
     setUpsellTargaLoading(true);
@@ -5436,7 +5436,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       setUpsellCarCategory(washClass.toLowerCase() as 'urban' | 'maxi');
       setUpsellCarModel(makeModel || null);
     } catch (err: any) {
-      setUpsellTargaError(err.message || 'Errore nella ricerca.');
+      setUpsellTargaError(err.message || t({ it: 'Errore nella ricerca.', en: 'Search error.' }));
     } finally {
       setUpsellTargaLoading(false);
     }
@@ -5510,7 +5510,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} readOnly={letto((driverData as any).firstName)} aria-readonly={letto((driverData as any).firstName)} autoComplete="given-name" className={classeCampo(letto((driverData as any).firstName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} readOnly={letto((driverData as any).lastName)} aria-readonly={letto((driverData as any).lastName)} autoComplete="family-name" className={classeCampo(letto((driverData as any).lastName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">Email *</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Email *", en: "Email *" })}</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
               {/* Codice fiscale, sesso e nascita: uguali per tutti e due i
                   conducenti. Prima erano riservati al primo, e il codice
@@ -5612,7 +5612,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     if (!incompleto) return null;
                     return (
                       <p className="text-[11px] text-red-400 mt-1">
-                        Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.
+                        {t({ it: "Seleziona l'indirizzo dall'elenco (anche estero) — necessario per la fattura.", en: "Select the address from the list (including abroad) — required for the invoice." })}
                       </p>
                     );
                   })()}
@@ -5856,7 +5856,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   </div>
                   {formData.deliveryPickupKm > 0 && (
                     <p className="text-sm text-white mt-3 font-semibold">
-                      Costo consegna: {formData.deliveryPickupKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM} = €{(formData.deliveryPickupKm * ACTIVE_DELIVERY_PRICE_PER_KM).toFixed(2)}
+                      {t({ it: "Costo consegna:", en: "Delivery cost:" })} {formData.deliveryPickupKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM} = €{(formData.deliveryPickupKm * ACTIVE_DELIVERY_PRICE_PER_KM).toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-gray-500 mt-2">{t({ it: "La distanza sarà verificata da DR7. In caso di discrepanza, verrà applicata la distanza reale.", en: "The distance will be verified by DR7. If it differs, the actual distance will be applied." })}</p>
@@ -5893,7 +5893,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   </div>
                   {formData.deliveryReturnKm > 0 && (
                     <p className="text-sm text-white mt-3 font-semibold">
-                      Costo riconsegna: {formData.deliveryReturnKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM} = €{(formData.deliveryReturnKm * ACTIVE_DELIVERY_PRICE_PER_KM).toFixed(2)}
+                      {t({ it: "Costo riconsegna:", en: "Collection cost:" })} {formData.deliveryReturnKm} km × €{ACTIVE_DELIVERY_PRICE_PER_KM} = €{(formData.deliveryReturnKm * ACTIVE_DELIVERY_PRICE_PER_KM).toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-gray-500 mt-2">{t({ it: "La distanza sarà verificata da DR7. In caso di discrepanza, verrà applicata la distanza reale.", en: "The distance will be verified by DR7. If it differs, the actual distance will be applied." })}</p>
@@ -5976,7 +5976,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     orariDelGiorno={getValidPickupTimes}
                     dataIniziale={formData.pickupDate}
                     oraIniziale={formData.pickupTime}
-                    titolo={{ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' }}
+                    titolo={t({ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' })}
                     onConferma={(data, ora) => {
                       // 2026-09-12 (direzione): scegliendo il giorno di ritiro
                       // la riconsegna si propone nello STESSO giorno — si puo'
@@ -6015,7 +6015,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     orariDelGiorno={getValidReturnTimes}
                     dataIniziale={formData.returnDate}
                     oraIniziale={formData.returnTime}
-                    titolo={{ it: 'Riconsegna: scegli il giorno', en: 'Drop-off: choose the day' }}
+                    titolo={t({ it: 'Riconsegna: scegli il giorno', en: 'Drop-off: choose the day' })}
                     onConferma={(data, ora) => {
                       setFormData(prev => ({ ...prev, returnDate: data, returnTime: ora }));
                       setErrors(prev => ({ ...prev, returnDate: '', returnTime: '', date: '' }));
@@ -6049,7 +6049,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               {/* Info message about KM */}
               <div className="mt-6 p-3 bg-gray-800/50 border border-gray-700 rounded-lg">
                 <p className="text-gray-400 text-xs text-center">
-                  La tariffa finale può subire variazioni in base a orari, disponibilità e durata effettiva del noleggio.
+                  {t({ it: "La tariffa finale può subire variazioni in base a orari, disponibilità e durata effettiva del noleggio.", en: "The final rate may vary depending on times, availability and the actual rental duration." })}
                 </p>
               </div>
             </div>
@@ -6067,8 +6067,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div>
                   <p className="text-sm text-gray-400 font-semibold mb-2">{t({ it: "Età del conducente *", en: "Driver's age *" })}</p>
                   {([
-                    { id: 'TIER_2' as DriverTier, label: { it: '26 anni o più', en: '26 or over' } },
-                    { id: 'TIER_1' as DriverTier, label: { it: 'Meno di 26 anni', en: 'Under 26' } },
+                    { id: 'TIER_2' as DriverTier, label: t({ it: '26 anni o più', en: '26 or over' }) },
+                    { id: 'TIER_1' as DriverTier, label: t({ it: 'Meno di 26 anni', en: 'Under 26' }) },
                   ]).map(opzione => (
                     <div key={opzione.id} className="flex items-start mt-2 p-2 rounded hover:bg-gray-800/30 transition-colors">
                       <input
@@ -6080,7 +6080,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         disabled={!!driverTierInfo?.tier}
                         className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 focus:ring-white disabled:opacity-60"
                       />
-                      <label htmlFor={`fascia-${opzione.id}`} className="ml-2 text-white flex-1">{t(opzione.label)}</label>
+                      <label htmlFor={`fascia-${opzione.id}`} className="ml-2 text-white flex-1">{opzione.label}</label>
                     </div>
                   ))}
                 </div>
@@ -6089,8 +6089,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div>
                   <p className="text-sm text-gray-400 font-semibold mb-2">{t({ it: "Residenza *", en: "Residence *" })}</p>
                   {([
-                    { id: 'RESIDENT' as const, label: { it: 'Residente in Sardegna', en: 'Resident in Sardinia' } },
-                    { id: 'NON_RESIDENT' as const, label: { it: 'Fuori dalla Sardegna o estero', en: 'Outside Sardinia or abroad' } },
+                    { id: 'RESIDENT' as const, label: t({ it: 'Residente in Sardegna', en: 'Resident in Sardinia' }) },
+                    { id: 'NON_RESIDENT' as const, label: t({ it: 'Fuori dalla Sardegna o estero', en: 'Outside Sardinia or abroad' }) },
                   ]).map(opzione => (
                     <div key={opzione.id} className="flex items-start mt-2 p-2 rounded hover:bg-gray-800/30 transition-colors">
                       <input
@@ -6104,7 +6104,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         disabled={!!(customerProvinciaResidenza || '').trim()}
                         className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 focus:ring-white disabled:opacity-60"
                       />
-                      <label htmlFor={`residenza-${opzione.id}`} className="ml-2 text-white flex-1">{t(opzione.label)}</label>
+                      <label htmlFor={`residenza-${opzione.id}`} className="ml-2 text-white flex-1">{opzione.label}</label>
                     </div>
                   ))}
                 </div>
@@ -6160,19 +6160,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <div className="flex justify-between items-center">
                             <span className="font-bold text-white">{opt.name}</span>
                             <span className={`font-bold ${isRCA ? 'text-gray-400' : 'text-white'}`}>
-                              {opt.dailyPrice > 0 ? `€${opt.dailyPrice}/giorno` : 'Inclusa'}
+                              {opt.dailyPrice > 0 ? `€${opt.dailyPrice}${t({ it: '/giorno', en: '/day' })}` : t({ it: 'Inclusa', en: 'Included' })}
                             </span>
                           </div>
                           {!isRCA && (
                             <p className="text-xs text-gray-400 mt-1">{opt.coverage}</p>
                           )}
                           <p className="text-xs mt-1 text-gray-300">
-                            Da risarcire: {opt.deductible}
+                            {t({ it: "Da risarcire:", en: "Excess:" })} {opt.deductible}
                           </p>
                           {isRCA && isSelected && opt.mandatoryDeposit && (
                             <div className="mt-2 p-2 bg-red-900/30 border border-red-500/50 rounded">
                               <p className="text-red-300 text-xs font-semibold">
-                                ATTENZIONE: Senza Kasko è richiesta una cauzione obbligatoria di €{opt.mandatoryDeposit.toLocaleString()}
+                                {t({ it: "ATTENZIONE: Senza Kasko è richiesta una cauzione obbligatoria di", en: "WARNING: Without Kasko cover a mandatory deposit is required of" })} €{opt.mandatoryDeposit.toLocaleString()}
                               </p>
                             </div>
                           )}
@@ -6205,7 +6205,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="font-bold text-white">{includedKm >= 9999 ? 'Illimitati' : includedKm > 0 ? `${includedKm} km inclusi` : 'KM inclusi nel noleggio'}</span>
+                        <span className="font-bold text-white">{includedKm >= 9999 ? t({ it: 'Illimitati', en: 'Unlimited' }) : includedKm > 0 ? `${includedKm} ${t({ it: 'km inclusi', en: 'km included' })}` : t({ it: 'KM inclusi nel noleggio', en: 'KM included in the rental' })}</span>
                         <p className="text-sm text-gray-400">{t({ it: "Calcolati in base alla durata del noleggio", en: "Calculated on the rental duration" })}</p>
                       </div>
                       <span className="font-bold text-green-400">{t({ it: "Inclusi", en: "Included" })}</span>
@@ -6257,14 +6257,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               <span className="font-bold text-white">{pkg.label} ({pkg.km} km)</span>
                               <p className="text-sm text-gray-400">
                                 {pkg.sconto_pct > 0
-                                  ? `Sconto ${pkg.sconto_pct}% sul sforo (${pkg.km} km a prezzo agevolato)`
-                                  : `${pkg.km} km extra inclusi nel pacchetto`}
+                                  ? `${t({ it: 'Sconto', en: 'Discount' })} ${pkg.sconto_pct}% ${t({ it: 'sul sforo', en: 'on excess mileage' })} (${pkg.km} ${t({ it: 'km a prezzo agevolato', en: 'km at a reduced price' })})`
+                                  : `${pkg.km} ${t({ it: 'km extra inclusi nel pacchetto', en: 'extra km included in the package' })}`}
                                 {isQtyBuyable && !isSelected && (
-                                  <span className="block text-xs text-dr7-gold mt-1">+ Aggiungi più volte (max {maxQty})</span>
+                                  <span className="block text-xs text-dr7-gold mt-1">{t({ it: "+ Aggiungi più volte (max", en: "+ Add more than once (max" })} {maxQty})</span>
                                 )}
                               </p>
                               {isSelected && qty > 1 && (
-                                <p className="text-xs text-dr7-gold font-semibold mt-1">Totale: {qty * pkg.km} km · {formatPrice(pkg.price * qty)}</p>
+                                <p className="text-xs text-dr7-gold font-semibold mt-1">{t({ it: "Totale:", en: "Total:" })} {qty * pkg.km} km · {formatPrice(pkg.price * qty)}</p>
                               )}
                             </div>
                             {isSelected ? (
@@ -6333,7 +6333,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <span className="font-bold text-white">{t({ it: "Km illimitati", en: "Unlimited km" })}</span>
                             <p className="text-sm text-gray-400">{t({ it: "Senza limiti di percorrenza", en: "Unlimited mileage" })}</p>
                           </div>
-                          <span className="font-bold text-white">{unlimitedPrice > 0 ? `+€${unlimitedPrice}/giorno` : 'Incluso'}</span>
+                          <span className="font-bold text-white">{unlimitedPrice > 0 ? `+€${unlimitedPrice}${t({ it: '/giorno', en: '/day' })}` : t({ it: 'Incluso', en: 'Included' })}</span>
                         </div>
                       </div>
                     )
@@ -6351,8 +6351,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="font-bold text-white">{calculateIncludedKm(duration.days || 1, getKmIncludedForVehicle((item as any).category, vehicleType)) || 0} km inclusi</span>
-                        <p className="text-sm text-gray-400">Calcolati sulla durata del noleggio ({duration.days || 1} {(duration.days || 1) === 1 ? 'giorno' : 'giorni'})</p>
+                        <span className="font-bold text-white">{calculateIncludedKm(duration.days || 1, getKmIncludedForVehicle((item as any).category, vehicleType)) || 0} {t({ it: 'km inclusi', en: 'km included' })}</span>
+                        <p className="text-sm text-gray-400">{t({ it: "Calcolati sulla durata del noleggio (", en: "Calculated on the rental duration (" })}{duration.days || 1} {(duration.days || 1) === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })})</p>
                       </div>
                       <span className="font-bold text-green-400">{t({ it: "Incluso", en: "Included" })}</span>
                     </div>
@@ -6377,8 +6377,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               <span className="font-bold text-white">{pkg.label} ({pkg.km} km)</span>
                               <p className="text-sm text-gray-400">
                                 {pkg.sconto_pct > 0
-                                  ? `Sconto ${pkg.sconto_pct}% sul sforo`
-                                  : `${pkg.km} km extra inclusi`}
+                                  ? `${t({ it: 'Sconto', en: 'Discount' })} ${pkg.sconto_pct}% ${t({ it: 'sul sforo', en: 'on excess mileage' })}`
+                                  : `${pkg.km} ${t({ it: 'km extra inclusi', en: 'extra km included' })}`}
                               </p>
                             </div>
                             <span className="font-bold text-dr7-gold">+{formatPrice(pkg.price)}</span>
@@ -6425,7 +6425,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <p className="text-sm text-gray-400">{t({ it: "Senza limiti di percorrenza", en: "Unlimited mileage" })}</p>
                           </div>
                           <span className="font-bold text-white">
-                            {perDay > 0 ? formatPrice(perDay * days) : 'Incluso'}
+                            {perDay > 0 ? formatPrice(perDay * days) : t({ it: 'Incluso', en: 'Included' })}
                           </span>
                         </div>
                       </div>
@@ -6473,7 +6473,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex items-center">
                     <input type="checkbox" checked={formData.addSecondDriver} onChange={() => {}} className="h-4 w-4" />
                     <span className="ml-3 text-white">{t({ it: "Secondo guidatore", en: "Second driver" })}</span>
-                    <span className="ml-auto font-semibold text-white">€{tierPricing.secondDriverPerDay}/giorno</span>
+                    <span className="ml-auto font-semibold text-white">€{tierPricing.secondDriverPerDay}{t({ it: '/giorno', en: '/day' })}</span>
                   </div>
                 </div>
                 )}
@@ -6498,7 +6498,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <span className="font-bold text-white">{t({ it: "Cauzione obbligatoria (solo RCA)", en: "Deposit required (third-party cover only)" })}</span>
                           <span className="font-bold text-red-400">€{mandatoryAmount.toLocaleString()}</span>
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">Senza Kasko è richiesta una cauzione di €{mandatoryAmount.toLocaleString()} su carta di credito.</p>
+                        <p className="text-sm text-gray-400 mt-1">{t({ it: "Senza Kasko è richiesta una cauzione di", en: "Without Kasko cover a deposit is required of" })} €{mandatoryAmount.toLocaleString()} {t({ it: "su carta di credito.", en: "on a credit card." })}</p>
                       </div>
                     );
                   }
@@ -6548,7 +6548,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             <div className="flex justify-between items-center">
                               <span className="font-bold text-white">{opt.label}</span>
                               <span className="font-bold text-white">
-                                {opt.surchargePerDay ? `€${opt.surchargePerDay}/giorno` : opt.amount > 0 ? `€${opt.amount.toLocaleString()}` : ''}
+                                {opt.surchargePerDay ? `€${opt.surchargePerDay}${t({ it: '/giorno', en: '/day' })}` : opt.amount > 0 ? `€${opt.amount.toLocaleString()}` : ''}
                               </span>
                             </div>
                             <p className="text-sm text-gray-400 mt-1">{opt.description}</p>
@@ -6576,17 +6576,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
                   <h3 className="text-lg font-bold text-white mb-3">{t({ it: "Richiesta No Cauzione", en: "No-Deposit Request" })}</h3>
                   <p className="text-gray-400 text-sm mb-4">
-                    L'opzione "Nessuna Cauzione" richiede l'approvazione del team DR7.
-                    Invieremo la tua richiesta e sarai contattato per conferma.
+                    {t({ it: "L'opzione \"Nessuna Cauzione\" richiede l'approvazione del team DR7. Invieremo la tua richiesta e sarai contattato per conferma.", en: "The \"No Deposit\" option requires approval from the DR7 team. We will send your request and contact you to confirm." })}
                   </p>
-                  <p className="text-white text-sm mb-1">{t({ it: "Supplemento:", en: "Surcharge:" })} <span className="font-bold text-white">€{ACTIVE_NO_DEPOSIT_SURCHARGE}/giorno</span></p>
+                  <p className="text-white text-sm mb-1">{t({ it: "Supplemento:", en: "Surcharge:" })} <span className="font-bold text-white">€{ACTIVE_NO_DEPOSIT_SURCHARGE}{t({ it: '/giorno', en: '/day' })}</span></p>
                   <p className="text-gray-500 text-xs mb-4">{t({ it: "Richiede Kasko attiva. Soggetto a verifica e approvazione del team DR7.", en: "Requires active Kasko cover. Subject to review and approval by the DR7 team." })}</p>
                   <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
                     <p className="text-red-400 text-xs font-bold mb-1">{t({ it: "ATTENZIONE", en: "WARNING" })}</p>
                     <p className="text-gray-300 text-xs leading-relaxed">
-                      Il pagamento con carta prepagata comporta l'obbligo di cauzione secondo modalità standard.
-                      Senza cauzione, il veicolo non verrà consegnato.
-                      Procedendo, il cliente accetta integralmente tale condizione.
+                      {t({ it: "Il pagamento con carta prepagata comporta l'obbligo di cauzione secondo modalità standard. Senza cauzione, il veicolo non verrà consegnato. Procedendo, il cliente accetta integralmente tale condizione.", en: "Paying with a prepaid card requires a deposit under the standard terms. Without a deposit, the vehicle will not be handed over. By proceeding, the customer fully accepts this condition." })}
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -6594,7 +6591,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       onClick={() => setShowNoCauzionePopup(false)}
                       className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                     >
-                      Annulla
+                      {t({ it: "Annulla", en: "Cancel" })}
                     </button>
                     <button
                       onClick={() => {
@@ -6604,7 +6601,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       }}
                       className="flex-1 py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
-                      {noCauzioneSending ? 'Invio...' : 'Invia Richiesta'}
+                      {noCauzioneSending ? t({ it: 'Invio...', en: 'Sending...' }) : t({ it: 'Invia Richiesta', en: 'Send Request' })}
                     </button>
                   </div>
                 </div>
@@ -6617,7 +6614,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
                   <h3 className="text-lg font-bold text-white mb-3">{t({ it: "Cauzione con Veicolo", en: "Vehicle as Deposit" })}</h3>
                   <p className="text-gray-400 text-sm mb-4">
-                    Il veicolo deve essere di proprietà e immatricolato dal <strong className="text-white">{t({ it: "2020 in poi", en: "2020 or newer" })}</strong>{t({ it: ". Supplemento:", en: ". Surcharge:" })} <span className="font-bold text-white">{t({ it: "€20/giorno", en: "€20/day" })}</span>.
+                    {t({ it: "Il veicolo deve essere di proprietà e immatricolato dal", en: "The vehicle must be owned by you and registered from" })} <strong className="text-white">{t({ it: "2020 in poi", en: "2020 or newer" })}</strong>{t({ it: ". Supplemento:", en: ". Surcharge:" })} <span className="font-bold text-white">{t({ it: "€20/giorno", en: "€20/day" })}</span>.
                   </p>
 
                   {/* Step 1: Enter targa */}
@@ -6637,7 +6634,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <button
                             onClick={async () => {
                               if (!vehicleDepositTarga || vehicleDepositTarga.length < 5) {
-                                setVehicleDepositError('Inserisci una targa valida');
+                                setVehicleDepositError(t({ it: 'Inserisci una targa valida', en: 'Enter a valid number plate' }));
                                 return;
                               }
                               setVehicleDepositLoading(true);
@@ -6645,10 +6642,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               try {
                                 const res = await fetch(`/.netlify/functions/lookupTarga?plate=${encodeURIComponent(vehicleDepositTarga)}`);
                                 const data = await res.json();
-                                if (!res.ok) throw new Error(data.error || 'Targa non trovata');
+                                if (!res.ok) throw new Error(data.error || t({ it: 'Targa non trovata', en: 'Number plate not found' }));
                                 const year = parseInt(data.registrationYear);
                                 if (isNaN(year) || year < 2020) {
-                                  setVehicleDepositError(`Veicolo immatricolato nel ${data.registrationYear || '?'} — deve essere dal 2020 in poi. Scegli un\'altra opzione di cauzione.`);
+                                  setVehicleDepositError(`${t({ it: 'Veicolo immatricolato nel', en: 'Vehicle registered in' })} ${data.registrationYear || '?'} — ${t({ it: "deve essere dal 2020 in poi. Scegli un'altra opzione di cauzione.", en: 'it must be from 2020 onwards. Choose another deposit option.' })}`);
                                   setVehicleDepositInfo(`${data.carMake} ${data.carModel} (${data.registrationYear})`);
                                 } else {
                                   setVehicleDepositVerified(true);
@@ -6656,7 +6653,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                   setVehicleDepositError(null);
                                 }
                               } catch (err: any) {
-                                setVehicleDepositError(err.message || 'Errore verifica targa');
+                                setVehicleDepositError(err.message || t({ it: 'Errore verifica targa', en: 'Error verifying the number plate' }));
                               } finally {
                                 setVehicleDepositLoading(false);
                               }
@@ -6664,7 +6661,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             disabled={vehicleDepositLoading || vehicleDepositTarga.length < 5}
                             className="px-4 py-2.5 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 text-sm"
                           >
-                            {vehicleDepositLoading ? '...' : 'Verifica'}
+                            {vehicleDepositLoading ? '...' : t({ it: 'Verifica', en: 'Verify' })}
                           </button>
                         </div>
                         {vehicleDepositInfo && !vehicleDepositVerified && (
@@ -6685,7 +6682,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           }}
                           className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                         >
-                          Annulla
+                          {t({ it: "Annulla", en: "Cancel" })}
                         </button>
                       </div>
                     </>
@@ -6695,8 +6692,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {vehicleDepositVerified && (
                     <>
                       <div className="p-3 bg-green-900/20 border border-green-500/50 rounded-lg mb-4">
-                        <p className="text-green-400 text-sm font-semibold">✓ Veicolo verificato: {vehicleDepositInfo}</p>
-                        <p className="text-green-300 text-xs mt-1">Targa: {vehicleDepositTarga}</p>
+                        <p className="text-green-400 text-sm font-semibold">{t({ it: "✓ Veicolo verificato:", en: "✓ Vehicle verified:" })} {vehicleDepositInfo}</p>
+                        <p className="text-green-300 text-xs mt-1">{t({ it: "Targa:", en: "Plate:" })} {vehicleDepositTarga}</p>
                       </div>
 
                       {/* Owner check */}
@@ -6825,7 +6822,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           }}
                           className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                         >
-                          Annulla
+                          {t({ it: "Annulla", en: "Cancel" })}
                         </button>
                         <button
                           disabled={
@@ -6859,7 +6856,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           }}
                           className="flex-1 py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Conferma
+                          {t({ it: "Conferma", en: "Confirm" })}
                         </button>
                       </div>
                     </>
@@ -6883,7 +6880,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 {experienceServices.map(svc => {
                   const qty = formData.selectedExperiences[svc.id] || 0;
                   const isSelected = qty > 0;
-                  const unitLabel = svc.unit === 'per_day' ? '/giorno' : svc.unit === 'per_hour' ? '/ora' : svc.unit === 'per_item' ? '/unità' : '';
+                  const unitLabel = svc.unit === 'per_day' ? t({ it: '/giorno', en: '/day' }) : svc.unit === 'per_hour' ? t({ it: '/ora', en: '/hour' }) : svc.unit === 'per_item' ? t({ it: '/unità', en: '/unit' }) : '';
                   return (
                     <div
                       key={svc.id}
@@ -6919,7 +6916,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                                 selectedExperiences: { ...prev.selectedExperiences, [svc.id]: isSelected ? 0 : 1 }
                               }))}
                             >
-                              {isSelected ? 'Aggiunto' : svc.unit === 'per_day' ? 'Aggiungi' : 'Aggiungi'}
+                              {isSelected ? t({ it: 'Aggiunto', en: 'Added' }) : svc.unit === 'per_day' ? t({ it: 'Aggiungi', en: 'Add' }) : t({ it: 'Aggiungi', en: 'Add' })}
                             </button>
                           )}
                         </div>
@@ -6950,14 +6947,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
                 <h2 className="text-2xl font-bold text-white">{t({ it: "Richiesta Inviata!", en: "Request sent." })}</h2>
                 <p className="text-gray-400 max-w-md mx-auto">
-                  La tua richiesta per la formula senza cauzione è stata registrata. Il team DR7 la contatterà via WhatsApp con l'esito e, in caso di approvazione, il link di pagamento.
+                  {t({ it: "La tua richiesta per la formula senza cauzione è stata registrata. Il team DR7 la contatterà via WhatsApp con l'esito e, in caso di approvazione, il link di pagamento.", en: "Your request for the no-deposit option has been registered. The DR7 team will contact you on WhatsApp with the outcome and, if approved, the payment link." })}
                 </p>
                 <button
                   type="button"
                   onClick={() => window.location.href = '/'}
                   className="mt-4 px-8 py-3 bg-white text-black font-bold hover:bg-gray-200 transition-colors"
                 >
-                  Torna alla Home
+                  {t({ it: "Torna alla Home", en: "Back to Home" })}
                 </button>
               </div>
             );
@@ -6972,7 +6969,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">{t({ it: "Riepilogo Preventivo", en: "Quote Summary" })}</h3>
                 <p className="text-gray-400 text-sm mb-6">
-                  Cliccando "Salva Preventivo" la tua richiesta verrà inviata al team DR7 per approvazione. Riceverai un messaggio WhatsApp con l'esito.
+                  {t({ it: "Cliccando \"Salva Preventivo\" la tua richiesta verrà inviata al team DR7 per approvazione. Riceverai un messaggio WhatsApp con l'esito.", en: "By clicking \"Save Quote\" your request will be sent to the DR7 team for approval. You will receive a WhatsApp message with the outcome." })}
                 </p>
               </div>
 
@@ -6980,10 +6977,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Veicolo", en: "Vehicle" })}</span><span className="text-white font-semibold">{item.name}</span></div>
                 <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Ritiro", en: "Pick-up" })}</span><span className="text-white">{formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.pickupTime || '—'}</span></div>
                 <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Riconsegna", en: "Drop-off" })}</span><span className="text-white">{formData.returnDate ? new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.returnTime || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Durata", en: "Duration" })}</span><span className="text-white">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Durata", en: "Duration" })}</span><span className="text-white">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })}</span></div>
                 <hr className="border-gray-600 my-1" />
-                <div className="flex justify-between"><span className="text-gray-400">Noleggio {item.name}</span><span className="text-white">{formatPrice(rentalCost)}</span></div>
-                {insuranceCost > 0 && <div className="flex justify-between"><span className="text-gray-400">Assicurazione {(() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || ''; })()}</span><span className="text-white">{formatPrice(insuranceCost)}</span></div>}
+                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Noleggio", en: "Rental" })} {item.name}</span><span className="text-white">{formatPrice(rentalCost)}</span></div>
+                {insuranceCost > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Assicurazione", en: "Insurance" })} {(() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || ''; })()}</span><span className="text-white">{formatPrice(insuranceCost)}</span></div>}
                 {lavaggioFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Lavaggio", en: "Car wash" })}</span><span className="text-white">{formatPrice(lavaggioFee)}</span></div>}
                 {/* 2026-05-16: Quando il cliente sceglie un pacchetto, mostriamo
                     SIA la riga "X km inclusi" (totale post-somma con il pacchetto)
@@ -7010,7 +7007,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-400">{t({ it: "Chilometri", en: "Mileage" })}</span>
-                        <span className="text-white">{baseKm >= 9999 ? 'Illimitati inclusi' : `${baseKm} km inclusi`}</span>
+                        <span className="text-white">{baseKm >= 9999 ? t({ it: 'Illimitati inclusi', en: 'Unlimited included' }) : `${baseKm} ${t({ it: 'km inclusi', en: 'km included' })}`}</span>
                       </div>
                       {selectedPkgs.map(({ pkg, qty }) => (
                         <div key={pkg.id} className="flex justify-between">
@@ -7024,7 +7021,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )
                 })()}
                 <div className="flex justify-between"><span className="text-green-400">{t({ it: "Supplemento No Cauzione", en: "No-Deposit surcharge" })}</span><span className="text-green-400">{formatPrice(noDepositSurcharge)}</span></div>
-                {hasDynamicDiscount && <div className="flex justify-between text-blue-400"><span>Sconto Revenue ({dynamicDiscountPct}%)</span><span>-{formatPrice(listSubtotal - subtotal)}</span></div>}
+                {hasDynamicDiscount && <div className="flex justify-between text-blue-400"><span>{t({ it: "Sconto Revenue (", en: "Revenue discount (" })}{dynamicDiscountPct}%)</span><span>-{formatPrice(listSubtotal - subtotal)}</span></div>}
                 <RigaPrevendita />
                 <hr className="border-gray-600 my-1" />
                 <div className="flex justify-between text-lg font-bold"><span className="text-white">{t({ it: "TOTALE", en: "TOTAL" })}</span><span className="text-white">{formatPrice(grandTotal)}</span></div>
@@ -7120,14 +7117,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                     setNoCauzioneSaved(true);
                   } catch (err: any) {
-                    setPaymentError(err.message || 'Errore salvataggio preventivo');
+                    setPaymentError(err.message || t({ it: 'Errore salvataggio preventivo', en: 'Error saving the quote' }));
                   } finally {
                     setNoCauzioneSending(false);
                   }
                 }}
                 className="w-full py-4 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
-                {noCauzioneSending ? 'Salvataggio...' : 'SALVA PREVENTIVO'}
+                {noCauzioneSending ? t({ it: 'Salvataggio...', en: 'Saving...' }) : t({ it: 'SALVA PREVENTIVO', en: 'SAVE QUOTE' })}
               </button>
               {paymentError && <p className="text-red-400 text-sm text-center">{paymentError}</p>}
             </div>
@@ -7159,7 +7156,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     )}
                   </span>
                   <svg className={`w-8 h-8 mb-auto ${formData.paymentMethod === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
-                  <span className={`block text-base font-bold mt-4 ${formData.paymentMethod === 'credit' ? 'text-white' : 'text-gray-300'}`}>Credit Wallet</span>
+                  <span className={`block text-base font-bold mt-4 ${formData.paymentMethod === 'credit' ? 'text-white' : 'text-gray-300'}`}>{t({ it: "Credit Wallet", en: "Credit Wallet" })}</span>
                   <span className="block text-xs text-gray-500 mt-1.5">
                     {t({ it: 'Usa il tuo credito disponibile nel wallet DR7', en: 'Use the credit available in your DR7 wallet' })}
                   </span>
@@ -7189,8 +7186,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <p className="text-white font-semibold">{t({ it: "DR7 Club — Pagamento separato", en: "DR7 Club — Separate payment" })}</p>
                   <p className="text-white/70 text-xs mt-1">
                     {formData.paymentMethod === 'credit'
-                      ? `Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club (${clubPrezzoScelto}) con carta.`
-                      : `Il noleggio e DR7 Club (${clubPrezzoScelto}) saranno pagati insieme con carta.`}
+                      ? `${t({ it: 'Il noleggio sarà pagato con il wallet. Riceverai un link separato per il pagamento DR7 Club', en: 'The rental will be paid with your wallet. You will receive a separate link to pay for DR7 Club' })} (${clubPrezzoScelto}) ${t({ it: 'con carta.', en: 'by card.' })}`
+                      : `${t({ it: 'Il noleggio e DR7 Club', en: 'The rental and DR7 Club' })} (${clubPrezzoScelto}) ${t({ it: 'saranno pagati insieme con carta.', en: 'will be paid together by card.' })}`}
                   </p>
                 </div>
               )}
@@ -7212,7 +7209,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             stesso che controlla il salvataggio: il pannello
                             poteva dire "saldo sufficiente" e poi rifiutare. */}
                         {creditoNonBasta ? (
-                          <p className="text-sm text-red-400">Credito insufficiente. Richiesto: €{grandTotal.toFixed(2)}</p>
+                          <p className="text-sm text-red-400">{t({ it: "Credito insufficiente. Richiesto:", en: "Insufficient credit. Required:" })} €{grandTotal.toFixed(2)}</p>
                         ) : (
                           <p className="text-sm text-green-400">{t({ it: "✓ Saldo sufficiente", en: "✓ Sufficient balance" })}</p>
                         )}
@@ -7239,7 +7236,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         <svg viewBox="0 0 60 40" className="h-7" aria-label="American Express" role="img"><rect width="60" height="40" rx="5" fill="#1F72CD"/><rect x="8" y="12.5" width="44" height="15" rx="2" fill="none" stroke="#fff" strokeWidth="1.5"/><text x="30" y="23.6" textAnchor="middle" fontFamily="Helvetica, Arial, sans-serif" fontSize="9" fontWeight="bold" letterSpacing="0.6" fill="#fff">AMEX</text></svg>
                       </div>
                       <p className="text-gray-400 text-sm text-center">
-                        Sarai reindirizzato a una pagina di pagamento sicura per completare la transazione.
+                        {t({ it: "Sarai reindirizzato a una pagina di pagamento sicura per completare la transazione.", en: "You will be redirected to a secure payment page to complete the transaction." })}
                       </p>
                     </div>
                   </>
@@ -7278,11 +7275,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
               )}
               <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                CARICA DOCUMENTI
+                {t({ it: "CARICA DOCUMENTI", en: "UPLOAD DOCUMENTS" })}
                 <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">{t({ it: "OBBLIGATORIO", en: "REQUIRED" })}</span>
               </h3>
               <p className="text-sm text-gray-400 mb-4">
-                Per noleggiare un veicolo è <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.
+                {t({ it: "Per noleggiare un veicolo è", en: "To rent a vehicle it is" })} <strong className="text-red-400">{t({ it: "obbligatorio", en: "required" })}</strong> {t({ it: "caricare patente di guida e documento d'identità (o passaporto). Senza questi documenti non è possibile proseguire con la prenotazione.", en: "to upload your driving licence and ID document (or passport). Without these documents you cannot continue with the booking." })}
               </p>
 
               {!nazionalitaNota && (
@@ -7401,12 +7398,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         auto
                         tone="rosso"
                         documents={[
-                          { file: formData.licenseImage, label: 'Patente (fronte)' },
-                          { file: formData.licenseImageBack, label: 'Patente (retro)' },
-                          { file: formData.cfImage, label: 'Codice Fiscale (fronte)' },
-                          { file: formData.cfImageBack, label: 'Codice Fiscale (retro)' },
-                          { file: formData.idImage, label: 'Documento Identità (fronte)' },
-                          { file: formData.idImageBack, label: 'Documento Identità (retro)' },
+                          { file: formData.licenseImage, label: t({ it: 'Patente (fronte)', en: 'Licence (front)' }) },
+                          { file: formData.licenseImageBack, label: t({ it: 'Patente (retro)', en: 'Licence (back)' }) },
+                          { file: formData.cfImage, label: t({ it: 'Codice Fiscale (fronte)', en: 'Tax code (front)' }) },
+                          { file: formData.cfImageBack, label: t({ it: 'Codice Fiscale (retro)', en: 'Tax code (back)' }) },
+                          { file: formData.idImage, label: t({ it: 'Documento Identità (fronte)', en: 'ID document (front)' }) },
+                          { file: formData.idImageBack, label: t({ it: 'Documento Identità (retro)', en: 'ID document (back)' }) },
                         ]}
                         currentData={{
                           nome: formData.firstName,
@@ -7501,7 +7498,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               <h3 className="text-lg font-bold text-white mb-2">{t({ it: "DATI DEL CONDUCENTE", en: "DRIVER DETAILS" })}</h3>
               <p className="text-sm text-gray-400 mb-4">
                 {t({
-                  it: 'Letti dai documenti caricati qui sopra e dalla tua scheda cliente. Quelli gia' + "\u2019" + 'compilati non si modificano: restano da completare solo gli eventuali campi vuoti.',
+                  it: "Letti dai documenti caricati qui sopra e dalla tua scheda cliente. Quelli gia’compilati non si modificano: restano da completare solo gli eventuali campi vuoti.",
                   en: 'Read from the documents above and from your customer profile. Filled fields are locked: only the empty ones are left to complete.',
                 })}
               </p>
@@ -7520,7 +7517,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   className="h-4 w-4 mt-1 text-white bg-gray-700 border-gray-600 rounded focus:ring-white"
                 />
                 <label htmlFor="add-second-driver" className="ml-2 text-white">
-                  Aggiungi un secondo conducente autorizzato
+                  {t({ it: "Aggiungi un secondo conducente autorizzato", en: "Add an authorised second driver" })}
                 </label>
               </div>
 
@@ -7551,12 +7548,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {([
-                        { campo: 'licenseImage', titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: ["Foto chiara e leggibile", "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'licenseImageBack', titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'idImage', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: ["Documento valido", "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'idImageBack', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
-                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), "Formati: JPG, PNG, PDF (max 5MB)"] },
+                        { campo: 'licenseImage', titolo: t({ it: "PATENTE — FRONTE *", en: "LICENCE — FRONT *" }), righe: [t({ it: "Foto chiara e leggibile", en: "Clear, readable photo" }), t({ it: "Formati: JPG, PNG, PDF (max 5MB)", en: "Formats: JPG, PNG, PDF (max 5MB)" })] },
+                        { campo: 'licenseImageBack', titolo: t({ it: "PATENTE — RETRO *", en: "LICENCE — BACK *" }), righe: [t({ it: "Da qui leggiamo la data di conseguimento", en: "This is where the real issue date is" }), t({ it: "Formati: JPG, PNG, PDF (max 5MB)", en: "Formats: JPG, PNG, PDF (max 5MB)" })] },
+                        { campo: 'idImage', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — FRONTE *", en: "ID CARD / PASSPORT — FRONT *" }), righe: [t({ it: "Documento valido", en: "Valid document" }), t({ it: "Formati: JPG, PNG, PDF (max 5MB)", en: "Formats: JPG, PNG, PDF (max 5MB)" })] },
+                        { campo: 'idImageBack', titolo: t({ it: "CARTA D'IDENTITÀ / PASSAPORTO — RETRO *", en: "ID CARD / PASSPORT — BACK *" }), righe: [t({ it: "Per il passaporto: la pagina dei dati", en: "For a passport: the data page" }), t({ it: "Formati: JPG, PNG, PDF (max 5MB)", en: "Formats: JPG, PNG, PDF (max 5MB)" })] },
+                        { campo: 'cfImage', titolo: t({ it: "CODICE FISCALE — FRONTE *", en: "TAX CODE CARD — FRONT *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), t({ it: "Formati: JPG, PNG, PDF (max 5MB)", en: "Formats: JPG, PNG, PDF (max 5MB)" })] },
+                        { campo: 'cfImageBack', titolo: t({ it: "CODICE FISCALE — RETRO *", en: "TAX CODE CARD — BACK *" }), righe: [t({ it: "Tessera sanitaria", en: "Health insurance card" }), t({ it: "Formati: JPG, PNG, PDF (max 5MB)", en: "Formats: JPG, PNG, PDF (max 5MB)" })] },
                       ] as const)
                         // Stessa regola del primo conducente: niente tessera
                         // sanitaria a chi non ha il codice fiscale.
@@ -7585,12 +7582,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           auto
                           tone="rosso"
                           documents={[
-                            { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: 'Patente Secondo Conducente (fronte)' },
-                            { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: 'Patente Secondo Conducente (retro)' },
-                            { file: formData.secondDriver.idImage instanceof File ? formData.secondDriver.idImage : null, label: 'Documento Secondo Conducente (fronte)' },
-                            { file: formData.secondDriver.idImageBack instanceof File ? formData.secondDriver.idImageBack : null, label: 'Documento Secondo Conducente (retro)' },
-                            { file: formData.secondDriver.cfImage instanceof File ? formData.secondDriver.cfImage : null, label: 'Codice Fiscale Secondo Conducente (fronte)' },
-                            { file: formData.secondDriver.cfImageBack instanceof File ? formData.secondDriver.cfImageBack : null, label: 'Codice Fiscale Secondo Conducente (retro)' },
+                            { file: formData.secondDriver.licenseImage instanceof File ? formData.secondDriver.licenseImage : null, label: t({ it: 'Patente Secondo Conducente (fronte)', en: 'Second Driver Licence (front)' }) },
+                            { file: formData.secondDriver.licenseImageBack instanceof File ? formData.secondDriver.licenseImageBack : null, label: t({ it: 'Patente Secondo Conducente (retro)', en: 'Second Driver Licence (back)' }) },
+                            { file: formData.secondDriver.idImage instanceof File ? formData.secondDriver.idImage : null, label: t({ it: 'Documento Secondo Conducente (fronte)', en: 'Second Driver ID Document (front)' }) },
+                            { file: formData.secondDriver.idImageBack instanceof File ? formData.secondDriver.idImageBack : null, label: t({ it: 'Documento Secondo Conducente (retro)', en: 'Second Driver ID Document (back)' }) },
+                            { file: formData.secondDriver.cfImage instanceof File ? formData.secondDriver.cfImage : null, label: t({ it: 'Codice Fiscale Secondo Conducente (fronte)', en: 'Second Driver Tax Code (front)' }) },
+                            { file: formData.secondDriver.cfImageBack instanceof File ? formData.secondDriver.cfImageBack : null, label: t({ it: 'Codice Fiscale Secondo Conducente (retro)', en: 'Second Driver Tax Code (back)' }) },
                           ]}
                           currentData={{
                             nome: formData.secondDriver.firstName,
@@ -7659,7 +7656,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex items-start">
                     <input id="confirms-documents" name="confirmsDocuments" type="checkbox" checked={formData.confirmsDocuments} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
                     <label htmlFor="confirms-documents" className="ml-3 block text-sm font-medium text-white">
-                      Confermo che i documenti caricati sono corretti e appartengono al conducente principale.
+                      {t({ it: "Confermo che i documenti caricati sono corretti e appartengono al conducente principale.", en: "I confirm that the uploaded documents are correct and belong to the main driver." })}
                     </label>
                   </div>
                   {errors.confirmsDocuments && <p className="text-xs text-red-400 mt-1 pl-7">{errors.confirmsDocuments}</p>}
@@ -7668,7 +7665,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex items-start">
                     <input id="agrees-to-terms" name="agreesToTerms" type="checkbox" checked={formData.agreesToTerms} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
                     <label htmlFor="agrees-to-terms" className="ml-3 block text-sm font-medium text-white">
-                      Ho letto e accetto i <Link to="/rental-agreement" target="_blank" className="underline hover:text-white">{t({ it: "termini e le condizioni di noleggio", en: "rental terms and conditions" })}</Link>.
+                      {t({ it: "Ho letto e accetto i", en: "I have read and accept the" })} <Link to="/rental-agreement" target="_blank" className="underline hover:text-white">{t({ it: "termini e le condizioni di noleggio", en: "rental terms and conditions" })}</Link>.
                     </label>
                   </div>
                   {errors.agreesToTerms && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToTerms}</p>}
@@ -7677,7 +7674,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <div className="flex items-start">
                     <input id="agrees-to-privacy" name="agreesToPrivacy" type="checkbox" checked={formData.agreesToPrivacy} onChange={handleChange} className="h-4 w-4 mt-1 rounded border-gray-600 bg-gray-700 text-white focus:ring-white" />
                     <label htmlFor="agrees-to-privacy" className="ml-3 block text-sm font-medium text-white">
-                      Ho letto e accetto l'<Link to="/privacy-policy" target="_blank" className="underline hover:text-white">{t({ it: "informativa sulla privacy", en: "privacy policy" })}</Link>.
+                      {t({ it: "Ho letto e accetto l'", en: "I have read and accept the " })}<Link to="/privacy-policy" target="_blank" className="underline hover:text-white">{t({ it: "informativa sulla privacy", en: "privacy policy" })}</Link>.
                     </label>
                   </div>
                   {errors.agreesToPrivacy && <p className="text-xs text-red-400 mt-1 pl-7">{errors.agreesToPrivacy}</p>}
@@ -7703,30 +7700,30 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div>
                   <p className="font-bold text-base text-white mb-2">{t({ it: "DATE E LOCALITÀ", en: "DATES AND LOCATIONS" })}</p>
                   <hr className="border-gray-600 mb-2" />
-                  <p>Ritiro: {formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} alle {formData.pickupTime || '—'} - {pickupLocs.find(l => l.id === formData.pickupLocation)?.label?.it || formData.pickupLocation}</p>
-                  <p>Riconsegna: {formData.returnDate ? new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} alle {formData.returnTime || '—'} - {returnLocs.find(l => l.id === formData.returnLocation)?.label?.it || formData.returnLocation}</p>
-                  <p>Durata: {Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? 'giorno' : 'giorni'}</p>
+                  <p>{t({ it: "Ritiro:", en: "Pick-up:" })} {formData.pickupDate ? new Date(formData.pickupDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} {t({ it: "alle", en: "at" })} {formData.pickupTime || '—'} - {pickupLocs.find(l => l.id === formData.pickupLocation)?.label?.it || formData.pickupLocation}</p>
+                  <p>{t({ it: "Riconsegna:", en: "Drop-off:" })} {formData.returnDate ? new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} {t({ it: "alle", en: "at" })} {formData.returnTime || '—'} - {returnLocs.find(l => l.id === formData.returnLocation)?.label?.it || formData.returnLocation}</p>
+                  <p>{t({ it: "Durata:", en: "Duration:" })} {Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })}</p>
                   {extraDayApplied && (
                     <div className="mt-1 p-2 bg-amber-900/30 border border-amber-500/50 rounded">
                       <p className="text-amber-300 text-xs font-semibold">{t({ it: "L'orario di riconsegna supera il margine di 1h30 prima del ritiro: viene conteggiato 1 giorno aggiuntivo.", en: "The drop-off time exceeds the 1h30 margin before pick-up: one extra day is charged." })}</p>
                     </div>
                   )}
-                  <p>Pacchetto km: {(formData.kmPackageType === 'unlimited' || includedKm >= 9999) ? 'ILLIMITATI' : `${includedKm} km`}</p>
+                  <p>{t({ it: "Pacchetto km:", en: "Km package:" })} {(formData.kmPackageType === 'unlimited' || includedKm >= 9999) ? t({ it: 'ILLIMITATI', en: 'UNLIMITED' }) : `${includedKm} km`}</p>
                 </div>
 
                 <div>
                   <p className="font-bold text-base text-white mb-2">{t({ it: "CONDUCENTE/I", en: "DRIVER(S)" })}</p>
                   <hr className="border-gray-600 mb-2" />
-                  <p>Principale: {formData.firstName} {formData.lastName}</p>
+                  <p>{t({ it: "Principale:", en: "Main:" })} {formData.firstName} {formData.lastName}</p>
                   <p className="text-xs text-gray-400">{formData.email} - {formData.phone}</p>
-                  <p className="text-xs text-gray-400">{driverAge} anni - Patente: {licenseYears} anni</p>
+                  <p className="text-xs text-gray-400">{driverAge} {t({ it: "anni", en: "years" })} - {t({ it: "Patente:", en: "Licence:" })} {licenseYears} {t({ it: "anni", en: "years" })}</p>
                   {(formData.licenseImage || formData.idImage) && <p className="text-xs text-green-400">{t({ it: "Documenti caricati", en: "Documents uploaded" })}</p>}
                   {formData.addSecondDriver && (
                     <div className="mt-2">
-                      <p>Secondo: {formData.secondDriver.firstName} {formData.secondDriver.lastName}</p>
+                      <p>{t({ it: "Secondo:", en: "Second:" })} {formData.secondDriver.firstName} {formData.secondDriver.lastName}</p>
                       <p className="text-xs text-gray-400">{formData.secondDriver.email} - {formData.secondDriver.phone}</p>
-                      <p className="text-xs text-gray-400">Patente: {formData.secondDriver.licenseNumber} - Rilascio: {formData.secondDriver.licenseIssueDate} - Scadenza: {formData.secondDriver.licenseExpiryDate}</p>
-                      <p className="text-xs text-gray-400">Paese di rilascio: {formData.secondDriver.countryOfIssue}</p>
+                      <p className="text-xs text-gray-400">{t({ it: "Patente:", en: "Licence:" })} {formData.secondDriver.licenseNumber} - {t({ it: "Rilascio:", en: "Issued:" })} {formData.secondDriver.licenseIssueDate} - {t({ it: "Scadenza:", en: "Expiry:" })} {formData.secondDriver.licenseExpiryDate}</p>
+                      <p className="text-xs text-gray-400">{t({ it: "Paese di rilascio:", en: "Country of issue:" })} {formData.secondDriver.countryOfIssue}</p>
                     </div>
                   )}
                 </div>
@@ -7755,20 +7752,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                   {/* Noleggio base */}
                   <div className="flex justify-between">
-                    <span>Noleggio ({Math.max(1, duration.days)} gg × {effectivePricePerDay ? formatPrice(effectivePricePerDay) : '€0'})</span>
+                    <span>{t({ it: "Noleggio (", en: "Rental (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × {effectivePricePerDay ? formatPrice(effectivePricePerDay) : '€0'})</span>
                     <span>{formatPrice(rentalCost)}</span>
                   </div>
 
                   {/* Assicurazione */}
                   {insuranceCost > 0 && (
                     <div className="flex justify-between">
-                      <span>Assicurazione {(() => {
+                      <span>{t({ it: "Assicurazione", en: "Insurance" })} {(() => {
                         const vType = getVehicleType(item);
                         const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
                         const allOpts = getInsuranceForVehicle(vType, activeTier);
                         const opt = allOpts.find(o => o.id === formData.insuranceOption);
                         return opt?.name || '';
-                      })()} ({Math.max(1, duration.days)} gg × €{(() => {
+                      })()} ({Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × €{(() => {
                         const vType = getVehicleType(item);
                         const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
                         const allOpts = getInsuranceForVehicle(vType, activeTier);
@@ -7780,7 +7777,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )}
                   {insuranceCost === 0 && (
                     <div className="flex justify-between text-gray-400">
-                      <span>Assicurazione ({(() => {
+                      <span>{t({ it: "Assicurazione (", en: "Insurance (" })}{(() => {
                         const vType = getVehicleType(item);
                         const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
                         return getInsuranceForVehicle(vType, activeTier).find(o => o.id === formData.insuranceOption)?.name || ''
@@ -7795,7 +7792,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     if (isIllimitati && kmPackageCost > 0) {
                       return (
                         <div className="flex justify-between">
-                          <span>Km illimitati ({Math.max(1, duration.days)} gg × €{(kmPackageCost / Math.max(1, duration.days)).toFixed(2)})</span>
+                          <span>{t({ it: "Km illimitati (", en: "Unlimited km (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × €{(kmPackageCost / Math.max(1, duration.days)).toFixed(2)})</span>
                           <span>{formatPrice(kmPackageCost)}</span>
                         </div>
                       )
@@ -7836,7 +7833,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {/* Secondo guidatore */}
                   {secondDriverFee > 0 && (
                     <div className="flex justify-between">
-                      <span>Secondo guidatore ({Math.max(1, duration.days)} gg × €{(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? ACTIVE_TIER_PRICING[driverTier].secondDriverPerDay : ACTIVE_TIER_PRICING.TIER_2.secondDriverPerDay})</span>
+                      <span>{t({ it: "Secondo guidatore (", en: "Second driver (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × €{(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? ACTIVE_TIER_PRICING[driverTier].secondDriverPerDay : ACTIVE_TIER_PRICING.TIER_2.secondDriverPerDay})</span>
                       <span>{formatPrice(secondDriverFee)}</span>
                     </div>
                   )}
@@ -7853,7 +7850,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {experienceCost > 0 && Object.entries(formData.selectedExperiences).filter(([_, qty]) => qty > 0).map(([svcId, qty]) => {
                     const svc = ACTIVE_EXPERIENCE_SERVICES.find(s => s.id === svcId);
                     if (!svc) return null;
-                    const unitLabel = svc.unit === 'per_day' ? `${Math.max(1, duration.days)} gg` : `${qty}x`;
+                    const unitLabel = svc.unit === 'per_day' ? `${Math.max(1, duration.days)} ${t({ it: 'gg', en: 'days' })}` : `${qty}x`;
                     const lineCost = svc.unit === 'per_day' ? svc.price * duration.days * qty : svc.price * qty;
                     return (
                       <div key={svcId} className="flex justify-between">
@@ -7868,21 +7865,21 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {/* Deposit surcharges */}
                   {noDepositSurcharge > 0 && (
                     <div className="flex justify-between text-white">
-                      <span>{`Supplemento cauzione (${(() => {
+                      <span>{`${t({ it: 'Supplemento cauzione', en: 'Deposit surcharge' })} (${(() => {
                         const days = Math.max(1, duration.days);
                         const depositKey = `${(driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
                         const depOpts = pickDepositOptions(configOverlay, vehicleType, depositKey, (item as any).category);
                         const selectedDep = depOpts.find((d: { id: string }) => d.id === formData.depositOption);
                         const perDay = selectedDep?.surchargePerDay || 0;
-                        return perDay > 0 ? `${days} gg × €${perDay}` : `${days} gg`;
+                        return perDay > 0 ? `${days} ${t({ it: 'gg', en: 'days' })} × €${perDay}` : `${days} ${t({ it: 'gg', en: 'days' })}`;
                       })()})`}</span>
                       <span>{formatPrice(noDepositSurcharge)}</span>
                     </div>
                   )}
 
                   {/* Additional surcharges from ours */}
-                  {youngDriverFee > 0 && <div className="flex justify-between"><span>Supplemento sotto i 25 anni ({Math.max(1, duration.days)} gg × €10)</span> <span>{formatPrice(youngDriverFee)}</span></div>}
-                  {recentLicenseFee > 0 && <div className="flex justify-between"><span>Supplemento patente recente ({Math.max(1, duration.days)} gg × €20)</span> <span>{formatPrice(recentLicenseFee)}</span></div>}
+                  {youngDriverFee > 0 && <div className="flex justify-between"><span>{t({ it: "Supplemento sotto i 25 anni (", en: "Under-25 surcharge (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × €10)</span> <span>{formatPrice(youngDriverFee)}</span></div>}
+                  {recentLicenseFee > 0 && <div className="flex justify-between"><span>{t({ it: "Supplemento patente recente (", en: "Recent licence surcharge (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × €20)</span> <span>{formatPrice(recentLicenseFee)}</span></div>}
 
                   <hr className="border-gray-500 my-2" />
 
@@ -7895,7 +7892,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       </div>
                       <div className="flex justify-between text-green-400 text-sm">
                         <span className="flex items-center gap-1">
-                          Prezzo dinamico
+                          {t({ it: "Prezzo dinamico", en: "Dynamic price" })}
                           <span className={`text-xs px-1 py-0.5 font-semibold ${dynamicDiscountPct > 0 ? 'bg-green-500/20' : 'bg-red-500/20 text-red-400'}`}>
                             {dynamicDiscountPct > 0 ? `-${dynamicDiscountPct}%` : `+${Math.abs(dynamicDiscountPct)}%`}
                           </span>
@@ -7919,7 +7916,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         onClick={() => setCoeffExpanded(!coeffExpanded)}
                         className="text-blue-400 hover:text-blue-300 underline"
                       >
-                        {coeffExpanded ? 'Nascondi dettagli coefficienti' : 'Mostra dettagli coefficienti'}
+                        {coeffExpanded ? t({ it: 'Nascondi dettagli coefficienti', en: 'Hide coefficient details' }) : t({ it: 'Mostra dettagli coefficienti', en: 'Show coefficient details' })}
                       </button>
                       {coeffExpanded && (
                         <div className="space-y-1 pt-2 mt-1 border-t border-gray-700">
@@ -7956,24 +7953,24 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             // quell'opzione). Cosi' direzione/cliente vede sempre
                             // lo stato corrente di ogni toggle Centralina Pro.
                             const items: { label: string; on: boolean }[] = [
-                              { label: 'Assicurazione',        on: ci?.insurance        ?? true  },
-                              { label: 'Lavaggio',             on: ci?.lavaggio         ?? true  },
-                              { label: 'No Cauzione',          on: ci?.no_cauzione      ?? true  },
-                              { label: 'Cauzione veicoli',     on: ci?.cauzione_veicoli ?? true  },
-                              { label: 'Secondo guidatore',    on: ci?.second_driver    ?? true  },
+                              { label: t({ it: 'Assicurazione', en: 'Insurance' }),        on: ci?.insurance        ?? true  },
+                              { label: t({ it: 'Lavaggio', en: 'Car wash' }),             on: ci?.lavaggio         ?? true  },
+                              { label: t({ it: 'No Cauzione', en: 'No Deposit' }),          on: ci?.no_cauzione      ?? true  },
+                              { label: t({ it: 'Cauzione veicoli', en: 'Vehicle deposit' }),     on: ci?.cauzione_veicoli ?? true  },
+                              { label: t({ it: 'Secondo guidatore', en: 'Second driver' }),    on: ci?.second_driver    ?? true  },
                               { label: 'DR7 FLEX',             on: ci?.dr7_flex         ?? true  },
-                              { label: 'KM Illimitati',        on: ci?.unlimited_km     ?? false },
-                              { label: 'Pacchetti KM',         on: ci?.km_packages      ?? false },
-                              { label: 'Servizi Experience',   on: ci?.experience       ?? false },
-                              { label: 'Consegna a domicilio', on: ci?.delivery         ?? false },
-                              { label: 'Ritiro a domicilio',   on: ci?.pickup           ?? false },
+                              { label: t({ it: 'KM Illimitati', en: 'Unlimited KM' }),        on: ci?.unlimited_km     ?? false },
+                              { label: t({ it: 'Pacchetti KM', en: 'KM packages' }),         on: ci?.km_packages      ?? false },
+                              { label: t({ it: 'Servizi Experience', en: 'Experience services' }),   on: ci?.experience       ?? false },
+                              { label: t({ it: 'Consegna a domicilio', en: 'Home delivery' }), on: ci?.delivery         ?? false },
+                              { label: t({ it: 'Ritiro a domicilio', en: 'Home collection' }),   on: ci?.pickup           ?? false },
                             ]
                             const inList = items.filter(i => i.on).map(i => i.label)
                             const outList = items.filter(i => !i.on).map(i => i.label)
                             return (
                               <div className="pt-2 mt-1 border-t border-gray-700/50 space-y-0.5">
                                 <div className="text-[11px] text-gray-400">
-                                  <span className="text-emerald-400">{t({ it: "Incluse nel coefficiente:", en: "Included in the coefficient:" })}</span> Noleggio{inList.length > 0 ? `, ${inList.join(', ')}` : ''}
+                                  <span className="text-emerald-400">{t({ it: "Incluse nel coefficiente:", en: "Included in the coefficient:" })}</span> {t({ it: "Noleggio", en: "Rental" })}{inList.length > 0 ? `, ${inList.join(', ')}` : ''}
                                 </div>
                                 <div className="text-[11px] text-gray-400">
                                   <span className="text-rose-400">{t({ it: "Escluse (a listino):", en: "Excluded (list price):" })}</span> {outList.length > 0 ? outList.join(', ') : '—'}
@@ -7994,9 +7991,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <>
                       <div className="flex justify-between text-yellow-400 text-sm">
                         <span className="flex items-center gap-1">
-                          ⚠️ Limite {clampHit === 'max' ? 'Max' : 'Min'} Raggiunto
+                          {t({ it: "⚠️ Limite", en: "⚠️ Limit" })} {clampHit === 'max' ? 'Max' : 'Min'} {t({ it: "Raggiunto", en: "Reached" })}
                           {clampLimitDaily != null && (
-                            <span className="text-gray-400 text-xs">({formatPrice(clampLimitDaily)}/g × {Math.max(1, duration.days)}gg, escl. experience)</span>
+                            <span className="text-gray-400 text-xs">({formatPrice(clampLimitDaily)}/g × {Math.max(1, duration.days)}{t({ it: "gg, escl. experience", en: "d, excl. experience" })})</span>
                           )}
                         </span>
                       </div>
@@ -8009,7 +8006,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                   {membershipDiscount > 0 && (
                     <div className="flex justify-between text-green-400 text-sm">
-                      <span>Sconto {membershipTier} ({(membershipDiscount / originalTotal * 100).toFixed(0)}%)</span>
+                      <span>{t({ it: "Sconto", en: "Discount" })} {membershipTier} ({(membershipDiscount / originalTotal * 100).toFixed(0)}%)</span>
                       <span>-{formatPrice(membershipDiscount)}</span>
                     </div>
                   )}
@@ -8021,13 +8018,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   )}
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-white text-sm">
-                      <span>Codice Sconto ({appliedDiscount?.code})</span>
+                      <span>{t({ it: "Codice Sconto (", en: "Discount Code (" })}{appliedDiscount?.code})</span>
                       <span>-{formatPrice(discountAmount)}</span>
                     </div>
                   )}
                   {selectedUpsellWash && (
                     <div className="flex justify-between text-blue-400 text-sm">
-                      <span>Lavaggio {selectedUpsellWash.name} (-10%)</span>
+                      <span>{t({ it: "Lavaggio", en: "Car wash" })} {selectedUpsellWash.name} (-10%)</span>
                       <span>+{formatPrice(washUpsellCost)}</span>
                     </div>
                   )}
@@ -8040,7 +8037,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   {grandTotal > 0 && (
                     <div className="flex justify-between text-green-400 text-sm mt-1">
                       <span>{t({ it: "Guadagna fino al 4% in credito wallet con DR7 Club", en: "Earn up to 4% in wallet credit with DR7 Club" })}</span>
-                      <span>fino a +€{(Math.floor(grandTotal * 4) / 100).toFixed(2)}</span>
+                      <span>{t({ it: "fino a", en: "up to" })} +€{(Math.floor(grandTotal * 4) / 100).toFixed(2)}</span>
                     </div>
                   )}
 
@@ -8050,7 +8047,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       return (
                         <div className="mt-3 p-3 bg-green-900/30 border border-green-500/30 rounded-lg">
                           <p className="text-sm font-semibold text-green-400">{t({ it: "NESSUNA CAUZIONE", en: "NO DEPOSIT" })}</p>
-                          <p className="text-sm text-white mt-1">Supplemento: €{ACTIVE_NO_DEPOSIT_SURCHARGE}/giorno ({Math.max(1, duration.days)} gg = {formatPrice(noDepositSurcharge)})</p>
+                          <p className="text-sm text-white mt-1">{t({ it: "Supplemento:", en: "Surcharge:" })} €{ACTIVE_NO_DEPOSIT_SURCHARGE}{t({ it: '/giorno', en: '/day' })} ({Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} = {formatPrice(noDepositSurcharge)})</p>
                           <p className="text-xs text-gray-500 mt-1">{t({ it: "Richiede approvazione DR7", en: "Requires DR7 approval" })}</p>
                         </div>
                       );
@@ -8084,14 +8081,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <p className="text-sm font-semibold text-white">{t({ it: "CAUZIONE AL RITIRO", en: "DEPOSIT AT PICK-UP" })}</p>
                           {optAmount > 0 ? (
                             <>
-                              <p className="text-sm text-gray-300 mt-1">Importo: €{optAmount.toLocaleString('it-IT')}</p>
+                              <p className="text-sm text-gray-300 mt-1">{t({ it: "Importo:", en: "Amount:" })} €{optAmount.toLocaleString('it-IT')}</p>
                               <p className="text-xs text-gray-500 mt-1">{t({ it: "Restituita dopo la riconsegna", en: "Refunded after drop-off" })}</p>
                             </>
                           ) : (
                             <p className="text-sm text-gray-400 mt-1">{t({ it: "Importo da confermare", en: "Amount to be confirmed" })}</p>
                           )}
                           {!isUrbanOrCorporate && optLabel && (
-                            <p className="text-sm text-gray-400 mt-1">Tipo: {optLabel}</p>
+                            <p className="text-sm text-gray-400 mt-1">{t({ it: "Tipo:", en: "Type:" })} {optLabel}</p>
                           )}
                         </div>
                       );
@@ -8109,8 +8106,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         <p className="text-green-400 font-bold">{appliedDiscount.code}</p>
                         <p className="text-green-300 text-sm">
                           {appliedDiscount.type === 'percentage'
-                            ? `Sconto del ${Math.round(Number(appliedDiscount.amount))}% applicato (-€${discountAmount.toFixed(2)})`
-                            : `Sconto di €${Number(appliedDiscount.amount).toFixed(2)} applicato`}
+                            ? `${t({ it: 'Sconto del', en: 'Discount of' })} ${Math.round(Number(appliedDiscount.amount))}% ${t({ it: 'applicato', en: 'applied' })} (-€${discountAmount.toFixed(2)})`
+                            : `${t({ it: 'Sconto di', en: 'Discount of' })} €${Number(appliedDiscount.amount).toFixed(2)} ${t({ it: 'applicato', en: 'applied' })}`}
                         </p>
                       </div>
                       <button
@@ -8136,7 +8133,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         disabled={isValidatingCode || !discountCode.trim()}
                         className="px-4 py-2 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                       >
-                        {isValidatingCode ? 'Verifica...' : 'Applica'}
+                        {isValidatingCode ? t({ it: 'Verifica...', en: 'Checking...' }) : t({ it: 'Applica', en: 'Apply' })}
                       </button>
                     </div>
                   )}
@@ -8150,7 +8147,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   <details className="group">
                     <summary className="cursor-pointer text-sm text-gray-300 hover:text-white flex items-center gap-2 font-semibold">
                       <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
-                      Maggiori informazioni
+                      {t({ it: "Maggiori informazioni", en: "More information" })}
                     </summary>
                     <div className="mt-3 pl-4 space-y-3 border-l-2 border-gray-600">
                       {/* 21/09/2026 (direzione): leggeva driverTierInfo, cioe' la
@@ -8161,15 +8158,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           si legge driverTier, la stessa che fa kasko, km,
                           secondo guidatore e cauzione. */}
                       <p className="text-sm text-gray-300">
-                        Profilo conducente: {driverTier === 'TIER_1'
-                          ? 'Tier 1 (21-25 anni o patente 3-4 anni)'
+                        {t({ it: "Profilo conducente:", en: "Driver profile:" })} {driverTier === 'TIER_1'
+                          ? t({ it: 'Tier 1 (21-25 anni o patente 3-4 anni)', en: 'Tier 1 (21-25 years old or licence held 3-4 years)' })
                           : driverTier === 'TIER_2'
-                            ? 'Tier 2 (26-69 anni, patente 5+ anni)'
-                            : 'da confermare dai documenti'}
-                        {driverTier && !driverTierInfo?.tier && ' — dichiarato, in attesa dei documenti'}
+                            ? t({ it: 'Tier 2 (26-69 anni, patente 5+ anni)', en: 'Tier 2 (26-69 years old, licence held 5+ years)' })
+                            : t({ it: 'da confermare dai documenti', en: 'to be confirmed by the documents' })}
+                        {driverTier && !driverTierInfo?.tier && t({ it: ' — dichiarato, in attesa dei documenti', en: ' — declared, awaiting documents' })}
                       </p>
                       <p className="text-sm text-gray-300">
-                        Prenotazione soggetta a verifica documenti. Se i documenti non sono validi, la prenotazione potrà essere annullata.
+                        {t({ it: "Prenotazione soggetta a verifica documenti. Se i documenti non sono validi, la prenotazione potrà essere annullata.", en: "Booking subject to document verification. If the documents are not valid, the booking may be cancelled." })}
                       </p>
                     </div>
                   </details>
@@ -8277,17 +8274,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     {/* Header */}
                     <div className="text-center mb-5 sm:mb-6">
                       <h3 className="text-xl sm:text-2xl font-bold text-white tracking-wide mb-1">
-                        APPROFITTA SUBITO
+                        {t({ it: "APPROFITTA SUBITO", en: "TAKE ADVANTAGE NOW" })}
                       </h3>
                       <div className="w-12 h-0.5 bg-white/30 mx-auto mb-4"></div>
                       <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-md mx-auto">
-                        Grazie per aver prenotato il tuo noleggio.
+                        {t({ it: "Grazie per aver prenotato il tuo noleggio.", en: "Thank you for booking your rental." })}
                       </p>
                       <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-md mx-auto mt-1">
-                        Mentre ti godi la tua {categoryContext === 'urban-cars' || categoryContext === 'corporate-fleet' ? 'utilitaria' : 'supercar'}, lascia a noi la cura della <strong className="text-white">{t({ it: "tua auto", en: "your car" })}</strong>.
+                        {t({ it: "Mentre ti godi la tua", en: "While you enjoy your" })} {categoryContext === 'urban-cars' || categoryContext === 'corporate-fleet' ? t({ it: 'utilitaria', en: 'city car' }) : t({ it: 'supercar', en: 'supercar' })}{t({ it: ", lascia a noi la cura della", en: ", let us take care of" })} <strong className="text-white">{t({ it: "tua auto", en: "your car" })}</strong>.
                       </p>
                       <p className="text-white font-semibold text-base sm:text-lg mt-3">
-                        Solo per i clienti noleggio: <span className="text-green-400">–10%</span> su qualsiasi servizio lavaggio.
+                        {t({ it: "Solo per i clienti noleggio:", en: "Rental customers only:" })} <span className="text-green-400">–10%</span> {t({ it: "su qualsiasi servizio lavaggio.", en: "on any car wash service." })}
                       </p>
                     </div>
 
@@ -8299,7 +8296,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           value={upsellTargaInput}
                           onChange={(e) => setUpsellTargaInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
                           onKeyDown={(e) => { if (e.key === 'Enter' && isValidItalianPlate(upsellTargaInput)) handleUpsellTargaSearch(); }}
-                          placeholder="es. EX117YA"
+                          placeholder={t({ it: "es. EX117YA", en: "e.g. EX117YA" })}
                           className="flex-1 bg-gray-800/80 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/50 transition-colors font-mono tracking-widest uppercase text-center"
                           maxLength={8}
                         />
@@ -8313,7 +8310,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                           }`}
                         >
-                          {upsellTargaLoading ? '...' : 'Cerca'}
+                          {upsellTargaLoading ? '...' : t({ it: 'Cerca', en: 'Search' })}
                         </button>
                       </div>
                       {upsellTargaError && (
@@ -8478,15 +8475,15 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         }`}
                       >
                         {selectedUpsellWash || selectedUpsellExtras.length > 0
-                          ? `Aggiungi servizi – €${totalWashUpsellCost % 1 === 0 ? totalWashUpsellCost : totalWashUpsellCost.toFixed(2)}`
-                          : 'Seleziona un servizio'}
+                          ? `${t({ it: 'Aggiungi servizi', en: 'Add services' })} – €${totalWashUpsellCost % 1 === 0 ? totalWashUpsellCost : totalWashUpsellCost.toFixed(2)}`
+                          : t({ it: 'Seleziona un servizio', en: 'Select a service' })}
                       </button>
                       <button
                         type="button"
                         onClick={handleWashUpsellDecline}
                         className="w-full py-3 text-gray-400 hover:text-white text-sm transition-colors"
                       >
-                        No, grazie
+                        {t({ it: "No, grazie", en: "No, thanks" })}
                       </button>
                     </div>
                   </motion.div>
@@ -8532,19 +8529,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             livello: si dice quello, e si dice fin dove sale.
                             "Fino al 31%" da solo prometteva la cifra piu' alta
                             a chi incassa la piu' bassa. */}
-                        {lang === 'it' ? (
-                          <>
-                            Attiva DR7 Club e ricevi <strong className="text-white">€{subscriptionWalletCredit.toFixed(2)}</strong> di credito wallet
-                            {' '}({clubBaseRate}% del totale{clubMaxRate > clubBaseRate ? `, fino al ${clubMaxRate}% con la spesa annua` : ''}),
-                            {' '}utilizzabile per il prossimo noleggio o servizio lavaggio.
-                          </>
-                        ) : (
-                          <>
-                            Activate DR7 Club and get <strong className="text-white">€{subscriptionWalletCredit.toFixed(2)}</strong> of wallet credit
-                            {' '}({clubBaseRate}% of the total{clubMaxRate > clubBaseRate ? `, up to ${clubMaxRate}% as your yearly spend grows` : ''}),
-                            {' '}to use on your next rental or wash service.
-                          </>
-                        )}
+                        <>
+                          {t({ it: "Attiva DR7 Club e ricevi", en: "Activate DR7 Club and get" })} <strong className="text-white">€{subscriptionWalletCredit.toFixed(2)}</strong> {t({ it: "di credito wallet", en: "of wallet credit" })}
+                          {' '}({clubBaseRate}% {t({ it: "del totale", en: "of the total" })}{clubMaxRate > clubBaseRate ? `, ${t({ it: 'fino al', en: 'up to' })} ${clubMaxRate}% ${t({ it: 'con la spesa annua', en: 'as your yearly spend grows' })}` : ''}),
+                          {' '}{t({ it: "utilizzabile per il prossimo noleggio o servizio lavaggio.", en: "to use on your next rental or wash service." })}
+                        </>
                       </p>
                     </div>
 
@@ -8583,14 +8572,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       >
                         {clubMesiGratis > 0 && (
                           <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-2 py-0.5">
-                            {t({ it: `${clubMesiGratis} MESI GRATIS`, en: `${clubMesiGratis} MONTHS FREE` })}
+                            {clubMesiGratis} {t({ it: 'MESI GRATIS', en: 'MONTHS FREE' })}
                           </div>
                         )}
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-white font-bold text-base">{t({ it: "Annuale", en: "Annual" })}</p>
                             <p className="text-gray-400 text-xs mt-0.5">{clubMesiGratis > 0
-                              ? t({ it: `Paga ${12 - clubMesiGratis} mesi, ricevi 12 — il piano migliore`, en: `Pay ${12 - clubMesiGratis} months, get 12 — the best plan` })
+                              ? `${t({ it: 'Paga', en: 'Pay' })} ${12 - clubMesiGratis} ${t({ it: 'mesi, ricevi 12 — il piano migliore', en: 'months, get 12 — the best plan' })}`
                               : t({ it: "Il piano migliore", en: "The best plan" })}</p>
                           </div>
                           <div className="text-right">
@@ -8810,7 +8799,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         rel="noopener noreferrer"
                         className="inline-block px-6 py-2 bg-green-600 text-white font-bold hover:bg-green-500 transition-colors text-sm"
                       >
-                        Apri WhatsApp
+                        {t({ it: "Apri WhatsApp", en: "Open WhatsApp" })}
                       </a>
                     </div>
                   )}
@@ -8836,13 +8825,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         // residenza): quel passo non esiste piu'.
                         disabled={(step === 1 && !isFromSearch && isCheckingAvailability) || (step === 1 && !!availabilityError) || (!!prevenditaScelta && (!!prevenditaErrore || prevenditaInVerifica))}
                       >
-                        Continua
+                        {t({ it: "Continua", en: "Continue" })}
                       </button>
                     ) : (
                       <>
                         {extraDayApplied && (
                           <div className="w-full mb-4 p-3 bg-amber-900/30 border border-amber-500/50 rounded-lg">
-                            <p className="text-amber-300 text-sm font-semibold">Attenzione: l'orario di riconsegna selezionato supera il margine di 1h30 prima dell'orario di ritiro. Viene conteggiato 1 giorno aggiuntivo ({duration.days} giorni totali invece di {duration.days - 1}).</p>
+                            <p className="text-amber-300 text-sm font-semibold">{t({ it: "Attenzione: l'orario di riconsegna selezionato supera il margine di 1h30 prima dell'orario di ritiro. Viene conteggiato 1 giorno aggiuntivo (", en: "Note: the selected drop-off time exceeds the 1h30 margin before the pick-up time. One extra day is charged (" })}{duration.days} {t({ it: "giorni totali invece di", en: "days in total instead of" })} {duration.days - 1}).</p>
                           </div>
                         )}
                         {/* Hide CONFERMA/RICHIEDI when No Cauzione flow (SALVA PREVENTIVO is in step 4 content) */}
@@ -8872,7 +8861,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                               className="flex-1 px-6 sm:px-8 py-3 bg-white text-black text-sm sm:text-base font-bold hover:bg-gray-200 transition-colors flex items-center justify-center disabled:bg-gray-600 disabled:cursor-not-allowed"
                               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                             >
-                              {isProcessing ? 'Elaborazione in corso...' : 'CONFERMA PRENOTAZIONE'}
+                              {isProcessing ? t({ it: 'Elaborazione in corso...', en: 'Processing...' }) : t({ it: 'CONFERMA PRENOTAZIONE', en: 'CONFIRM BOOKING' })}
                             </button>
                             {creditoNonBasta && (
                               <p className="w-full text-xs text-red-400 text-center sm:text-left">
@@ -8900,7 +8889,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             >
                               {/* 19/09/2026 (direzione): "SALVA", non "RICHIEDI" — il
                                   preventivo lo salva il cliente, non lo chiede. */}
-                              {isSavingPreventivo ? 'Salvataggio...' : 'SALVA PREVENTIVO'}
+                              {isSavingPreventivo ? t({ it: 'Salvataggio...', en: 'Saving...' }) : t({ it: 'SALVA PREVENTIVO', en: 'SAVE QUOTE' })}
                             </button>
                           </div>
                         )}
@@ -8949,7 +8938,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 onClick={() => setShowMaxDatePopup(false)}
                 className="w-full py-3.5 text-[17px] font-medium text-blue-400 hover:bg-white/5 transition-colors"
               >
-                OK
+                {t({ it: "OK", en: "OK" })}
               </button>
             </div>
           </motion.div>

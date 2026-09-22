@@ -666,9 +666,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       if (value < minDate) {
         setErrors(prev => ({
           ...prev,
-          appointmentDate: lang === 'it'
-            ? 'Non puoi selezionare date passate. Seleziona da oggi in poi.'
-            : 'You cannot select past dates. Select from today onwards.'
+          appointmentDate: t({ it: 'Non puoi selezionare date passate. Seleziona da oggi in poi.', en: 'You cannot select past dates. Select from today onwards.' })
         }));
         setFormData(prev => ({ ...prev, appointmentDate: '' }));
         return;
@@ -678,9 +676,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       if (['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04'].includes(value)) {
         setErrors(prev => ({
           ...prev,
-          appointmentDate: lang === 'it'
-            ? 'Siamo chiusi per ferie. Riapriremo il 5 Gennaio 2026.'
-            : 'We are closed for holidays. We will reopen on January 5th, 2026.'
+          appointmentDate: t({ it: 'Siamo chiusi per ferie. Riapriremo il 5 Gennaio 2026.', en: 'We are closed for holidays. We will reopen on January 5th, 2026.' })
         }));
         setFormData(prev => ({ ...prev, appointmentDate: '' }));
         return;
@@ -689,9 +685,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       if (isHoliday(value)) {
         setErrors(prev => ({
           ...prev,
-          appointmentDate: lang === 'it'
-            ? 'Non puoi prenotare nei giorni festivi. Siamo chiusi.'
-            : 'You cannot book on holidays. We are closed.'
+          appointmentDate: t({ it: 'Non puoi prenotare nei giorni festivi. Siamo chiusi.', en: 'You cannot book on holidays. We are closed.' })
         }));
         setFormData(prev => ({ ...prev, appointmentDate: '' }));
         return;
@@ -702,9 +696,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       if (new Date(y, m - 1, d).getDay() === 0) {
         setErrors(prev => ({
           ...prev,
-          appointmentDate: lang === 'it'
-            ? 'Siamo chiusi la domenica. Seleziona un altro giorno.'
-            : 'We are closed on Sundays. Please select another day.'
+          appointmentDate: t({ it: 'Siamo chiusi la domenica. Seleziona un altro giorno.', en: 'We are closed on Sundays. Please select another day.' })
         }));
         setFormData(prev => ({ ...prev, appointmentDate: '' }));
         return;
@@ -715,9 +707,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       if (blk) {
         setErrors(prev => ({
           ...prev,
-          appointmentDate: blk.message || (lang === 'it'
-            ? 'Prenotazioni non disponibili in questa data.'
-            : 'Bookings are not available on this date.')
+          appointmentDate: blk.message || t({ it: 'Prenotazioni non disponibili in questa data.', en: 'Bookings are not available on this date.' })
         }));
         setFormData(prev => ({ ...prev, appointmentDate: '' }));
         return;
@@ -736,9 +726,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     if (value && value < minDate) {
       setErrors(prev => ({
         ...prev,
-        appointmentDate: lang === 'it'
-          ? 'Non puoi selezionare date passate. Seleziona da oggi in poi.'
-          : 'You cannot select past dates. Select from today onwards.'
+        appointmentDate: t({ it: 'Non puoi selezionare date passate. Seleziona da oggi in poi.', en: 'You cannot select past dates. Select from today onwards.' })
       }));
       setFormData(prev => ({ ...prev, appointmentDate: '' }));
     }
@@ -946,19 +934,19 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   // Validate birthday discount code
   const validateDiscountCode = async () => {
     if (!discountCode.trim()) {
-      setDiscountCodeError('Inserisci un codice sconto');
+      setDiscountCodeError(t({ it: 'Inserisci un codice sconto', en: 'Enter a discount code' }));
       return;
     }
 
     // Block scooter wash from using birthday discount
     if (serviceId === 'scooter-wash') {
-      setDiscountCodeError('Il codice sconto compleanno non è applicabile al lavaggio scooter');
+      setDiscountCodeError(t({ it: 'Il codice sconto compleanno non è applicabile al lavaggio scooter', en: 'The birthday discount code does not apply to scooter washes' }));
       return;
     }
 
     // Check if user is logged in
     if (!user) {
-      setDiscountCodeError('Devi effettuare il login per utilizzare un codice sconto');
+      setDiscountCodeError(t({ it: 'Devi effettuare il login per utilizzare un codice sconto', en: 'You must log in to use a discount code' }));
       return;
     }
 
@@ -985,7 +973,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       const rawResult = await response.json();
 
       if (!response.ok || !rawResult.valid) {
-        setDiscountCodeError(rawResult.message || rawResult.error || 'Codice non valido');
+        setDiscountCodeError(rawResult.message || rawResult.error || t({ it: 'Codice non valido', en: 'Invalid code' }));
         setDiscountCodeValid(false);
         setAppliedDiscount(null);
         return;
@@ -995,7 +983,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       const result = { ...rawResult, ...(rawResult.discountCode || {}) };
 
       if (result.car_wash_used) {
-        setDiscountCodeError('Lo sconto lavaggio di questo codice è già stato utilizzato');
+        setDiscountCodeError(t({ it: 'Lo sconto lavaggio di questo codice è già stato utilizzato', en: 'The car wash discount of this code has already been used' }));
         setDiscountCodeValid(false);
         setAppliedDiscount(null);
         return;
@@ -1017,7 +1005,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
         );
 
         if (!emailMatch && !phoneMatch) {
-          setDiscountCodeError('Questo codice sconto è riservato a un altro cliente. Verifica di aver effettuato il login con lo stesso account.');
+          setDiscountCodeError(t({ it: 'Questo codice sconto è riservato a un altro cliente. Verifica di aver effettuato il login con lo stesso account.', en: 'This discount code is reserved for another customer. Make sure you are logged in with the same account.' }));
           setDiscountCodeValid(false);
           setAppliedDiscount(null);
           return;
@@ -1044,7 +1032,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
 
     } catch (error: any) {
       console.error('Error validating discount code:', error);
-      setDiscountCodeError('Errore nella verifica del codice');
+      setDiscountCodeError(t({ it: 'Errore nella verifica del codice', en: 'Error verifying the code' }));
       setDiscountCodeValid(false);
     } finally {
       setIsValidatingCode(false);
@@ -1114,9 +1102,9 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     if (experienceTier && experienceItem && hasAvailableCar && !chosenSupercar) {
       setErrors(prev => ({
         ...prev,
-        chosenSupercar: lang === 'it'
-          ? `Seleziona la ${experienceTier === 'hypercar' ? 'hypercar' : 'supercar'} per completare la prenotazione.`
-          : `Pick the ${experienceTier === 'hypercar' ? 'hypercar' : 'supercar'} to complete the booking.`,
+        chosenSupercar: experienceTier === 'hypercar'
+          ? t({ it: 'Seleziona la hypercar per completare la prenotazione.', en: 'Pick the hypercar to complete the booking.' })
+          : t({ it: 'Seleziona la supercar per completare la prenotazione.', en: 'Pick the supercar to complete the booking.' }),
       }));
       // Scroll the picker into view
       const picker = document.querySelector('[data-supercar-picker]');
@@ -1314,7 +1302,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
         : '';
       await aggiungiArticolo({
         tipo: 'lavaggio',
-        titolo: dati.service_name || (lang === 'it' ? 'Lavaggio' : 'Car wash'),
+        titolo: dati.service_name || t({ it: 'Lavaggio', en: 'Car wash' }),
         sottotitolo: [quando, dati.vehicle_name, dati.vehicle_plate].filter(Boolean).join(' · '),
         prezzoCents: dati.price_total,
         dati: { booking: dati },
@@ -1596,9 +1584,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
           console.error('Database error:', pendingError);
           clearTimeout(safetyTimer);
           setPaymentError(
-            lang === 'it'
-              ? `Errore database: ${pendingError.message}`
-              : `Database error: ${pendingError.message}`
+            `${t({ it: 'Errore database:', en: 'Database error:' })} ${pendingError.message}`
           );
           isSubmittingRef.current = false;
           setIsProcessing(false);
@@ -1707,9 +1693,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
               {t({ it: 'Accesso Richiesto', en: 'Login Required' })}
             </h2>
             <p className="text-gray-400 mb-8">
-              {lang === 'it'
-                ? 'Devi essere registrato e aver effettuato l\'accesso per prenotare questo servizio.'
-                : 'You must be registered and logged in to book this service.'}
+              {t({ it: 'Devi essere registrato e aver effettuato l\'accesso per prenotare questo servizio.', en: 'You must be registered and logged in to book this service.' })}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -1857,43 +1841,33 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                     : (t({ it: 'Scegli la tua supercar', en: 'Choose your supercar' }))}
                 </h2>
                 <p className="text-sm text-gray-400 mb-6">
-                  {lang === 'it'
-                    ? `Durata ${experienceItem.option}. Seleziona il veicolo: verrà bloccato per la finestra del tuo appuntamento.`
-                    : `Duration ${experienceItem.option}. Pick the vehicle: it will be blocked for your appointment window.`}
+                  {t({ it: 'Durata', en: 'Duration' })} {experienceItem.option}. {t({ it: 'Seleziona il veicolo: verrà bloccato per la finestra del tuo appuntamento.', en: 'Pick the vehicle: it will be blocked for your appointment window.' })}
                 </p>
 
                 {!formData.appointmentDate || !formData.appointmentTime ? (
                   <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm text-amber-300">
-                    {lang === 'it'
-                      ? 'Seleziona prima la data e l\'orario sopra per vedere le auto disponibili.'
-                      : 'Pick a date and time above first to see available cars.'}
+                    {t({ it: 'Seleziona prima la data e l\'orario sopra per vedere le auto disponibili.', en: 'Pick a date and time above first to see available cars.' })}
                   </div>
                 ) : fleetLoading ? (
                   <div className="text-sm text-gray-400">{t({ it: 'Caricamento flotta...', en: 'Loading fleet...' })}</div>
                 ) : supercarFleet.length === 0 ? (
                   <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm text-amber-300 space-y-1">
                     <p>
-                      {lang === 'it'
-                        ? `Nessuna ${experienceTier === 'hypercar' ? 'hypercar' : 'supercar'} configurata in flotta al momento.`
-                        : `No ${experienceTier === 'hypercar' ? 'hypercar' : 'supercar'} configured in the fleet right now.`}
+                      {experienceTier === 'hypercar'
+                        ? t({ it: 'Nessuna hypercar configurata in flotta al momento.', en: 'No hypercar configured in the fleet right now.' })
+                        : t({ it: 'Nessuna supercar configurata in flotta al momento.', en: 'No supercar configured in the fleet right now.' })}
                     </p>
                     <p className="text-xs text-amber-300/80">
-                      {lang === 'it'
-                        ? 'Puoi comunque prenotare l\'esperienza: il nostro team ti contatterà per assegnarti il veicolo.'
-                        : 'You can still book the experience: our team will contact you to assign the vehicle.'}
+                      {t({ it: 'Puoi comunque prenotare l\'esperienza: il nostro team ti contatterà per assegnarti il veicolo.', en: 'You can still book the experience: our team will contact you to assign the vehicle.' })}
                     </p>
                   </div>
                 ) : !supercarFleet.some(v => v.available) ? (
                   <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm text-amber-300 space-y-1">
                     <p>
-                      {lang === 'it'
-                        ? 'Tutti i veicoli sono occupati nella finestra scelta.'
-                        : 'All vehicles are busy in the chosen window.'}
+                      {t({ it: 'Tutti i veicoli sono occupati nella finestra scelta.', en: 'All vehicles are busy in the chosen window.' })}
                     </p>
                     <p className="text-xs text-amber-300/80">
-                      {lang === 'it'
-                        ? 'Prova a cambiare orario, oppure prenota comunque: il nostro team ti contatterà per riassegnarti l\'orario.'
-                        : 'Try a different time, or book anyway: our team will reach out to reschedule.'}
+                      {t({ it: 'Prova a cambiare orario, oppure prenota comunque: il nostro team ti contatterà per riassegnarti l\'orario.', en: 'Try a different time, or book anyway: our team will reach out to reschedule.' })}
                     </p>
                   </div>
                 ) : (
@@ -1949,9 +1923,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
 
                 {experienceTier && formData.appointmentDate && formData.appointmentTime && supercarFleet.length > 0 && !chosenSupercar && (
                   <p className="text-xs text-amber-400 mt-3">
-                    {lang === 'it'
-                      ? 'Seleziona un veicolo per completare la prenotazione.'
-                      : 'Select a vehicle to complete the booking.'}
+                    {t({ it: 'Seleziona un veicolo per completare la prenotazione.', en: 'Select a vehicle to complete the booking.' })}
                   </p>
                 )}
                 {errors.chosenSupercar && (
@@ -2012,8 +1984,8 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                     <p className="text-green-400 font-bold">{appliedDiscount.code}</p>
                     <p className="text-green-300 text-sm">
                       {appliedDiscount.type === 'percentage'
-                        ? `Sconto del ${Math.round(Number(appliedDiscount.amount))}% applicato (-€${birthdayDiscountAmount.toFixed(2)})`
-                        : `Sconto di €${Number(appliedDiscount.amount).toFixed(2)} applicato`}
+                        ? <>{t({ it: 'Sconto del', en: 'Discount of' })} {Math.round(Number(appliedDiscount.amount))}% {t({ it: 'applicato', en: 'applied' })} (-€{birthdayDiscountAmount.toFixed(2)})</>
+                        : <>{t({ it: 'Sconto di', en: 'Discount of' })} €{Number(appliedDiscount.amount).toFixed(2)} {t({ it: 'applicato', en: 'applied' })}</>}
                     </p>
                   </div>
                   <button
@@ -2021,7 +1993,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                     onClick={removeDiscount}
                     className="text-red-400 hover:text-red-300 text-sm underline"
                   >
-                    Rimuovi
+                    {t({ it: 'Rimuovi', en: 'Remove' })}
                   </button>
                 </div>
               ) : (
@@ -2039,7 +2011,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                     disabled={isValidatingCode || !discountCode.trim()}
                     className="px-6 py-3 bg-white text-black font-bold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isValidatingCode ? 'Verifica...' : 'Applica'}
+                    {isValidatingCode ? t({ it: 'Verifica...', en: 'Checking...' }) : t({ it: 'Applica', en: 'Apply' })}
                   </button>
                 </div>
               )}
@@ -2063,7 +2035,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
               )}
               {birthdayDiscountAmount > 0 && (
                 <div className="flex justify-between items-center mb-3 text-yellow-400">
-                  <span>Sconto ({appliedDiscount?.code})</span>
+                  <span>{t({ it: 'Sconto', en: 'Discount' })} ({appliedDiscount?.code})</span>
                   <span>-€{birthdayDiscountAmount.toFixed(2)}</span>
                 </div>
               )}
@@ -2188,7 +2160,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                 )}
                 {birthdayDiscountAmount > 0 && (
                   <div className="flex justify-between text-sm text-yellow-400 mb-1">
-                    <span>Sconto ({appliedDiscount?.code}):</span>
+                    <span>{t({ it: 'Sconto', en: 'Discount' })} ({appliedDiscount?.code}):</span>
                     <span>-€{birthdayDiscountAmount.toFixed(2)}</span>
                   </div>
                 )}
@@ -2253,9 +2225,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                           {t({ it: 'Pagamento Sicuro con Nexi', en: 'Secure Payment with Nexi' })}
                         </h3>
                         <p className="text-gray-400 text-sm">
-                          {lang === 'it'
-                            ? 'Sarai reindirizzato alla pagina di pagamento sicura di Nexi per completare la prenotazione.'
-                            : 'You will be redirected to Nexi\'s secure payment page to complete your booking.'}
+                          {t({ it: 'Sarai reindirizzato alla pagina di pagamento sicura di Nexi per completare la prenotazione.', en: 'You will be redirected to Nexi\'s secure payment page to complete your booking.' })}
                         </p>
                       </div>
                     </div>
@@ -2275,13 +2245,11 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                   >
                     {isProcessing
                       ? (t({ it: 'Reindirizzamento...', en: 'Redirecting...' }))
-                      : (lang === 'it' ? `Procedi al Pagamento €${calculateTotal()}` : `Proceed to Payment €${calculateTotal()}`)}
+                      : (<>{t({ it: 'Procedi al Pagamento', en: 'Proceed to Payment' })} €{calculateTotal()}</>)}
                   </button>
 
                   <p className="text-xs text-gray-400 text-center mt-4">
-                    {lang === 'it'
-                      ? 'Pagamento sicuro elaborato da Nexi'
-                      : 'Secure payment processed by Nexi'}
+                    {t({ it: 'Pagamento sicuro elaborato da Nexi', en: 'Secure payment processed by Nexi' })}
                   </p>
                 </>
               ) : paymentMethod === 'credit' ? (
@@ -2327,14 +2295,12 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                       ? (t({ it: 'Elaborazione...', en: 'Processing...' }))
                       : creditBalance < calculateTotal()
                         ? (t({ it: 'Credito Insufficiente', en: 'Insufficient Credit' }))
-                        : (lang === 'it' ? `Paga con Credit Wallet` : `Pay with Credit Wallet`)}
+                        : t({ it: 'Paga con Credit Wallet', en: 'Pay with Credit Wallet' })}
                   </button>
 
                   {creditBalance < calculateTotal() && (
                     <p className="text-xs text-gray-400 text-center mt-4">
-                      {lang === 'it'
-                        ? 'Ricarica il tuo Credit Wallet per completare questa prenotazione'
-                        : 'Recharge your Credit Wallet to complete this booking'}
+                      {t({ it: 'Ricarica il tuo Credit Wallet per completare questa prenotazione', en: 'Recharge your Credit Wallet to complete this booking' })}
                     </p>
                   )}
                 </>

@@ -5,11 +5,12 @@ import { preparaFileDocumento } from '../../utils/immagineDocumento';
 import { supabase } from '../../supabaseClient';
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+    const { t } = useTranslation();
     const statusMap: Record<string, { text: string; color: string }> = {
-        pending_verification: { text: 'In Revisione', color: 'bg-yellow-500/20 text-yellow-400' },
-        pending: { text: 'In Revisione', color: 'bg-yellow-500/20 text-yellow-400' },
-        verified: { text: 'Verificato', color: 'bg-green-500/20 text-green-400' },
-        rejected: { text: 'Rifiutato', color: 'bg-red-500/20 text-red-400' },
+        pending_verification: { text: t({ it: 'In Revisione', en: 'Under review' }), color: 'bg-yellow-500/20 text-yellow-400' },
+        pending: { text: t({ it: 'In Revisione', en: 'Under review' }), color: 'bg-yellow-500/20 text-yellow-400' },
+        verified: { text: t({ it: 'Verificato', en: 'Verified' }), color: 'bg-green-500/20 text-green-400' },
+        rejected: { text: t({ it: 'Rifiutato', en: 'Rejected' }), color: 'bg-red-500/20 text-red-400' },
     };
     // Uno stato sconosciuto non deve far sparire la riga: vale come in revisione.
     const v = statusMap[status] || statusMap.pending_verification;
@@ -219,7 +220,7 @@ const DocumentsVerification = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Caricamento non riuscito' }));
+                const errorData = await response.json().catch(() => ({ error: t({ it: 'Caricamento non riuscito', en: 'Upload failed' }) }));
                 throw new Error(errorData.error || `HTTP ${response.status}`);
             }
 
@@ -332,20 +333,20 @@ const DocumentsVerification = () => {
             window.open(data.signedUrl, '_blank');
         } catch (error: any) {
             console.error('Error viewing document:', error);
-            alert(`Impossibile visualizzare il documento. Riprova più tardi.\nErrore: ${error.message || 'Errore sconosciuto'}`);
+            alert(`${t({ it: 'Impossibile visualizzare il documento. Riprova più tardi.', en: 'Unable to view the document. Please try again later.' })}\n${t({ it: 'Errore:', en: 'Error:' })} ${error.message || t({ it: 'Errore sconosciuto', en: 'Unknown error' })}`);
         }
     };
 
     const getDocumentLabel = (docType: string) => {
-        const labels: { [key: string]: string } = {
-            cartaIdentitaFront: 'Carta d\'Identità (Fronte)',
-            cartaIdentitaBack: 'Carta d\'Identità (Retro)',
-            codiceFiscaleFront: 'Codice Fiscale (Fronte)',
-            codiceFiscaleBack: 'Codice Fiscale (Retro)',
-            patenteFront: 'Patente (Fronte)',
-            patenteBack: 'Patente (Retro)'
-        };
-        return labels[docType] || docType;
+        switch (docType) {
+            case 'cartaIdentitaFront': return t({ it: "Carta d'Identità (Fronte)", en: 'ID card (Front)' });
+            case 'cartaIdentitaBack': return t({ it: "Carta d'Identità (Retro)", en: 'ID card (Back)' });
+            case 'codiceFiscaleFront': return t({ it: 'Codice Fiscale (Fronte)', en: 'Tax code (Front)' });
+            case 'codiceFiscaleBack': return t({ it: 'Codice Fiscale (Retro)', en: 'Tax code (Back)' });
+            case 'patenteFront': return t({ it: 'Patente (Fronte)', en: 'Licence (Front)' });
+            case 'patenteBack': return t({ it: 'Patente (Retro)', en: 'Licence (Back)' });
+            default: return docType;
+        }
     };
 
     if (!user) return null;
@@ -375,7 +376,7 @@ const DocumentsVerification = () => {
                                         <div className="flex-1">
                                             <p className="text-white font-medium">{getDocumentLabel(doc.document_type)}</p>
                                             <p className="text-xs text-gray-400 mt-1">
-                                                Caricato il {new Date(doc.upload_date).toLocaleDateString('it-IT')}
+                                                {t({ it: 'Caricato il', en: 'Uploaded on' })} {new Date(doc.upload_date).toLocaleDateString('it-IT')}
                                             </p>
                                         </div>
                                         <div className="flex items-center space-x-3">
@@ -384,15 +385,15 @@ const DocumentsVerification = () => {
                                                 onClick={() => getDocumentUrl(doc)}
                                                 className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs transition-colors"
                                             >
-                                                Visualizza
+                                                {t({ it: 'Visualizza', en: 'View' })}
                                             </button>
                                             <button
                                                 onClick={async () => {
-                                                    if (!confirm(`Elimina ${getDocumentLabel(doc.document_type)}? L'operazione e' definitiva.`)) return
+                                                    if (!confirm(`${t({ it: 'Elimina', en: 'Delete' })} ${getDocumentLabel(doc.document_type)}? ${t({ it: "L'operazione e' definitiva.", en: 'This cannot be undone.' })}`)) return
                                                     try {
                                                         const { error } = await supabase.storage.from(doc.bucket).remove([doc.file_path])
                                                         if (error) {
-                                                            alert(`Errore: ${error.message}`)
+                                                            alert(`${t({ it: 'Errore:', en: 'Error:' })} ${error.message}`)
                                                             return
                                                         }
                                                         // Anche la riga in "Verifica Documenti" del gestionale,
@@ -403,12 +404,12 @@ const DocumentsVerification = () => {
                                                         setUploadedDocuments(next)
                                                         setUploadedSteps(passiCaricati(next))
                                                     } catch (e) {
-                                                        alert(`Errore eliminazione: ${e instanceof Error ? e.message : 'sconosciuto'}`)
+                                                        alert(`${t({ it: 'Errore eliminazione:', en: 'Delete error:' })} ${e instanceof Error ? e.message : t({ it: 'sconosciuto', en: 'unknown' })}`)
                                                     }
                                                 }}
                                                 className="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-white text-xs transition-colors"
                                             >
-                                                Elimina
+                                                {t({ it: 'Elimina', en: 'Delete' })}
                                             </button>
                                         </div>
                                     </div>
@@ -444,7 +445,7 @@ const DocumentsVerification = () => {
                                             </h3>
                                             {!step.required && (
                                                 <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5">
-                                                    Opzionale
+                                                    {t({ it: 'Opzionale', en: 'Optional' })}
                                                 </span>
                                             )}
                                             {isUploaded && (
@@ -452,7 +453,7 @@ const DocumentsVerification = () => {
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                     </svg>
-                                                    Caricato
+                                                    {t({ it: 'Caricato', en: 'Uploaded' })}
                                                 </span>
                                             )}
                                         </div>
@@ -467,7 +468,7 @@ const DocumentsVerification = () => {
                                             />
                                             {hasFile && !isUploaded && (
                                                 <p className="text-xs text-gray-400">
-                                                    Selezionato: {files[index]?.name}
+                                                    {t({ it: 'Selezionato:', en: 'Selected:' })} {files[index]?.name}
                                                 </p>
                                             )}
                                         </div>
@@ -478,7 +479,7 @@ const DocumentsVerification = () => {
                                         disabled={uploading || !hasFile || isUploaded}
                                         className="w-full sm:w-auto px-6 py-2 min-h-[44px] bg-white text-black font-bold hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                                     >
-                                        {isUploaded ? 'Caricato ✓' : uploading ? 'Caricamento...' : 'Carica'}
+                                        {isUploaded ? t({ it: 'Caricato ✓', en: 'Uploaded ✓' }) : uploading ? t({ it: 'Caricamento...', en: 'Uploading...' }) : t({ it: 'Carica', en: 'Upload' })}
                                     </button>
                                 </div>
                             </div>
@@ -487,10 +488,10 @@ const DocumentsVerification = () => {
 
                     <div className="pt-4 border-t border-gray-700">
                         <p className="text-xs text-gray-400">
-                            * Carica almeno Carta d'Identità e Codice Fiscale (fronte e retro). La Patente è opzionale.
+                            {t({ it: "* Carica almeno Carta d'Identità e Codice Fiscale (fronte e retro). La Patente è opzionale.", en: '* Upload at least your ID card and tax code (front and back). The driving licence is optional.' })}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                            I documenti saranno verificati dal nostro team entro 24-48 ore.
+                            {t({ it: 'I documenti saranno verificati dal nostro team entro 24-48 ore.', en: 'Documents will be verified by our team within 24-48 hours.' })}
                         </p>
                     </div>
                 </div>

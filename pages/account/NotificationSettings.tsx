@@ -102,7 +102,7 @@ const NotificationSettings = () => {
 
         // Note: GDPR-compliant consent is now saved by the MarketingConsentModal
         // via the save-consent Netlify function (with IP address and user agent)
-        setSuccessMessage('Consenso salvato con successo!');
+        setSuccessMessage(t({ it: 'Consenso salvato con successo!', en: 'Consent saved successfully!' }));
 
         setPendingPref(null);
         setShowConsentModal(false);

@@ -391,8 +391,8 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
               orariDelGiorno={orariPartenza}
               dataIniziale={date}
               oraIniziale={departure?.departure_time.slice(0, 5)}
-              titolo={{ it: 'Scegli il giorno', en: 'Choose the day' }}
-              sottotitolo={{ it: 'Poi ti mostriamo le partenze di quel giorno.', en: 'We then show the departures on that day.' }}
+              titolo={t({ it: 'Scegli il giorno', en: 'Choose the day' })}
+              sottotitolo={t({ it: 'Poi ti mostriamo le partenze di quel giorno.', en: 'We then show the departures on that day.' })}
               onConferma={(giorno, ora) => {
                 const trovata = departures.find(d => d.departure_date === giorno && d.departure_time.slice(0, 5) === ora);
                 setDate(giorno);

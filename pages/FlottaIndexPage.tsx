@@ -23,7 +23,7 @@ import type { RentalItem } from '../types';
 import { categoryAliases } from '../utils/flottaConfig';
 
 const FlottaIndexPage: React.FC = () => {
-  const { lang, t } = useTranslation();
+  const { t } = useTranslation();
   const { openCarWizard, setInitialSearchDates } = useBooking();
   const { categories: flottaCats, loading: catsLoading, status: catsStatus } = useFlottaCategories();
   const { vehicles: allVehicles, loading: vehLoading } = useVehicles(undefined);
@@ -149,18 +149,16 @@ const FlottaIndexPage: React.FC = () => {
       <SfondoVideo
         src={filmato.src}
         poster={filmato.poster}
-        ariaLabel={lang === 'it' ? 'La collezione DR7 Terra' : 'The DR7 Land collection'}
+        ariaLabel={t({ it: 'La collezione DR7 Terra', en: 'The DR7 Land collection' })}
       >
       <div className="container mx-auto px-6">
         <div className="text-center">
           <h1 className="t-display text-white">
-            {lang === 'it' ? "OLTRE L'ORDINARIO." : 'BEYOND THE ORDINARY.'}
+            {t({ it: "OLTRE L'ORDINARIO.", en: 'BEYOND THE ORDINARY.' })}
           </h1>
           <span className="mx-auto mt-8 block h-px w-16 bg-white/25" />
           <p className="text-gray-500 mt-8 text-base max-w-xl mx-auto">
-            {lang === 'it'
-              ? 'Non è semplicemente una scelta. È l\'accesso a qualcosa che non trovi altrove.'
-              : "It isn't simply a choice. It's access to something you won't find elsewhere."}
+            {t({ it: 'Non è semplicemente una scelta. È l\'accesso a qualcosa che non trovi altrove.', en: "It isn't simply a choice. It's access to something you won't find elsewhere." })}
           </p>
           {/* Al posto del bottone "Prenota Ora": si parte dal luogo, e la
               finestra di prenotazione si apre scegliendolo. */}
@@ -183,9 +181,7 @@ const FlottaIndexPage: React.FC = () => {
               <div className="absolute left-0 right-0 z-20 mt-2 max-h-72 overflow-y-auto border border-white/10 bg-[#0B0C0D]">
                 {luoghiTrovati.length === 0 ? (
                   <p className="px-4 py-4 text-[13px] text-white/40">
-                    {lang === 'it'
-                      ? 'Nessun risultato: per ora copriamo solo la Sardegna.'
-                      : 'No match: for now we cover Sardinia only.'}
+                    {t({ it: 'Nessun risultato: per ora copriamo solo la Sardegna.', en: 'No match: for now we cover Sardinia only.' })}
                   </p>
                 ) : (
                   luoghiTrovati.map((l) => (
@@ -215,15 +211,11 @@ const FlottaIndexPage: React.FC = () => {
           // Config non letta: non si mostra il catalogo intero "per sicurezza",
           // si dice che la lista non e' disponibile. Vedi utils/flottaConfig.ts.
           <p className="text-center text-gray-400">
-            {lang === 'it'
-              ? 'Flotta momentaneamente non disponibile. Riprova tra poco.'
-              : 'Fleet temporarily unavailable. Please try again shortly.'}
+            {t({ it: 'Flotta momentaneamente non disponibile. Riprova tra poco.', en: 'Fleet temporarily unavailable. Please try again shortly.' })}
           </p>
         ) : totalCount === 0 ? (
           <p className="text-center text-gray-400">
-            {lang === 'it'
-              ? 'Nessun veicolo disponibile al momento.'
-              : 'No vehicles available right now.'}
+            {t({ it: 'Nessun veicolo disponibile al momento.', en: 'No vehicles available right now.' })}
           </p>
         ) : (
           <div className="space-y-24 md:space-y-32">
@@ -237,9 +229,7 @@ const FlottaIndexPage: React.FC = () => {
 
                 {group.vehicles.length === 0 ? (
                   <p className="text-gray-500 text-sm italic">
-                    {lang === 'it'
-                      ? 'Nessun veicolo in questa categoria al momento.'
-                      : 'No vehicles in this category yet.'}
+                    {t({ it: 'Nessun veicolo in questa categoria al momento.', en: 'No vehicles in this category yet.' })}
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">

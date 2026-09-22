@@ -209,7 +209,7 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
         orariDelGiorno={getPickupTimes}
         dataIniziale={pickupDate}
         oraIniziale={pickupTime}
-        titolo={{ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' }}
+        titolo={t({ it: 'Ritiro: scegli il giorno', en: 'Pick-up: choose the day' })}
         onConferma={(data, ora) => {
           setPickupDate(data)
           if (data > returnDate) setReturnDate(data)
@@ -224,7 +224,7 @@ export default function RentalSearchBar({ onSearch, isSearching }: Props) {
         orariDelGiorno={getReturnTimes}
         dataIniziale={returnDate}
         oraIniziale={returnTime}
-        titolo={{ it: 'Riconsegna: scegli il giorno', en: 'Drop-off: choose the day' }}
+        titolo={t({ it: 'Riconsegna: scegli il giorno', en: 'Drop-off: choose the day' })}
         onConferma={(data, ora) => {
           setReturnDate(data)
           handleReturnTimeChange(ora)

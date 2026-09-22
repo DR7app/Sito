@@ -473,7 +473,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen, onClo
               </div>
 
               <p className="text-xs text-gray-400 text-center mt-4">
-                Formati supportati: JPG, PNG, PDF • Max 5MB per file
+                {t({ it: 'Formati supportati: JPG, PNG, PDF • Max 5MB per file', en: 'Supported formats: JPG, PNG, PDF • Max 5MB per file' })}
               </p>
             </div>
           </motion.div>

@@ -59,7 +59,7 @@ const CookieBanner: React.FC = () => {
               {/* Welcome message */}
               <div className="text-center mb-8">
                 <h1 className="text-2xl md:text-3xl font-bold text-white tracking-wide mb-2">
-                  WELCOME TO DR7
+                  {t({ it: "WELCOME TO DR7", en: "WELCOME TO DR7" })}
                 </h1>
                 <div className="w-16 h-0.5 bg-white mx-auto" />
               </div>
@@ -67,20 +67,19 @@ const CookieBanner: React.FC = () => {
               {/* Cookie message */}
               <div className="text-center mb-8">
                 <h2 className="text-base font-semibold text-white mb-4 uppercase tracking-wider">
-                  Privacy & Compliance Excellence
+                  {t({ it: "Privacy & Compliance Excellence", en: "Privacy & Compliance Excellence" })}
                 </h2>
                 <p className="text-sm text-white/80 leading-relaxed mb-4">
-                  DR7 adotta tecnologie avanzate per garantire un'esperienza di navigazione impeccabile, personalizzata e conforme ai più alti standard internazionali.
-                  Utilizziamo cookie per ottimizzare le performance del sito, migliorare i nostri servizi e analizzare il traffico in totale sicurezza.
+                  {t({ it: "DR7 adotta tecnologie avanzate per garantire un'esperienza di navigazione impeccabile, personalizzata e conforme ai più alti standard internazionali. Utilizziamo cookie per ottimizzare le performance del sito, migliorare i nostri servizi e analizzare il traffico in totale sicurezza.", en: "DR7 uses advanced technologies to ensure a flawless, personalised browsing experience that meets the highest international standards. We use cookies to optimise site performance, improve our services and analyse traffic in complete security." })}
                 </p>
                 <p className="text-sm text-white/80 leading-relaxed mb-4">
-                  Procedendo e cliccando "Accetta", confermi il tuo consenso all'utilizzo dei cookie come descritto nella nostra{' '}
+                  {t({ it: "Procedendo e cliccando \"Accetta\", confermi il tuo consenso all'utilizzo dei cookie come descritto nella nostra", en: "By proceeding and clicking \"Accept\", you consent to the use of cookies as described in our" })}{' '}
                   <Link to="/cookie-policy" className="text-white underline hover:text-white/90 transition-colors font-semibold">
-                    Cookie Policy
+                    {t({ it: "Cookie Policy", en: "Cookie Policy" })}
                   </Link>.
                 </p>
                 <p className="text-xs text-white/70 italic">
-                  Accedendo al sito, dichiari inoltre di avere più di 18 anni.
+                  {t({ it: "Accedendo al sito, dichiari inoltre di avere più di 18 anni.", en: "By accessing the site, you also declare that you are over 18 years of age." })}
                 </p>
               </div>
 
@@ -91,14 +90,14 @@ const CookieBanner: React.FC = () => {
                   className="px-8 py-3 border border-white text-white text-sm font-semibold uppercase tracking-widest transition-all duration-300 hover:bg-white hover:text-black"
                   style={{ backgroundColor: 'transparent' }}
                 >
-                  RIFIUTA
+                  {t({ it: "RIFIUTA", en: "DECLINE" })}
                 </button>
                 <button
                   onClick={() => handleConsent(true)}
                   className="px-8 py-3 border border-white text-sm font-semibold uppercase tracking-widest transition-all duration-300 hover:bg-transparent hover:text-white"
                   style={{ backgroundColor: 'white', color: 'black' }}
                 >
-                  ACCETTA
+                  {t({ it: "ACCETTA", en: "ACCEPT" })}
                 </button>
               </div>
             </div>

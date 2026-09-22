@@ -82,7 +82,7 @@ function minutiOra(ora: string): number {
 }
 
 const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClose }) => {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const { setInitialSearchDates, openCarWizard } = useBooking();
   const it = lang === 'it';
 
@@ -412,8 +412,8 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 disabled={!cliccabile}
                 onClick={() => scegliGiorno(ymd)}
                 title={
-                  stato === 'occupato' ? (it ? 'Non disponibile' : 'Not available')
-                    : stato === 'chiuso' ? (it ? 'Chiuso' : 'Closed')
+                  stato === 'occupato' ? t({ it: 'Non disponibile', en: 'Not available' })
+                    : stato === 'chiuso' ? t({ it: 'Chiuso', en: 'Closed' })
                       : undefined
                 }
                 className={`aspect-square text-[12px] transition-colors duration-200 ${classi} ${
@@ -450,7 +450,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
       >
         <button
           onClick={onClose}
-          aria-label={it ? 'Chiudi' : 'Close'}
+          aria-label={t({ it: 'Chiudi', en: 'Close' })}
           className="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center border border-[color:var(--line)] text-[color:var(--fg-dim)] transition-colors duration-300 hover:border-[color:var(--line-strong)] hover:text-[color:var(--fg)]"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -458,33 +458,29 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
           </svg>
         </button>
 
-        <p className="t-eyebrow">{it ? 'Disponibilita' : 'Availability'}</p>
+        <p className="t-eyebrow">{t({ it: 'Disponibilita', en: 'Availability' })}</p>
         <h3 className="mt-3 pr-10 font-serif text-[26px] font-normal leading-tight tracking-[-0.01em] text-[color:var(--fg)]">
           {item.name}
         </h3>
         <p className="mt-3 text-[12px] text-[color:var(--fg-dim)]">
           {!ritiroYmd
-            ? (it ? 'Scegli il giorno di ritiro.' : 'Pick your collection day.')
+            ? t({ it: 'Scegli il giorno di ritiro.', en: 'Pick your collection day.' })
             : !riconsegnaYmd
-              ? (it ? 'Ora scegli il giorno di riconsegna.' : 'Now pick your return day.')
+              ? t({ it: 'Ora scegli il giorno di riconsegna.', en: 'Now pick your return day.' })
               : riconsegnaProposta
-                ? (it
-                    ? 'Riconsegna proposta nello stesso giorno: clicca un altro giorno per allungare il noleggio.'
-                    : 'Return set to the same day: click another day to extend the rental.')
-                : (it ? 'Periodo selezionato.' : 'Period selected.')}
+                ? t({ it: 'Riconsegna proposta nello stesso giorno: clicca un altro giorno per allungare il noleggio.', en: 'Return set to the same day: click another day to extend the rental.' })
+                : t({ it: 'Periodo selezionato.', en: 'Period selected.' })}
         </p>
 
         <span className="seam-line my-6 block" />
 
         {caricamento || !configLetta ? (
           <p className="py-12 text-center text-[12px] text-[color:var(--fg-dim)]">
-            {it ? 'Lettura del calendario…' : 'Loading the calendar…'}
+            {t({ it: 'Lettura del calendario…', en: 'Loading the calendar…' })}
           </p>
         ) : erroreDisponibilita ? (
           <p className="py-12 text-center text-[12px] text-[color:var(--fg-dim)]">
-            {it
-              ? 'Calendario non disponibile in questo momento. Usa "Prenota Ora" per la ricerca per date.'
-              : 'The calendar is unavailable right now. Use "Book Now" to search by dates.'}
+            {t({ it: 'Calendario non disponibile in questo momento. Usa "Prenota Ora" per la ricerca per date.', en: 'The calendar is unavailable right now. Use "Book Now" to search by dates.' })}
           </p>
         ) : (
           <>
@@ -493,7 +489,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 type="button"
                 onClick={() => setMese(new Date(mese.getFullYear(), mese.getMonth() - 1, 1))}
                 disabled={!puoIndietro}
-                aria-label={it ? 'Mese precedente' : 'Previous month'}
+                aria-label={t({ it: 'Mese precedente', en: 'Previous month' })}
                 className="flex h-8 w-8 items-center justify-center border border-[color:var(--line)] text-[color:var(--fg)] transition-colors duration-300 enabled:hover:border-[color:var(--fg)] disabled:opacity-25"
               >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -507,7 +503,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 type="button"
                 onClick={() => setMese(new Date(mese.getFullYear(), mese.getMonth() + 1, 1))}
                 disabled={!puoAvanti}
-                aria-label={it ? 'Mese successivo' : 'Next month'}
+                aria-label={t({ it: 'Mese successivo', en: 'Next month' })}
                 className="flex h-8 w-8 items-center justify-center border border-[color:var(--line)] text-[color:var(--fg)] transition-colors duration-300 enabled:hover:border-[color:var(--fg)] disabled:opacity-25"
               >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -522,15 +518,15 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] uppercase tracking-[0.16em] text-[color:var(--fg-dim)]">
               <span className="flex items-center gap-2">
                 <span className="inline-block h-3 w-3 border border-[color:var(--line)]" />
-                {it ? 'Libero' : 'Available'}
+                {t({ it: 'Libero', en: 'Available' })}
               </span>
               <span className="flex items-center gap-2">
                 <span className="inline-block h-3 w-3 bg-[rgba(246,243,237,0.08)]" />
-                {it ? 'Gia prenotato' : 'Already booked'}
+                {t({ it: 'Gia prenotato', en: 'Already booked' })}
               </span>
               <span className="flex items-center gap-2">
                 <span className="inline-block h-3 w-3 bg-transparent text-[rgba(246,243,237,0.18)]">—</span>
-                {it ? 'Chiuso (domenica e festivi)' : 'Closed (Sundays & holidays)'}
+                {t({ it: 'Chiuso (domenica e festivi)', en: 'Closed (Sundays & holidays)' })}
               </span>
             </div>
 
@@ -540,7 +536,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 <span className="seam-line my-7 block" />
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <label className="block">
-                    <span className="t-eyebrow">{it ? 'Ritiro' : 'Collection'}</span>
+                    <span className="t-eyebrow">{t({ it: 'Ritiro', en: 'Collection' })}</span>
                     <div className="mt-2 flex items-center gap-3">
                       <span className="text-[13px] text-[color:var(--fg)]">
                         {ritiroYmd.split('-').reverse().join('/')}
@@ -566,12 +562,12 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                   </label>
 
                   <label className="block">
-                    <span className="t-eyebrow">{it ? 'Riconsegna' : 'Return'}</span>
+                    <span className="t-eyebrow">{t({ it: 'Riconsegna', en: 'Return' })}</span>
                     <div className="mt-2 flex items-center gap-3">
                       <span className="text-[13px] text-[color:var(--fg)]">
                         {riconsegnaYmd
                           ? riconsegnaYmd.split('-').reverse().join('/')
-                          : <span className="text-[color:var(--fg-dim)]">{it ? 'da scegliere' : 'to pick'}</span>}
+                          : <span className="text-[color:var(--fg-dim)]">{t({ it: 'da scegliere', en: 'to pick' })}</span>}
                       </span>
                       {riconsegnaYmd && (
                         <select
@@ -610,14 +606,12 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 extra e cauzione che lo compongono. */}
             {ritiroYmd && riconsegnaYmd && (
               <div className="mt-7 border border-[color:var(--line)] p-5">
-                <p className="t-eyebrow">{it ? 'Periodo scelto' : 'Selected period'}</p>
+                <p className="t-eyebrow">{t({ it: 'Periodo scelto', en: 'Selected period' })}</p>
                 <p className="mt-2 text-[11px] text-[color:var(--fg-dim)]">
-                  {giorni} {giorni === 1 ? (it ? 'giorno' : 'day') : (it ? 'giorni' : 'days')}
+                  {giorni} {giorni === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })}
                 </p>
                 <p className="mt-4 text-[11px] leading-relaxed text-[color:var(--fg-dim)]">
-                  {it
-                    ? 'Assicurazione, chilometri, extra e cauzione si scelgono nel passo successivo, insieme al prezzo.'
-                    : 'Insurance, mileage, extras and deposit are chosen in the next step, together with the price.'}
+                  {t({ it: 'Assicurazione, chilometri, extra e cauzione si scelgono nel passo successivo, insieme al prezzo.', en: 'Insurance, mileage, extras and deposit are chosen in the next step, together with the price.' })}
                 </p>
               </div>
             )}
@@ -629,7 +623,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 disabled={!ritiroYmd}
                 className="btn btn-text self-start text-[color:var(--fg-dim)] disabled:opacity-30"
               >
-                {it ? 'Ricomincia' : 'Reset'}
+                {t({ it: 'Ricomincia', en: 'Reset' })}
               </button>
               <button
                 type="button"
@@ -637,7 +631,7 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                 disabled={!ritiroYmd || !riconsegnaYmd}
                 className="btn btn-primary btn-sm w-full sm:w-auto"
               >
-                {it ? 'Continua la prenotazione' : 'Continue booking'}
+                {t({ it: 'Continua la prenotazione', en: 'Continue booking' })}
               </button>
             </div>
           </>

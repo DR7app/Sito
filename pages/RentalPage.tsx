@@ -358,7 +358,7 @@ const VehicleResults: React.FC<{
             const vehicleDayPrice = item.pricePerDay?.eur;
             const marketingPrice = (categoryId === 'cars' || categoryId === 'urban-cars' || categoryId === 'corporate-fleet')
               ? vehicleDayPrice : undefined;
-            const marketingTooltip = categoryId === 'urban-cars' ? 'Disponibile con formula long rent' : undefined;
+            const marketingTooltip = categoryId === 'urban-cars' ? t({ it: 'Disponibile con formula long rent', en: 'Available with long-rent plan' }) : undefined;
             const dailyRate = vehicleDayPrice || 0;
             const itemTotalPrice = searchResult ? searchResult.totalPrice
               : (preDays > 0 && dailyRate ? Math.round(dailyRate * preDays) : undefined);
@@ -507,14 +507,14 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
                   const [rH, rM] = initial.returnTime.split(':').map(Number);
                   const diff = (pH * 60 + pM) - (rH * 60 + rM);
                   const days = diff < 90 ? baseDays + 1 : baseDays;
-                  return `${days} ${days === 1 ? 'giorno' : 'giorni'}`;
+                  return `${days} ${days === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })}`;
                 })()}
               </span>
               <button
                 onClick={() => setExpanded(true)}
                 className="text-sm font-semibold text-white border border-white px-4 py-1.5 hover:bg-white hover:text-black transition-colors"
               >
-                Modifica
+                {t({ it: "Modifica", en: "Edit" })}
               </button>
             </div>
           </div>
@@ -647,7 +647,7 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
                 onClick={() => { setDraft(initial); setExpanded(false); }}
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
-                Annulla
+                {t({ it: "Annulla", en: "Cancel" })}
               </button>
             </div>
           </div>
@@ -1213,14 +1213,14 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
 
   const seoConfig: Record<string, { title: string; description: string; canonical: string; jsonLd?: Record<string, any> }> = {
     cars: {
-      title: 'Luxury Car Rental Sardinia | Ferrari, Lamborghini, Porsche | DR7',
-      description: 'Rent Ferrari, Lamborghini, Porsche, and premium supercars in Sardinia. Short-term & long-term luxury car rental with delivery. DR7 Supercar Division.',
+      title: t({ it: 'Luxury Car Rental Sardinia | Ferrari, Lamborghini, Porsche | DR7', en: 'Luxury Car Rental Sardinia | Ferrari, Lamborghini, Porsche | DR7' }),
+      description: t({ it: 'Rent Ferrari, Lamborghini, Porsche, and premium supercars in Sardinia. Short-term & long-term luxury car rental with delivery. DR7 Supercar Division.', en: 'Rent Ferrari, Lamborghini, Porsche, and premium supercars in Sardinia. Short-term & long-term luxury car rental with delivery. DR7 Supercar Division.' }),
       canonical: '/supercar-luxury',
       jsonLd: { '@type': 'AutoRental', name: 'DR7 Supercar Division', url: 'https://dr7.app/supercar-luxury', areaServed: { '@type': 'State', name: 'Sardegna' } },
     },
     'urban-cars': {
-      title: 'Affordable Car Rental Sardinia | Urban Cars | DR7',
-      description: 'Affordable urban car rental in Sardinia. City cars, compact SUVs, and practical vehicles for daily commutes and weekend trips. DR7 Urban Division.',
+      title: t({ it: 'Affordable Car Rental Sardinia | Urban Cars | DR7', en: 'Affordable Car Rental Sardinia | Urban Cars | DR7' }),
+      description: t({ it: 'Affordable urban car rental in Sardinia. City cars, compact SUVs, and practical vehicles for daily commutes and weekend trips. DR7 Urban Division.', en: 'Affordable urban car rental in Sardinia. City cars, compact SUVs, and practical vehicles for daily commutes and weekend trips. DR7 Urban Division.' }),
       canonical: '/urban',
       jsonLd: { '@type': 'AutoRental', name: 'DR7 Urban Division', url: 'https://dr7.app/urban', areaServed: { '@type': 'State', name: 'Sardegna' } },
     },
@@ -1454,7 +1454,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                   onClick={() => window.location.reload()}
                   className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 text-sm font-medium transition-colors flex-shrink-0"
                 >
-                  Retry
+                  {t({ it: "Retry", en: "Retry" })}
                 </button>
               </div>
             </div>

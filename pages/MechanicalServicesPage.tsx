@@ -8,7 +8,7 @@ import { getMechanicalCopy, getMechanicalServices, type MechanicalCopy, type Mec
 export type MechanicalService = MechanicalServiceItem;
 
 const MechanicalServicesPage: React.FC = () => {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const navigate = useNavigate();
   const [copy, setCopy] = useState<MechanicalCopy | null>(null);
   const [services, setServices] = useState<MechanicalServiceItem[] | null>(null);
@@ -42,7 +42,7 @@ const MechanicalServicesPage: React.FC = () => {
   if (!copy || !services) {
     return (
       <div className="min-h-screen bg-black pt-32 pb-16 px-6 text-center">
-        <p className="text-gray-500 text-sm">{lang === 'it' ? 'Caricamento…' : 'Loading…'}</p>
+        <p className="text-gray-500 text-sm">{t({ it: 'Caricamento…', en: 'Loading…' })}</p>
       </div>
     );
   }

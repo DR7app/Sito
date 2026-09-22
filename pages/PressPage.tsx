@@ -4,7 +4,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { getPressCopy, type PressCopy } from '../utils/siteCopy';
 
 const PressPage: React.FC = () => {
-    const { lang } = useTranslation();
+    const { t, lang } = useTranslation();
     const [copy, setCopy] = useState<PressCopy | null>(null);
 
     useEffect(() => {
@@ -17,7 +17,7 @@ const PressPage: React.FC = () => {
         return (
             <div className="min-h-screen bg-black pt-32 pb-24">
                 <div className="container mx-auto px-6 text-center text-gray-500 text-sm">
-                    {lang === 'it' ? 'Caricamento…' : 'Loading…'}
+                    {t({ it: 'Caricamento…', en: 'Loading…' })}
                 </div>
             </div>
         );

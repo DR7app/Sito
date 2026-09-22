@@ -8,6 +8,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useFlottaCategories } from '../hooks/useFlottaCategories';
 import { useVehicles } from '../hooks/useVehicles';
 import { useTranslation } from '../hooks/useTranslation';
@@ -198,6 +199,18 @@ const FlottaIndexPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* 22/09/2026 (direzione): sotto la ricerca, in rosso come nel menu. */}
+          <Link
+            to="/prevendite"
+            className="t-nav mt-10 inline-flex items-center gap-3 text-[13px] text-[#e5322d] transition-colors duration-300 hover:text-[#ff4a44] md:text-[15px]"
+            style={{ letterSpacing: '0.2em' }}
+          >
+            {t({ it: 'PREVENDITA E PROMOZIONI', en: 'PRESALES & PROMOTIONS' })}
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </Link>
 
         </div>
       </div>

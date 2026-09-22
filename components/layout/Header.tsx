@@ -83,7 +83,13 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     Icon: React.FC<{ className?: string }>;
     title: string;
     subtitle: string;
+    rosso?: boolean;
   }> = [
+    // Prevendita e Promozioni: la vetrina dei pacchetti pagati in anticipo
+    // (/prevendite). 22/09/2026 (direzione): prima voce, sopra Terra, in rosso.
+    { to: '/prevendite', img: mi('menu_prevendite_img', '/menu-club.jpeg'), Icon: GiftIcon, rosso: true,
+      title: mc('menu_prevendite_title_it', 'menu_prevendite_title_en', 'PREVENDITA E PROMOZIONI', 'PRESALES & PROMOTIONS'),
+      subtitle: mc('menu_prevendite_sub_it', 'menu_prevendite_sub_en', 'Pacchetti pagati in anticipo e offerte esclusive', 'Prepaid packages and exclusive offers') },
     { to: flottaLanding, img: mi('menu_mobilita_img', '/menu-mobilita.jpeg'), Icon: CarIcon,
       // Terra, come Mare e Aria: le tre linee di noleggio si chiamano cosi'
       // ovunque, gestionale compreso. "Mobilita'" era il nome vecchio.
@@ -103,11 +109,6 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/prime-wash', img: mi('menu_servizi_img', '/servizi-lavaggio.jpeg'), Icon: SparklesIcon,
       title: mc('menu_servizi_title_it', 'menu_servizi_title_en', 'Lavaggio & Meccanica', 'Car Wash & Mechanics'),
       subtitle: mc('menu_servizi_sub_it', 'menu_servizi_sub_en', 'Lavaggio auto premium e officina meccanica', 'Premium car wash and mechanical workshop') },
-    // Prevendita e Promozioni: la vetrina dei pacchetti pagati in anticipo
-    // (/prevendite). Stesso nome della sezione del gestionale.
-    { to: '/prevendite', img: mi('menu_prevendite_img', '/menu-club.jpeg'), Icon: GiftIcon,
-      title: mc('menu_prevendite_title_it', 'menu_prevendite_title_en', 'Prevendita e Promozioni', 'Presales & Promotions'),
-      subtitle: mc('menu_prevendite_sub_it', 'menu_prevendite_sub_en', 'Pacchetti pagati in anticipo e offerte esclusive', 'Prepaid packages and exclusive offers') },
     { to: '/credit-wallet', img: mi('menu_wallet_img', '/menu-club.jpeg'), Icon: WalletIcon,
       title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'),
       subtitle: mc('menu_wallet_sub_it', 'menu_wallet_sub_en', 'Il tuo credito DR7 Wallet per prenotare e ricaricare', 'Your DR7 Wallet credit to book and top up') },
@@ -122,6 +123,9 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/franchising', img: mi('menu_business_img', '/menu-business.jpeg'), Icon: TrendingUpIcon,
       title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
       subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },
+    { to: '/investitori', img: mi('menu_investitori_img', '/menu-business.jpeg'), Icon: TrendingUpIcon,
+      title: mc('menu_investitori_title_it', 'menu_investitori_title_en', 'Investitori', 'Investor Relations'),
+      subtitle: mc('menu_investitori_sub_it', 'menu_investitori_sub_en', 'Numeri, azionisti e governance di DR7 S.p.A.', 'Figures, shareholders and governance of DR7 S.p.A.') },
     { to: '/token', img: mi('menu_digital_img', '/menu-digital.jpeg'), Icon: CubeTransparentIcon,
       title: mc('menu_digital_title_it', 'menu_digital_title_en', 'Innovazione Digitale', 'Digital Innovation'),
       subtitle: mc('menu_digital_sub_it', 'menu_digital_sub_en', 'Creazione di asset digitali e token', 'Digital Asset & Token Creation') },
@@ -291,7 +295,7 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
               <div className="container m-auto w-full px-6 py-5 lg:py-6">
                 <nav className="mr-auto w-full text-left lg:max-w-[46%] lg:text-right">
                   <ul>
-                    {MENU_ITEMS.map(({ to, title }, i) => (
+                    {MENU_ITEMS.map(({ to, title, rosso }, i) => (
                       <li key={title}>
                         {/* Apertura e chiusura sono lo stesso gesto.
                             La voce arriva da SINISTRA, di una larghezza esatta
@@ -326,8 +330,10 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
                           >
                             <span
                               className={`t-nav block text-[13px] leading-none transition-colors duration-standard md:text-[15px] ${
-                                hovered === i ? 'text-white' : 'text-white/60'
-                              } group-hover:text-white`}
+                                rosso
+                                  ? 'text-[#e5322d] group-hover:text-[#ff4a44]'
+                                  : `${hovered === i ? 'text-white' : 'text-white/60'} group-hover:text-white`
+                              }`}
                               style={{ letterSpacing: '0.2em' }}
                             >
                               {title}

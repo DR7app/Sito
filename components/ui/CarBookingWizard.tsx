@@ -570,9 +570,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Step 4
       paymentMethod: 'nexi' as 'nexi' | 'credit',
-      agreesToTerms: false,
-      agreesToPrivacy: false,
-      confirmsDocuments: false,
+      // 22/09/2026 (direzione): le tre Conferme Finali arrivano gia'
+      // spuntate; il cliente puo' sempre toglierle.
+      agreesToTerms: true,
+      agreesToPrivacy: true,
+      confirmsDocuments: true,
     };
   });
 

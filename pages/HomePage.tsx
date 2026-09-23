@@ -8,6 +8,7 @@ import { Grid } from '../components/editorial/layout';
 import Reveal from '../components/editorial/Reveal';
 import { useInViewOnce } from '../hooks/useInViewOnce';
 import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
+import { useNumeriPiattaforma, risolviNumeriPiattaforma } from '../hooks/useNumeriPiattaforma';
 import MediaVideo from '../components/editorial/MediaVideo';
 
 /**
@@ -152,6 +153,8 @@ const HomePage: React.FC = () => {
   // Il conteggio delle recensioni non e' un numero di questa pagina: arriva da
   // Google. Le metriche lo chiedono scrivendo `{reviewCount}` nel valore.
   const reviewCount = useReviewCount();
+  // Contratti, clienti e fatturato: dalla piattaforma (sito_numeri_pubblici).
+  const numeriPiattaforma = useNumeriPiattaforma();
 
   if (!copy) {
     // Guscio silenzioso mentre la configurazione arriva: nessun lampo bianco,
@@ -168,7 +171,7 @@ const HomePage: React.FC = () => {
   // vero di Google; finche' non si sa, quella metrica non si mostra (non si
   // stampa una cifra vecchia solo per riempire la griglia).
   const metrics = copy.metrics
-    .map((m) => ({ ...m, value: risolviReviewCount(m.value, reviewCount) }))
+    .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma) }))
     .filter((m): m is typeof copy.metrics[number] => m.value !== null);
 
   return (

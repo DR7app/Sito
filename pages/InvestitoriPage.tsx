@@ -8,6 +8,7 @@ import {
 import { useTranslation } from '../hooks/useTranslation';
 import { useAspetto } from '../hooks/useAspetto';
 import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
+import { useNumeriPiattaforma, risolviNumeriPiattaforma } from '../hooks/useNumeriPiattaforma';
 
 /**
  * Investor Relations — 22/09/2026.
@@ -435,6 +436,8 @@ const InvestitoriPage: React.FC = () => {
   const [copy, setCopy] = useState<InvestitoriCopy | null>(null);
   const [metriche, setMetriche] = useState<HomeMetric[]>([]);
   const reviewCount = useReviewCount();
+  // Contratti, clienti e fatturato: dalla piattaforma (sito_numeri_pubblici).
+  const numeriPiattaforma = useNumeriPiattaforma();
 
   useEffect(() => {
     let cancelled = false;
@@ -454,7 +457,7 @@ const InvestitoriPage: React.FC = () => {
   // Come sulla Home: finche' il conteggio delle recensioni non si sa, quella
   // metrica non si mostra.
   const numeri = metriche
-    .map((m) => ({ ...m, value: risolviReviewCount(m.value, reviewCount) }))
+    .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma) }))
     .filter((m): m is HomeMetric => m.value !== null);
   const barre = (copy.ir_crescita || []).filter(b => b.anno);
   const azionisti = copy.ir_azionisti || [];

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   getInvestitoriCopy, getHomeCopy, bilingual, bilingualList,
-  type InvestitoriCopy, type HomeMetric, type IrNumero, type IrBarra, type IrAzionista, type IrDocumento,
+  type InvestitoriCopy, type HomeMetric, type IrNumero, type IrBarra, type IrAzionista, type IrDocumento, type IrTappa, type IrPilastro,
 } from '../utils/siteCopy';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAspetto } from '../hooks/useAspetto';
@@ -34,6 +34,10 @@ const IR_ICONE: Record<string, React.ReactNode> = {
   presentazione: <><rect x="4" y="5" width="16" height="11" rx="1" /><path d="M12 16v4M9 20h6" /><path d="M10.5 8.5l3.5 2-3.5 2z" /></>,
   governance: <><path d="M7 3.5h7l4 4V20.5H7z" /><path d="M14 3.5V8h4" /><path d="M10 14.5l1.6 1.6 3-3.2" /></>,
   comunicati: <><rect x="4" y="5" width="16" height="14" rx="1" /><path d="M8 9h8M8 12.5h8M8 16h5" /></>,
+  aereo: <><path d="M3.5 13.5l7-1.5 4.5-6.5h2l-2 6.5 5 .8c1 .2 1 1.4 0 1.6l-5 .8 2 3.3h-2l-4.5-3.8-7-1.2z" /></>,
+  chip: <><rect x="7" y="7" width="10" height="10" rx="1" /><rect x="10" y="10" width="4" height="4" /><path d="M10 4v3M14 4v3M10 17v3M14 17v3M4 10h3M4 14h3M17 10h3M17 14h3" /></>,
+  moneta: <><ellipse cx="12" cy="7" rx="6" ry="2.5" /><path d="M6 7v5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V7" /><path d="M6 12v5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-5" /></>,
+  globo: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16" /><path d="M12 4c2.2 2.3 3.3 5 3.3 8s-1.1 5.7-3.3 8c-2.2-2.3-3.3-5-3.3-8s1.1-5.7 3.3-8z" /></>,
   lucchetto: <><rect x="6" y="11" width="12" height="9" rx="1" /><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" /><circle cx="12" cy="15.5" r="1" /></>,
 };
 
@@ -253,6 +257,160 @@ const SchedaDocumento: React.FC<{ d: IrDocumento; lang: string; mailto: string }
     : <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className={classi}>{corpo}</a>;
 };
 
+// Visione 2030: la frise degli obiettivi sale da sinistra a destra come una
+// curva di crescita. Solo foto del sito senza loghi; ogni testo e ogni foto si
+// cambiano da Admin > Sito > Investitori.
+const PASSO = 22; // px di salita tra una tappa e la successiva (desktop)
+
+const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, lang }) => {
+  const tx = (base: string) => bilingual(copy, base, lang);
+  const tappe = (copy.ir_v2030_tappe || []).filter((t: IrTappa) => t.anno);
+  const pilastri = copy.ir_v2030_pilastri || [];
+  const foto = [copy.ir_v2030_img_1, copy.ir_v2030_img_2, copy.ir_v2030_img_3].filter(Boolean) as string[];
+  const n = tappe.length;
+  if (n === 0) return null;
+  const salita = (n - 1) * PASSO;
+  // Punti della linea d'oro: centro di ogni colonna, all'altezza del suo pallino.
+  const punti = tappe.map((_, i) => `${((i + 0.5) / n) * 100},${(n - 1 - i) * PASSO + 1}`).join(' ');
+
+  return (
+    <Sezione className="relative overflow-hidden">
+      {/* Bagliore caldo dietro la frise, come una luce d'orizzonte */}
+      <div className="pointer-events-none absolute inset-x-0 top-1/3 h-[60%] opacity-60" style={{ background: `radial-gradient(60% 50% at 70% 40%, ${GOLD}1f, transparent 70%)` }} />
+
+      {/* Apertura: titolo a sinistra, tre foto a destra */}
+      <div className="container relative mx-auto grid gap-12 px-6 pt-16 md:pt-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center">
+        <motion.div {...fadeUp}>
+          <Eyebrow>{tx('ir_v2030_eyebrow')}</Eyebrow>
+          <h2 className="mt-5 font-serif text-4xl font-normal uppercase leading-[1.05] tracking-[0.01em] text-white md:text-[3.4rem]">
+            {tx('ir_v2030_riga1')}
+            {tx('ir_v2030_accento') && <><br /><span style={{ color: GOLD }}>{tx('ir_v2030_accento')}</span></>}
+          </h2>
+          {tx('ir_v2030_motto') && <p className="t-nav mt-7 text-[11px] uppercase tracking-[0.32em] text-white/75">{tx('ir_v2030_motto')}</p>}
+          <span className="mt-7 block h-px w-12" style={{ backgroundColor: GOLD }} />
+          {tx('ir_v2030_citazione') && <p className="mt-7 max-w-sm font-serif text-xl italic leading-snug text-white/85">&ldquo;{tx('ir_v2030_citazione')}&rdquo;</p>}
+        </motion.div>
+        {foto.length > 0 && (
+          <motion.div {...fadeUp} className="relative">
+            <div className={`grid h-[300px] gap-2 sm:h-[380px] ${foto.length > 1 ? 'grid-cols-[1.4fr_1fr] grid-rows-2' : ''}`}>
+              {foto.map((src, i) => (
+                <div key={src + i} className={`relative overflow-hidden border border-white/[0.08] ${i === 0 && foto.length > 1 ? 'row-span-2' : ''} ${foto.length === 2 && i === 1 ? 'row-span-2' : ''}`}>
+                  <img src={src} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                </div>
+              ))}
+            </div>
+            {tx('ir_v2030_mondi') && (
+              <p className="t-nav absolute -top-3 right-4 bg-[#0b0b0b] px-3 text-[10px] uppercase tracking-[0.34em]" style={{ color: GOLD }}>{tx('ir_v2030_mondi')}</p>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      {/* Frise: desktop a scalini con la linea d'oro, mobile in verticale */}
+      <div className="container relative mx-auto px-6 pb-4 pt-16 md:pt-20">
+        <div className="relative hidden lg:block" style={{ paddingTop: 8 }}>
+          <svg className="pointer-events-none absolute left-0 overflow-visible" width="100%" style={{ top: 7, height: salita + 2 }} viewBox={`0 0 100 ${salita + 2}`} preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="ir-linea" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" stopColor={GOLD} stopOpacity="0.25" />
+                <stop offset="1" stopColor={GOLD} stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <motion.polyline
+              points={punti} fill="none" stroke="url(#ir-linea)" strokeWidth={1.5} vectorEffect="non-scaling-stroke"
+              initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.4 }}
+              style={{ filter: `drop-shadow(0 0 6px ${GOLD})` }}
+            />
+          </svg>
+          <div className="grid items-start" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+            {tappe.map((t, i) => {
+              const ultima = i === n - 1;
+              return (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.6, delay: 0.12 * i }}
+                  className="flex flex-col items-center"
+                  style={{ marginTop: (n - 1 - i) * PASSO }}
+                >
+                  <span className="relative z-10 -mt-[5px] h-2.5 w-2.5 rounded-full" style={{ backgroundColor: GOLD, boxShadow: `0 0 12px ${GOLD}` }} />
+                  <span className="h-6 w-px" style={{ background: `linear-gradient(${GOLD}, transparent)` }} />
+                  <div className={`relative flex w-full flex-col overflow-hidden border-l border-white/[0.08] ${i === 0 ? 'border-l-0' : ''} ${ultima ? 'border border-[#C8A24A]/50' : ''}`} style={{ height: 380 - (n - 1 - i) * PASSO }}>
+                    <div className="relative z-10 px-2 pt-2 text-center">
+                      <p className="font-serif text-[1.35rem] leading-none text-white">{t.anno}</p>
+                      <p className={`mt-2 font-serif leading-tight ${ultima ? 'text-[1.45rem]' : 'text-[1.15rem] text-white'}`} style={ultima ? { color: GOLD } : undefined}>{bilingual(t, 'valore', lang)}</p>
+                      <p className="t-nav mt-4 text-[9.5px] uppercase tracking-[0.1em] text-white/90 xl:tracking-[0.16em]">{bilingual(t, 'titolo', lang)}</p>
+                      <p className="mt-1.5 text-[12px] leading-snug text-white/60">{bilingual(t, 'testo', lang)}</p>
+                    </div>
+                    {t.img && (
+                      <div className="relative mt-auto h-40">
+                        <img src={t.img} alt="" loading="lazy" className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0b0b] via-[#0b0b0b]/30 to-[#0b0b0b]/10" />
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        <ol className="relative space-y-5 border-l pl-6 lg:hidden" style={{ borderColor: `${GOLD}55` }}>
+          {tappe.map((t, i) => {
+            const ultima = i === n - 1;
+            return (
+              <motion.li key={t.id} {...fadeUp} className="relative">
+                <span className="absolute -left-[29px] top-5 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: GOLD, boxShadow: `0 0 10px ${GOLD}` }} />
+                <div className={`relative flex overflow-hidden border ${ultima ? 'border-[#C8A24A]/50' : 'border-white/[0.08]'}`}>
+                  <div className="relative z-10 flex-1 px-4 py-4">
+                    <p className="font-serif text-lg leading-none text-white">{t.anno}</p>
+                    <p className="mt-1.5 font-serif text-xl leading-tight" style={{ color: ultima ? GOLD : '#fff' }}>{bilingual(t, 'valore', lang)}</p>
+                    <p className="t-nav mt-3 text-[10px] uppercase tracking-[0.2em] text-white/90">{bilingual(t, 'titolo', lang)}</p>
+                    <p className="mt-1 text-[12px] leading-snug text-white/60">{bilingual(t, 'testo', lang)}</p>
+                  </div>
+                  {t.img && (
+                    <div className="relative w-[38%] shrink-0">
+                      <img src={t.img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#0b0b0b] to-transparent" />
+                    </div>
+                  )}
+                </div>
+              </motion.li>
+            );
+          })}
+        </ol>
+        {tx('ir_v2030_nota') && <p className="mt-5 text-[11px] text-white/40">{tx('ir_v2030_nota')}</p>}
+      </div>
+
+      {/* Claim + settori */}
+      <div className="container relative mx-auto px-6 pb-16 pt-14 md:pb-24">
+        <motion.div {...fadeUp} className="text-center">
+          {tx('ir_v2030_claim') && <p className="font-serif text-lg uppercase tracking-[0.3em] md:text-2xl md:tracking-[0.42em]" style={{ color: GOLD }}>{tx('ir_v2030_claim')}</p>}
+          {tx('ir_v2030_sottoclaim') && <p className="t-nav mt-3 text-[10px] uppercase tracking-[0.3em] text-white/70 md:text-[11px]">{tx('ir_v2030_sottoclaim')}</p>}
+        </motion.div>
+        {pilastri.length > 0 && (
+          <motion.div {...fadeUp} className="mx-auto mt-12 grid max-w-6xl grid-cols-2 gap-y-10 sm:grid-cols-4 lg:grid-cols-7">
+            {pilastri.map((pl: IrPilastro) => (
+              <div key={pl.id} className="flex flex-col items-center px-2 text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full border" style={{ borderColor: `${GOLD}55` }}><Icona nome={pl.icona} className="h-6 w-6" /></span>
+                <p className="t-nav mt-4 text-[10px] uppercase tracking-[0.2em] text-white">{bilingual(pl, 'titolo', lang)}</p>
+                {bilingual(pl, 'testo', lang) && <p className="mt-1 text-[12px] text-white/55">{bilingual(pl, 'testo', lang)}</p>}
+              </div>
+            ))}
+          </motion.div>
+        )}
+        {tx('ir_v2030_chiusura') && (
+          <motion.div {...fadeUp} className="mt-14 flex items-center justify-center gap-5">
+            <span className="hidden h-px w-16 sm:block" style={{ backgroundColor: `${GOLD}88` }} />
+            <p className="t-nav text-center text-[11px] uppercase tracking-[0.3em] text-white/80">&ldquo;{tx('ir_v2030_chiusura')}&rdquo;</p>
+            <span className="hidden h-px w-16 sm:block" style={{ backgroundColor: `${GOLD}88` }} />
+          </motion.div>
+        )}
+      </div>
+    </Sezione>
+  );
+};
+
 const InvestitoriPage: React.FC = () => {
   const aspetto = useAspetto();
   const { t, lang } = useTranslation();
@@ -349,17 +507,7 @@ const InvestitoriPage: React.FC = () => {
         </div>
       </Sezione>
 
-      {/* Infografica Visione: immagine intera, senza velo, cosi' si leggono le
-          scritte. Tocca per aprirla a piena risoluzione. */}
-      {copy.ir_infografica_img && (
-        <Sezione className="py-12 md:py-16">
-          <div className="container mx-auto px-6">
-            <motion.a {...fadeUp} href={copy.ir_infografica_img} target="_blank" rel="noopener noreferrer" className="block">
-              <img src={copy.ir_infografica_img} alt={tx('ir_visione_titolo') || 'DR7'} loading="lazy" className="w-full h-auto border border-white/[0.08]" />
-            </motion.a>
-          </div>
-        </Sezione>
-      )}
+      <Visione2030 copy={copy} lang={lang} />
 
       {/* Azionisti */}
       {azionisti.length > 0 && (

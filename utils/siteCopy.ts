@@ -1732,6 +1732,9 @@ export interface PressArticle {
   date: string;
   summary_it: string; summary_en: string;
   link: string;
+  /** Logo della testata caricato dal gestionale. Vuoto = logo riconosciuto
+   *  dal nome (utils/loghiStampa.ts), altrimenti il nome scritto. */
+  logo?: string;
 }
 
 export interface PressCopy {

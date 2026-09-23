@@ -92,9 +92,9 @@ const PressPage: React.FC = () => {
                                     {/* La testata si vede col suo logo quando ce l'abbiamo
                                         (public/loghi-stampa), altrimenti resta il nome scritto. */}
                                     <div className="flex items-center gap-3 text-sm text-gray-400 mb-3">
-                                        {logoTestata(article.publication)
+                                        {(article.logo || logoTestata(article.publication))
                                             ? <img
-                                                src={logoTestata(article.publication)}
+                                                src={article.logo || logoTestata(article.publication)}
                                                 alt={article.publication}
                                                 loading="lazy"
                                                 className="h-6 w-auto max-w-[130px] object-contain opacity-80 transition-opacity duration-300 group-hover:opacity-100"

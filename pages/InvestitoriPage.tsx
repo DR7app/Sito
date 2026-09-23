@@ -323,9 +323,6 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
               {/* velo caldo comune: le tre foto prendono lo stesso tono */}
               <div className="pointer-events-none absolute inset-0 z-10 mix-blend-soft-light" style={{ background: `radial-gradient(closest-side, ${GOLD}40, transparent)` }} />
             </div>
-            {tx('ir_v2030_mondi') && (
-              <p className="t-nav absolute -top-3 right-4 bg-[#0b0b0b] px-3 text-[10px] uppercase tracking-[0.34em]" style={{ color: GOLD }}>{tx('ir_v2030_mondi')}</p>
-            )}
           </motion.div>
         )}
       </div>

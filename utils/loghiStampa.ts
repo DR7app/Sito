@@ -26,6 +26,9 @@ const LOGHI: Record<string, string> = {
   'estate in sardegna': '/loghi-stampa/estate-in-sardegna.png',
   'today news': '/loghi-stampa/today-news.png',
   'streetinsider': '/loghi-stampa/streetinsider.png',
+  'casteddu online': '/loghi-stampa/casteddu-online.png',
+  'castedduonline': '/loghi-stampa/casteddu-online.png',
+  'casteddu on line': '/loghi-stampa/casteddu-online.png',
   'streetinsider.com': '/loghi-stampa/streetinsider.png',
   'todaynews': '/loghi-stampa/today-news.png',
 };

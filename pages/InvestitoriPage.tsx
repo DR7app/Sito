@@ -349,6 +349,18 @@ const InvestitoriPage: React.FC = () => {
         </div>
       </Sezione>
 
+      {/* Infografica Visione: immagine intera, senza velo, cosi' si leggono le
+          scritte. Tocca per aprirla a piena risoluzione. */}
+      {copy.ir_infografica_img && (
+        <Sezione className="py-12 md:py-16">
+          <div className="container mx-auto px-6">
+            <motion.a {...fadeUp} href={copy.ir_infografica_img} target="_blank" rel="noopener noreferrer" className="block">
+              <img src={copy.ir_infografica_img} alt={tx('ir_visione_titolo') || 'DR7'} loading="lazy" className="w-full h-auto border border-white/[0.08]" />
+            </motion.a>
+          </div>
+        </Sezione>
+      )}
+
       {/* Azionisti */}
       {azionisti.length > 0 && (
         <Sezione className="py-16 md:py-20">

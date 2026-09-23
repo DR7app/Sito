@@ -9,10 +9,14 @@ import { getMechanicalServices, type MechanicalServiceItem } from '../utils/site
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 import { useCarrello } from '../hooks/useCarrello';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
+import { useContactInfo } from '../hooks/useContactInfo';
+import { linkWhatsApp } from '../utils/whatsapp';
 
 
 const MechanicalBookingPage: React.FC = () => {
   const { t, lang } = useTranslation();
+  // 23/09/2026 (direzione): numero WhatsApp dell'officina da Sito > Contatti.
+  const contatti = useContactInfo();
   // Il testo del pulsante arriva dal gestionale (Sito > Lavaggio > Carrello):
   // una casella sola per tutti i punti in cui si aggiunge qualcosa.
   const testiCarrello = useTestiCarrello();
@@ -702,8 +706,7 @@ const MechanicalBookingPage: React.FC = () => {
       whatsappMessage += `*Totale:* €${totalPrice}\n\n` +
         `Grazie!`;
 
-      const officeWhatsAppNumber = '393457905205';
-      const whatsappUrl = `https://wa.me/${officeWhatsAppNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+      const whatsappUrl = linkWhatsApp(contatti.whatsapp_url, whatsappMessage);
 
       setTimeout(() => {
         window.open(whatsappUrl, '_blank');

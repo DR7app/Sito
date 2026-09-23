@@ -16,20 +16,11 @@ import SfondoVideo from '../components/ui/SfondoVideo';
 import { useFilmato, type ChiaveFilmato } from '../hooks/useFilmato';
 import GalleriaCatalogo from '../components/ui/GalleriaCatalogo';
 import { useTranslation } from '../hooks/useTranslation';
-
-const WHATSAPP_NUMBER = '393457905205';
-
-interface Bilingual { it: string; en: string }
+import { useContactInfo } from '../hooks/useContactInfo';
+import { linkWhatsApp, riempiSegnaposto } from '../utils/whatsapp';
 
 interface NoleggioServicePageProps {
   serviceType: NoleggioServiceType;
-  /**
-   * "la barca" / "the boat": entra solo nel messaggio WhatsApp a DR7, che
-   * resta in italiano. Titolo e sottotitolo della pagina non arrivano piu'
-   * da qui: sono scritti sotto con t e i due testi, cosi' si cambiano dal
-   * gestionale (Sito > Testi).
-   */
-  asset: Bilingual;
   /** Filmato di apertura, se la sezione ne ha uno (file in /public). */
   heroVideo?: { src: string; poster?: string; adatta?: 'riempi' | 'intero' };
 }
@@ -38,8 +29,19 @@ function eur(cents: number): string {
   return (cents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 }
 
-export default function NoleggioServicePage({ serviceType, asset, heroVideo }: NoleggioServicePageProps) {
+export default function NoleggioServicePage({ serviceType, heroVideo }: NoleggioServicePageProps) {
   const { t } = useTranslation();
+  // 23/09/2026 (direzione) — numero WhatsApp da Sito > Contatti, e i
+  // messaggi gia' scritti (con il nome del mezzo) da Sito > Testi. Il
+  // messaggio va a DR7 e resta in italiano anche col sito in inglese: per
+  // questo le due lingue partono uguali. Prima il nome ("la barca") stava
+  // nella route di App.tsx e il numero in cima a questo file.
+  const contatti = useContactInfo();
+  const cosa = serviceType === 'boat_rental'
+    ? t({ it: "la barca", en: "la barca" })
+    : serviceType === 'heli_rental'
+      ? t({ it: "l'elicottero", en: "l'elicottero" })
+      : t({ it: "l'alloggio", en: "l'alloggio" });
   const titolo = serviceType === 'boat_rental'
     ? t({ it: "Noleggio Mare", en: "Sea Rentals" })
     : serviceType === 'heli_rental'
@@ -196,10 +198,11 @@ export default function NoleggioServicePage({ serviceType, asset, heroVideo }: N
             fotografia non diceva niente. Mare e Aria restano su tre. */}
         <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 ${serviceType === 'stay_rental' ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
           {items.map(item => {
-            const message =
-              `Ciao DR7, vorrei richiedere un preventivo per ${asset.it}: ${item.name}. ` +
-              `Potete inviarmi disponibilità e preventivo?`;
-            const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+            const message = riempiSegnaposto(
+              t({ it: "Ciao DR7, vorrei richiedere un preventivo per {cosa}: {nome}. Potete inviarmi disponibilità e preventivo?", en: "Ciao DR7, vorrei richiedere un preventivo per {cosa}: {nome}. Potete inviarmi disponibilità e preventivo?" }),
+              { cosa, nome: item.name },
+            );
+            const waHref = linkWhatsApp(contatti.whatsapp_url, message);
             // 06/09/2026 — l'aria non passa piu' da WhatsApp. "Richiedi
             // Preventivo" apre il modulo di /helicopters/quote con il mezzo
             // gia' scelto: quel modulo si manda a DR7 (resta scritto fra i
@@ -275,7 +278,10 @@ export default function NoleggioServicePage({ serviceType, asset, heroVideo }: N
       {openTour && (
         <TourBookingModal
           item={openTour}
-          waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare ${asset.it}: ${openTour.name}.`)}`}
+          waHref={linkWhatsApp(contatti.whatsapp_url, riempiSegnaposto(
+            t({ it: "Ciao DR7, vorrei prenotare {cosa}: {nome}.", en: "Ciao DR7, vorrei prenotare {cosa}: {nome}." }),
+            { cosa, nome: openTour.name },
+          ))}
           onClose={() => setOpenTour(null)}
         />
       )}

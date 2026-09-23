@@ -18,6 +18,7 @@ import RentalFilters from '../components/ui/RentalFilters';
 import { useSearchAvailability } from '../hooks/useSearchAvailability';
 import { getFlottaVisibleCategoryIds } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
+import { linkWhatsApp as conTesto, riempiSegnaposto } from '../utils/whatsapp';
 
 interface RentalPageProps {
   categoryId: 'cars' | 'urban-cars' | 'corporate-fleet' | 'yachts' | 'villas' | 'jets' | 'helicopters';
@@ -659,11 +660,6 @@ const ModificaBar: React.FC<ModificaBarProps> = ({ initial, onUpdate }) => {
 
 // ─── RentalPage ──────────────────────────────────────────────────────────────
 
-/** Link WhatsApp con un messaggio gia' scritto. */
-function conTesto(whatsappUrl: string, testo: string): string {
-  return whatsappUrl + (whatsappUrl.includes('?') ? '&' : '?') + 'text=' + encodeURIComponent(testo);
-}
-
 const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
   // Numero WhatsApp da Sito > Contatti, come il resto del sito.
   const contatti = useContactInfo();
@@ -1100,7 +1096,7 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
             className="text-center mb-12"
           >
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-              DR7 Aviation Division
+              {t({ it: "DR7 Aviation Division", en: "DR7 Aviation Division" })}
             </h1>
             <p className="text-xl text-gray-400 mb-8">
               {t({ it: "Jet Privati ed Elicotteri su Misura", en: "Bespoke Private Jets and Helicopters" })}
@@ -1279,16 +1275,24 @@ const RentalPage: React.FC<RentalPageProps> = ({ categoryId }) => {
                       e.preventDefault();
                       const fd = new FormData(e.currentTarget);
                       const get = (k: string) => fd.get(k)?.toString() || '';
-                      let msg = 'Richiesta preventivo nautico:\n\n';
-                      msg += `Data inizio: ${get('startDate')} ore ${get('startTime')}\n`;
-                      msg += `Data fine: ${get('endDate')} ore ${get('endTime')}\n`;
-                      msg += `Porto partenza: ${get('departurePort')}\n`;
-                      msg += `Porto rientro: ${get('returnPort')}\n`;
-                      msg += `Paese: ${get('country')}\n`;
-                      msg += `N. ospiti: ${get('guests')}\n`;
-                      msg += `Tipo imbarcazione: ${get('boatType')}\n`;
-                      msg += `Lunghezza: ${get('minLength')}m - ${get('maxLength')}m\n`;
-                      msg += `Budget: €${get('minPrice')} - €${get('maxPrice')}`;
+                      // 23/09/2026 (direzione): il messaggio si riscrive da
+                      // Sito > Testi. Va a DR7 e resta in italiano: le due
+                      // lingue partono uguali. I {segnaposto} li riempie il form.
+                      const msg = riempiSegnaposto(
+                        t({
+                          it: "Richiesta preventivo nautico:\n\nData inizio: {data_inizio} ore {ora_inizio}\nData fine: {data_fine} ore {ora_fine}\nPorto partenza: {porto_partenza}\nPorto rientro: {porto_rientro}\nPaese: {paese}\nN. ospiti: {ospiti}\nTipo imbarcazione: {tipo_imbarcazione}\nLunghezza: {lunghezza_min}m - {lunghezza_max}m\nBudget: €{budget_min} - €{budget_max}",
+                          en: "Richiesta preventivo nautico:\n\nData inizio: {data_inizio} ore {ora_inizio}\nData fine: {data_fine} ore {ora_fine}\nPorto partenza: {porto_partenza}\nPorto rientro: {porto_rientro}\nPaese: {paese}\nN. ospiti: {ospiti}\nTipo imbarcazione: {tipo_imbarcazione}\nLunghezza: {lunghezza_min}m - {lunghezza_max}m\nBudget: €{budget_min} - €{budget_max}",
+                        }),
+                        {
+                          data_inizio: get('startDate'), ora_inizio: get('startTime'),
+                          data_fine: get('endDate'), ora_fine: get('endTime'),
+                          porto_partenza: get('departurePort'), porto_rientro: get('returnPort'),
+                          paese: get('country'), ospiti: get('guests'),
+                          tipo_imbarcazione: get('boatType'),
+                          lunghezza_min: get('minLength'), lunghezza_max: get('maxLength'),
+                          budget_min: get('minPrice'), budget_max: get('maxPrice'),
+                        },
+                      );
                       window.open(conTesto(contatti.whatsapp_url, msg), '_blank');
                     }}
                     className="space-y-5"

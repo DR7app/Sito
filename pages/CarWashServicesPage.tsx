@@ -12,6 +12,7 @@ import SfondoVideo from '../components/ui/SfondoVideo';
 import SEOHead from '../components/seo/SEOHead';
 import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
+import { linkWhatsApp, riempiSegnaposto } from '../utils/whatsapp';
 import { useFilmato } from '../hooks/useFilmato';
 // Prenotazione in finestra: gli stessi identici passi della pagina
 // /car-wash-booking (data e ora, DR7 Flex, codice sconto, PRENOTA ORA e
@@ -865,9 +866,11 @@ const CarWashServicesPage: React.FC = () => {
                 >
                   {targaResult && washCategory ? (
                     <a
-                      href={`${contact.whatsapp_url}?text=${encodeURIComponent(
-                        `Ciao, vorrei richiedere un preventivo per il servizio ABSOLUTE DETAIL.\nVeicolo: ${targaResult.carMake} ${targaResult.carModel} (${targaResult.plate}) – ${washCategory.toUpperCase()}`
-                      )}`}
+                      href={linkWhatsApp(contact.whatsapp_url, riempiSegnaposto(
+                        // 23/09/2026 (direzione): messaggio da Sito > Testi, resta in italiano.
+                        t({ it: "Ciao, vorrei richiedere un preventivo per il servizio ABSOLUTE DETAIL.\nVeicolo: {marca} {modello} ({targa}) – {categoria}", en: "Ciao, vorrei richiedere un preventivo per il servizio ABSOLUTE DETAIL.\nVeicolo: {marca} {modello} ({targa}) – {categoria}" }),
+                        { marca: targaResult.carMake, modello: targaResult.carModel, targa: targaResult.plate, categoria: washCategory.toUpperCase() },
+                      ))}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full inline-flex items-center justify-center bg-white text-black px-2 py-1.5 font-semibold text-xs sm:text-sm hover:bg-gray-200 transition-all duration-300"

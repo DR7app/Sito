@@ -292,9 +292,9 @@ const AnimatedRoutes = () => {
         <Route path="/flotta" element={<FlottaIndexPage />} />
         {/* Noleggio Mare / Aria — pagine DINAMICHE dal catalogo admin
             (noleggio_catalog). Catalogo vuoto => pagina non mostra nulla. */}
-        <Route path="/noleggio-mare" element={<NoleggioServicePage serviceType="boat_rental" asset={{ it: "la barca", en: "the boat" }} heroVideo={{ src: "/video-mare.mp4", poster: "/video-mare-poster.jpg" }} />} />
-        <Route path="/noleggio-aria" element={<NoleggioServicePage serviceType="heli_rental" asset={{ it: "l'elicottero", en: "the helicopter" }} heroVideo={{ src: "/video-aria.mp4", poster: "/video-aria-poster.jpg" }} />} />
-        <Route path="/soggiorni" element={<NoleggioServicePage serviceType="stay_rental" asset={{ it: "l'alloggio", en: "the accommodation" }} heroVideo={{ src: "/video-soggiorni.mp4", poster: "/video-soggiorni-poster.jpg" }} />} />
+        <Route path="/noleggio-mare" element={<NoleggioServicePage serviceType="boat_rental" heroVideo={{ src: "/video-mare.mp4", poster: "/video-mare-poster.jpg" }} />} />
+        <Route path="/noleggio-aria" element={<NoleggioServicePage serviceType="heli_rental" heroVideo={{ src: "/video-aria.mp4", poster: "/video-aria-poster.jpg" }} />} />
+        <Route path="/soggiorni" element={<NoleggioServicePage serviceType="stay_rental" heroVideo={{ src: "/video-soggiorni.mp4", poster: "/video-soggiorni-poster.jpg" }} />} />
         <Route path="/supercar-luxury" element={<RentalPage categoryId="cars" />} />
         <Route path="/urban" element={<Navigate to="/supercar-luxury" replace />} />
         <Route path="/prime-wash" element={<CarWashServicesPage />} />

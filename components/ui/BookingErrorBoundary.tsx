@@ -1,6 +1,7 @@
 import React from 'react';
 import { getContactCopy } from '../../utils/siteCopy';
 import { useTranslation } from '../../hooks/useTranslation';
+import { WHATSAPP_URL_DI_FABBRICA } from '../../utils/whatsapp';
 
 interface Props {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ interface State {
 // Module-level cache so the boundary (a class component) can pick up the
 // admin-edited WhatsApp URL without needing hooks. Loaded once on first
 // import; the fallback is the historical hardcoded URL.
-let cachedWhatsappUrl = 'https://wa.me/393457905205';
+let cachedWhatsappUrl = WHATSAPP_URL_DI_FABBRICA;
 void (async () => {
   try {
     const cp = await getContactCopy();

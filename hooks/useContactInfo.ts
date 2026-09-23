@@ -3,6 +3,7 @@
 // siteCopy loadOnce() cache so multiple mounts don't re-fetch.
 import { useEffect, useState } from 'react';
 import { getContactCopy } from '../utils/siteCopy';
+import { WHATSAPP_URL_DI_FABBRICA } from '../utils/whatsapp';
 
 export interface ContactInfo {
   whatsapp_url: string;
@@ -12,7 +13,7 @@ export interface ContactInfo {
 }
 
 const DEFAULT: ContactInfo = {
-  whatsapp_url: 'https://wa.me/393457905205',
+  whatsapp_url: WHATSAPP_URL_DI_FABBRICA,
   phone_display: '+39 345 790 5205',
   phone_tel_url: 'tel:+393457905205',
   email_address: 'info@dr7.app',

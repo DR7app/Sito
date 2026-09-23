@@ -15,6 +15,8 @@ import HelicopterBookingForm from '../components/ui/HelicopterBookingForm';
 import { getBookingCopy, type BookingCopy, getMessageTemplateBody } from '../utils/siteCopy';
 import { getAirports, getYachtMarinas, getHeliDeparturePoints, getHeliArrivalPoints } from '../utils/getLocations';
 import { dateLocale } from '../utils/i18nDate';
+import { useContactInfo } from '../hooks/useContactInfo';
+import { linkWhatsApp } from '../utils/whatsapp';
 
 // Token substitution for WhatsApp templates loaded from system_messages.
 function applyTokens(tpl: string, tokens: Record<string, string>): string {
@@ -23,7 +25,8 @@ function applyTokens(tpl: string, tokens: Record<string, string>): string {
   return out;
 }
 
-const WHATSAPP_RECIPIENT = '393457905205';
+// 23/09/2026 (direzione): il numero WhatsApp arriva da Sito > Contatti
+// (useContactInfo), non piu' scritto qui.
 
 
 
@@ -37,6 +40,7 @@ const BookingPage: React.FC = () => {
   const { t, lang, getTranslated } = useTranslation();
   const { currency } = useCurrency();
   const { user, loading } = useAuth();
+  const contatti = useContactInfo();
 
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -268,7 +272,7 @@ const BookingPage: React.FC = () => {
             animali: formData.petsAllowed ? 'Sì' : 'No',
             fumo: formData.smokingAllowed ? 'Sì' : 'No',
           });
-          const whatsappUrl = `https://wa.me/${WHATSAPP_RECIPIENT}?text=${encodeURIComponent(message)}`;
+          const whatsappUrl = linkWhatsApp(contatti.whatsapp_url, message);
           window.open(whatsappUrl, '_blank');
         }
       }
@@ -326,7 +330,7 @@ const BookingPage: React.FC = () => {
             passeggeri: String(formData.guests),
             totale: formatPrice(total),
           });
-          const whatsappUrl = `https://wa.me/${WHATSAPP_RECIPIENT}?text=${encodeURIComponent(message)}`;
+          const whatsappUrl = linkWhatsApp(contatti.whatsapp_url, message);
           setTimeout(() => { window.open(whatsappUrl, '_blank'); }, 1000);
         }
       }

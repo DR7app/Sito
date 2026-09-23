@@ -6,11 +6,12 @@ import { supabase } from '../../supabaseClient';
 import { useNoleggioCatalog, type NoleggioCatalogItem, type TourDuration } from '../../hooks/useNoleggioCatalog';
 import TourBookingModal from './TourBookingModal';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useContactInfo } from '../../hooks/useContactInfo';
+import { linkWhatsApp, riempiSegnaposto } from '../../utils/whatsapp';
 
 const SESSION_KEY = 'dr7_heli_tour_popup_dismissed';
 const CAR_POPUP_KEY = 'dr7_auto_booking_popup_dismissed';
 const DELAY_MS = 6000; // 6s dopo l'arrivo in homepage.
-const WHATSAPP_NUMBER = '393457905205';
 
 function eur(cents: number): string {
   return (cents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -27,6 +28,8 @@ function eur(cents: number): string {
  */
 const HeliTourPopup: React.FC = () => {
   const { t } = useTranslation();
+  // 23/09/2026 (direzione): numero da Sito > Contatti, messaggio da Sito > Testi.
+  const contatti = useContactInfo();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -179,7 +182,10 @@ const HeliTourPopup: React.FC = () => {
         <TourBookingModal
           item={tourItem}
           selectedDuration={selDuration}
-          waHref={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Ciao DR7, vorrei prenotare l'elicottero: ${tourItem.name}${selDuration ? ` (${selDuration.label})` : ''}.`)}`}
+          waHref={linkWhatsApp(contatti.whatsapp_url, riempiSegnaposto(
+            t({ it: "Ciao DR7, vorrei prenotare l'elicottero: {tour}{durata}.", en: "Ciao DR7, vorrei prenotare l'elicottero: {tour}{durata}." }),
+            { tour: tourItem.name, durata: selDuration ? ` (${selDuration.label})` : '' },
+          ))}
           onClose={() => setBooking(false)}
         />
       )}

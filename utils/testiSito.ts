@@ -72,6 +72,22 @@ export function testoOverride(chiave: string, lang: 'it' | 'en'): string | null 
   return typeof valore === 'string' && valore.trim() !== '' ? valore : null
 }
 
+/**
+ * 23/09/2026 (direzione) — come `t({ it, en })`, ma per i file fuori da
+ * React (utils/): gli errori del carrello, del codice fiscale, della targa.
+ * La lingua e' quella della pagina (<html lang>, la tiene LanguageContext);
+ * l'override arriva da Sito > Testi come per t(). scripts/genTestiCatalogo.mjs
+ * nel gestionale raccoglie anche queste chiamate, quindi si scrivono con
+ * due testi fissi (niente `${...}`): i valori si mettono con {segnaposto}.
+ */
+export function testoFisso(field: { it: string; en: string }): string {
+  let lang: 'it' | 'en' = 'it'
+  try {
+    if (typeof document !== 'undefined' && document.documentElement.lang === 'en') lang = 'en'
+  } catch { /* fuori dal browser: italiano */ }
+  return testoOverride(chiaveTesto(field.it), lang) ?? field[lang]
+}
+
 // Caricamento unico all'avvio: la configurazione e' gia' in cache per il
 // resto del CMS, qui si legge solo la sua sezione `testi`.
 let inCorso: Promise<void> | null = null

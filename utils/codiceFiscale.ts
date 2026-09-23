@@ -5,6 +5,8 @@
  * Algorithm: https://it.wikipedia.org/wiki/Codice_fiscale
  */
 
+import { testoFisso } from './testiSito'
+
 // ── Month codes ────────────────────────────────────────────────────────────
 const MONTH_CODES = 'ABCDEHLMPRST'
 
@@ -295,7 +297,7 @@ export function calcolaCodiceFiscale(input: CodiceFiscaleInput): CodiceFiscaleRe
   const { cognome, nome, data_nascita, sesso, luogo_nascita } = input
 
   if (!cognome || !nome || !data_nascita || !sesso || !luogo_nascita) {
-    return { codice_fiscale: null, error: 'Tutti i campi sono obbligatori' }
+    return { codice_fiscale: null, error: testoFisso({ it: 'Tutti i campi sono obbligatori', en: 'All fields are required' }) }
   }
 
   // 1. Surname (3 chars)
@@ -307,7 +309,7 @@ export function calcolaCodiceFiscale(input: CodiceFiscaleInput): CodiceFiscaleRe
   // 3. Birth date + sex (5 chars)
   const datePart = encodeBirthDate(data_nascita, sesso)
   if (!datePart) {
-    return { codice_fiscale: null, error: 'Data di nascita non valida' }
+    return { codice_fiscale: null, error: testoFisso({ it: 'Data di nascita non valida', en: 'Invalid date of birth' }) }
   }
 
   // 4. Belfiore code (4 chars)
@@ -558,11 +560,11 @@ export function verificaConsistenza(
 } {
   const decoded = decodificaCodiceFiscale(cf)
   if (!decoded) {
-    return { isConsistent: false, mismatches: ['Il Codice Fiscale inserito non è valido'], decoded: null }
+    return { isConsistent: false, mismatches: [testoFisso({ it: 'Il Codice Fiscale inserito non è valido', en: 'The tax code (Codice Fiscale) entered is not valid' })], decoded: null }
   }
 
   if (!validateCheckDigit(cf)) {
-    return { isConsistent: false, mismatches: ['Il carattere di controllo del Codice Fiscale non è corretto'], decoded }
+    return { isConsistent: false, mismatches: [testoFisso({ it: 'Il carattere di controllo del Codice Fiscale non è corretto', en: 'The check character of the tax code (Codice Fiscale) is not correct' })], decoded }
   }
 
   const mismatches: string[] = []

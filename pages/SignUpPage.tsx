@@ -252,8 +252,8 @@ const SignUpPage: React.FC = () => {
     if (falliti.length > 0) {
       // Meglio dirlo: prima il documento spariva senza che nessuno lo sapesse.
       setGeneralError(
-        'Account creato. Questi documenti non sono stati caricati: ' + falliti.join(', ') +
-        '. Puoi ricaricarli dalla tua area personale, sezione Documenti.'
+        t({ it: "Account creato. Questi documenti non sono stati caricati: {documenti}. Puoi ricaricarli dalla tua area personale, sezione Documenti.", en: "Account created. These documents were not uploaded: {documenti}. You can upload them again from your personal area, Documents section." })
+          .replace('{documenti}', falliti.join(', '))
       );
     }
     return fatti;
@@ -517,7 +517,7 @@ const SignUpPage: React.FC = () => {
       // 17/09/2026: account gia' creato dal nostro ufficio. Nessun accesso
       // qui: il cliente riceve un'email per scegliere la password.
       if (result?.accountEsistente) {
-        setGeneralError(result.message || 'Il tuo account DR7 esiste gia\': controlla la tua email per scegliere la password.')
+        setGeneralError(result.message || t({ it: "Il tuo account DR7 esiste gia': controlla la tua email per scegliere la password.", en: "Your DR7 account already exists: check your email to choose your password." }))
         return
       }
 
@@ -537,10 +537,10 @@ const SignUpPage: React.FC = () => {
       // lasciarlo con una scheda a meta' senza saperlo.
       if (result?.profiloCompleto === false) {
         console.warn('[SignUp] profilo incompleto:', result.profileError);
-        setGeneralError(
-          'Account creato e credito di benvenuto accreditato, ma alcuni dati non sono stati salvati. ' +
-          'Completali dalla tua area personale (Il mio account) o scrivici: info@dr7.app'
-        );
+        setGeneralError(t({
+          it: "Account creato e credito di benvenuto accreditato, ma alcuni dati non sono stati salvati. Completali dalla tua area personale (Il mio account) o scrivici: info@dr7.app",
+          en: "Account created and welcome credit added, but some details were not saved. Complete them from your personal area (My account) or write to us: info@dr7.app",
+        }));
       }
 
       // I documenti partono qui: l'account esiste gia', e non dipendiamo piu'

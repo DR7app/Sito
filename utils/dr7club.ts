@@ -16,6 +16,7 @@
 
 import { supabase } from '../supabaseClient'
 import { loadCentralinaConfigOnce, getDr7ClubPlanCopy } from './siteCopy'
+import { testoFisso } from './testiSito'
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -256,7 +257,8 @@ export function calculateReward(
     baseReward: Math.round(baseReward * 100), // in cents
     rewardPercent,
     tier: tierInfo.tier,
-    message: `Riceverai €${baseReward.toFixed(2)} di credito wallet dopo il noleggio`,
+    message: testoFisso({ it: 'Riceverai €{importo} di credito wallet dopo il noleggio', en: 'You will receive €{importo} of wallet credit after the rental' })
+      .split('{importo}').join(baseReward.toFixed(2)),
   }
 }
 

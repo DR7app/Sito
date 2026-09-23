@@ -5777,7 +5777,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <span className="text-gray-500 block text-xs">{t({ it: "Luogo", en: "Location" })}</span>
                     <span className="text-white">{
                       pickupLocs.find(l => l.id === formData.pickupLocation)?.label?.it
-                      || (formData.pickupLocation === 'dr7-cagliari' ? 'DR7 Cagliari — Viale Marconi 229, 09131' : null)
+                      || (formData.pickupLocation === 'dr7-cagliari' ? t({ it: "DR7 Cagliari — Viale Marconi 229, 09131", en: "DR7 Cagliari — Viale Marconi 229, 09131" }) : null)
                       || new URLSearchParams(window.location.search).get('pickupLocLabel')
                       || formData.pickupLocation
                     }</span>
@@ -7100,11 +7100,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     // Send confirmation to customer
                     const customerPhone = formData.phone?.replace(/[\s\-\+()]/g, '') || '';
                     if (customerPhone) {
-                      const customerMsg = `Gentile ${formData.firstName},\n\n`
-                        + `abbiamo ricevuto la sua richiesta per la formula senza cauzione relativa alla prenotazione appena effettuata.\n\n`
-                        + `Il nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\n`
-                        + `Riceverà a breve un aggiornamento con l'esito e, in caso di approvazione, il link di pagamento per completare la prenotazione.\n\n`
-                        + `Restiamo a disposizione.\n\nCordiali saluti,\nDR7`;
+                      // 23/09/2026 (direzione): il messaggio al cliente si
+                      // riscrive da Sito > Testi. Parte uguale nelle due lingue
+                      // (com'era: sempre in italiano); {nome} lo riempie il form.
+                      const customerMsg = t({
+                        it: "Gentile {nome},\n\nabbiamo ricevuto la sua richiesta per la formula senza cauzione relativa alla prenotazione appena effettuata.\n\nIl nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\nRiceverà a breve un aggiornamento con l'esito e, in caso di approvazione, il link di pagamento per completare la prenotazione.\n\nRestiamo a disposizione.\n\nCordiali saluti,\nDR7",
+                        en: "Gentile {nome},\n\nabbiamo ricevuto la sua richiesta per la formula senza cauzione relativa alla prenotazione appena effettuata.\n\nIl nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\nRiceverà a breve un aggiornamento con l'esito e, in caso di approvazione, il link di pagamento per completare la prenotazione.\n\nRestiamo a disposizione.\n\nCordiali saluti,\nDR7",
+                      }).split('{nome}').join(formData.firstName || '');
                       await fetch('/.netlify/functions/send-whatsapp-notification', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

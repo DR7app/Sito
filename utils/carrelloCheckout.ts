@@ -20,6 +20,7 @@ import { supabase } from '../supabaseClient';
 import { deductCredits, addCredits, hasSufficientBalance } from './creditWallet';
 import { checkVehicleAvailability } from './bookingValidation';
 import type { ArticoloCarrello } from './carrello';
+import { testoFisso } from './testiSito';
 
 export const FUNCTIONS_BASE =
   (import.meta as { env?: Record<string, string> }).env?.VITE_FUNCTIONS_BASE ??
@@ -71,7 +72,7 @@ async function disponibilitaNoleggio(prenotazione: Dati): Promise<EsitoArticolo 
     if (conflitti.length > 0) {
       const primo = conflitti[0] as { _checkFailed?: boolean };
       if (primo?._checkFailed) return null;
-      return { ok: false, errore: 'Il mezzo non è più disponibile per queste date. Toglilo dal carrello o cambia le date.' };
+      return { ok: false, errore: testoFisso({ it: 'Il mezzo non è più disponibile per queste date. Toglilo dal carrello o cambia le date.', en: 'This vehicle is no longer available for these dates. Remove it from the cart or change the dates.' }) };
     }
   } catch (e) {
     console.warn('[carrello] controllo disponibilita non riuscito:', e);
@@ -394,7 +395,7 @@ export async function pagaArticoloACredito(
       }
 
       default:
-        return { ok: false, errore: 'Questo articolo si paga solo con carta.' };
+        return { ok: false, errore: testoFisso({ it: 'Questo articolo si paga solo con carta.', en: 'This item can only be paid by card.' }) };
     }
   } catch (e) {
     return { ok: false, errore: (e as Error).message };

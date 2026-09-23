@@ -38,7 +38,7 @@ const PartnerSecuritySettings = () => {
             if (loginError) {
                 // Use a more specific error message if possible
                 if (loginError.message.includes('Invalid login credentials')) {
-                    throw new Error("The current password you entered is incorrect.");
+                    throw new Error(t({ it: "La password attuale che hai inserito non è corretta.", en: "The current password you entered is incorrect." }));
                 }
                 throw loginError;
             }
@@ -107,7 +107,7 @@ const PartnerSecuritySettings = () => {
             ) : (
                 <div className="p-4 md:p-6">
                     <p className="text-sm text-gray-400">
-                        Your account is secured with Google Sign-In. To change your password or manage security settings, please visit your Google Account settings.
+                        {t({ it: "Il tuo account è protetto dall'accesso con Google. Per cambiare la password o gestire la sicurezza, vai alle impostazioni del tuo Account Google.", en: "Your account is secured with Google Sign-In. To change your password or manage security settings, please visit your Google Account settings." })}
                     </p>
                     <a
                         href="https://myaccount.google.com/security"
@@ -115,7 +115,7 @@ const PartnerSecuritySettings = () => {
                         rel="noopener noreferrer"
                         className="mt-4 inline-block px-5 py-2.5 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-sm"
                     >
-                        Go to Google Security
+                        {t({ it: "Vai alla sicurezza Google", en: "Go to Google Security" })}
                     </a>
                 </div>
             )}

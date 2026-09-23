@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { testoFisso } from './testiSito';
 
 /**
  * PREVENDITE DR7 — 14/09/2026
@@ -252,7 +253,7 @@ export async function verificaPrevendita(
   });
   if (error) {
     console.error('[prevendite] verifica non riuscita:', error.message);
-    return { ok: false, errore: 'Controllo della prevendita non riuscito, riprova' };
+    return { ok: false, errore: testoFisso({ it: 'Controllo della prevendita non riuscito, riprova', en: 'Pre-sale check failed, please try again' }) };
   }
   return (data || { ok: false, errore: 'Risposta vuota' }) as EsitoVerifica;
 }

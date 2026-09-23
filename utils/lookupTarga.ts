@@ -3,6 +3,8 @@
  * Calls the Netlify proxy function which queries OpenAPI Automotive.
  */
 
+import { testoFisso } from './testiSito';
+
 export interface TargaResult {
   plate: string;
   carMake: string;
@@ -30,7 +32,7 @@ export async function lookupTarga(plate: string): Promise<TargaResult> {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Errore nella ricerca della targa.');
+    throw new Error(data.error || testoFisso({ it: 'Errore nella ricerca della targa.', en: 'Error while looking up the plate.' }));
   }
 
   return data as TargaResult;

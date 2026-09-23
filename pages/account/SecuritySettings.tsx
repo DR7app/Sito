@@ -38,7 +38,7 @@ const SecuritySettings = () => {
             const { error: loginError } = await login(user!.email, currentPassword);
             if (loginError) {
                 if (loginError.message.includes('Invalid login credentials')) {
-                    throw new Error("The current password you entered is incorrect.");
+                    throw new Error(t({ it: "La password attuale che hai inserito non è corretta.", en: "The current password you entered is incorrect." }));
                 }
                 throw loginError;
             }

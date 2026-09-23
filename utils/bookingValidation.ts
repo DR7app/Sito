@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { testoFisso } from './testiSito';
 
 // Hydrated dal Centralina Pro al module load. L'operatore li modifica
 // in admin > Centralina Pro > Automazioni; effettivo dopo refresh pagina.
@@ -648,7 +649,9 @@ export async function checkCarWashAvailability(
         return {
           isAvailable: false,
           conflictingBooking: booking,
-          message: `Questo orario non è disponibile. È già prenotato dalle ${booking.appointment_time} per ${bookingDuration} ora/e.`
+          message: testoFisso({ it: 'Questo orario non è disponibile. È già prenotato dalle {ora} per {durata} ora/e.', en: 'This time slot is not available. It is already booked from {ora} for {durata} hour(s).' })
+            .split('{ora}').join(String(booking.appointment_time))
+            .split('{durata}').join(String(bookingDuration))
         };
       }
     }

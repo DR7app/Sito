@@ -90,7 +90,7 @@ const PartnerDashboardPage: React.FC = () => {
             <div className="container mx-auto px-4 md:px-6">
                 <div className="text-center mb-6 md:mb-12">
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-2">{t('Welcome_to_your_Partner_Dashboard')}</h1>
-                    <p className="text-lg text-gray-400">Welcome, {user?.companyName || user?.fullName}</p>
+                    <p className="text-lg text-gray-400">{t({ it: "Benvenuto,", en: "Welcome," })} {user?.companyName || user?.fullName}</p>
                 </div>
 
                 <div className="max-w-5xl mx-auto">
@@ -177,7 +177,7 @@ const PartnerDashboardPage: React.FC = () => {
                                                     ? 'bg-green-500/20 text-green-400'
                                                     : 'bg-yellow-500/20 text-yellow-400'
                                                     }`}>
-                                                    {booking.payment_status === 'paid' || booking.payment_status === 'succeeded' || booking.payment_status === 'completed' ? 'Pagato' : 'In attesa'}
+                                                    {booking.payment_status === 'paid' || booking.payment_status === 'succeeded' || booking.payment_status === 'completed' ? t({ it: "Pagato", en: "Paid" }) : t({ it: "In attesa", en: "Pending" })}
                                                 </span>
                                             </div>
                                         </div>

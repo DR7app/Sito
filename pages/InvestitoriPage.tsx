@@ -218,6 +218,26 @@ const RigaAzionista: React.FC<{ a: IrAzionista; lang: string; riservatoLabel: st
 
 const SchedaDocumento: React.FC<{ d: IrDocumento; lang: string; mailto: string }> = ({ d, lang, mailto }) => {
   const titolo = bilingual(d, 'titolo', lang);
+  // Scheda con piu' file (es. un bilancio per anno): li elenca tutti, ognuno
+  // si apre in una nuova scheda. Senza file resta il comportamento di prima.
+  const file = (d.file || []).filter(f => f.url?.trim());
+  if (file.length > 0) {
+    return (
+      <div className="border border-white/[0.1] bg-white/[0.02] p-6">
+        <Icona nome={d.icona} className="h-8 w-8" />
+        <p className="mt-6 text-[15px] text-white">{titolo}</p>
+        <ul className="mt-3 space-y-2">
+          {file.map(f => (
+            <li key={f.id}>
+              <a href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[12px] hover:underline" style={{ color: GOLD }}>
+                {bilingual(f, 'nome', lang)}<Freccia />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   const href = d.url?.trim() || `${mailto}?subject=${encodeURIComponent(titolo)}`;
   const interno = href.startsWith('/') && !href.startsWith('//');
   const corpo = (

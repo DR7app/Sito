@@ -48,8 +48,6 @@ const LOGHI: Record<string, string> = {
   'incopertina.it': '/loghi-stampa/in-copertina.png',
   'medium': '/loghi-stampa/medium.png',
   'medium.com': '/loghi-stampa/medium.png',
-  'vanityclass': '/loghi-stampa/vanityclass.png',
-  'vanity class': '/loghi-stampa/vanityclass.png',
   'vanityclass.it': '/loghi-stampa/vanityclass.png',
 };
 

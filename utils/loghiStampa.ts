@@ -27,6 +27,8 @@ const LOGHI: Record<string, string> = {
   'today news': '/loghi-stampa/today-news.png',
   'streetinsider': '/loghi-stampa/streetinsider.png',
   'casteddu online': '/loghi-stampa/casteddu-online.png',
+  'vanityclass': '/loghi-stampa/vanityclass.png',
+  'vanity class': '/loghi-stampa/vanityclass.png',
   'castedduonline': '/loghi-stampa/casteddu-online.png',
   'casteddu on line': '/loghi-stampa/casteddu-online.png',
   'streetinsider.com': '/loghi-stampa/streetinsider.png',

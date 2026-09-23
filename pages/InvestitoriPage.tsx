@@ -262,6 +262,21 @@ const SchedaDocumento: React.FC<{ d: IrDocumento; lang: string; mailto: string }
 // cambiano da Admin > Sito > Investitori.
 const PASSO = 22; // px di salita tra una tappa e la successiva (desktop)
 
+// Maschere: le foto sfumano nel nero e l'una nell'altra, senza bordi netti.
+const maschera = (...g: string[]): React.CSSProperties => ({
+  WebkitMaskImage: g.join(', '), maskImage: g.join(', '),
+  WebkitMaskComposite: g.length > 1 ? 'source-in' : undefined, maskComposite: g.length > 1 ? 'intersect' : undefined,
+});
+const SFUMA_OVALE = maschera(
+  'linear-gradient(to bottom, transparent 0%, #000 22%, #000 70%, transparent 100%)',
+  'linear-gradient(to right, transparent 0%, #000 22%, #000 72%, transparent 100%)',
+);
+const SFUMA_FRISE = maschera(
+  'linear-gradient(to bottom, transparent 0%, #000 55%, #000 75%, transparent 100%)',
+  'linear-gradient(to right, transparent 0%, #000 22%, #000 78%, transparent 100%)',
+);
+const SFUMA_LATO = maschera('linear-gradient(to right, transparent 0%, #000 60%)', 'linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%)');
+
 const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, lang }) => {
   const tx = (base: string) => bilingual(copy, base, lang);
   const tappe = (copy.ir_v2030_tappe || []).filter((t: IrTappa) => t.anno);
@@ -292,13 +307,21 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
         </motion.div>
         {foto.length > 0 && (
           <motion.div {...fadeUp} className="relative">
-            <div className={`grid h-[300px] gap-2 sm:h-[380px] ${foto.length > 1 ? 'grid-cols-[1.4fr_1fr] grid-rows-2' : ''}`}>
-              {foto.map((src, i) => (
-                <div key={src + i} className={`relative overflow-hidden border border-white/[0.08] ${i === 0 && foto.length > 1 ? 'row-span-2' : ''} ${foto.length === 2 && i === 1 ? 'row-span-2' : ''}`}>
-                  <img src={src} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                </div>
-              ))}
+            <div className="relative h-[320px] sm:h-[420px]">
+              {foto.map((src, i) => {
+                // Collage sovrapposto: la grande a sinistra, le altre a destra che ci entrano dentro.
+                const posto = foto.length === 1 ? 'inset-0'
+                  : i === 0 ? 'left-0 top-0 h-full w-[72%]'
+                  : foto.length === 2 ? 'right-0 top-[10%] h-[80%] w-[52%]'
+                  : i === 1 ? 'right-0 top-0 h-[58%] w-[54%]' : 'right-[4%] bottom-0 h-[58%] w-[54%]';
+                return (
+                  <div key={src + i} className={`absolute ${posto}`} style={{ ...SFUMA_OVALE, zIndex: foto.length - i }}>
+                    <img src={src} alt="" loading="lazy" className="h-full w-full object-cover opacity-90" />
+                  </div>
+                );
+              })}
+              {/* velo caldo comune: le tre foto prendono lo stesso tono */}
+              <div className="pointer-events-none absolute inset-0 z-10 mix-blend-soft-light" style={{ background: `radial-gradient(closest-side, ${GOLD}40, transparent)` }} />
             </div>
             {tx('ir_v2030_mondi') && (
               <p className="t-nav absolute -top-3 right-4 bg-[#0b0b0b] px-3 text-[10px] uppercase tracking-[0.34em]" style={{ color: GOLD }}>{tx('ir_v2030_mondi')}</p>
@@ -335,7 +358,7 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
                 >
                   <span className="relative z-10 -mt-[5px] h-2.5 w-2.5 rounded-full" style={{ backgroundColor: GOLD, boxShadow: `0 0 12px ${GOLD}` }} />
                   <span className="h-6 w-px" style={{ background: `linear-gradient(${GOLD}, transparent)` }} />
-                  <div className={`relative flex w-full flex-col overflow-hidden border-l border-white/[0.08] ${i === 0 ? 'border-l-0' : ''} ${ultima ? 'border border-[#C8A24A]/50' : ''}`} style={{ height: 380 - (n - 1 - i) * PASSO }}>
+                  <div className="relative flex w-full flex-col" style={{ height: 400 - (n - 1 - i) * PASSO, background: ultima ? `radial-gradient(closest-side at 50% 30%, ${GOLD}26, transparent)` : undefined }}>
                     <div className="relative z-10 px-2 pt-2 text-center">
                       <p className="font-serif text-[1.35rem] leading-none text-white">{t.anno}</p>
                       <p className={`mt-2 font-serif leading-tight ${ultima ? 'text-[1.45rem]' : 'text-[1.15rem] text-white'}`} style={ultima ? { color: GOLD } : undefined}>{bilingual(t, 'valore', lang)}</p>
@@ -343,9 +366,8 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
                       <p className="mt-1.5 text-[12px] leading-snug text-white/60">{bilingual(t, 'testo', lang)}</p>
                     </div>
                     {t.img && (
-                      <div className="relative mt-auto h-40">
-                        <img src={t.img} alt="" loading="lazy" className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0b0b] via-[#0b0b0b]/30 to-[#0b0b0b]/10" />
+                      <div className="relative -mx-8 mt-auto h-48" style={SFUMA_FRISE}>
+                        <img src={t.img} alt="" loading="lazy" className="h-full w-full object-cover opacity-80" />
                       </div>
                     )}
                   </div>
@@ -361,7 +383,7 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
             return (
               <motion.li key={t.id} {...fadeUp} className="relative">
                 <span className="absolute -left-[29px] top-5 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: GOLD, boxShadow: `0 0 10px ${GOLD}` }} />
-                <div className={`relative flex overflow-hidden border ${ultima ? 'border-[#C8A24A]/50' : 'border-white/[0.08]'}`}>
+                <div className="relative flex overflow-hidden" style={ultima ? { background: `linear-gradient(to right, ${GOLD}1f, transparent 70%)` } : undefined}>
                   <div className="relative z-10 flex-1 px-4 py-4">
                     <p className="font-serif text-lg leading-none text-white">{t.anno}</p>
                     <p className="mt-1.5 font-serif text-xl leading-tight" style={{ color: ultima ? GOLD : '#fff' }}>{bilingual(t, 'valore', lang)}</p>
@@ -369,9 +391,8 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
                     <p className="mt-1 text-[12px] leading-snug text-white/60">{bilingual(t, 'testo', lang)}</p>
                   </div>
                   {t.img && (
-                    <div className="relative w-[38%] shrink-0">
-                      <img src={t.img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#0b0b0b] to-transparent" />
+                    <div className="relative w-[45%] shrink-0" style={SFUMA_LATO}>
+                      <img src={t.img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-85" />
                     </div>
                   )}
                 </div>
@@ -379,7 +400,7 @@ const Visione2030: React.FC<{ copy: InvestitoriCopy; lang: string }> = ({ copy, 
             );
           })}
         </ol>
-        {tx('ir_v2030_nota') && <p className="mt-5 text-[11px] text-white/40">{tx('ir_v2030_nota')}</p>}
+        {tx('ir_v2030_nota') && <p className="relative z-10 mt-2 text-[11px] text-white/40">{tx('ir_v2030_nota')}</p>}
       </div>
 
       {/* Claim + settori */}

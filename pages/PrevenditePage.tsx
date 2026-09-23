@@ -69,7 +69,7 @@ const PrevenditePage: React.FC = () => {
 
     if (!user?.id) {
       // Dopo l'accesso si torna qui, sulla prevendita che stava guardando.
-      navigate('/signin', { state: { from: `${location.pathname}?prevendita=${p.id}` } });
+      navigate('/signin', { state: { from: { pathname: `${location.pathname}?prevendita=${p.id}` } } });
       return;
     }
 

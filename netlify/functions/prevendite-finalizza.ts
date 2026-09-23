@@ -17,7 +17,39 @@ const supabase = createClient(
  * Qui dentro si fa anche la fattura, con lo stesso servizio degli altri
  * pagamenti con carta. Se quella parte fallisce la prevendita resta attiva: il
  * cliente ha pagato, il pacchetto deve funzionare comunque.
+ *
+ * 23/09/2026 — PRIMA SI CONTROLLA L'INCASSO. Questo endpoint e' pubblico: chi
+ * conosceva l'indirizzo poteva far partire un acquisto, abbandonare il
+ * pagamento e poi chiamarlo con l'id della propria riga, attivando il
+ * pacchetto senza pagare. Ora l'unica fonte di verita' e' Nexi
+ * (`nexi-verify-order`), come per le prenotazioni. Il callback Nexi, che parla
+ * gia' con Nexi, passa la chiave di servizio e non ripete la verifica.
  */
+
+/** Chiamata interna (callback Nexi), non dal browser. */
+function chiamataInterna(headers: Record<string, string | undefined>): boolean {
+  const atteso = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const dato = headers['x-dr7-interno'] || headers['X-DR7-Interno']
+  return !!atteso && !!dato && dato === atteso
+}
+
+/** Nexi dice che l'ordine e' stato incassato? Nel dubbio: no. */
+async function incassoVerificato(orderId: string | null | undefined): Promise<boolean> {
+  if (!orderId) return false
+  try {
+    const base = process.env.URL || 'https://dr7.app'
+    const risposta = await fetch(`${base}/.netlify/functions/nexi-verify-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    })
+    const esito = await risposta.json()
+    return esito?.paid === true
+  } catch (e) {
+    console.error('[prevendite-finalizza] verifica Nexi non riuscita:', e)
+    return false
+  }
+}
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) }
@@ -41,6 +73,16 @@ export const handler: Handler = async (event) => {
 
     const riga = righe[0]
     const eraGiaPagata = ['paid', 'completed', 'succeeded'].includes(riga.payment_status)
+
+    // Nessuna attivazione senza incasso: o la chiamata arriva dal callback
+    // Nexi (chiave di servizio), o l'ordine risulta pagato su Nexi.
+    if (!eraGiaPagata && !chiamataInterna(event.headers as Record<string, string | undefined>)) {
+      const pagato = await incassoVerificato(riga.nexi_order_id || orderId)
+      if (!pagato) {
+        console.warn('[prevendite-finalizza] attivazione rifiutata, incasso non confermato:', riga.id)
+        return { statusCode: 402, body: JSON.stringify({ error: 'Pagamento non confermato da Nexi' }) }
+      }
+    }
 
     const { data: esito, error: erroreRpc } = await supabase.rpc('prevendita_attiva_pagamento', {
       p_prevendita_cliente_id: riga.id,

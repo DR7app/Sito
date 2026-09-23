@@ -1548,7 +1548,12 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
         try {
           const risposta = await fetch(`${process.env.URL || 'https://dr7.app'}/.netlify/functions/prevendite-finalizza`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              // Il callback ha gia' parlato con Nexi: si identifica cosi' e
+              // `prevendite-finalizza` non ripete la verifica.
+              'x-dr7-interno': process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+            },
             body: JSON.stringify({ orderId, prevenditaClienteId: acquisto.id }),
           });
           console.log('[nexi-callback] prevendita finalizzata:', risposta.status);

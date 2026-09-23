@@ -370,7 +370,7 @@ const InvestitoriPage: React.FC = () => {
                     <div key={n.id} className="border-white/[0.1] p-5 sm:border-l sm:first:border-l-0">
                       <Icona nome={n.icona} className="h-6 w-6" />
                       <p className="mt-3 font-serif text-xl text-white">{n.valore}</p>
-                      <p className="mt-1 text-[12px] text-white/70">{bilingual(n, 'label', lang)}</p>
+                      {bilingual(n, 'label', lang) && <p className="mt-1 text-[12px] text-white/70">{bilingual(n, 'label', lang)}</p>}
                       {bilingual(n, 'nota', lang) && <p className="text-[11px] text-white/45">{bilingual(n, 'nota', lang)}</p>}
                     </div>
                   ))}

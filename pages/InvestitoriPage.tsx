@@ -456,8 +456,10 @@ const InvestitoriPage: React.FC = () => {
 
   // Come sulla Home: finche' il conteggio delle recensioni non si sa, quella
   // metrica non si mostra.
+  // 23/09/2026: sugli Investitori le cifre sono esatte, senza il "+" finale
+  // (recensioni, parco auto, patrimonio...). La Home lo tiene.
   const numeri = metriche
-    .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma) }))
+    .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma)?.replace(/\s*\+$/, '') ?? null }))
     .filter((m): m is HomeMetric => m.value !== null);
   const barre = (copy.ir_crescita || []).filter(b => b.anno);
   const azionisti = copy.ir_azionisti || [];

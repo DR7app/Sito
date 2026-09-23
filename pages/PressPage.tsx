@@ -79,51 +79,37 @@ const PressPage: React.FC = () => {
                         {tx(copy.news_heading_it, copy.news_heading_en)}
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {copy.articles.map((article, index) => (
-                            <motion.article
-                                key={article.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.1 * (index + 3) }}
-                                className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden hover:border-gray-600 transition-all duration-300 group"
-                            >
-                                <div className="p-8">
-                                    {/* La testata si vede col suo logo quando ce l'abbiamo
-                                        (public/loghi-stampa), altrimenti resta il nome scritto. */}
-                                    <div className="flex items-center gap-3 text-sm text-gray-400 mb-3">
-                                        {(article.logo || logoTestata(article.publication))
+                    {/* Solo i loghi delle testate, come su Investitori, con
+                        "Leggi articolo" sotto ogni logo. Senza logo resta il
+                        nome scritto. */}
+                    <div className="grid grid-cols-2 items-start gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-4">
+                        {copy.articles.map((article) => {
+                            const logo = article.logo || logoTestata(article.publication);
+                            return (
+                                <a
+                                    key={article.id}
+                                    href={article.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={article.title || article.publication}
+                                    className="group flex flex-col items-center text-center"
+                                >
+                                    <div className="flex h-12 items-center justify-center">
+                                        {logo
                                             ? <img
-                                                src={article.logo || logoTestata(article.publication)}
+                                                src={logo}
                                                 alt={article.publication}
                                                 loading="lazy"
-                                                className="h-6 w-auto max-w-[130px] object-contain opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                                                className="mx-auto max-h-9 w-auto max-w-[150px] object-contain opacity-75 transition-opacity duration-300 group-hover:opacity-100"
                                               />
-                                            : <span className="font-semibold">{article.publication}</span>}
-                                        <span>•</span>
-                                        <span>{article.date}</span>
+                                            : <span className="block font-serif text-xl text-white/90">{article.publication}</span>}
                                     </div>
-
-                                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-gray-300 transition-colors">
-                                        {article.title}
-                                    </h3>
-
-                                    <p className="text-gray-400 mb-4 line-clamp-3">
-                                        {tx(article.summary_it, article.summary_en)}
-                                    </p>
-
-                                    <a
-                                        href={article.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center text-white hover:text-gray-300 transition-colors font-semibold group/link"
-                                    >
+                                    <span className="mt-3 text-xs uppercase tracking-[0.18em] text-white/55 transition-colors group-hover:text-white">
                                         {tx(copy.read_more_label_it, copy.read_more_label_en)}
-                                        <span className="ml-2 group-hover/link:translate-x-1 transition-transform">→</span>
-                                    </a>
-                                </div>
-                            </motion.article>
-                        ))}
+                                    </span>
+                                </a>
+                            );
+                        })}
                     </div>
                 </motion.div>
 

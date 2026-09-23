@@ -166,7 +166,7 @@ const PrevenditePage: React.FC = () => {
       <dd className="text-white text-right font-medium">{p.utilizzi_inclusi}</dd>
 
       <dt className="text-gray-500">{t({ it: 'Km per utilizzo', en: 'Km per use' })}</dt>
-      <dd className="text-white text-right font-medium">{p.km_inclusi ? `${p.km_inclusi} km` : '—'}</dd>
+      <dd className="text-white text-right font-medium">{p.km_inclusi >= 9999 ? t({ it: 'Illimitati', en: 'Unlimited' }) : p.km_inclusi ? `${p.km_inclusi} km` : '—'}</dd>
 
       <dt className="text-gray-500">{t({ it: 'Validita’', en: 'Validity' })}</dt>
       <dd className="text-white text-right font-medium">

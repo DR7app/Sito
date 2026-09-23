@@ -2766,7 +2766,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         calculatedInsuranceCost = roundToTwoDecimals(calculatedInsuranceCost - copertura);
       }
       const kmPacchetto = Number(prevenditaAttiva.km_inclusi) || 0;
-      if (kmPacchetto > 0 && calculatedIncludedKm !== 9999) {
+      if (kmPacchetto >= 9999) {
+        // Pacchetto con km illimitati (9999, stessa convenzione del resto del
+        // wizard): gia' pagati, un pacchetto km scelto adesso non si paga.
+        calculatedIncludedKm = 9999;
+        prevenditaCopertura += calculatedKmPackageCost;
+        calculatedKmPackageCost = 0;
+      } else if (kmPacchetto > 0 && calculatedIncludedKm !== 9999) {
         calculatedIncludedKm = kmPacchetto + kmAcquistatiExtra;
       }
     }
@@ -5450,7 +5456,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     if (!prevenditaScelta) return null;
     const coperto = [
       t({ it: 'Noleggio auto', en: 'Car rental' }),
-      prevenditaScelta.km_inclusi > 0 ? `${prevenditaScelta.km_inclusi} km` : null,
+      prevenditaScelta.km_inclusi >= 9999 ? t({ it: 'Km illimitati', en: 'Unlimited km' })
+        : prevenditaScelta.km_inclusi > 0 ? `${prevenditaScelta.km_inclusi} km` : null,
       prevenditaScelta.assicurazione_inclusa || null,
     ].filter(Boolean).join(' · ');
     return (
@@ -5700,7 +5707,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <p className="text-white font-bold mt-1">{prevenditaScelta.nome}</p>
                     <p className="text-xs text-gray-400 mt-1">
                       {utilizziResidui(prevenditaScelta)} {t({ it: 'utilizzi disponibili', en: 'uses available' })}
-                      {prevenditaScelta.km_inclusi > 0 && ` · ${prevenditaScelta.km_inclusi} km ${t({ it: 'inclusi', en: 'included' })}`}
+                      {prevenditaScelta.km_inclusi >= 9999 ? ` · ${t({ it: 'Km illimitati', en: 'Unlimited km' })}`
+                        : prevenditaScelta.km_inclusi > 0 && ` · ${prevenditaScelta.km_inclusi} km ${t({ it: 'inclusi', en: 'included' })}`}
                       {prevenditaScelta.assicurazione_inclusa && ` · ${prevenditaScelta.assicurazione_inclusa}`}
                     </p>
                   </div>
@@ -8667,7 +8675,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             </span>
                           </div>
                           <div className="text-xs text-gray-400 mt-2 space-y-0.5">
-                            {pc.km_inclusi > 0 && (
+                            {pc.km_inclusi >= 9999 ? (
+                              <div>{t({ it: 'Km illimitati', en: 'Unlimited km' })}</div>
+                            ) : pc.km_inclusi > 0 && (
                               <div>{pc.km_inclusi} km {t({ it: 'inclusi per utilizzo', en: 'included per use' })}</div>
                             )}
                             {pc.assicurazione_inclusa && (

@@ -161,7 +161,7 @@ const MiePrevendite: React.FC = () => {
                   <dd className="text-gray-300 text-right">{dataIt(pc.data_scadenza)}</dd>
 
                   <dt className="text-gray-500">{t({ it: 'Km inclusi per utilizzo', en: 'Km included per use' })}</dt>
-                  <dd className="text-gray-300 text-right">{pc.km_inclusi ? `${pc.km_inclusi} km` : '—'}</dd>
+                  <dd className="text-gray-300 text-right">{pc.km_inclusi >= 9999 ? t({ it: 'Illimitati', en: 'Unlimited' }) : pc.km_inclusi ? `${pc.km_inclusi} km` : '—'}</dd>
 
                   <dt className="text-gray-500">{t({ it: 'Assicurazione', en: 'Insurance' })}</dt>
                   <dd className="text-gray-300 text-right">

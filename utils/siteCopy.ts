@@ -1704,6 +1704,11 @@ export interface CarWashCopy {
   upsell_step2_text_it: string; upsell_step2_text_en: string;
   upsell_added_it: string; upsell_added_en: string;
   upsell_add_it: string; upsell_add_en: string;
+  /** 23/09/2026 (direzione) — le schede Urban+Maxi della vetrina, in ordine:
+   *  un suffisso per scheda. Ogni suffisso accoppia i servizi del Catalogo
+   *  Lavaggio `urban-<suffisso>` e `maxi-<suffisso>`; se uno dei due manca
+   *  la scheda non compare. Vuoto = l'elenco di fabbrica. */
+  carte_combinate?: string[];
 }
 
 // ─── Careers ────────────────────────────────────────────────────────────────
@@ -3839,6 +3844,7 @@ const DEFAULT_CARWASH: CarWashCopy = {
   upsell_step2_text_en: 'Drive a courtesy car or supercar while your vehicle is being treated.',
   upsell_added_it: 'Aggiunto ✓', upsell_added_en: 'Added ✓',
   upsell_add_it: 'Aggiungi', upsell_add_en: 'Add',
+  carte_combinate: ['exterior', 'interior', 'full', 'full-n2', 'top-shine', 'vip', 'luxury'],
 };
 
 // ─── Default Mechanical Services chrome ────────────────────────────────────

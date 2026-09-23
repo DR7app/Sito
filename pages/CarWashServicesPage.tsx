@@ -69,15 +69,11 @@ interface CombinedWashService {
   maxi: WashService;
 }
 
-const COMBINED_TEMPLATES: { suffix: string; name: string; nameEn: string }[] = [
-  { suffix: 'exterior',  name: 'EXTERIOR CLEAN',      nameEn: 'EXTERIOR CLEAN' },
-  { suffix: 'interior',  name: 'INTERIOR CLEAN',      nameEn: 'INTERIOR CLEAN' },
-  { suffix: 'full',      name: 'FULL CLEAN',          nameEn: 'FULL CLEAN' },
-  { suffix: 'full-n2',   name: 'FULL CLEAN N2',       nameEn: 'FULL CLEAN N2' },
-  { suffix: 'top-shine', name: 'TOP SHINE',           nameEn: 'TOP SHINE' },
-  { suffix: 'vip',       name: 'VIP',                 nameEn: 'VIP' },
-  { suffix: 'luxury',    name: 'LUXURY',              nameEn: 'LUXURY' },
-];
+// 23/09/2026 (direzione) — quali schede e in che ordine si decide da
+// Sito > Vetrina Lavaggio (carwash.carte_combinate). Questo elenco vale finche'
+// la configurazione non e' arrivata, o se il campo e' vuoto: e' lo stesso
+// del valore di fabbrica in utils/siteCopy.ts.
+const SUFFISSI_COMBINATI_DI_FABBRICA = ['exterior', 'interior', 'full', 'full-n2', 'top-shine', 'vip', 'luxury'];
 
 type MainTabType = 'lavaggio' | 'meccanica';
 type LavaggioCategory = 'moto' | 'wash' | 'extra' | 'experience';
@@ -221,12 +217,16 @@ const CarWashServicesPage: React.FC = () => {
   // Combined cards pair URBAN+MAXI services that share the same suffix
   // (e.g. urban-exterior + maxi-exterior). If either side is missing in DB,
   // that combined card is skipped silently.
-  const liveCombined: CombinedWashService[] = COMBINED_TEMPLATES
-    .map(tpl => {
-      const urban = liveUrban.find(s => s.id === `urban-${tpl.suffix}`);
-      const maxi = liveMaxi.find(s => s.id === `maxi-${tpl.suffix}`);
+  const suffissiCombinati = [...new Set((copy?.carte_combinate || [])
+    .map(s => String(s).trim().toLowerCase())
+    .filter(Boolean))];
+  const liveCombined: CombinedWashService[] = (suffissiCombinati.length ? suffissiCombinati : SUFFISSI_COMBINATI_DI_FABBRICA)
+    .map(suffix => {
+      const urban = liveUrban.find(s => s.id === `urban-${suffix}`);
+      const maxi = liveMaxi.find(s => s.id === `maxi-${suffix}`);
       if (!urban || !maxi) return null;
-      return { id: `combined-${tpl.suffix}`, name: tpl.name, nameEn: tpl.nameEn, urban, maxi };
+      const nome = suffix.replace(/-/g, ' ').toUpperCase();
+      return { id: `combined-${suffix}`, name: nome, nameEn: nome, urban, maxi };
     })
     .filter((x): x is CombinedWashService => x !== null);
 

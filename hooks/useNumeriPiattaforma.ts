@@ -7,7 +7,7 @@ import { supabase } from '../supabaseClient';
  * 23/09/2026 — "Contratti firmati", "Clienti serviti" e "Fatturato generato"
  * erano cifre fisse (4.000+, 3.000+, 2,5M+). Ora li calcola il database con
  * `sito_numeri_pubblici()`: contratti firmati (uno per prenotazione, niente
- * annullati ne' prove), persone distinte con una prenotazione valida, fatture
+ * annullati ne' prove), clienti = il Totale Clienti della tab Clienti del gestionale, fatture
  * emesse meno note di credito (scartate dallo SDI escluse). Escono solo i tre
  * totali, nessun dato personale.
  *

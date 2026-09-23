@@ -5,12 +5,14 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
+import CaroselloFoto from '../components/ui/CaroselloFoto';
 import {
   getCatalogoPrevendite,
   getImpostazioniPrevendite,
   IMPOSTAZIONI_DEFAULT,
   type Prevendita,
   type ImpostazioniPrevendite,
+  fotoPrevendita,
 } from '../utils/prevendite';
 
 /**
@@ -247,11 +249,7 @@ const PrevenditePage: React.FC = () => {
                   key={p.id}
                   className="border border-gray-800 rounded-2xl overflow-hidden bg-gray-950 flex flex-col hover:border-gray-600 transition-colors"
                 >
-                  {p.foto_url ? (
-                    <img src={p.foto_url} alt={p.nome} className="w-full h-56 object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-56 bg-gray-900" />
-                  )}
+                  <CaroselloFoto foto={fotoPrevendita(p)} alt={p.nome} className="h-56" />
 
                   <div className="p-6 flex-1 flex flex-col gap-4">
                     <div>
@@ -318,8 +316,8 @@ const PrevenditePage: React.FC = () => {
             className="bg-gray-950 border border-gray-800 w-full max-w-lg sm:rounded-2xl my-0 sm:my-8"
             onClick={e => e.stopPropagation()}
           >
-            {scelta.foto_url && (
-              <img src={scelta.foto_url} alt={scelta.nome} className="w-full h-52 object-cover sm:rounded-t-2xl" />
+            {fotoPrevendita(scelta).length > 0 && (
+              <CaroselloFoto foto={fotoPrevendita(scelta)} alt={scelta.nome} className="h-52 sm:rounded-t-2xl" />
             )}
             <div className="p-6 space-y-5">
               <div>

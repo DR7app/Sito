@@ -29,6 +29,8 @@ export interface Prevendita {
   nome: string;
   descrizione: string | null;
   foto_url: string | null;
+  /** 23/09/2026: foto del carosello (la prima e' anche foto_url). */
+  foto_urls?: string[] | null;
   prezzo: number;
   prezzo_listino: number | null;
   utilizzi_inclusi: number;
@@ -311,4 +313,11 @@ function normalizzaPacchetto(r: any): PrevenditaCliente {
     prezzo_pagato: Number(r.prezzo_pagato) || 0,
     veicoli: Array.isArray(r.veicoli) ? r.veicoli : [],
   };
+}
+
+/** Foto della prevendita: il carosello, oppure la foto unica di prima. */
+export function fotoPrevendita(p: { foto_url: string | null; foto_urls?: string[] | null }): string[] {
+  const lista = (p.foto_urls || []).filter(Boolean);
+  if (lista.length) return lista;
+  return p.foto_url ? [p.foto_url] : [];
 }

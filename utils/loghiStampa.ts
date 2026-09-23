@@ -25,6 +25,8 @@ const LOGHI: Record<string, string> = {
   'talky media': '/loghi-stampa/talkymedia.png',
   'estate in sardegna': '/loghi-stampa/estate-in-sardegna.png',
   'today news': '/loghi-stampa/today-news.png',
+  'streetinsider': '/loghi-stampa/streetinsider.png',
+  'streetinsider.com': '/loghi-stampa/streetinsider.png',
   'todaynews': '/loghi-stampa/today-news.png',
 };
 

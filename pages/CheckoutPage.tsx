@@ -61,6 +61,9 @@ function tipoRicorrenza(articoli: ArticoloCarrello[]): { recurringType?: string;
 const campo = 'w-full bg-gray-800 border border-gray-700 rounded-md p-3 text-white text-sm focus:border-white focus:outline-none';
 const etichetta = 'block text-xs uppercase tracking-[0.18em] text-gray-400 mb-2';
 
+/** Servizi che diventano una prenotazione; Club, Membership e ricarica wallet sono acquisti. */
+const TIPI_PRENOTAZIONE: ArticoloCarrello['tipo'][] = ['noleggio', 'lavaggio', 'meccanica', 'tour'];
+
 const CheckoutPage: React.FC = () => {
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
@@ -600,7 +603,9 @@ const CheckoutPage: React.FC = () => {
             >
               {inCorso
                 ? (avanzamento || t({ it: 'Attendere…', en: 'Please wait…' }))
-                : t({ it: 'Conferma prenotazione', en: 'Confirm booking' })}
+                : articoliSelezionati.some(a => TIPI_PRENOTAZIONE.includes(a.tipo))
+                  ? t({ it: 'Conferma prenotazione', en: 'Confirm booking' })
+                  : t({ it: 'Conferma acquisto', en: 'Confirm purchase' })}
             </button>
           )}
         </div>

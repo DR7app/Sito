@@ -3,9 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
 import BackButton from '../components/ui/BackButton';
 import { getFaqCopy, type FaqCopy } from '../utils/siteCopy';
+import { useContactInfo } from '../hooks/useContactInfo';
 
 const FAQPage: React.FC = () => {
     const { lang, t } = useTranslation();
+    // 23/09/2026 (direzione): l'email del bottone in fondo e' quella di
+    // Sito > Contatti, non piu' scritta qui.
+    const contatti = useContactInfo();
     const [copy, setCopy] = useState<FaqCopy | null>(null);
     const [openId, setOpenId] = useState<string | null>(null);
 
@@ -137,14 +141,14 @@ const FAQPage: React.FC = () => {
                                 {t({ it: 'Non hai trovato la risposta?', en: "Didn’t find the answer?" })}
                             </p>
                             <a
-                                href="mailto:info@dr7.app"
+                                href={`mailto:${contatti.email_address}`}
                                 className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-black bg-white hover:bg-gray-200 transition-colors"
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                                     <polyline points="22,6 12,13 2,6"/>
                                 </svg>
-                                info@dr7.app
+                                {contatti.email_address}
                             </a>
                         </div>
                     )}

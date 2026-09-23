@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
 import { getPressCopy, type PressCopy } from '../utils/siteCopy';
+import { logoTestata } from '../utils/loghiStampa';
 
 const PressPage: React.FC = () => {
     const { t, lang } = useTranslation();
@@ -88,8 +89,17 @@ const PressPage: React.FC = () => {
                                 className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden hover:border-gray-600 transition-all duration-300 group"
                             >
                                 <div className="p-8">
-                                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
-                                        <span className="font-semibold">{article.publication}</span>
+                                    {/* La testata si vede col suo logo quando ce l'abbiamo
+                                        (public/loghi-stampa), altrimenti resta il nome scritto. */}
+                                    <div className="flex items-center gap-3 text-sm text-gray-400 mb-3">
+                                        {logoTestata(article.publication)
+                                            ? <img
+                                                src={logoTestata(article.publication)}
+                                                alt={article.publication}
+                                                loading="lazy"
+                                                className="h-6 w-auto max-w-[130px] object-contain opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                                              />
+                                            : <span className="font-semibold">{article.publication}</span>}
                                         <span>•</span>
                                         <span>{article.date}</span>
                                     </div>

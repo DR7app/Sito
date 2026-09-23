@@ -563,7 +563,7 @@ const InvestitoriPage: React.FC = () => {
                 <Eyebrow>{tx('ir_privati_eyebrow')}</Eyebrow>
                 {tx('ir_privati_titolo') && <Titolo className="mt-4">{tx('ir_privati_titolo')}</Titolo>}
                 {tx('ir_privati_testo') && <div className="mt-5"><Paragrafi testo={tx('ir_privati_testo')} /></div>}
-                <div className="mt-8 grid grid-cols-1 border border-white/[0.1] sm:grid-cols-3">
+                <div className={`mt-8 grid grid-cols-1 border border-white/[0.1] ${stat.length === 1 ? '' : stat.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                   {stat.map(n => (
                     <div key={n.id} className="border-white/[0.1] p-5 sm:border-l sm:first:border-l-0">
                       <Icona nome={n.icona} className="h-6 w-6" />

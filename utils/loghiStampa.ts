@@ -24,6 +24,8 @@ const LOGHI: Record<string, string> = {
   'talkymedia': '/loghi-stampa/talkymedia.png',
   'talky media': '/loghi-stampa/talkymedia.png',
   'estate in sardegna': '/loghi-stampa/estate-in-sardegna.png',
+  'today news': '/loghi-stampa/today-news.png',
+  'todaynews': '/loghi-stampa/today-news.png',
 };
 
 /** Il logo della testata, o '' se non ce l'abbiamo. */

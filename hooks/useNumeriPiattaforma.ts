@@ -11,6 +11,10 @@ import { supabase } from '../supabaseClient';
  * emesse meno note di credito (scartate dallo SDI escluse). Escono solo i tre
  * totali, nessun dato personale.
  *
+ * 24/09/2026 — anche il "Valore del parco auto" (prima "€3M+" scritto a mano):
+ * somma dei valori scritti veicolo per veicolo nella tab Veicoli. Segnaposto
+ * `{valoreFlotta}`; finche' nessun veicolo ha un valore la metrica non si mostra.
+ *
  * Ogni testo li chiede con un segnaposto: `{contrattiFirmati}`,
  * `{clientiServiti}`, `{fatturatoGenerato}`. Finche' il numero non arriva la
  * metrica non si mostra: meglio un dato in meno che un dato inventato.
@@ -20,6 +24,7 @@ export interface NumeriPiattaforma {
   contrattiFirmati: number;
   clientiServiti: number;
   fatturato: number;
+  valoreFlotta: number;
 }
 
 let richiesta: Promise<NumeriPiattaforma | null> | null = null;
@@ -31,7 +36,7 @@ function leggiNumeri(): Promise<NumeriPiattaforma | null> {
       if (error) throw error;
       const d = (data || {}) as Record<string, unknown>;
       const n = (v: unknown) => (typeof v === 'number' ? v : Number(v));
-      const numeri = { contrattiFirmati: n(d.contratti_firmati), clientiServiti: n(d.clienti_serviti), fatturato: n(d.fatturato) };
+      const numeri = { contrattiFirmati: n(d.contratti_firmati), clientiServiti: n(d.clienti_serviti), fatturato: n(d.fatturato), valoreFlotta: n(d.valore_flotta ?? 0) };
       return Object.values(numeri).every(Number.isFinite) ? numeri : null;
     })().catch((err) => {
       console.error('[useNumeriPiattaforma] numeri non disponibili:', err);
@@ -60,10 +65,12 @@ const cifra = (v: number) => new Intl.NumberFormat('it-IT', { maximumFractionDig
  */
 export function risolviNumeriPiattaforma(testo: string | null, numeri: NumeriPiattaforma | null): string | null {
   if (testo === null) return null;
-  if (!/\{(contrattiFirmati|clientiServiti|fatturatoGenerato)\}/.test(testo)) return testo;
+  if (!/\{(contrattiFirmati|clientiServiti|fatturatoGenerato|valoreFlotta)\}/.test(testo)) return testo;
   if (!numeri) return null;
+  if (testo.includes('{valoreFlotta}') && !(numeri.valoreFlotta > 0)) return null;
   return testo
     .split('{contrattiFirmati}').join(cifra(numeri.contrattiFirmati))
     .split('{clientiServiti}').join(cifra(numeri.clientiServiti))
-    .split('{fatturatoGenerato}').join(`€${cifra(numeri.fatturato)}`);
+    .split('{fatturatoGenerato}').join(`€${cifra(numeri.fatturato)}`)
+    .split('{valoreFlotta}').join(`€${cifra(numeri.valoreFlotta)}`);
 }

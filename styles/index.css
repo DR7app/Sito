@@ -488,9 +488,15 @@ html { overflow-x: clip; }
    meta' larghezza e al 43% dell'altezza, e un raggio del 37,7% — e da li'
    sfuma in una decina di punti percentuali: quel che resta e' il bagliore
    dell'oro che si spegne, non un ritaglio. */
+/* 24/09/2026 — la moneta sembrava ancora una foto appoggiata sul filmato.
+   `screen` fa sparire il nero del file (la moneta scura, il marmo, le ombre)
+   e lascia passare il filmato: resta l'oro che brilla. Un filo di
+   trasparenza e un bordo piu' morbido la fondono con la scena. */
 .foto-fusa-tonda {
-  -webkit-mask-image: radial-gradient(44% 44% at 50% 43%, #000 0 86%, rgba(0, 0, 0, 0.45) 94%, transparent 100%);
-  mask-image: radial-gradient(44% 44% at 50% 43%, #000 0 86%, rgba(0, 0, 0, 0.45) 94%, transparent 100%);
+  -webkit-mask-image: radial-gradient(44% 44% at 50% 43%, #000 0 78%, rgba(0, 0, 0, 0.5) 91%, transparent 100%);
+  mask-image: radial-gradient(44% 44% at 50% 43%, #000 0 78%, rgba(0, 0, 0, 0.5) 91%, transparent 100%);
+  mix-blend-mode: screen;
+  opacity: 0.88;
 }
 
 /* Chi ha chiesto meno movimento al sistema non deve subire rivelazioni,

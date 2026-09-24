@@ -9,6 +9,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useAspetto } from '../hooks/useAspetto';
 import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
 import { useNumeriPiattaforma, risolviNumeriPiattaforma } from '../hooks/useNumeriPiattaforma';
+import { eVideo } from './InvestitoriVideoPage';
 
 /**
  * Investor Relations — 22/09/2026.
@@ -243,7 +244,8 @@ const SchedaDocumento: React.FC<{ d: IrDocumento; lang: string; mailto: string }
       </div>
     );
   }
-  const href = d.url?.trim() || `${mailto}?subject=${encodeURIComponent(titolo)}`;
+  // 24/09/2026: un documento che e' un video si guarda nella sua pagina.
+  const href = eVideo(d.url) ? `/investitori/video/${encodeURIComponent(d.id)}` : (d.url?.trim() || `${mailto}?subject=${encodeURIComponent(titolo)}`);
   const interno = href.startsWith('/') && !href.startsWith('//');
   const corpo = (
     <>

@@ -94,6 +94,7 @@ import ContactPage from './pages/ContactPage';
 import MechanicalServicesPage from './pages/MechanicalServicesPage';
 import MechanicalBookingPage from './pages/MechanicalBookingPage';
 import InvestitoriPage from './pages/InvestitoriPage';
+import InvestitoriVideoPage from './pages/InvestitoriVideoPage';
 import TokenPage from './pages/TokenPage';
 import CreditWalletPage from './pages/CreditWalletPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
@@ -385,6 +386,7 @@ const AnimatedRoutes = () => {
 
         <Route path="/about" element={<WbOppure><AboutPage /></WbOppure>} />
         <Route path="/investitori" element={<InvestitoriPage />} />
+        <Route path="/investitori/video/:id" element={<InvestitoriVideoPage />} />
         <Route path="/investor-relations" element={<InvestitoriPage />} />
         <Route path="/token" element={<TokenPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />

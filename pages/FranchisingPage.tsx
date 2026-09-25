@@ -4,7 +4,8 @@ import { useInViewOnce } from '../hooks/useInViewOnce';
 import LegalPageLayout from '../components/layout/LegalPageLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { useReviewCount, risolviReviewCount } from '../hooks/useReviewCount';
-import { getFranchisingCopy, DEFAULT_FRANCHISING, bilingual, bilingualList, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
+import { useNumeriPiattaforma, risolviNumeriPiattaforma } from '../hooks/useNumeriPiattaforma';
+import { getFranchisingCopy, getHomeCopy, DEFAULT_FRANCHISING, bilingual, bilingualList, type HomeMetric, type FranchisingCopy, type FranchisingExpansionIcon, type FranchisingBenefitIcon } from '../utils/siteCopy';
 import { useFilmato } from '../hooks/useFilmato';
 import { useAspetto } from '../hooks/useAspetto';
 
@@ -70,10 +71,16 @@ const FranchisingPage: React.FC = () => {
     // dopo la rete, non dopo il disegno. Ora si vedono subito e la versione
     // salvata prende il posto quando arriva -- come fa gia' il filmato.
     const [copy, setCopy] = useState<FranchisingCopy>(DEFAULT_FRANCHISING);
+    // 25/09/2026 — i numeri sono quelli della Home (Admin > Sito > Home), come
+    // su Investitori: prima qui c'erano righe scritte a mano (4.000+, €2,5M+)
+    // che non coincidevano con le cifre vere della piattaforma.
+    const [metriche, setMetriche] = useState<HomeMetric[]>([]);
+    const numeriPiattaforma = useNumeriPiattaforma();
 
     useEffect(() => {
         let cancelled = false;
         getFranchisingCopy().then((c) => { if (!cancelled) setCopy(c); });
+        getHomeCopy().then((h) => { if (!cancelled) setMetriche(h.metrics || []); });
         return () => { cancelled = true; };
     }, []);
 
@@ -86,12 +93,10 @@ const FranchisingPage: React.FC = () => {
     // I numeri salgono da zero quando la sezione entra in campo.
     const [numeriRef, numeriInCampo] = useInViewOnce<HTMLDivElement>();
 
-    // 14/09/2026 — prima qui c'era un pavimento a 300: sotto quella soglia la
-    // pagina scriveva comunque "300+", cioe' un numero che non era di nessuno.
-    // Adesso o si dice il numero vero, o la riga non si mostra.
-    const righeDati = bilingualList(copy, 'stats_lines', lang)
-        .map((line) => risolviReviewCount(line, reviewCount))
-        .filter((line): line is string => line !== null);
+    // Stessa risoluzione della Home: una metrica senza il suo numero non si mostra.
+    const numeri = metriche
+        .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma) }))
+        .filter((m): m is HomeMetric => m.value !== null);
 
     return (
         <LegalPageLayout title={t('Franchising')} filmato={filmato}>
@@ -146,15 +151,17 @@ const FranchisingPage: React.FC = () => {
                         spazio dove andare a capo e in mezza schermata
                         uscirebbe dal bordo. */}
                     <div ref={numeriRef} className="mt-10 grid grid-cols-2 gap-x-6 gap-y-9 sm:mt-12 sm:gap-x-10 sm:gap-y-12 lg:grid-cols-3">
-                        {righeDati.map((line, i) => (
-                            <CountUp
-                                key={i}
-                                text={line}
-                                run={numeriInCampo}
-                                lang={lang}
-                                classeNumero="font-serif text-[1.75rem] sm:text-5xl md:text-6xl font-normal leading-none tracking-[-0.02em] text-black"
-                                classeTesto="mt-3 text-[9px] sm:mt-4 sm:text-[10px] uppercase leading-relaxed tracking-[0.16em] sm:tracking-[0.2em] text-black/55"
-                            />
+                        {numeri.map((m) => (
+                            <div key={m.id}>
+                                <CountUp
+                                    text={m.value}
+                                    run={numeriInCampo}
+                                    lang={lang}
+                                    className="font-serif font-normal tracking-[-0.02em] text-black"
+                                    style={{ lineHeight: 1, fontSize: 'clamp(1.4rem, 2.2vw, 1.9rem)' }}
+                                />
+                                <p className="mt-3 text-[9px] sm:mt-4 sm:text-[10px] uppercase leading-relaxed tracking-[0.16em] sm:tracking-[0.2em] text-black/55">{bilingual(m, 'label', lang)}</p>
+                            </div>
                         ))}
                     </div>
                     <p className="mt-8 text-lg text-black">{bilingual(copy, 'stats_footer_main', lang)}</p>

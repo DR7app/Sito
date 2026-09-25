@@ -173,13 +173,13 @@ export const Metric: React.FC<{
 }> = ({ value, label, delay = 0, run, lang = 'it' }) => (
   <Reveal delay={delay} className="text-center md:text-left">
     {run === undefined ? (
-      <div className="t-display" style={{ lineHeight: 1 }}>{value}</div>
+      <div className="t-h2" style={{ lineHeight: 1 }}>{value}</div>
     ) : (
       <CountUp
         text={value}
         run={run}
         lang={lang}
-        className="t-display"
+        className="t-h2"
         style={{ lineHeight: 1 }}
       />
     )}

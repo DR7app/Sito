@@ -158,7 +158,7 @@ const ICONA_METRICA: Record<string, string> = {
 const SchedaNumero: React.FC<{ m: HomeMetric; lang: string }> = ({ m, lang }) => (
   <div className="border-t border-white/[0.08] pt-5">
     <Icona nome={ICONA_METRICA[m.id] || 'round'} />
-    <p className="mt-4 font-serif text-[1.2rem] leading-none text-white md:text-[1.3rem]">{m.value}</p>
+    <p className="mt-4 font-serif text-[1rem] leading-none text-white md:text-[1.1rem]">{m.value}</p>
     <p className="mt-2 text-[12px] text-white/80">{bilingual(m, 'label', lang)}</p>
   </div>
 );

@@ -3744,7 +3744,7 @@ const DEFAULT_INVESTITORI: InvestitoriCopy = {
   info_items: [
     { label: 'Denominazione',                 label_it: 'Denominazione',                 label_en: 'Company name',                value: 'DR7 S.p.A.', value_it: 'DR7 S.p.A.', value_en: 'DR7 S.p.A.' },
     { label: 'Sede legale',                   label_it: 'Sede legale',                   label_en: 'Registered office',           value: 'Cagliari, Italia', value_it: 'Cagliari, Italia', value_en: 'Cagliari, Italy' },
-    { label: 'Settore',                       label_it: 'Settore',                       label_en: 'Sector',                      value: 'Luxury Mobility & Lifestyle', value_it: 'Luxury Mobility & Lifestyle', value_en: 'Luxury Mobility & Lifestyle' },
+    { label: 'Settore',                       label_it: 'Settore',                       label_en: 'Sector',                      value: 'Diversified Technology & Services Company', value_it: 'Diversified Technology & Services Company', value_en: 'Diversified Technology & Services Company' },
     { label: 'Forma giuridica',               label_it: 'Forma giuridica',               label_en: 'Legal form',                  value: 'Società per Azioni', value_it: 'Società per Azioni', value_en: 'Joint-stock company (S.p.A.)' },
     { label: 'Capitale sociale',              label_it: 'Capitale sociale',              label_en: 'Share capital',               value: '€1.000.000', value_it: '€1.000.000', value_en: '€1,000,000' },
     { label: 'Tipologia quote',               label_it: 'Tipologia quote',               label_en: 'Share type',                  value: 'Azioni ordinarie nominative', value_it: 'Azioni ordinarie nominative', value_en: 'Registered ordinary shares' },

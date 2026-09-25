@@ -26,6 +26,14 @@ const PressPage: React.FC = () => {
 
     const tx = (it: string, en: string) => (lang === 'it' ? it : en);
 
+    // Una casella per testata: si raggruppa per logo (o per nome se manca).
+    const testate: { key: string; publication: string; logo?: string }[] = [];
+    for (const a of copy.articles) {
+        const logo = a.logo || logoTestata(a.publication);
+        const key = logo || a.publication.trim().toLowerCase();
+        if (!testate.some((t) => t.key === key)) testate.push({ key, publication: a.publication, logo: logo || undefined });
+    }
+
     return (
         <div className="min-h-screen bg-black pt-32 pb-24">
             <div className="container mx-auto px-6 max-w-7xl">
@@ -79,38 +87,66 @@ const PressPage: React.FC = () => {
                         {tx(copy.news_heading_it, copy.news_heading_en)}
                     </h2>
 
-                    {/* Solo i loghi delle testate, come su Investitori, con
-                        "Leggi articolo" sotto ogni logo. Senza logo resta il
-                        nome scritto. */}
-                    <div className="grid grid-cols-2 items-start gap-x-8 gap-y-12 sm:grid-cols-3 lg:grid-cols-4">
+                    {/* Muro dei loghi: ogni testata una sola volta, anche se
+                        ha scritto piu' articoli (Casteddu Online ne ha 6). */}
+                    <div className="mb-14 grid grid-cols-3 items-center gap-x-5 gap-y-8 rounded-2xl border border-white/10 px-4 py-8 md:flex md:flex-wrap md:justify-center md:gap-x-16 md:gap-y-10 md:px-6 md:py-10">
+                        {testate.map((t) => (
+                            <div key={t.key} className="flex h-10 items-center justify-center">
+                                {t.logo
+                                    ? <img
+                                        src={t.logo}
+                                        alt={t.publication}
+                                        loading="lazy"
+                                        className="max-h-6 w-auto max-w-full object-contain opacity-70 md:max-h-8 md:max-w-[130px]"
+                                      />
+                                    : <span className="font-serif text-sm text-white/80 md:text-lg">{t.publication}</span>}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Elenco articoli: titolo, data e riassunto al posto di
+                        "Leggi l'articolo" ripetuto sotto ogni logo. */}
+                    <ul className="divide-y divide-white/10 border-y border-white/10">
                         {copy.articles.map((article) => {
                             const logo = article.logo || logoTestata(article.publication);
+                            const summary = tx(article.summary_it, article.summary_en);
                             return (
-                                <a
-                                    key={article.id}
-                                    href={article.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={article.title || article.publication}
-                                    className="group flex flex-col items-center text-center"
-                                >
-                                    <div className="flex h-12 items-center justify-center">
-                                        {logo
-                                            ? <img
-                                                src={logo}
-                                                alt={article.publication}
-                                                loading="lazy"
-                                                className="mx-auto max-h-9 w-auto max-w-[150px] object-contain opacity-75 transition-opacity duration-300 group-hover:opacity-100"
-                                              />
-                                            : <span className="block font-serif text-xl text-white/90">{article.publication}</span>}
-                                    </div>
-                                    <span className="mt-3 text-xs uppercase tracking-[0.18em] text-white/55 transition-colors group-hover:text-white">
-                                        {tx(copy.read_more_label_it, copy.read_more_label_en)}
-                                    </span>
-                                </a>
+                                <li key={article.id}>
+                                    <a
+                                        href={article.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group grid grid-cols-1 gap-3 py-6 md:grid-cols-[160px_1fr_auto] md:items-center md:gap-8"
+                                    >
+                                        <div className="flex h-8 items-center">
+                                            {logo
+                                                ? <img
+                                                    src={logo}
+                                                    alt={article.publication}
+                                                    loading="lazy"
+                                                    className="max-h-7 w-auto max-w-[140px] object-contain opacity-60 transition-opacity group-hover:opacity-100"
+                                                  />
+                                                : <span className="font-serif text-base text-white/70">{article.publication}</span>}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-lg font-semibold leading-snug text-white transition-colors group-hover:text-white/80">
+                                                {article.title || article.publication}
+                                            </h3>
+                                            {summary && (
+                                                <p className="mt-1 line-clamp-2 text-sm text-gray-400">{summary}</p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs uppercase tracking-[0.18em] text-white/50 md:flex-col md:items-end md:gap-1">
+                                            {article.date && <span className="normal-case tracking-normal text-white/40">{article.date}</span>}
+                                            <span className="whitespace-nowrap transition-colors group-hover:text-white">
+                                                {tx(copy.read_more_label_it, copy.read_more_label_en)} &rarr;
+                                            </span>
+                                        </div>
+                                    </a>
+                                </li>
                             );
                         })}
-                    </div>
+                    </ul>
                 </motion.div>
 
                 {/* Press Releases */}

@@ -60,6 +60,12 @@ export interface SearchDates {
   // to the backend which UPDATES the row instead of creating a new one.
   // Also: wizard stays on step 1 instead of auto-jumping to step 4.
   editMode?: boolean;
+  // Codice sconto portato da un preventivo (RentalPage ?codice=).
+  discountCode?: string;
+  // 26/09/2026: prenotazione di una PROMOZIONE (tabella promozioni). Il wizard
+  // carica la promo, limita le date alla sua finestra, usa il suo prezzo al
+  // giorno e scrive promo_* in booking_details (il database li ricontrolla).
+  promoId?: string;
 }
 
 interface BookingContextType {

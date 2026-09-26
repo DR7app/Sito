@@ -16,7 +16,10 @@ export type TipoArticolo =
   | 'tour'
   | 'club'
   | 'membership'
-  | 'wallet';
+  | 'wallet'
+  // 26/09/2026: prevendita (pacchetto di utilizzi). Nel database il tipo
+  // esiste solo dopo la migrazione 20260926_prevendite_wallet_carrello.
+  | 'prevendita';
 
 export interface ArticoloCarrello {
   /** uuid della riga (o id locale per chi non ha ancora l'accesso). */
@@ -46,7 +49,7 @@ export const SCADENZA_CARRELLO_MS = 24 * 60 * 60 * 1000;
  * sono a sola carta (regola di sempre: l'abbonamento non si paga a credito).
  * Se nel carrello c'e' uno di questi, l'intero ordine va a carta.
  */
-export const TIPI_PAGABILI_A_CREDITO: TipoArticolo[] = ['noleggio', 'lavaggio', 'meccanica', 'tour'];
+export const TIPI_PAGABILI_A_CREDITO: TipoArticolo[] = ['noleggio', 'lavaggio', 'meccanica', 'tour', 'prevendita'];
 
 export function carrelloPagabileACredito(articoli: ArticoloCarrello[]): boolean {
   return articoli.length > 0 && articoli.every(a => TIPI_PAGABILI_A_CREDITO.includes(a.tipo));
@@ -66,6 +69,7 @@ export function etichettaTipo(tipo: TipoArticolo, lang: 'it' | 'en'): string {
     club: { it: 'DR7 Club', en: 'DR7 Club' },
     membership: { it: 'Membership', en: 'Membership' },
     wallet: { it: 'Credit Wallet', en: 'Credit Wallet' },
+    prevendita: { it: 'Prevendita', en: 'Pre-sale' },
   };
   return nomi[tipo][lang];
 }

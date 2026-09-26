@@ -106,7 +106,7 @@ const Footer: React.FC = () => {
             sottotitolo={lang === 'it' ? copy.reviews_text_it : copy.reviews_text_en}
             immagine={copy.reviews_image}
             recensioniManuali={copy.manual_reviews}
-            manualiDopoGoogle={copy.manual_reviews_after_google !== false}
+            manualiDopoGoogle={copy.manual_reviews_after_google === true}
             googleUrl={copy.reviews_google_url}
           />
         </div>

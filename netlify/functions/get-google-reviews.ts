@@ -11,6 +11,8 @@ interface GoogleReview {
   text: string;
   time: number;
   author_url?: string;
+  profile_photo_url?: string;
+  language?: string;
 }
 
 interface GooglePlaceDetailsResponse {
@@ -33,6 +35,10 @@ export const handler: Handler = async (
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Content-Type": "application/json",
+    // 26/09/2026 — Google a ogni visita costava una richiesta a pagamento:
+    // ora il sito legge la copia nel database, questa funzione serve al
+    // sincronizzatore e da riserva. Dieci minuti di cache bastano.
+    "Cache-Control": "public, max-age=600",
   };
 
   // Handle preflight requests
@@ -62,7 +68,10 @@ export const handler: Handler = async (
 
   try {
     // Fetch place details including reviews
-    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${GOOGLE_PLACE_ID}&fields=name,rating,user_ratings_total,reviews&key=${GOOGLE_PLACES_API_KEY}&language=it`;
+    // ?ordine=recenti: le 5 recensioni PIU' NUOVE invece delle 5 "piu'
+    // rilevanti" scelte da Google. La usa il sincronizzatore del gestionale.
+    const recenti = event.queryStringParameters?.ordine === 'recenti';
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${GOOGLE_PLACE_ID}&fields=name,rating,user_ratings_total,reviews&key=${GOOGLE_PLACES_API_KEY}&language=it${recenti ? '&reviews_sort=newest' : ''}`;
 
     const response = await fetch(url);
     const data: GooglePlaceDetailsResponse = await response.json();
@@ -84,6 +93,13 @@ export const handler: Handler = async (
       date: new Date(review.time * 1000).toISOString().split("T")[0], // Convert Unix timestamp to YYYY-MM-DD
       body: review.text,
       sourceUrl: review.author_url || `https://search.google.com/local/reviews?placeid=${GOOGLE_PLACE_ID}`,
+      // Campi originali di Google, per il sincronizzatore (stessa forma di prima piu' questi).
+      author_name: review.author_name,
+      profile_photo_url: review.profile_photo_url || null,
+      text: review.text,
+      language: review.language || null,
+      time: review.time,
+      relative_time_description: review.relative_time_description,
     })) || [];
 
     return {

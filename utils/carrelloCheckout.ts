@@ -15,6 +15,9 @@
  *  wallet     -> `credit_wallet_purchases`
  *  club       -> `dr7_club_subscriptions`
  *  membership -> `membership_purchases`
+ *  prevendita -> `prevendite_clienti` (carta: pending, la attiva il callback
+ *                Nexi con prevendite-finalizza; wallet: una funzione del
+ *                database scala il saldo e la attiva subito)
  */
 import { supabase } from '../supabaseClient';
 import { deductCredits, addCredits, hasSufficientBalance } from './creditWallet';
@@ -23,6 +26,9 @@ import type { ArticoloCarrello } from './carrello';
 import { testoFisso } from './testiSito';
 // Rifiuto del database quando il System Control sospende le prenotazioni.
 import { testoPrenotazioniSospese } from './statoServizi';
+import type { Prevendita } from './prevendite';
+import { rigaAcquistoPrevendita, acquistaPrevenditaConCredito } from './prevenditeAcquisto';
+import { caricaDatiFatturaCliente } from './datiFatturaCliente';
 
 export const FUNCTIONS_BASE =
   (import.meta as { env?: Record<string, string> }).env?.VITE_FUNCTIONS_BASE ??
@@ -291,6 +297,25 @@ export async function preparaArticoloCarta(
         return { ok: true };
       }
 
+      case 'prevendita': {
+        // Stessa riga dell'acquisto dalla pagina Prevendite, col suo ordine
+        // figlio: il callback Nexi la trova per numero d'ordine e la attiva.
+        if (!userId) return { ok: false, errore: testoFisso({ it: 'Accedi per acquistare una prevendita.', en: 'Sign in to buy a pre-sale.' }) };
+        const p = (articolo.dati as { prevendita?: Prevendita }).prevendita;
+        if (!p?.id) return { ok: false, errore: 'Prevendita non valida.' };
+        const dati = await caricaDatiFatturaCliente(userId);
+        const { data: sessione } = await supabase.auth.getUser();
+        const riga = rigaAcquistoPrevendita(
+          p,
+          { id: userId, email: sessione?.user?.email, fullName: dati.fullName },
+          dati,
+          ordine,
+        );
+        const { error } = await supabase.from('prevendite_clienti').insert(riga);
+        if (error) return { ok: false, errore: error.message };
+        return { ok: true };
+      }
+
       default:
         return { ok: false, errore: `Tipo non gestito: ${articolo.tipo}` };
     }
@@ -394,6 +419,16 @@ export async function pagaArticoloACredito(
         const dati = await res.json();
         if (!res.ok || !dati?.paid) return { ok: false, errore: dati?.error || 'Errore pagamento tour.' };
         return { ok: true, bookingId: dati.bookingId };
+      }
+
+      case 'prevendita': {
+        // Prezzo, posti e saldo li controlla il database, in una transazione.
+        const p = (articolo.dati as { prevendita?: Prevendita }).prevendita;
+        if (!p?.id) return { ok: false, errore: 'Prevendita non valida.' };
+        const dati = await caricaDatiFatturaCliente(userId);
+        const esito = await acquistaPrevenditaConCredito(p.id, dati);
+        if (!esito.ok) return { ok: false, errore: esito.errore };
+        return { ok: true };
       }
 
       default:

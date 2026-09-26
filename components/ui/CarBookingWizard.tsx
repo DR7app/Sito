@@ -52,6 +52,15 @@ import {
   getMiePrevendite, prevenditeSpendibili, verificaPrevendita,
   utilizziResidui, type PrevenditaCliente,
 } from '../../utils/prevendite';
+import {
+  getPromozione,
+  verificaPromozione,
+  dateDentroFinestra,
+  dettagliPromo as calcolaDettagliPromo,
+  noleggioPromoCents,
+  dataIt,
+  type Promozione,
+} from '../../utils/promozioni';
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 import { datiPatenteScheda, luogoNascitaScheda } from '../../utils/datiPatenteScheda';
 import { useAspetto } from '../../hooks/useAspetto';
@@ -418,6 +427,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [prevenditaErrore, setPrevenditaErrore] = useState<string | null>(null);
   const [prevenditaInVerifica, setPrevenditaInVerifica] = useState(false);
 
+  // ─── PROMOZIONE (26/09/2026) ────────────────────────────────────────────
+  // Aperto da una card promozione: prezzo al giorno della promo sui soli
+  // giorni di noleggio; cauzione, assicurazione, km ed extra come sempre.
+  // Il verdetto (date, veicolo, giorni, posti, prezzo) e' del database.
+  const [promoScelta, setPromoScelta] = useState<Promozione | null>(null);
+  const [promoErrore, setPromoErrore] = useState<string | null>(null);
+  const [promoInVerifica, setPromoInVerifica] = useState(false);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSavingPreventivo, setIsSavingPreventivo] = useState(false);
   const [preventivoSaved, setPreventivoSaved] = useState(false);
@@ -650,7 +667,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       setNoCauzioneRequested(true);
     }
     // Auto-fill discount code from preventivo link (e.g. refused No Cauzione with 5% code)
-    if (initialSearchDates.discountCode) {
+    // Con una promozione il codice sconto non si somma (prezzo gia' promozionale).
+    if (initialSearchDates.discountCode && !initialSearchDates.promoId) {
       setDiscountCode(initialSearchDates.discountCode);
       // Auto-validate after a short delay to let form state settle
       setTimeout(async () => {
@@ -2493,9 +2511,32 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     return () => { annullato = true; };
   }, [prevenditaScelta, formData.pickupDate, formData.returnDate, vehicleIdsPrevendita]);
 
+  // ─── PROMOZIONE: caricamento ─────────────────────────────────────────────
+  // Arriva da setInitialSearchDates({ promoId }). Una promozione esclude la
+  // prevendita (sono due modi diversi di pagare il noleggio): niente bivio.
+  useEffect(() => {
+    const promoId = initialSearchDates?.promoId;
+    if (!promoId) { setPromoScelta(null); return; }
+    let annullato = false;
+    getPromozione(promoId).then(p => {
+      if (annullato) return;
+      if (!p || !p.attiva) {
+        setPromoScelta(null);
+        setPromoErrore(t({ it: 'Questa promozione non e piu disponibile.', en: 'This promotion is no longer available.' }));
+        return;
+      }
+      setPromoScelta(p);
+      setPrevenditaScelta(null);
+      setModalitaDecisa(true);
+      setAppliedDiscount(null);
+      setDiscountCode('');
+    });
+    return () => { annullato = true; };
+  }, [initialSearchDates?.promoId]);
+
   // === Calculs tarifaires / durée / km inclus ===
   const {
-    duration, rentalCost, prevenditaCopertura, insuranceCost, extrasCost, kmPackageCost, pickupFee, dropoffFee, subtotal, taxes, total, includedKm,
+    duration, rentalCost, prevenditaCopertura, promoGiorni, insuranceCost, extrasCost, kmPackageCost, pickupFee, dropoffFee, subtotal, taxes, total, includedKm,
     driverAge, licenseYears, youngDriverFee, recentLicenseFee, secondDriverFee, recommendedKm,
     membershipDiscount, membershipTier, originalTotal, finalTotal,
     carWashFee, noDepositSurcharge,
@@ -2506,7 +2547,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     uncappedSubtotal, clampHit, clampLimitDaily, clampLimitTotal
   } = useMemo(() => {
     const zero = {
-      duration: { days: 0, hours: 0 }, rentalCost: 0, prevenditaCopertura: 0, insuranceCost: 0, extrasCost: 0, kmPackageCost: 0, pickupFee: 0, dropoffFee: 0, subtotal: 0, taxes: 0, total: 0, includedKm: 0, driverAge: 0, licenseYears: 0, youngDriverFee: 0, recentLicenseFee: 0, secondDriverFee: 0, recommendedKm: null, membershipDiscount: 0, membershipTier: null, originalTotal: 0, finalTotal: 0,
+      duration: { days: 0, hours: 0 }, rentalCost: 0, prevenditaCopertura: 0, promoGiorni: 0, insuranceCost: 0, extrasCost: 0, kmPackageCost: 0, pickupFee: 0, dropoffFee: 0, subtotal: 0, taxes: 0, total: 0, includedKm: 0, driverAge: 0, licenseYears: 0, youngDriverFee: 0, recentLicenseFee: 0, secondDriverFee: 0, recommendedKm: null, membershipDiscount: 0, membershipTier: null, originalTotal: 0, finalTotal: 0,
       carWashFee: 0, noDepositSurcharge: 0,
       effectivePricePerDay: 0,
       lavaggioFee: 0, experienceCost: 0, flexCost: 0, supercarDepositSurcharge: 0, deliveryFee: 0,
@@ -2783,6 +2824,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       }
     }
 
+    // --- PROMOZIONE: prezzo al giorno della promo sui giorni di noleggio ----
+    // Solo la riga noleggio cambia; e' fuori dai coefficienti dinamici, dal
+    // minimo/massimo della Centralina e dagli sconti membership (il prezzo e'
+    // gia' quello promozionale). Stessa formula del database, al centesimo.
+    const promoAttiva = promoScelta && !prevenditaAttiva ? promoScelta : null;
+    let promoNoleggio = 0;
+    if (promoAttiva) {
+      promoNoleggio = noleggioPromoCents(promoAttiva.prezzo_giorno, billingDaysCalc) / 100;
+      calculatedRentalCost = promoNoleggio;
+    }
+
     let calculatedSubtotal = calculatedRentalCost + calculatedInsuranceCost + calculatedExtrasCost +
       calculatedKmPackageCost + calculatedSecondDriverFee + calculatedLavaggioFee +
       calculatedExperienceCost + calculatedFlexCost +
@@ -2855,7 +2907,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // Costruisce il "subtotale clamp-eligible" sommando SOLO le voci
     // che il toggle dice di includere nel coefficiente. Le altre
     // vengono aggiunte dopo, intatte.
-    let subtotalForCoeff = calculatedRentalCost; // rental SEMPRE sotto coefficiente
+    // rental SEMPRE sotto coefficiente — tranne la promozione, che ha gia' il
+    // suo prezzo e passa a listino (passThroughExtras).
+    let subtotalForCoeff = promoAttiva ? 0 : calculatedRentalCost;
     if (includeInsurance)    subtotalForCoeff += calculatedInsuranceCost;
     if (includeLavaggio)     subtotalForCoeff += calculatedLavaggioFee;
     if (includeNoCauzione)   subtotalForCoeff += calculatedNoDepositSurcharge;
@@ -2902,7 +2956,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     let afterCoeffNoExp = subtotalNoExperience * combinedCoeff;
     // Con una prevendita il clamp NON si applica: il minimo giornaliero
     // rimetterebbe in conto proprio il noleggio gia' pagato col pacchetto.
-    if (prevenditaAttiva) {
+    if (prevenditaAttiva || promoAttiva) {
       // nessun clamp
     } else if (maxTotal != null && afterCoeffNoExp > maxTotal + 0.5) {
       afterCoeffNoExp = maxTotal;
@@ -2925,13 +2979,22 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const calculatedTaxes = 0;
     const calculatedTotal = calculatedSubtotal;
 
-    const discountInfo = calculateDiscountedPrice(calculatedTotal, user, 'car_rental');
+    // Lo sconto membership vale sul resto, non sul noleggio in promozione.
+    const discountInfoBase = calculateDiscountedPrice(calculatedTotal - promoNoleggio, user, 'car_rental');
+    const discountInfo = promoAttiva
+      ? {
+          ...discountInfoBase,
+          originalPrice: discountInfoBase.originalPrice + promoNoleggio,
+          finalPrice: discountInfoBase.finalPrice + promoNoleggio,
+        }
+      : discountInfoBase;
     const membershipTierName = getMembershipTierName(user);
 
     return {
       duration: { days, hours },
       rentalCost: calculatedRentalCost,
       prevenditaCopertura,
+      promoGiorni: promoAttiva ? billingDaysCalc : 0,
       insuranceCost: calculatedInsuranceCost,
       extrasCost: calculatedExtrasCost,
       kmPackageCost: calculatedKmPackageCost,
@@ -2979,7 +3042,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     formData.email, formData.usageZone, formData.depositOption,
     formData.selectedExperiences, formData.dr7Flex, formData.pickupLocation, formData.returnLocation,
     formData.deliveryPickupKm, formData.deliveryReturnKm,
-    item, currency, user, isUrbanOrCorporate, categoryContext, driverTier, dynamicPricing, prevenditaScelta,
+    item, currency, user, isUrbanOrCorporate, categoryContext, driverTier, dynamicPricing, prevenditaScelta, promoScelta,
     ACTIVE_RENTAL_DAY_RATES, ACTIVE_KM_INCLUDED, ACTIVE_KM_INCLUDED_AZIENDALI, configOverlay,
     residencySuffix
   ]);
@@ -3000,13 +3063,63 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     prevendita_copertura_eur: prevenditaCopertura,
   } : {}), [prevenditaScelta, prevenditaCopertura]);
 
+  /**
+   * Quello che la prenotazione porta con se' quando usa una promozione.
+   * Il trigger trg_01_promozione_valida ricontrolla promo_id, promo_giorni e
+   * promo_noleggio_cents: se non tornano la prenotazione viene rifiutata.
+   */
+  const dettagliPromo = useMemo(
+    () => (promoScelta && promoGiorni > 0 ? calcolaDettagliPromo(promoScelta, promoGiorni) : {}),
+    [promoScelta, promoGiorni],
+  );
+
+  // Verdetto del database su date, veicolo, giorni e posti: si mostra subito,
+  // prima del pagamento. Prima un controllo locale per la finestra di date.
+  useEffect(() => {
+    let annullato = false;
+    if (!promoScelta || !formData.pickupDate || !formData.returnDate) {
+      if (promoScelta) setPromoErrore(null);
+      return;
+    }
+    if (!dateDentroFinestra(promoScelta, formData.pickupDate, formData.returnDate)) {
+      setPromoErrore(t({
+        it: `La promozione vale per noleggi dal ${dataIt(promoScelta.noleggio_dal)} al ${dataIt(promoScelta.noleggio_al)}.`,
+        en: `The promotion is valid for rentals from ${dataIt(promoScelta.noleggio_dal)} to ${dataIt(promoScelta.noleggio_al)}.`,
+      }));
+      return;
+    }
+    const idsPromo = promoScelta.veicoli.map(v => v.id);
+    const veicolo = formData.selectedVehicleId && idsPromo.includes(formData.selectedVehicleId)
+      ? formData.selectedVehicleId
+      : null;
+    if (formData.selectedVehicleId && !veicolo) {
+      setPromoErrore(t({ it: 'La promozione non vale per questo veicolo.', en: 'The promotion is not valid for this vehicle.' }));
+      return;
+    }
+    if (!veicolo || promoGiorni <= 0) return;
+    setPromoInVerifica(true);
+    verificaPromozione(
+      promoScelta.id,
+      veicolo,
+      createItalyDateTime(formData.pickupDate, formData.pickupTime || '10:30').toISOString(),
+      createItalyDateTime(formData.returnDate, formData.returnTime || '09:00').toISOString(),
+      promoGiorni,
+    ).then(esito => {
+      if (annullato) return;
+      setPromoErrore(esito.ok ? null : (esito.errore || t({ it: 'Promozione non valida per queste date.', en: 'Promotion not valid for these dates.' })));
+      setPromoInVerifica(false);
+    });
+    return () => { annullato = true; };
+  }, [promoScelta, formData.pickupDate, formData.returnDate, formData.pickupTime, formData.returnTime, formData.selectedVehicleId, promoGiorni]);
+
   // Online booking discount REMOVED — no automatic discount
   const onlineDiscountAmount = 0;
   const finalTotalWithOnlineDiscount = finalTotal;
 
   // Calculate discount code amount
   const discountAmount = useMemo(() => {
-    if (!appliedDiscount) return 0;
+    // Promozione: prezzo gia' promozionale, nessun codice sconto sopra.
+    if (!appliedDiscount || promoScelta) return 0;
 
     if (appliedDiscount.type === 'percentage') {
       return Math.min(finalTotal * (appliedDiscount.amount / 100), finalTotal);
@@ -3014,7 +3127,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // Fixed amount: €150 means €150, capped at subtotal only
       return Math.min(appliedDiscount.amount, finalTotal);
     }
-  }, [appliedDiscount, finalTotal, vehicleType]);
+  }, [appliedDiscount, finalTotal, vehicleType, promoScelta]);
 
   const finalPriceWithBirthdayDiscount = Math.max(0, finalTotalWithOnlineDiscount - discountAmount);
 
@@ -3922,6 +4035,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         customer_phone: rPhone,
         booking_details: {
           ...dettagliPrevendita,
+            ...dettagliPromo,
           // I chilometri della consegna stanno qui: in `bookings` non c'e' una
           // colonna per loro (vedi la nota sopra su delivery_distance_km).
           ...(deliveryInfo?.roundTripKm ? { delivery_distance_km: deliveryInfo.roundTripKm } : {}),
@@ -4156,6 +4270,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   // Validate discount code (supports both birthday codes and marketing codes)
   const validateDiscountCode = async () => {
+    if (promoScelta) return;
     if (!discountCode.trim()) {
       setDiscountCodeError(t({ it: 'Inserisci un codice sconto', en: 'Enter a discount code' }));
       return;
@@ -4500,6 +4615,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       setPaymentError(statoServizi.prenotazioni.messaggio || t({ it: "Prenotazioni online momentaneamente sospese.", en: "Online bookings are temporarily suspended." }));
       return;
     }
+    // Promozione non valida per queste date / questo veicolo: il database la
+    // rifiuterebbe comunque, meglio dirlo prima di aprire il pagamento.
+    if (promoScelta && (promoErrore || promoInVerifica || promoGiorni <= 0)) {
+      setPaymentError(promoErrore || t({ it: 'Attendi il controllo della promozione.', en: 'Please wait for the promotion check.' }));
+      return;
+    }
     console.log("handleSubmit called", { paymentMethod: formData.paymentMethod, step, userId: user?.id });
     if (!validateStep() || !item) return;
 
@@ -4646,6 +4767,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           booking_usage_zone: formData.usageZone || null,
           booking_details: {
             ...dettagliPrevendita,
+            ...dettagliPromo,
             customer: {
               fullName: `${formData.firstName} ${formData.lastName}`,
               firstName: formData.firstName,
@@ -5030,6 +5152,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           customer_phone: nPhone,
           booking_details: {
             ...dettagliPrevendita,
+            ...dettagliPromo,
             nexi_order_id: nexiOrderId,
             vehicle_image_url: item.image,
             vehicle_id: formData.selectedVehicleId || null,
@@ -5703,6 +5826,45 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         return (
           <div className="space-y-10">
           <div className="space-y-6">
+            {/* ── Promozione in uso ─────────────────────────────────────────
+                Visibile per tutto lo step 1: prezzo, finestra di date e cosa
+                resta come una prenotazione normale. Gli errori del database
+                (date, posti, veicolo) compaiono qui, non al pagamento. */}
+            {promoScelta && (
+              <div className="border border-white/30 bg-white/5 rounded-lg p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wider">
+                  {t({ it: 'Stai prenotando una promozione', en: 'You are booking a promotion' })}
+                </p>
+                <p className="text-white font-bold mt-1">
+                  {(lang === 'en' && promoScelta.titolo_en) || promoScelta.titolo}
+                </p>
+                <p className="text-sm text-white mt-1">
+                  €{promoScelta.prezzo_giorno.toFixed(2)} {t({ it: 'al giorno', en: 'per day' })}
+                  {promoScelta.prezzo_listino_giorno && promoScelta.prezzo_listino_giorno > promoScelta.prezzo_giorno && (
+                    <span className="text-gray-500 line-through ml-2">€{promoScelta.prezzo_listino_giorno.toFixed(2)}</span>
+                  )}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {t({ it: 'Noleggi dal', en: 'Rentals from' })} {dataIt(promoScelta.noleggio_dal)} {t({ it: 'al', en: 'to' })} {dataIt(promoScelta.noleggio_al)}
+                  {promoScelta.min_giorni ? ` · ${t({ it: 'minimo', en: 'min' })} ${promoScelta.min_giorni} ${t({ it: 'giorni', en: 'days' })}` : ''}
+                  {promoScelta.max_giorni ? ` · ${t({ it: 'massimo', en: 'max' })} ${promoScelta.max_giorni} ${t({ it: 'giorni', en: 'days' })}` : ''}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {t({ it: 'Cauzione, assicurazione e km come una normale prenotazione.', en: 'Deposit, insurance and km as in a normal booking.' })}
+                </p>
+                {promoInVerifica && (
+                  <p className="text-xs text-gray-500 mt-3">
+                    {t({ it: 'Controllo della promozione in corso...', en: 'Checking the promotion...' })}
+                  </p>
+                )}
+                {promoErrore && (
+                  <div className="mt-3 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+                    <p className="text-red-300 text-sm font-semibold">{promoErrore}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ── Prevendita in uso ──────────────────────────────────────────
                 Resta visibile per tutto lo step 1: il cliente deve sapere che
                 sta spendendo un utilizzo, e poter tornare indietro. I vincoli
@@ -6994,7 +7156,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Riconsegna", en: "Drop-off" })}</span><span className="text-white">{formData.returnDate ? new Date(formData.returnDate).toLocaleDateString(dateLocale(lang), { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '—'} — {formData.returnTime || '—'}</span></div>
                 <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Durata", en: "Duration" })}</span><span className="text-white">{Math.max(1, duration.days)} {Math.max(1, duration.days) === 1 ? t({ it: 'giorno', en: 'day' }) : t({ it: 'giorni', en: 'days' })}</span></div>
                 <hr className="border-gray-600 my-1" />
-                <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Noleggio", en: "Rental" })} {item.name}</span><span className="text-white">{formatPrice(rentalCost)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">{promoScelta ? t({ it: "Noleggio in promozione", en: "Promotional rental" }) : t({ it: "Noleggio", en: "Rental" })} {item.name}</span><span className="text-white">{formatPrice(rentalCost)}</span></div>
                 {insuranceCost > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Assicurazione", en: "Insurance" })} {(() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || ''; })()}</span><span className="text-white">{formatPrice(insuranceCost)}</span></div>}
                 {lavaggioFee > 0 && <div className="flex justify-between"><span className="text-gray-400">{t({ it: "Lavaggio", en: "Car wash" })}</span><span className="text-white">{formatPrice(lavaggioFee)}</span></div>}
                 {/* 2026-05-16: Quando il cliente sceglie un pacchetto, mostriamo
@@ -7085,6 +7247,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       user_id: user?.id || null,
                       booking_details: {
                         ...dettagliPrevendita,
+            ...dettagliPromo,
                         no_cauzione_request: true,
                         depositOption: 'no_deposit',
                         noDepositSurcharge: noDepositSurcharge,
@@ -7769,7 +7932,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                   {/* Noleggio base */}
                   <div className="flex justify-between">
-                    <span>{t({ it: "Noleggio (", en: "Rental (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × {effectivePricePerDay ? formatPrice(effectivePricePerDay) : '€0'})</span>
+                    <span>
+                      {promoScelta && promoGiorni > 0
+                        ? <>{t({ it: "Noleggio in promozione (", en: "Promotional rental (" })}{promoGiorni} {t({ it: "gg", en: "days" })} × {formatPrice(promoScelta.prezzo_giorno)})</>
+                        : <>{t({ it: "Noleggio (", en: "Rental (" })}{Math.max(1, duration.days)} {t({ it: "gg", en: "days" })} × {effectivePricePerDay ? formatPrice(effectivePricePerDay) : '€0'})</>}
+                    </span>
                     <span>{formatPrice(rentalCost)}</span>
                   </div>
 
@@ -8117,7 +8284,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 {/* Codice Sconto - Available for ALL customers */}
                 <div className="border-t border-gray-600 pt-4">
                   <p className="font-bold text-base text-white mb-3">{t({ it: "CODICE SCONTO", en: "DISCOUNT CODE" })}</p>
-                  {appliedDiscount ? (
+                  {promoScelta ? (
+                    <p className="text-sm text-gray-400">
+                      {t({ it: 'Stai prenotando una promozione: il prezzo e gia scontato e non si somma ad altri codici.', en: 'You are booking a promotion: the price is already discounted and cannot be combined with other codes.' })}
+                    </p>
+                  ) : appliedDiscount ? (
                     <div className="flex items-center justify-between p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
                       <div>
                         <p className="text-green-400 font-bold">{appliedDiscount.code}</p>
@@ -8845,7 +9016,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         // 20/09/2026: tolti i blocchi legati al passo del
                         // conducente (anzianita' patente, conferma dati,
                         // residenza): quel passo non esiste piu'.
-                        disabled={(step === 1 && !isFromSearch && isCheckingAvailability) || (step === 1 && !!availabilityError) || (!!prevenditaScelta && (!!prevenditaErrore || prevenditaInVerifica))}
+                        disabled={(step === 1 && !isFromSearch && isCheckingAvailability) || (step === 1 && !!availabilityError) || (!!prevenditaScelta && (!!prevenditaErrore || prevenditaInVerifica)) || (!!promoScelta && (!!promoErrore || promoInVerifica))}
                       >
                         {t({ it: "Continua", en: "Continue" })}
                       </button>

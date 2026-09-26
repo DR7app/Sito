@@ -12,7 +12,7 @@ function daRecensioneManuale(r: ManualReview, lang: string): Review {
   return { author: r.name, rating: Number(r.stars) || 5, date: r.date, body: testo || '', sourceUrl: r.link };
 }
 
-export default function ReviewsSection({ titolo, sottotitolo, immagine, recensioniManuali = [], manualiDopoGoogle = true, googleUrl }: {
+export default function ReviewsSection({ titolo, sottotitolo, immagine, recensioniManuali = [], manualiDopoGoogle = false, googleUrl }: {
   titolo: string;
   sottotitolo: string;
   immagine?: string;
@@ -22,6 +22,10 @@ export default function ReviewsSection({ titolo, sottotitolo, immagine, recensio
 }) {
   const { t, lang } = useTranslation();
   const manuali = recensioniManuali.map(r => daRecensioneManuale(r, lang)).filter(r => r.body.trim() !== '');
+  // 26/09/2026 — le recensioni vere di Google arrivano gia' dalla piu' recente
+  // (copia aggiornata ogni tre ore dal gestionale). Quelle scritte a mano sono
+  // solo la riserva: si vedono se Google non risponde, o in coda se in
+  // Sito > Recensioni l'interruttore lo chiede esplicitamente.
   // null = Google non ha (ancora) risposto: si vedono le recensioni scritte a mano.
   const [google, setGoogle] = useState<Review[] | null>(null);
   const reviews: Review[] = google === null
@@ -88,13 +92,15 @@ export default function ReviewsSection({ titolo, sottotitolo, immagine, recensio
       "ratingValue": ratingSummary.ratingValue,
       "reviewCount": ratingSummary.reviewCount,
     },
+    // Solo le recensioni vere di Google portano Google come editore: quelle
+    // scritte a mano non si presentano ai motori di ricerca come se lo fossero.
     "review": reviews.slice(0, 30).map(review => ({
       "@type": "Review",
       "reviewRating": { "@type": "Rating", "ratingValue": review.rating },
       "author": { "@type": "Person", "name": review.author },
       "reviewBody": review.body.replace(/\n\n/g, ' '),
       "datePublished": review.date,
-      "publisher": { "@type": "Organization", "name": "Google" },
+      ...(review.daGoogle ? { "publisher": { "@type": "Organization", "name": "Google" } } : {}),
     })),
   };
 

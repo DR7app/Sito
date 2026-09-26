@@ -39,14 +39,26 @@ export function leggiStatoServizi(business: BusinessSito): Promise<StatoServizi>
   return p;
 }
 
-// Prefisso del messaggio con cui il database rifiuta una prenotazione quando
-// il System Control le ha sospese (trigger su bookings).
-const PREFISSO_SOSPESE = 'PRENOTAZIONI_SOSPESE:';
+// Prefissi dei messaggi con cui il database rifiuta una prenotazione:
+//  - PRENOTAZIONI_SOSPESE: il System Control le ha sospese;
+//  - PROMO_NON_VALIDA: la promozione e' scaduta, esaurita, su un altro veicolo
+//    o con un prezzo che non torna (trigger trg_01_promozione_valida).
+// Il testo dopo il prefisso e' gia' scritto per il cliente.
+const PREFISSI_CLIENTE: { prefisso: string; ripiego: string }[] = [
+  { prefisso: 'PRENOTAZIONI_SOSPESE:', ripiego: 'Le prenotazioni online sono momentaneamente sospese.' },
+  { prefisso: 'PROMO_NON_VALIDA:', ripiego: 'La promozione non e piu valida per questa prenotazione.' },
+];
 
-/** Se l'errore e' "prenotazioni sospese", il testo da mostrare al cliente; altrimenti null. */
+/**
+ * Se l'errore del database e' uno di quelli scritti per il cliente
+ * (prenotazioni sospese, promozione non valida), il testo da mostrare;
+ * altrimenti null.
+ */
 export function testoPrenotazioniSospese(err: unknown): string | null {
   const msg = typeof err === 'string' ? err : String((err as { message?: string } | null)?.message ?? '');
-  const i = msg.indexOf(PREFISSO_SOSPESE);
-  if (i < 0) return null;
-  return msg.slice(i + PREFISSO_SOSPESE.length).trim() || 'Le prenotazioni online sono momentaneamente sospese.';
+  for (const { prefisso, ripiego } of PREFISSI_CLIENTE) {
+    const i = msg.indexOf(prefisso);
+    if (i >= 0) return msg.slice(i + prefisso.length).trim() || ripiego;
+  }
+  return null;
 }

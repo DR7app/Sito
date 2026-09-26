@@ -25,6 +25,7 @@ function paginaConfigurazione(articolo: ArticoloCarrello): string | null {
     // della navigazione e l'articolo da modificare non arriverebbe a destinazione.
     case 'lavaggio': return '/car-wash-booking';
     case 'wallet': return '/credit-wallet';
+    case 'prevendita': return '/prevendite';
     default: return null;
   }
 }

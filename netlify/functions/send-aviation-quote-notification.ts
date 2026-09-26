@@ -102,44 +102,13 @@ function istanteRoma(ymd?: string | null, hm?: string | null): string | null {
 /**
  * La tipologia di aeromobile scelta dal cliente, in parole.
  *
- * Sta in UNA funzione perche' la usano sia il messaggio di riserva sia il
- * segnaposto {aeromobile} del template: due elenchi separati avrebbero finito
- * per dire cose diverse.
+ * Usata dal segnaposto {aeromobile} del template e dal preventivo Aria.
  */
 function tipoAeromobile(q: QuoteBody, it = true): string {
   if (q.aircraft_category === "helicopter") return it ? "Elicottero" : "Helicopter";
   if (q.aircraft_category === "jet") return it ? "Jet privato" : "Private jet";
   if (q.aircraft_category === "any") return it ? "Da valutare insieme al cliente" : "To be advised";
   return "";
-}
-
-/** Il testo di riserva, se il template non c'e' o e' stato spento. */
-function messaggioDiRiserva(q: QuoteBody): string {
-  const righe = [
-    "*NUOVA RICHIESTA PREVENTIVO*",
-    "",
-    `*Servizio:* ${q.service || "Aviation"}`,
-    // Quello che ha chiesto il cliente nel modulo: puo' non coincidere con la
-    // pagina da cui e' arrivato.
-    tipoAeromobile(q) ? `*Tipologia aeromobile:* ${tipoAeromobile(q)}` : "",
-    q.preferred_aircraft ? `*Mezzo:* ${q.preferred_aircraft}` : "",
-    "",
-    `*Cliente:* ${q.customer_name || "-"}`,
-    `*Email:* ${q.customer_email || "-"}`,
-    `*Telefono:* ${q.customer_phone || "-"}`,
-    "",
-    `*Da:* ${q.departure_location || "-"}`,
-    `*A:* ${q.arrival_location || "-"}`,
-    q.departure_date ? `*Partenza:* ${dataOraIt(q.departure_date, q.departure_time)}` : "",
-    q.return_date ? `*Ritorno:* ${dataOraIt(q.return_date, q.return_time)}` : "",
-    `*Date flessibili:* ${q.is_flexible ? "Sì" : "No"}`,
-    `*Passeggeri:* ${q.passenger_count ?? 1}`,
-    q.has_stops ? `*Tappe:* ${q.intermediate_stops || "sì, da definire"}` : "",
-    q.luggage_details ? `*Bagagli:* ${q.luggage_details}` : "",
-    q.budget_indicative ? `*Budget indicativo:* ${q.budget_indicative}` : "",
-    q.notes ? `\n*Note:* ${q.notes}` : "",
-  ];
-  return righe.filter((r) => r !== "").join("\n");
 }
 
 /** Sostituisce i segnaposto del template dei Messaggi di Sistema Pro. */
@@ -415,7 +384,9 @@ export const handler: Handler = async (event) => {
   // ── 2. E si manda a DR7 su WhatsApp ────────────────────────────────────
   let messaggioInviato = false;
   try {
-    let testo = messaggioDiRiserva(q);
+    // 26/09/2026: nessun testo di riserva. Il messaggio e' il template Pro
+    // "Richiesta preventivo Aviation (DR7 + cliente)"; se e' spento non parte.
+    let testo = "";
     const { data: tpl } = await supabase
       .from("system_messages")
       .select("message_body, is_enabled")
@@ -429,6 +400,7 @@ export const handler: Handler = async (event) => {
       }
     }
 
+    if (!testo) throw new Error("template pro_aviation_quote_request spento o vuoto: nessun WhatsApp");
     const base = process.env.URL || "https://dr7.app";
     const res = await fetch(`${base}/.netlify/functions/send-whatsapp-notification`, {
       method: "POST",

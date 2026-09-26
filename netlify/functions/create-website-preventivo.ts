@@ -240,11 +240,27 @@ const handler: Handler = async (event) => {
       // Sulle richieste "no cauzione" il cliente riceve gia' il messaggio
       // dedicato qui sotto: non gliene mandiamo due.
       if (preventivo.customer_phone && !isNoCauzione) {
-        const msgCliente = msg.replace(/\n+Gestisci dal pannello admin > Preventivi$/, '')
+        // 26/09/2026: il testo al cliente e' il template Pro
+        // "Preventivo dal sito — riepilogo al cliente", non piu' scritto qui.
         await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customPhone: preventivo.customer_phone, customMessage: msgCliente }),
+          body: JSON.stringify({
+            customPhone: preventivo.customer_phone,
+            templateKey: 'pro_preventivo_sito_cliente',
+            templateVars: {
+              nome: preventivo.customer_name,
+              telefono: preventivo.customer_phone || 'N/A',
+              veicolo: preventivo.vehicle_name,
+              data_ritiro: pickupDate,
+              data_riconsegna: dropoffDate,
+              giorni: String(preventivo.rental_days),
+              totale: Number(preventivo.total_final).toFixed(2),
+              assicurazione: insuranceLabel,
+              km: preventivo.unlimited_km ? 'Illimitati' : (preventivo.km_limit + ' km'),
+              cauzione: `€${Number(preventivo.deposit_amount).toFixed(2)}`,
+            },
+          }),
         }).catch(() => {})
       }
 
@@ -266,17 +282,16 @@ const handler: Handler = async (event) => {
 
       // Send confirmation WhatsApp to CUSTOMER for no-cauzione requests
       if (isNoCauzione && preventivo.customer_phone) {
+        // Testo: template Pro "Richiesta No Cauzione ricevuta (cliente)".
         const firstName = (preventivo.customer_name || 'Cliente').split(' ')[0]
-        const customerConfirmMsg = `Gentile ${firstName},\n\n`
-          + `abbiamo ricevuto la sua richiesta per la formula senza cauzione relativa alla prenotazione appena effettuata.\n\n`
-          + `Il nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\n`
-          + `Riceverà a breve un aggiornamento con l'esito e, in caso di approvazione, il link di pagamento per completare la prenotazione.\n\n`
-          + `Restiamo a disposizione.\n\n`
-          + `Cordiali Saluti,\nDR7`
         await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customPhone: preventivo.customer_phone, customMessage: customerConfirmMsg }),
+          body: JSON.stringify({
+            customPhone: preventivo.customer_phone,
+            templateKey: 'pro_no_cauzione_richiesta_cliente',
+            templateVars: { nome: firstName },
+          }),
         }).catch(() => {})
       }
     } catch (whatsappErr) {

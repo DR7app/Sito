@@ -87,8 +87,12 @@ async function contattiCliente(supabase, userId) {
   return out;
 }
 
-/** Un messaggio al cliente: template dei Messaggi di Sistema Pro, se c'e'. */
-async function avvisaCliente(siteUrl, contatti, templateKey, templateVars, testoDiRiserva) {
+/**
+ * Un messaggio al cliente: SOLO il template dei Messaggi di Sistema Pro.
+ * 26/09/2026: tolto il testo di riserva scritto qui. Template spento o
+ * mancante = nessun messaggio (send-whatsapp-notification risponde skipped).
+ */
+async function avvisaCliente(siteUrl, contatti, templateKey, templateVars) {
   if (!contatti.phone) return false;
   try {
     const res = await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
@@ -96,20 +100,14 @@ async function avvisaCliente(siteUrl, contatti, templateKey, templateVars, testo
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ templateKey, templateVars, customPhone: contatti.phone }),
     });
-    if (res.ok) return true;
-    console.warn(`[club-renewals] template ${templateKey} non inviato (${res.status}), mando il testo di riserva`);
+    const esito = await res.json().catch(() => ({}));
+    if (!res.ok || esito.skipped) {
+      console.warn(`[club-renewals] template ${templateKey} non inviato (${res.status}${esito.reason ? `, ${esito.reason}` : ''})`);
+      return false;
+    }
+    return true;
   } catch (err) {
-    console.warn(`[club-renewals] invio ${templateKey} fallito:`, err.message || err);
-  }
-  try {
-    const res = await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customMessage: testoDiRiserva, customPhone: contatti.phone }),
-    });
-    return res.ok;
-  } catch (err) {
-    console.error('[club-renewals] avviso al cliente non partito:', err.message || err);
+    console.error(`[club-renewals] invio ${templateKey} fallito:`, err.message || err);
     return false;
   }
 }
@@ -164,17 +162,6 @@ async function avvisaCambioPrezzo(supabase, siteUrl, prezzi) {
 
     const contatti = await contattiCliente(supabase, sub.user_id);
     const quando = dataIt(sub.expires_at);
-    // Riserva: si usa solo se il template non c'e' o e' spento. Stessa
-    // sostanza del testo approvato, cosi' il cliente non riceve due
-    // versioni diverse della stessa comunicazione.
-    const testo =
-      `Gentile Cliente, la informiamo che dal prossimo rinnovo il costo del suo abbonamento DR7 Club ` +
-      `passerà da ${eur(vecchio)} a ${eur(nuovo)}${periodoPiano(sub.plan)}.\n\n` +
-      `Potrà continuare normalmente con il nuovo prezzo oppure annullare l'abbonamento senza alcuna ` +
-      `penale prima del rinnovo del ${quando}.\n\n` +
-      `In caso di cancellazione, l'accesso al DR7 Club terminerà alla scadenza del periodo già pagato ` +
-      `e verranno meno i relativi privilegi e benefici maturati secondo le Condizioni del Club. ` +
-      `La cancellazione è definitiva e non sarà possibile riattivare successivamente l'adesione.`;
     const inviato = await avvisaCliente(siteUrl, contatti, 'pro_club_price_change', {
       nome: contatti.nome,
       prezzo_vecchio: eur(vecchio),
@@ -182,7 +169,7 @@ async function avvisaCambioPrezzo(supabase, siteUrl, prezzi) {
       periodo: periodoPiano(sub.plan),
       data_rinnovo: quando,
       piano: sub.plan === 'monthly' ? 'Mensile' : 'Annuale',
-    }, testo);
+    });
     if (inviato) avvisati++;
     else console.warn(`[club-renewals] abbonamento ${sub.id}: avviso prezzo segnato ma non consegnato (telefono mancante?)`);
   }
@@ -323,18 +310,12 @@ exports.handler = async (event) => {
         // il modo piu' rapido per farsi contestare la carta.
         try {
           const contatti = await contattiCliente(supabase, sub.user_id);
-          const testo =
-            `Ciao${contatti.nome ? ` ${contatti.nome.split(' ')[0]}` : ''}, il tuo abbonamento DR7 Club ` +
-            `${sub.plan === 'monthly' ? 'mensile' : 'annuale'} e' stato rinnovato.\n\n` +
-            `Importo addebitato: ${eur(importo)}\n` +
-            `Prossimo rinnovo: ${dataIt(newExpiry)}\n\n` +
-            `Grazie di essere con noi.`;
           await avvisaCliente(siteUrl, contatti, 'pro_club_renewal_charged', {
             nome: contatti.nome,
             importo: eur(importo),
             data_rinnovo: dataIt(newExpiry),
             piano: sub.plan === 'monthly' ? 'Mensile' : 'Annuale',
-          }, testo);
+          });
         } catch (avvisoErr) {
           console.warn('[club-renewals] ricevuta al cliente non inviata:', avvisoErr.message || avvisoErr);
         }

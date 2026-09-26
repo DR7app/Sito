@@ -2,30 +2,6 @@ const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const { getClubCashbackPct } = require('./utils/dr7ClubCashback');
 
-// Resolve insurance ID → display name from Centralina Pro (centralina_pro_config).
-// Inline copy of utils/centralinaProLookups.ts (TS import not available in .js handler).
-async function getInsuranceNameByIdNexi(sb, id) {
-  if (!id) return '';
-  const key = String(id).trim();
-  if (!key) return '';
-  try {
-    const { data } = await sb.from('centralina_pro_config').select('config').eq('id', 'main').maybeSingle();
-    const insurance = data && data.config && data.config.insurance;
-    if (!Array.isArray(insurance)) return key;
-    for (const cat of insurance) {
-      const byFascia = cat.byFascia || {};
-      for (const tier of Object.keys(byFascia)) {
-        const opt = (byFascia[tier] || []).find(o => o && o.id === key);
-        if (opt && typeof opt.name === 'string' && opt.name.trim()) return opt.name.trim();
-      }
-      const all = cat.all || [];
-      const opt = all.find(o => o && o.id === key);
-      if (opt && typeof opt.name === 'string' && opt.name.trim()) return opt.name.trim();
-    }
-  } catch (_) { /* fallthrough */ }
-  return key;
-}
-
 /**
  * Sends the "Ingresso DR7 Club" template (from Messaggi di Sistema Pro)
  * to the customer who just subscribed. Matched by LABEL because admin-created
@@ -736,42 +712,15 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
         const custPhone = newBooking.customer_phone || newBooking.booking_details?.customer?.phone;
         if (custPhone) {
           try {
-            const custName = newBooking.customer_name || newBooking.booking_details?.customer?.fullName || 'Cliente';
-            const custFirstName = custName.split(' ')[0] || 'Cliente';
-            const bookingRef = newBooking.id.substring(0, 8).toUpperCase();
-            const totalEur = newBooking.price_total ? (newBooking.price_total / 100).toFixed(2) : '0.00';
-            const fmtDate = (d) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' });
-            const fmtTime = (d) => new Date(d).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Rome' });
-
-            const details = newBooking.booking_details || {};
-            const vehicleName = newBooking.vehicle_name || details.vehicle?.name || 'N/A';
-            const pickupDate = newBooking.pickup_date ? `${fmtDate(newBooking.pickup_date)} ${fmtTime(newBooking.pickup_date)}` : 'N/A';
-            const dropoffDate = newBooking.dropoff_date ? `${fmtDate(newBooking.dropoff_date)} ${fmtTime(newBooking.dropoff_date)}` : 'N/A';
-            const pickupLoc = newBooking.pickup_location || details.pickupLocation || 'Sede DR7';
-            const dropoffLoc = newBooking.dropoff_location || details.dropoffLocation || pickupLoc;
-
-            // Resolve insurance display name from Centralina Pro (no hardcoded map).
-            const insuranceId = newBooking.insurance_option || (details.insurance && details.insurance.type) || '';
-            const insurance = (await getInsuranceNameByIdNexi(supabase, insuranceId)) || insuranceId;
-
-            let custMsg = '';
-            custMsg += `Gentile ${custFirstName},\n\nLa sua prenotazione è stata *confermata* con successo!\n\n`;
-            custMsg += `*Rif:* ${bookingRef}\n`;
-            custMsg += `*Veicolo:* ${vehicleName}\n`;
-            custMsg += `*Ritiro:* ${pickupDate}\n`;
-            custMsg += `*Luogo ritiro:* ${pickupLoc}\n`;
-            custMsg += `*Riconsegna:* ${dropoffDate}\n`;
-            custMsg += `*Luogo riconsegna:* ${dropoffLoc}\n`;
-            custMsg += `*Assicurazione:* ${insurance}\n`;
-            custMsg += `*Totale:* €${totalEur}\n`;
-            custMsg += `*Pagamento:* Pagato (Nexi)\n`;
-            custMsg += `\nRiceverà a breve il contratto da firmare digitalmente.\n`;
-            custMsg += `\nCordiali Saluti,\nDR7`;
-
+            // 26/09/2026: qui il testo al cliente era scritto nel codice e
+            // parlava SEMPRE di noleggio (Veicolo, Ritiro, Riconsegna,
+            // Assicurazione, contratto da firmare), anche per un lavaggio
+            // pagato dal carrello. Ora passa dal template di Messaggi di
+            // Sistema Pro scelto per tipo di servizio, come l'altro ramo.
             await fetch(`${siteUrl}/.netlify/functions/send-whatsapp-notification`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ customPhone: custPhone, customMessage: custMsg }),
+              body: JSON.stringify({ booking: newBooking, customPhone: custPhone }),
             });
             console.log('[nexi-callback] WhatsApp booking confirmation sent to customer');
           } catch (custErr) {

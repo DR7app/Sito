@@ -561,6 +561,16 @@ const CarWashServicesPage: React.FC = () => {
           // The (possibly overridden) wash category — Urban / Maxi / Moto.
           category: washCategory || detectedCategory || targaManualCategory,
         }
+      } : normalizePlate(targaInput) ? {
+        // 26/09/2026: la ricerca non ha risposto e il cliente ha scelto la
+        // categoria a mano. La targa che ha scritto va comunque avanti:
+        // prima si perdeva e la prenotazione nasceva senza targa.
+        customerVehicle: {
+          plate: normalizePlate(targaInput),
+          carMake: '',
+          carModel: '',
+          category: washCategory || targaManualCategory,
+        }
       } : {})
     });
   };

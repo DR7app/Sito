@@ -15,6 +15,7 @@ import CalendarioLavaggio from '../components/ui/CalendarioLavaggio';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
 import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
 import { dataRoma } from '../utils/oraRoma';
+import { normalizePlate } from '../utils/lookupTarga';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
 
 interface CartItem {
@@ -182,6 +183,15 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 26/09/2026: la targa e' obbligatoria (dice quale lavaggio e' e quale
+  // auto arriva). Arriva dalla pagina dei servizi; se li' la ricerca non ha
+  // risposto e il cliente ha scelto la categoria a mano, la targa non
+  // arrivava e la prenotazione nasceva senza (Pamela Cau 26/09 e altri 4
+  // lavaggi in tre settimane). Ora, se manca, la si chiede qui e senza non
+  // si paga.
+  const [targaManuale, setTargaManuale] = useState('');
+  const targaCliente: string = (customerVehicle?.plate ? String(customerVehicle.plate) : '') || normalizePlate(targaManuale);
 
   // ─── Supercar / Icon Experience: vehicle picker ──────────────────
   // When the cart contains a Supercar or Icon Experience extra (with a
@@ -893,6 +903,10 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       }
     }
 
+    if (targaCliente.length < 5) {
+      newErrors.targa = t({ it: 'Inserisci la targa del veicolo da lavare.', en: 'Enter the plate of the vehicle to be washed.' });
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -1089,6 +1103,10 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
 
     if (!validate() || !hasValidBooking) {
       console.log('Validation failed or no valid booking data');
+      if (targaCliente.length < 5) {
+        const campo = document.querySelector('input[name="targa"]');
+        if (campo && 'scrollIntoView' in campo) (campo as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -1164,7 +1182,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       user_id: user?.id || null,
       vehicle_type: 'car',
       vehicle_name: customerVehicleMakeModel || 'Car Wash Service',
-      vehicle_plate: customerVehicle?.plate || null,
+      vehicle_plate: targaCliente || null,
       service_type: 'car_wash',
       service_name: getServiceNames(),
       service_id: getServiceIds(),
@@ -1194,12 +1212,12 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
         // sbagliato, il dettaglio dei servizi scelti sul sito non arrivava
         // in admin: si vedeva solo la riga `service_name`.
         ...(hasCartItems ? { cartItems } : {}),
-        ...(customerVehicle ? {
-          customerVehicle,
+        ...(customerVehicle || targaCliente ? {
+          customerVehicle: { ...(customerVehicle || {}), plate: targaCliente || null },
           // Field aliases che l'admin CarWash modal legge direttamente.
           vehicleMakeModel: customerVehicleMakeModel || null,
-          vehiclePlate: customerVehicle.plate || null,
-          vehicleCategory: customerVehicle.category || null,
+          vehiclePlate: targaCliente || null,
+          vehicleCategory: customerVehicle?.category || null,
         } : {}),
         ...(primeFlexSelected ? { prime_flex: true, prime_flex_price: PRIME_FLEX_PRICE } : {}),
         // Supercar / Icon Experience: chosen vehicle + window. Used by
@@ -1928,6 +1946,30 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                 )}
                 {errors.chosenSupercar && (
                   <p className="text-xs text-red-400 mt-2 font-semibold">{errors.chosenSupercar}</p>
+                )}
+              </div>
+            )}
+
+            {/* Targa: solo se non e' arrivata dalla pagina dei servizi */}
+            {!customerVehicle?.plate && (
+              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-8">
+                <h2 className="text-2xl font-bold text-white mb-6">
+                  {t({ it: 'Targa del veicolo', en: 'Vehicle plate' })}
+                </h2>
+                <input
+                  type="text"
+                  name="targa"
+                  value={targaManuale}
+                  onChange={(e) => {
+                    setTargaManuale(e.target.value.toUpperCase());
+                    if (errors.targa) setErrors(prev => { const n = { ...prev }; delete n.targa; return n; });
+                  }}
+                  autoCapitalize="characters"
+                  placeholder={t({ it: 'Es. EX117YA', en: 'E.g. EX117YA' })}
+                  className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white font-mono uppercase"
+                />
+                {errors.targa && (
+                  <p className="text-xs text-red-400 mt-2 font-semibold">{errors.targa}</p>
                 )}
               </div>
             )}

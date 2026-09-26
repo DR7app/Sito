@@ -15,6 +15,7 @@ import type { Handler } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import crypto from 'node:crypto';
+import { funzioneFerma } from './utils/systemControl';
 
 const MAX_CAMPI = 40;
 const MAX_LUNGHEZZA = 5000;
@@ -97,7 +98,10 @@ export const handler: Handler = async (event) => {
   try {
     const impostazioni = (site?.settings || {}) as Record<string, string>;
     const destinatario = body.destinationEmail || impostazioni.email || 'info@dr7.app';
-    if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+    // Interruttore System Control: e-mail spente = il messaggio resta solo nel database.
+    const fermaEmail = await funzioneFerma('invio_email');
+    if (fermaEmail) console.warn('[wb-form] notifica saltata:', fermaEmail);
+    if (!fermaEmail && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.secureserver.net',
         port: parseInt(process.env.SMTP_PORT || '587', 10),

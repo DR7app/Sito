@@ -9,6 +9,8 @@ import CalendarioGiornoOrario from './CalendarioGiornoOrario';
 import { useCarrello } from '../../hooks/useCarrello';
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 import { useAspetto } from '../../hooks/useAspetto';
+import { useStatoServizi } from '../../hooks/useStatoServizi';
+import AvvisoServizioSospeso from './AvvisoServizioSospeso';
 
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
@@ -82,6 +84,11 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
   const [cust, setCust] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Interruttore System Control: prenotazioni dal sito sospese per Aria.
+  const statoServizi = useStatoServizi('aria');
+  const prenotazioniSospese = !statoServizi.prenotazioni.attiva
+    ? (statoServizi.prenotazioni.messaggio || 'Le prenotazioni online sono momentaneamente sospese.')
+    : null;
   const [walletBalanceCents, setWalletBalanceCents] = useState<number | null>(null); // null = non caricato
   const [success, setSuccess] = useState(false);
   const { user } = useAuth();
@@ -218,6 +225,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
   // effettivo se ok, altrimenti imposta l'errore e ritorna null.
   function validate(): string | null {
     setError('');
+    if (prenotazioniSospese) { setError(prenotazioniSospese); return null; }
     if (selected.size === 0) { setError(t({ it: "Seleziona almeno un posto.", en: "Select at least one seat." })); return null; }
     // Loggato: l'identità arriva dall'account (nome/email), serve solo il
     // telefono per la conferma WhatsApp. Non loggato: nome + telefono.
@@ -346,6 +354,8 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
         </div>
+
+        {prenotazioniSospese && <AvvisoServizioSospeso messaggio={prenotazioniSospese} />}
 
         {loading ? (
           <div className="py-12 text-center text-gray-400">{t({ it: "Caricamento date…", en: "Loading dates…" })}</div>

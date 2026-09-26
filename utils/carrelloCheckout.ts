@@ -21,6 +21,8 @@ import { deductCredits, addCredits, hasSufficientBalance } from './creditWallet'
 import { checkVehicleAvailability } from './bookingValidation';
 import type { ArticoloCarrello } from './carrello';
 import { testoFisso } from './testiSito';
+// Rifiuto del database quando il System Control sospende le prenotazioni.
+import { testoPrenotazioniSospese } from './statoServizi';
 
 export const FUNCTIONS_BASE =
   (import.meta as { env?: Record<string, string> }).env?.VITE_FUNCTIONS_BASE ??
@@ -216,7 +218,7 @@ export async function preparaArticoloCarta(
         (booking.booking_details as Dati).payment_link_expires_at = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
         const { data, error } = await supabase.from('bookings').insert(booking).select('id').single();
-        if (error) return { ok: false, errore: error.message };
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
 
         await supabase.from('pending_nexi_bookings').insert({
           nexi_order_id: ordine,
@@ -233,7 +235,7 @@ export async function preparaArticoloCarta(
         const { error } = await supabase
           .from('pending_nexi_bookings')
           .insert({ nexi_order_id: ordine, booking_data: booking });
-        if (error) return { ok: false, errore: error.message };
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         return { ok: true };
       }
 
@@ -259,7 +261,7 @@ export async function preparaArticoloCarta(
           nexi_order_id: ordine,
           created_at: new Date().toISOString(),
         }]);
-        if (error) return { ok: false, errore: error.message };
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         return { ok: true };
       }
 
@@ -272,7 +274,7 @@ export async function preparaArticoloCarta(
           payment_reference: ordine,
           nexi_order_id: ordine,
         });
-        if (error) return { ok: false, errore: error.message };
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         return { ok: true };
       }
 
@@ -285,7 +287,7 @@ export async function preparaArticoloCarta(
           payment_status: 'pending',
           nexi_order_id: ordine,
         });
-        if (error) return { ok: false, errore: error.message };
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         return { ok: true };
       }
 
@@ -342,7 +344,7 @@ export async function pagaArticoloACredito(
           p_vehicle_name: String(payload.vehicle_name || articolo.titolo),
           p_booking_payload: payload,
         });
-        if (error) return { ok: false, errore: error.message };
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         if (!data?.success) return { ok: false, errore: data?.error || 'Credito insufficiente.' };
         const booking = { ...payload, id: data.booking_id } as { id: string; customer_phone?: string | null };
         avvisaPrenotazionePagata(booking, false);
@@ -376,7 +378,7 @@ export async function pagaArticoloACredito(
           // Credito gia' tolto e prenotazione fallita: si restituisce subito.
           await addCredits(userId, euro, 'Rimborso automatico: errore prenotazione dal carrello', undefined, 'refund')
             .catch(e => console.error('[carrello] CRITICO: rimborso fallito', e));
-          return { ok: false, errore: error.message };
+          return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         }
         avvisaPrenotazionePagata(data, false);
         return { ok: true, bookingId: data.id };

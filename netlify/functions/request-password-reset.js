@@ -45,6 +45,7 @@ exports.handler = async (event) => {
         const tokenHash = encodeURIComponent(linkData.properties.hashed_token);
         const resetLink = `${siteUrl}/reset-password?token_hash=${tokenHash}&type=recovery`;
 
+        // Esente dagli interruttori System Control: codice di sicurezza, senza si resta chiusi fuori.
         const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
         if (!resendApiKey) {
             console.error('[request-password-reset] NO API KEY — impossibile inviare');

@@ -11,6 +11,9 @@ import { useCarrello } from '../hooks/useCarrello';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
 import { useContactInfo } from '../hooks/useContactInfo';
 import { linkWhatsApp } from '../utils/whatsapp';
+import { useStatoServizi } from '../hooks/useStatoServizi';
+import AvvisoServizioSospeso from '../components/ui/AvvisoServizioSospeso';
+import { testoPrenotazioniSospese } from '../utils/statoServizi';
 
 
 const MechanicalBookingPage: React.FC = () => {
@@ -71,6 +74,11 @@ const MechanicalBookingPage: React.FC = () => {
   // Payment state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  // Interruttore System Control: prenotazioni dal sito sospese (meccanica = business lavaggio).
+  const statoServizi = useStatoServizi('lavaggio');
+  const prenotazioniSospese = !statoServizi.prenotazioni.attiva
+    ? (statoServizi.prenotazioni.messaggio || 'Le prenotazioni online sono momentaneamente sospese.')
+    : null;
   const [isProcessing, setIsProcessing] = useState(false);
   const isSubmittingRef = useRef(false);
   const [pendingBookingData, setPendingBookingData] = useState<any>(null);
@@ -356,6 +364,7 @@ const MechanicalBookingPage: React.FC = () => {
   // finisce nel carrello del sito invece che nella finestra di pagamento.
   const handleSubmit = async (e: React.FormEvent, opzioni?: { alCarrello?: boolean }) => {
     e.preventDefault();
+    if (prenotazioniSospese) { setPaymentError(prenotazioniSospese); return; }
 
     if (!validate() || !selectedService) {
       return;
@@ -457,6 +466,7 @@ const MechanicalBookingPage: React.FC = () => {
   };
 
   const handlePayment = async () => {
+    if (prenotazioniSospese) { setPaymentError(prenotazioniSospese); return; }
     if (!pendingBookingData) {
       return;
     }
@@ -560,7 +570,7 @@ const MechanicalBookingPage: React.FC = () => {
         if (pendingError) {
           console.error('Database error:', pendingError);
           clearTimeout(safetyTimer);
-          setPaymentError(`${t({ it: 'Errore database:', en: 'Database error:' })} ${pendingError.message}`);
+          setPaymentError(testoPrenotazioniSospese(pendingError) || `${t({ it: 'Errore database:', en: 'Database error:' })} ${pendingError.message}`);
           isSubmittingRef.current = false;
           setIsProcessing(false);
           return;
@@ -715,7 +725,7 @@ const MechanicalBookingPage: React.FC = () => {
       navigate('/booking-success', { state: { booking: data } });
     } catch (error: any) {
       console.error('Payment error:', error);
-      setPaymentError(error.message || 'Payment processing failed');
+      setPaymentError(testoPrenotazioniSospese(error) || error.message || 'Payment processing failed');
       isSubmittingRef.current = false;
       setIsProcessing(false);
     } finally {
@@ -797,6 +807,7 @@ const MechanicalBookingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-black pt-32 pb-16 px-6">
       <div className="container mx-auto max-w-4xl">
+        {prenotazioniSospese && <AvvisoServizioSospeso messaggio={prenotazioniSospese} />}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

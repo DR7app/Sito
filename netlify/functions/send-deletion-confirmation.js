@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { funzioneFerma } = require('./utils/systemControl');
 
 exports.handler = async (event) => {
     // Only allow POST requests
@@ -74,6 +75,13 @@ exports.handler = async (event) => {
         </html>
       `,
         };
+
+        // Interruttore System Control: e-mail spente = nessun invio.
+        const fermaEmail = await funzioneFerma('invio_email');
+        if (fermaEmail) {
+            console.warn('[send-deletion-confirmation] e-mail saltata:', fermaEmail);
+            return { statusCode: 200, body: JSON.stringify({ success: false, skipped: true, reason: 'invio_email_off', message: fermaEmail }) };
+        }
 
         // Send email
         await transporter.sendMail(mailOptions);

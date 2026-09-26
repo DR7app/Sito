@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { getCorsOrigin } = require('./utils/cors');
+const { funzioneFerma } = require('./utils/systemControl');
 
 /**
  * Netlify Function to create Nexi XPay payment using API method
@@ -24,6 +25,17 @@ exports.handler = async (event) => {
       statusCode: 405,
       headers: corsHeaders,
       body: JSON.stringify({ error: 'Method not allowed' }),
+    };
+  }
+
+  // Interruttore System Control: pagamenti online spenti = nessun checkout.
+  // Solo la creazione del pagamento: callback e verifiche restano attivi.
+  const fermaPagamenti = await funzioneFerma('pagamenti_online');
+  if (fermaPagamenti) {
+    return {
+      statusCode: 503,
+      headers: corsHeaders,
+      body: JSON.stringify({ success: false, error: fermaPagamenti, code: 'pagamenti_online_off' }),
     };
   }
 

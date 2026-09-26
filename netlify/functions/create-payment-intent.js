@@ -1,5 +1,6 @@
 // netlify/functions/create-payment-intent.js
 const { getCorsOrigin } = require('./utils/cors');
+const { funzioneFerma } = require('./utils/systemControl');
 
 // Store current request origin for CORS (set per-request in handler)
 let _currentOrigin = '';
@@ -39,6 +40,12 @@ exports.handler = async (event) => {
 
   if (event.httpMethod !== 'POST') {
     return createResponse(405, { error: 'Method Not Allowed' });
+  }
+
+  // Interruttore System Control: pagamenti online spenti = nessun checkout.
+  const fermaPagamenti = await funzioneFerma('pagamenti_online');
+  if (fermaPagamenti) {
+    return createResponse(503, { success: false, error: fermaPagamenti, code: 'pagamenti_online_off' });
   }
 
   // IMPORTANT: Set this environment variable in your Netlify project settings.

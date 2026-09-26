@@ -17,6 +17,9 @@ import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance }
 import { dataRoma } from '../utils/oraRoma';
 import { normalizePlate } from '../utils/lookupTarga';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
+import { useStatoServizi } from '../hooks/useStatoServizi';
+import AvvisoServizioSospeso from '../components/ui/AvvisoServizioSospeso';
+import { testoPrenotazioniSospese } from '../utils/statoServizi';
 
 interface CartItem {
   serviceId: string;
@@ -359,6 +362,11 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   // Payment state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  // Interruttore System Control: prenotazioni dal sito sospese (lavaggi = business lavaggio).
+  const statoServizi = useStatoServizi('lavaggio');
+  const prenotazioniSospese = !statoServizi.prenotazioni.attiva
+    ? (statoServizi.prenotazioni.messaggio || 'Le prenotazioni online sono momentaneamente sospese.')
+    : null;
   const [isProcessing, setIsProcessing] = useState(false);
   const isSubmittingRef = useRef(false);
   const [pendingBookingData, setPendingBookingData] = useState<any>(null);
@@ -1097,6 +1105,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   // che nella finestra di pagamento.
   const handleSubmit = async (e: React.FormEvent, opzioni?: { alCarrello?: boolean }) => {
     e.preventDefault();
+    if (prenotazioniSospese) { setPaymentError(prenotazioniSospese); return; }
     console.log('handleSubmit called');
     console.log('selectedService:', selectedService);
     console.log('validation result:', validate());
@@ -1339,6 +1348,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   };
 
   const handlePayment = async () => {
+    if (prenotazioniSospese) { setPaymentError(prenotazioniSospese); return; }
     console.log('handlePayment called with method:', paymentMethod);
     if (!pendingBookingData) {
       console.log('Missing pending booking data');
@@ -1602,7 +1612,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
           console.error('Database error:', pendingError);
           clearTimeout(safetyTimer);
           setPaymentError(
-            `${t({ it: 'Errore database:', en: 'Database error:' })} ${pendingError.message}`
+            testoPrenotazioniSospese(pendingError) || `${t({ it: 'Errore database:', en: 'Database error:' })} ${pendingError.message}`
           );
           isSubmittingRef.current = false;
           setIsProcessing(false);
@@ -1653,7 +1663,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     } catch (error: any) {
       console.error('Payment error:', error);
       setPaymentError(
-        error instanceof Error ? error.message : t('Unexpected_error')
+        testoPrenotazioniSospese(error) || (error instanceof Error ? error.message : t('Unexpected_error'))
       );
       isSubmittingRef.current = false;
       setIsProcessing(false);
@@ -1736,6 +1746,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   return (
     <div className={classiGuscio}>
       <div className="container mx-auto max-w-4xl">
+        {prenotazioniSospese && <AvvisoServizioSospeso messaggio={prenotazioniSospese} />}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -563,7 +563,11 @@ const MyBookings = () => {
               customerEmail: modifyingBooking.customer_email,
             }),
           });
-          if (!nexiRes.ok) throw new Error(t({ it: "Impossibile creare il link di pagamento.", en: "Unable to create the payment link." }));
+          if (!nexiRes.ok) {
+            // Pagamenti sospesi dal System Control: si mostra il messaggio vero.
+            const errData = await nexiRes.json().catch(() => ({} as { error?: string }));
+            throw new Error(errData.error || t({ it: "Impossibile creare il link di pagamento.", en: "Unable to create the payment link." }));
+          }
           const nexiData = await nexiRes.json();
           const payUrl = nexiData.hostedPageUrl || nexiData.url || nexiData.paymentUrl;
           if (!payUrl) throw new Error(t({ it: "Nessun link di pagamento ricevuto.", en: "No payment link received." }));

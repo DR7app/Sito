@@ -55,6 +55,9 @@ import {
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
 import { datiPatenteScheda, luogoNascitaScheda } from '../../utils/datiPatenteScheda';
 import { useAspetto } from '../../hooks/useAspetto';
+import { useStatoServizi } from '../../hooks/useStatoServizi';
+import AvvisoServizioSospeso from './AvvisoServizioSospeso';
+import { testoPrenotazioniSospese } from '../../utils/statoServizi';
 
 // Filter out dummy/placeholder names from auth profiles (e.g. "No Name", "User", "Test")
 const DUMMY_NAMES = ['no name', 'no-name', 'noname', 'user', 'test', 'unknown', 'n/a', 'none', 'cliente'];
@@ -1159,6 +1162,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
   // Nexi payment state
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  // Interruttore System Control: prenotazioni dal sito sospese per il noleggio.
+  const statoServizi = useStatoServizi('terra');
   // FIX 5: WhatsApp fallback URL — shown as button if popup is blocked
   const [whatsAppFallbackUrl, setWhatsAppFallbackUrl] = useState<string | null>(null);
   const openWhatsApp = (url: string) => {
@@ -4490,6 +4495,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const handleSubmit = async (e: React.FormEvent, opzioni?: { alCarrello?: boolean }) => {
     e.preventDefault();
     setPaymentError(null);
+    if (!statoServizi.prenotazioni.attiva) {
+      setPaymentError(statoServizi.prenotazioni.messaggio || t({ it: "Prenotazioni online momentaneamente sospese.", en: "Online bookings are temporarily suspended." }));
+      return;
+    }
     console.log("handleSubmit called", { paymentMethod: formData.paymentMethod, step, userId: user?.id });
     if (!validateStep() || !item) return;
 
@@ -4893,13 +4902,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         } else {
           // RPC returned but success was not true
           console.warn("RPC returned success: false", data);
-          setPaymentError(data?.message || t({ it: "Prenotazione fallita. Riprova o contatta il supporto.", en: "Booking failed. Please try again or contact support." }));
+          setPaymentError(testoPrenotazioniSospese(data?.message) || data?.message || t({ it: "Prenotazione fallita. Riprova o contatta il supporto.", en: "Booking failed. Please try again or contact support." }));
           setIsProcessing(false);
         }
 
       } catch (err: any) {
         console.error("Catch Error during booking:", err);
-        setPaymentError(err.message || t({ it: "Errore sconosciuto durante la prenotazione.", en: "Unknown error during booking." }));
+        setPaymentError(testoPrenotazioniSospese(err) || err.message || t({ it: "Errore sconosciuto durante la prenotazione.", en: "Unknown error during booking." }));
         setIsProcessing(false);
       }
     } else if (normalizedPaymentMethod === 'nexi') {
@@ -5332,7 +5341,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       } catch (err: any) {
         console.error("Booking Error:", err.message || err, { code: err?.code, details: err?.details, hint: err?.hint });
-        setPaymentError(err.message || t({ it: "Si è verificato un errore durante la prenotazione.", en: "An error occurred during the booking." }));
+        setPaymentError(testoPrenotazioniSospese(err) || err.message || t({ it: "Si è verificato un errore durante la prenotazione.", en: "An error occurred during the booking." }));
         isSubmittingRef.current = false;
         setIsProcessing(false);
       }
@@ -7124,7 +7133,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
                     setNoCauzioneSaved(true);
                   } catch (err: any) {
-                    setPaymentError(err.message || t({ it: 'Errore salvataggio preventivo', en: 'Error saving the quote' }));
+                    setPaymentError(testoPrenotazioniSospese(err) || err.message || t({ it: 'Errore salvataggio preventivo', en: 'Error saving the quote' }));
                   } finally {
                     setNoCauzioneSending(false);
                   }
@@ -8232,6 +8241,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/95">
         <div className="min-h-dvh px-2 sm:px-4 py-4 sm:py-8">
           <div className="max-w-6xl mx-auto">
+            {!statoServizi.prenotazioni.attiva && (
+              <AvvisoServizioSospeso messaggio={statoServizi.prenotazioni.messaggio || 'Le prenotazioni online sono momentaneamente sospese.'} />
+            )}
 
             <AnimatePresence>
               {isCameraOpen && (

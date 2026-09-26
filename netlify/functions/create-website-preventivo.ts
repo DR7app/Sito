@@ -1,6 +1,7 @@
 import { Handler } from '@netlify/functions'
 import { createClient } from '@supabase/supabase-js'
 import { getCorsOrigin } from './utils/cors'
+import { funzioneFerma } from './utils/systemControl'
 import { getInsuranceNameById } from './utils/centralinaProLookups'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || ''
@@ -21,6 +22,12 @@ const handler: Handler = async (event) => {
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) }
+  }
+
+  // Interruttore System Control: prenotazioni dal sito sospese = niente richieste di preventivo.
+  const fermaPrenotazioni = await funzioneFerma('prenotazioni_online')
+  if (fermaPrenotazioni) {
+    return { statusCode: 503, headers, body: JSON.stringify({ error: fermaPrenotazioni, code: 'prenotazioni_online_off' }) }
   }
 
   // Auth: extract user from JWT

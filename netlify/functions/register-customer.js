@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { funzioneFerma } = require('./utils/systemControl');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -40,6 +41,7 @@ async function completaAccountCreatoDallUfficio(email, userMetadata) {
             if (u.host !== site.host) { u.protocol = site.protocol; u.host = site.host; link = u.toString(); }
         } catch (_e) { /* link lasciato com'e' */ }
 
+        // Esente dagli interruttori System Control: codice di sicurezza, senza si resta chiusi fuori.
         const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
         if (!resendApiKey) return false;
         const fromAddress = process.env.SMTP_FROM || 'info@dr7.app';
@@ -259,6 +261,7 @@ exports.handler = async (event) => {
                 }
                 console.log('=== LINK GENERATED OK === for:', email, '->', confirmationLink);
 
+                // Esente dagli interruttori System Control: codice di sicurezza, senza si resta chiusi fuori.
                 const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
                 if (resendApiKey) {
                     console.log('=== SENDING VIA RESEND API === key starts with:', resendApiKey.substring(0, 6));
@@ -552,8 +555,10 @@ exports.handler = async (event) => {
                 console.log('[register-customer] Welcome WhatsApp sent to:', custPhone);
             } else {
                 // Fallback: send via email
+                // Interruttore System Control: benvenuto via e-mail saltato se le e-mail sono spente.
+                const fermaEmailBenvenuto = await funzioneFerma('invio_email');
                 const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
-                if (resendApiKey) {
+                if (resendApiKey && !fermaEmailBenvenuto) {
                     const fromAddress = process.env.SMTP_FROM || 'info@dr7.app';
                     await fetch('https://api.resend.com/emails', {
                         method: 'POST',

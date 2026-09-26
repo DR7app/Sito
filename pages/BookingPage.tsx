@@ -17,6 +17,9 @@ import { getAirports, getYachtMarinas, getHeliDeparturePoints, getHeliArrivalPoi
 import { dateLocale } from '../utils/i18nDate';
 import { useContactInfo } from '../hooks/useContactInfo';
 import { linkWhatsApp } from '../utils/whatsapp';
+import { useStatoServizi } from '../hooks/useStatoServizi';
+import AvvisoServizioSospeso from '../components/ui/AvvisoServizioSospeso';
+import { testoPrenotazioniSospese } from '../utils/statoServizi';
 
 // Token substitution for WhatsApp templates loaded from system_messages.
 function applyTokens(tpl: string, tokens: Record<string, string>): string {
@@ -101,6 +104,11 @@ const BookingPage: React.FC = () => {
   const [stripe, setStripe] = useState<any>(null);
   const [cardElement, setCardElement] = useState<any>(null);
   const [stripeError, setStripeError] = useState<string | null>(null);
+  // Interruttore System Control: prenotazioni dal sito sospese per questo business.
+  const statoServizi = useStatoServizi(categoryId === 'yachts' ? 'mare' : categoryId === 'jets' || categoryId === 'helicopters' ? 'aria' : 'terra');
+  const prenotazioniSospese = !statoServizi.prenotazioni.attiva
+    ? (statoServizi.prenotazioni.messaggio || 'Le prenotazioni online sono momentaneamente sospese.')
+    : null;
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isClientSecretLoading, setIsClientSecretLoading] = useState(false);
 
@@ -305,7 +313,7 @@ const BookingPage: React.FC = () => {
 
       if (error) {
         console.error('Error creating booking:', error);
-        setErrors(prev => ({ ...prev, form: b('err_save_failed_it', 'err_save_failed_en') }));
+        setErrors(prev => ({ ...prev, form: testoPrenotazioniSospese(error) || b('err_save_failed_it', 'err_save_failed_en') }));
         setIsProcessing(false);
         return;
       }
@@ -342,6 +350,7 @@ const BookingPage: React.FC = () => {
   const isSubmittingRef = useRef(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!validateStep() || !item) return;
+    if (prenotazioniSospese) { setErrors(prev => ({ ...prev, form: prenotazioniSospese })); return; }
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setIsProcessing(true);
@@ -547,6 +556,7 @@ const BookingPage: React.FC = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="pt-32 pb-24 bg-black min-h-screen">
       <div className="container mx-auto px-6">
         <h1 className="text-5xl md:text-6xl font-bold text-white text-center mb-4">{t('Book_Your')} <span className="text-white">{item.name}</span></h1>
+        {prenotazioniSospese && <div className="max-w-2xl mx-auto"><AvvisoServizioSospeso messaggio={prenotazioniSospese} /></div>}
         {renderContent()}
       </div>
     </motion.div>

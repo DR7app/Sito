@@ -2,6 +2,7 @@ import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import nodemailer from "nodemailer";
 import { createCalendarEvent, formatCarRentalEvent, formatCarWashEvent } from './utils/googleCalendar';
 import { getInsuranceNameById } from './utils/centralinaProLookups';
+import { funzioneFerma, businessDaServiceType } from './utils/systemControl';
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   console.log('📧 [send-booking-confirmation] Function invoked');
@@ -207,16 +208,23 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     html: emailHtml,
   };
 
+  // Interruttore System Control: e-mail spente = niente invio, ma l'evento
+  // in calendario si crea lo stesso.
+  const fermaEmail = await funzioneFerma('invio_email', businessDaServiceType(booking?.service_type));
+  if (fermaEmail) console.warn('[send-booking-confirmation] e-mail saltate:', fermaEmail);
+
   try {
     // Send email to customer
-    console.log('📤 Sending email to customer:', customerEmail);
-    await transporter.sendMail(customerMailOptions);
-    console.log('✅ Customer email sent successfully to:', customerEmail);
+    if (!fermaEmail) {
+      console.log('📤 Sending email to customer:', customerEmail);
+      await transporter.sendMail(customerMailOptions);
+      console.log('✅ Customer email sent successfully to:', customerEmail);
+    }
 
     // Send copy to admin (blocking to catch errors)
     try {
       console.log('📤 Sending notification to admin: info@dr7.app');
-      await transporter.sendMail(adminMailOptions);
+      if (!fermaEmail) await transporter.sendMail(adminMailOptions);
       console.log('✅ Admin notification email sent successfully');
     } catch (adminError: any) {
       console.error('❌ Failed to send admin notification:', adminError.message);

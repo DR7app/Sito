@@ -2,6 +2,7 @@ import type { Handler } from "@netlify/functions";
 import { renderTemplate, resolveKeyForContext } from './utils/messageTemplates';
 import { getInsuranceNameById } from './utils/centralinaProLookups';
 import { formatLocation } from './utils/formatLocation';
+import { funzioneFerma, businessDaServiceType } from './utils/systemControl';
 
 const GREEN_API_INSTANCE_ID = process.env.GREEN_API_INSTANCE_ID;
 const GREEN_API_TOKEN = process.env.GREEN_API_TOKEN;
@@ -409,6 +410,16 @@ const handler: Handler = async (event) => {
   // (the template's own `include_header` flag decides). Retained as a no-op
   // hint in the payload for legacy callers.
   void skipHeader;
+
+  // Interruttore System Control: invii WhatsApp spenti = nessun invio.
+  const fermaWa = await funzioneFerma('invio_whatsapp', businessDaServiceType((booking as any)?.service_type));
+  if (fermaWa) {
+    console.warn('[send-whatsapp-notification] invio saltato:', fermaWa);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: false, skipped: true, reason: 'invio_whatsapp_off', message: fermaWa }),
+    };
+  }
 
   try {
     const greenApiUrl = `https://api.green-api.com/waInstance${GREEN_API_INSTANCE_ID}/sendMessage/${GREEN_API_TOKEN}`;

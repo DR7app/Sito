@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
+const { funzioneFerma } = require('./utils/systemControl');
 
 /**
  * Scheduled function — runs daily at 06:00 UTC
@@ -67,6 +68,12 @@ exports.handler = async (event) => {
   let sent = 0;
   let failed = 0;
 
+  // Interruttori System Control: canale spento = quel canale salta, il resto prosegue.
+  const fermaWa = await funzioneFerma('invio_whatsapp');
+  const fermaEmail = await funzioneFerma('invio_email');
+  if (fermaWa) console.warn('[send-membership-reminders] WhatsApp saltati:', fermaWa);
+  if (fermaEmail) console.warn('[send-membership-reminders] e-mail saltate:', fermaEmail);
+
   for (const membership of expiringMemberships) {
     try {
       const renewalDate = new Date(membership.renewal_date);
@@ -113,7 +120,7 @@ exports.handler = async (event) => {
       console.log(`Processing reminder for user ${membership.user_id}: ${displayName}, tier=${membership.tier_name}, expires=${formattedExpiry}, daysLeft=${daysLeft}`);
 
       // --- Send WhatsApp reminder to customer ---
-      if (userPhone && greenInstanceId && greenToken) {
+      if (!fermaWa && userPhone && greenInstanceId && greenToken) {
         // Clean phone for Green API
         // Solo cifre: \s non prende gli invisibili (es. U+202D) che i
         // telefoni infilano nei contatti, e restavano nel chatId.
@@ -156,7 +163,7 @@ exports.handler = async (event) => {
       }
 
       // --- Send Email reminder to customer ---
-      if (userEmail && transporter) {
+      if (!fermaEmail && userEmail && transporter) {
         const emailHtml = `
           <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">La tua Membership sta per scadere</h1>
@@ -202,7 +209,7 @@ exports.handler = async (event) => {
       }
 
       // --- Notify admin via WhatsApp ---
-      if (greenInstanceId && greenToken) {
+      if (!fermaWa && greenInstanceId && greenToken) {
         const adminPhone = process.env.NOTIFICATION_PHONE || '393457905205';
         const adminMsg =
           `Promemoria Membership in Scadenza\n\n` +

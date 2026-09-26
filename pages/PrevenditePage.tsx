@@ -137,7 +137,11 @@ const PrevenditePage: React.FC = () => {
       });
 
       const esito = await risposta.json();
-      if (!risposta.ok) throw new Error(esito.error || 'Pagamento non avviato');
+      if (!risposta.ok) {
+        // Pagamenti sospesi dal System Control: il messaggio va mostrato cosi' com'e'.
+        if (esito.code === 'pagamenti_online_off') { setErrore(esito.error); setInPagamento(false); return; }
+        throw new Error(esito.error || 'Pagamento non avviato');
+      }
 
       sessionStorage.setItem('dr7_pending_order', nexiOrderId);
       window.location.href = esito.paymentUrl;

@@ -22,6 +22,8 @@ import {
   preparaArticoloCarta,
   type DatiClienteOrdine,
 } from '../utils/carrelloCheckout';
+import { leggiStatoServizi, testoPrenotazioniSospese, type BusinessSito } from '../utils/statoServizi';
+import AvvisoServizioSospeso from '../components/ui/AvvisoServizioSospeso';
 
 /**
  * Pagamento del carrello.
@@ -78,6 +80,9 @@ const CheckoutPage: React.FC = () => {
   const [saldo, setSaldo] = useState<number | null>(null);
   const [inCorso, setInCorso] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  // Interruttore System Control: prenotazioni dal sito sospese per uno dei
+  // business nel carrello (abbonamenti e ricariche non sono prenotazioni).
+  const [prenotazioniSospese, setPrenotazioniSospese] = useState<string | null>(null);
   const [avanzamento, setAvanzamento] = useState<string>('');
   const [erroriCampi, setErroriCampi] = useState<Record<string, string>>({});
 
@@ -95,6 +100,19 @@ const CheckoutPage: React.FC = () => {
   // Paga solo quello che ha la spunta: il resto resta nel carrello per dopo.
   const totaleCents = totaleSelezionatiCents;
   const pagabileACredito = useMemo(() => carrelloPagabileACredito(articoliSelezionati), [articoliSelezionati]);
+
+  useEffect(() => {
+    const perTipo: Partial<Record<string, BusinessSito>> = { noleggio: 'terra', lavaggio: 'lavaggio', meccanica: 'lavaggio', tour: 'aria' };
+    const business = Array.from(new Set(articoliSelezionati.map(a => perTipo[a.tipo]).filter((b): b is BusinessSito => !!b)));
+    if (!business.length) { setPrenotazioniSospese(null); return; }
+    let annullato = false;
+    Promise.all(business.map(b => leggiStatoServizi(b))).then(stati => {
+      if (annullato) return;
+      const chiuso = stati.find(st => !st.prenotazioni.attiva);
+      setPrenotazioniSospese(chiuso ? (chiuso.prenotazioni.messaggio || 'Le prenotazioni online sono momentaneamente sospese.') : null);
+    });
+    return () => { annullato = true; };
+  }, [articoliSelezionati]);
   const creditoBastante = saldo != null && saldo * 100 >= totaleCents;
   const nessunaSpunta = articoliSelezionati.length === 0;
 
@@ -272,6 +290,7 @@ const CheckoutPage: React.FC = () => {
   const paga = async () => {
     if (inCorso) return;
     setErrore(null);
+    if (prenotazioniSospese) { setErrore(prenotazioniSospese); return; }
     if (!validaCliente()) { setPasso('cliente'); return; }
     setInCorso(true);
     try {
@@ -282,7 +301,7 @@ const CheckoutPage: React.FC = () => {
       if (metodo === 'credit') await pagaCredito(daPagare);
       else await pagaConCarta(daPagare);
     } catch (e) {
-      setErrore((e as Error).message);
+      setErrore(testoPrenotazioniSospese(e) || (e as Error).message);
       setInCorso(false);
       setAvanzamento('');
     }
@@ -575,7 +594,8 @@ const CheckoutPage: React.FC = () => {
             )}
           </div>
         )}
-        {errore && (
+        {prenotazioniSospese && <AvvisoServizioSospeso messaggio={prenotazioniSospese} />}
+        {errore && errore !== prenotazioniSospese && (
           <div className="border border-red-500/40 bg-red-500/10 text-red-300 text-sm p-4 mb-6">{errore}</div>
         )}
         <div className="flex flex-col sm:flex-row gap-3">

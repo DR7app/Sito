@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getCorsOrigin } from './utils/cors';
+import { funzioneFerma } from './utils/systemControl';
 
 // Prenotazione biglietti Tour (Noleggio Aria/Mare): valida i posti scelti,
 // crea la prenotazione (service_type heli_rental/boat_rental), marca i posti
@@ -21,6 +22,10 @@ export const handler = async (event: any) => {
   };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: 'Method not allowed' }) };
+
+  // Interruttore System Control: prenotazioni dal sito sospese per Aria (tour in elicottero).
+  const fermaPrenotazioni = await funzioneFerma('prenotazioni_online', 'aria');
+  if (fermaPrenotazioni) return { statusCode: 503, headers: corsHeaders, body: JSON.stringify({ error: fermaPrenotazioni, code: 'prenotazioni_online_off' }) };
 
   try {
     const { departureId, seatIds, customer, userId, paymentMethod, durationPriceCents, durationLabel, nexiOrderId: ordineDalCarrello, carrelloOrderId } = JSON.parse(event.body || '{}');

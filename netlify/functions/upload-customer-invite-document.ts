@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions'
 import { createClient } from '@supabase/supabase-js'
+import { nomeFileSicuro, percorsoStorage } from '../../utils/nomeFileSicuro'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -74,8 +75,7 @@ const handler: Handler = async (event) => {
             return { statusCode: 413, headers, body: JSON.stringify({ error: 'File troppo grande (max 10 MB)' }) }
         }
 
-        const safeName = String(fileName).replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80)
-        const path = `${customerId}/${Date.now()}_${kind}_${safeName}`
+        const path = percorsoStorage(customerId, `${Date.now()}_${kind}_${nomeFileSicuro(fileName)}`)
 
         const { error: upErr } = await supabase.storage
             .from(bucket)

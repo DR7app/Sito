@@ -3,6 +3,7 @@ import type { Handler } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import * as busboy from 'busboy';
 import { getCorsOrigin } from './utils/cors';
+import { nomeFileSicuro, percorsoStorage } from '../../utils/nomeFileSicuro';
 
 function getCorsHeaders(origin?: string) {
   return {
@@ -146,7 +147,7 @@ export const handler: Handler = async (event) => {
     }
 
     // Normalise le nom de fichier (évite espaces/caractères exotiques)
-    const safeName = filename.replace(/[^\w.\-]+/g, '_');
+    const safeName = nomeFileSicuro(filename);
     const ext = safeName.includes('.') ? safeName.split('.').pop()?.toLowerCase() : 'bin';
 
     // Validate file extension
@@ -158,7 +159,7 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    const path = `${userId}/${prefix}_${Date.now()}.${ext}`;
+    const path = percorsoStorage(userId, `${prefix}_${Date.now()}.${ext}`);
 
     const { error: upErr } = await supabase.storage
       .from(bucket)

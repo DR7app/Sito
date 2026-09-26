@@ -58,6 +58,7 @@ import { useAspetto } from '../../hooks/useAspetto';
 import { useStatoServizi } from '../../hooks/useStatoServizi';
 import AvvisoServizioSospeso from './AvvisoServizioSospeso';
 import { testoPrenotazioniSospese } from '../../utils/statoServizi';
+import { percorsoStorage } from '../../utils/nomeFileSicuro';
 
 // Filter out dummy/placeholder names from auth profiles (e.g. "No Name", "User", "Test")
 const DUMMY_NAMES = ['no name', 'no-name', 'noname', 'user', 'test', 'unknown', 'n/a', 'none', 'cliente'];
@@ -3414,7 +3415,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Fallback: upload directly via Supabase client
       if (!uploadPath) {
-        const directPath = `${userId}/${prefix}_${Date.now()}.${fileName.split('.').pop() || 'jpg'}`;
+        const directPath = percorsoStorage(userId, `${prefix}_${Date.now()}.${fileName.split('.').pop() || 'jpg'}`);
         const { error: directErr } = await supabase.storage
           .from(bucket)
           .upload(directPath, fileToUpload, {
@@ -6848,7 +6849,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             if (vehicleDepositLibretto && user?.id) {
                               try {
                                 const ext = vehicleDepositLibretto.name.split('.').pop();
-                                const path = `${user.id}/libretto_fronte_${Date.now()}.${ext}`;
+                                const path = percorsoStorage(user.id, `libretto_fronte_${Date.now()}.${ext}`);
                                 await supabase.storage.from('driver-licenses').upload(path, vehicleDepositLibretto);
                               } catch (e) {
                                 console.error('Libretto fronte upload error:', e);
@@ -6858,7 +6859,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             if (vehicleDepositLibrettoVerso && user?.id) {
                               try {
                                 const ext = vehicleDepositLibrettoVerso.name.split('.').pop();
-                                const path = `${user.id}/libretto_verso_${Date.now()}.${ext}`;
+                                const path = percorsoStorage(user.id, `libretto_verso_${Date.now()}.${ext}`);
                                 await supabase.storage.from('driver-licenses').upload(path, vehicleDepositLibrettoVerso);
                               } catch (e) {
                                 console.error('Libretto verso upload error:', e);

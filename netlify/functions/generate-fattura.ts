@@ -30,7 +30,7 @@ export const handler: Handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body || '{}');
-        const { bookingId, includeIVA, purchaseType, purchaseId, purchaseData } = body;
+        const { bookingId, includeIVA, purchaseType, purchaseId, purchaseData, nexiOrderId } = body;
 
         // Support both booking fattura and purchase fattura (wallet/membership)
         if (!bookingId && !purchaseId) {
@@ -40,6 +40,9 @@ export const handler: Handler = async (event) => {
         const payload: Record<string, any> = { includeIVA: includeIVA ?? true };
         if (bookingId) {
             payload.bookingId = bookingId;
+            // L'ordine Nexi che ha portato qui: il gestionale salta la fattura
+            // della prenotazione se il link era un'estensione, un saldo, ecc.
+            if (nexiOrderId) payload.nexiOrderId = nexiOrderId;
             console.log(`[generate-fattura] Proxying to admin for booking ${bookingId}`);
         } else {
             payload.purchaseType = purchaseType; // 'wallet_purchase' | 'membership_purchase'

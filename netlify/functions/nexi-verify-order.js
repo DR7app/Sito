@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 const { getCorsOrigin } = require('./utils/cors');
 
 /**
@@ -28,6 +29,37 @@ const { getCorsOrigin } = require('./utils/cors');
 const ESITI_PAGATI = ['AUTHORIZED', 'EXECUTED'];
 
 const isPagato = (esito) => ESITI_PAGATI.includes(String(esito || '').toUpperCase());
+
+/**
+ * 28/09/2026 — a cosa serviva il link. I link creati dal gestionale
+ * (estensione, saldo, penali, danni, cauzione) atterrano su questa stessa
+ * pagina, e la pagina trovava la prenotazione tramite
+ * booking_details.nexi_order_id e rigenerava la fattura dell'INTERA
+ * prenotazione: Audi RS3 del 27/09, estensione da 400 EUR, e' partita allo SDI
+ * anche la fattura principale DR7-2026-1978 da 1.990 EUR (estensione compresa).
+ * Quei pagamenti li chiude nexi-payment-callback del gestionale; la pagina deve
+ * saperlo per non toccarli. Best-effort: se la lettura fallisce torna null.
+ */
+async function scopoDelLink(orderId) {
+  try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+    const supabase = createClient(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const { data } = await supabase
+      .from('nexi_transactions')
+      .select('metadata')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const riga = Array.isArray(data) ? data[0] : null;
+    return (riga && riga.metadata && riga.metadata.payment_purpose) || null;
+  } catch (err) {
+    console.warn('[nexi-verify-order] scopo del link non letto:', err && err.message);
+    return null;
+  }
+}
 
 exports.handler = async (event) => {
   const corsHeaders = {
@@ -103,12 +135,13 @@ exports.handler = async (event) => {
     }
 
     const paid = isPagato(esito);
-    console.log(`[nexi-verify-order] ordine ${nexiOrderId} — esito Nexi: ${esito || 'nessuno'} => paid=${paid}`);
+    const purpose = paid ? await scopoDelLink(nexiOrderId) : null;
+    console.log(`[nexi-verify-order] ordine ${nexiOrderId} — esito Nexi: ${esito || 'nessuno'} => paid=${paid} scopo=${purpose || '-'}`);
 
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ paid, result: esito || null, reason: paid ? null : 'not_authorized' }),
+      body: JSON.stringify({ paid, result: esito || null, reason: paid ? null : 'not_authorized', purpose }),
     };
   } catch (err) {
     console.error('[nexi-verify-order] Verifica fallita:', err && err.message);

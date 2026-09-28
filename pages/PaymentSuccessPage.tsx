@@ -260,6 +260,7 @@ const PaymentSuccessPage: React.FC = () => {
                 // manda niente. Il pagamento vero viene comunque finalizzato dal
                 // webhook `nexi-callback`, che parla direttamente con Nexi.
                 let verificaEsito: string | null = null;
+                let scopoLink: string | null = null;
                 try {
                     const verificaRes = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/nexi-verify-order`, {
                         method: 'POST',
@@ -268,6 +269,7 @@ const PaymentSuccessPage: React.FC = () => {
                     });
                     const verifica = await verificaRes.json();
                     verificaEsito = verifica?.result ?? verifica?.reason ?? null;
+                    scopoLink = verifica?.purpose ?? null;
                     if (!verifica?.paid) {
                         console.warn('[PaymentSuccess] Pagamento NON confermato da Nexi:', verifica);
                         setPagamentoNonConfermato(true);
@@ -346,6 +348,22 @@ const PaymentSuccessPage: React.FC = () => {
                     const booking = bookings[0];
                     console.log('Found booking:', booking.id);
                     setPurchaseType('booking');
+
+                    // 28/09/2026 — link del gestionale che NON e' il pagamento
+                    // della prenotazione (estensione, saldo, penali, danni,
+                    // cauzione): lo chiude nexi-payment-callback con la SUA
+                    // fattura (solo l'importo del link) e i suoi messaggi. Qui
+                    // la prenotazione si ritrovava tramite
+                    // booking_details.nexi_order_id e si rigenerava la fattura
+                    // dell'intera prenotazione: estensione Audi RS3 del 27/09
+                    // da 400 EUR, e allo SDI e' partita anche la principale da
+                    // 1.990 EUR con l'estensione dentro. Si mostra solo l'esito.
+                    if (scopoLink && scopoLink !== 'booking') {
+                        console.log(`[PaymentSuccess] Link "${scopoLink}" del gestionale: nessuna scrittura, fattura o messaggio da qui`);
+                        setUpdating(false);
+                        return;
+                    }
+
                     trackBookingCompleted(booking);
 
                     // Update if not already confirmed (backward compat + idempotency)
@@ -371,7 +389,7 @@ const PaymentSuccessPage: React.FC = () => {
                     fetch(`${FUNCTIONS_BASE}/.netlify/functions/generate-fattura`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ bookingId: booking.id, includeIVA: true }),
+                        body: JSON.stringify({ bookingId: booking.id, includeIVA: true, nexiOrderId: orderId }),
                     }).then(r => console.log('[PaymentSuccess] booking fattura trigger:', r.status))
                       .catch(e => console.error('[PaymentSuccess] booking fattura trigger failed:', e));
 

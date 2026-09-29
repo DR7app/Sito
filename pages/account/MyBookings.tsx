@@ -257,6 +257,23 @@ const MyBookings = () => {
       isElite,
     });
 
+    // 2026-09-29: niente rimborso su una prenotazione mai pagata (link Nexi
+    // non pagato, preventivo simulato). Prima si rimborsava il 90% di
+    // price_total a prescindere: 704,62 EUR regalati. Il database ora rifiuta
+    // comunque il rimborso (trg_dr7_rimborso_solo_se_pagato).
+    const isPaid = ['paid', 'succeeded', 'completed'].includes(String(booking.payment_status || '').toLowerCase());
+
+    if (rule && !isPaid) {
+      return {
+        canCancel: true,
+        hasFlex: false,
+        refundPercent: 0,
+        penaltyPercent: 0,
+        refundMethod: 'wallet',
+        message: t({ it: 'Prenotazione non ancora pagata: puoi annullarla senza costi, non ci sono importi da rimborsare.', en: 'This booking has not been paid yet: you can cancel it at no cost, there is nothing to refund.' }),
+      };
+    }
+
     if (rule) {
       const penalty = Math.max(0, 100 - rule.refundPercent);
       const dest = rule.refundMethod === 'card'

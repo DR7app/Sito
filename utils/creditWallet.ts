@@ -59,45 +59,14 @@ export async function addCredits(
     p_reference_type: referenceType || 'purchase'
   });
 
+  // 2026-09-29: niente piu' strada di riserva che scriveva saldo e movimento
+  // dal browser in due passi. add_credits falliva sempre con una prenotazione
+  // (testo in colonna uuid) e la riserva accreditava senza nessun controllo:
+  // cosi' e' passato un rimborso di 704,62 EUR su una prenotazione mai pagata.
+  // Se la RPC fallisce, l'accredito non avviene.
   if (error) {
     console.error('Error in addCredits RPC:', error);
-    // Fallback: direct insert if RPC fails (e.g. overload ambiguity)
-    try {
-      const { data: balanceRow } = await supabase
-        .from('user_credit_balance')
-        .select('balance')
-        .eq('user_id', userId)
-        .single();
-
-      const currentBalance = balanceRow?.balance ? parseFloat(balanceRow.balance) : 0;
-      const newBalance = currentBalance + amount;
-
-      await supabase
-        .from('user_credit_balance')
-        .upsert({
-          user_id: userId,
-          balance: newBalance,
-          last_updated: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-
-      await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: userId,
-          transaction_type: 'credit',
-          amount: amount,
-          balance_after: newBalance,
-          description: description,
-          reference_id: referenceId || null,
-          reference_type: referenceType || 'purchase'
-        });
-
-      console.log(`Credits added via fallback: €${amount} (new balance: €${newBalance})`);
-      return { success: true, newBalance };
-    } catch (fallbackErr: any) {
-      console.error('Fallback credit insert also failed:', fallbackErr);
-      return { success: false, newBalance: 0, error: fallbackErr.message };
-    }
+    return { success: false, newBalance: 0, error: error.message };
   }
 
   const result = data?.[0] || data;

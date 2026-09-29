@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
-const { getCorsOrigin } = require('./utils/cors');
+const { getCorsOrigin } = require('./utils/cors.js');
 
 /**
  * Verifica server-to-server l'esito reale di un ordine Nexi.

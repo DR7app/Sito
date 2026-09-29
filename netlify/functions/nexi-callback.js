@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
-const { getClubCashbackPct } = require('./utils/dr7ClubCashback');
-const { finalizzaRicarica } = require('./utils/ricaricaWallet');
+const { getClubCashbackPct } = require('./utils/dr7ClubCashback.js');
+const { finalizzaRicarica } = require('./utils/ricaricaWallet.js');
 
 /**
  * Sends the "Ingresso DR7 Club" template (from Messaggi di Sistema Pro)

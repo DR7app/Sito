@@ -1,6 +1,6 @@
 const crypto = require('crypto');
-const { getCorsOrigin } = require('./utils/cors');
-const { funzioneFerma } = require('./utils/systemControl');
+const { getCorsOrigin } = require('./utils/cors.js');
+const { funzioneFerma } = require('./utils/systemControl.js');
 
 /**
  * Netlify Function to create Nexi XPay payment using API method

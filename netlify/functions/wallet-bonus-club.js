@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { getCorsOrigin } = require('./utils/cors');
+const { getCorsOrigin } = require('./utils/cors.js');
 
 /**
  * Bonus di iscrizione DR7 Club (10 EUR) sul Credit Wallet.

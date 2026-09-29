@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { getClubCashbackPct } = require('./utils/dr7ClubCashback');
+const { getClubCashbackPct } = require('./utils/dr7ClubCashback.js');
 
 // Applica il cashback DR7 Club su una ricarica wallet pagata con carta.
 // IDEMPOTENTE: salta se un cashback (card_bonus / cashback_3_percent) esiste già

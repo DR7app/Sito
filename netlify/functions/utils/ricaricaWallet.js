@@ -1,4 +1,4 @@
-const { leggiOrdineNexi } = require('./nexiOrdine');
+const { leggiOrdineNexi } = require('./nexiOrdine.js');
 
 /**
  * Finalizza una ricarica Credit Wallet: UNA sola strada, usata sia dalla

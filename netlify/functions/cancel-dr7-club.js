@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { getCorsOrigin } = require('./utils/cors');
+const { getCorsOrigin } = require('./utils/cors.js');
 
 // Cancellazione definitiva del DR7 Club, chiesta dal cliente dal suo profilo.
 //

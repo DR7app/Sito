@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
-const { getCorsOrigin } = require('./utils/cors');
-const { finalizzaRicarica } = require('./utils/ricaricaWallet');
+const { getCorsOrigin } = require('./utils/cors.js');
+const { finalizzaRicarica } = require('./utils/ricaricaWallet.js');
 
 /**
  * Chiude una ricarica Credit Wallet dalla pagina di esito del pagamento.

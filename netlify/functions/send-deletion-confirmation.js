@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { funzioneFerma } = require('./utils/systemControl');
+const { funzioneFerma } = require('./utils/systemControl.js');
 
 exports.handler = async (event) => {
     // Only allow POST requests

@@ -1,6 +1,6 @@
 // Simple test endpoint for Nexi X-Pay
 // Access at: /.netlify/functions/test-nexi
-const { getCorsOrigin } = require('./utils/cors');
+const { getCorsOrigin } = require('./utils/cors.js');
 
 exports.handler = async (event) => {
     // Handle CORS

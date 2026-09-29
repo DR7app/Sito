@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
-const { funzioneFerma } = require('./utils/systemControl');
+const { funzioneFerma } = require('./utils/systemControl.js');
 
 /**
  * Scheduled function — runs daily at 06:00 UTC

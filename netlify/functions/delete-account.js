@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { getCorsOrigin } = require('./utils/cors');
+const { getCorsOrigin } = require('./utils/cors.js');
 
 exports.handler = async (event) => {
     const headers = {

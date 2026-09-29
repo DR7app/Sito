@@ -1,6 +1,6 @@
 // netlify/functions/create-payment-intent.js
-const { getCorsOrigin } = require('./utils/cors');
-const { funzioneFerma } = require('./utils/systemControl');
+const { getCorsOrigin } = require('./utils/cors.js');
+const { funzioneFerma } = require('./utils/systemControl.js');
 
 // Store current request origin for CORS (set per-request in handler)
 let _currentOrigin = '';

@@ -207,6 +207,18 @@ const MyBookings = () => {
     // comunque il rimborso (trg_dr7_rimborso_solo_se_pagato).
     const isPaid = ['paid', 'succeeded', 'completed'].includes(String(booking.payment_status || '').toLowerCase());
 
+    const isAcconto = ['partial', 'parziale'].includes(String(booking.payment_status || '').toLowerCase());
+    if (rule && isAcconto) {
+      return {
+        canCancel: true,
+        hasFlex: false,
+        refundPercent: 0,
+        penaltyPercent: 0,
+        refundMethod: 'wallet',
+        message: t({ it: "Prenotazione con acconto: DR7 verificherà quanto hai pagato e ti contatterà per il rimborso.", en: 'Booking with a deposit paid: DR7 will check the amount paid and contact you about the refund.' }),
+      };
+    }
+
     if (rule && !isPaid) {
       return {
         canCancel: true,

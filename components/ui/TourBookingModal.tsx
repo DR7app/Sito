@@ -12,6 +12,13 @@ import { useAspetto } from '../../hooks/useAspetto';
 import { useStatoServizi } from '../../hooks/useStatoServizi';
 import AvvisoServizioSospeso from './AvvisoServizioSospeso';
 
+/** 29/09/2026: book-tour riconosce il cliente dal token, non dallo userId nel corpo. */
+async function intestazioneAccesso(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 const FUNCTIONS_BASE =
   (import.meta as any).env?.VITE_FUNCTIONS_BASE ??
   (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:8888' : (typeof window !== 'undefined' ? window.location.origin : ''));
@@ -244,7 +251,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
     setSubmitting(true);
     try {
       const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(await intestazioneAccesso()) },
         body: JSON.stringify({
           departureId,
           seatIds: Array.from(selected),
@@ -302,7 +309,7 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
     setSubmitting(true);
     try {
       const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(await intestazioneAccesso()) },
         body: JSON.stringify({
           departureId,
           seatIds: Array.from(selected),

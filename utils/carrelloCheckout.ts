@@ -30,6 +30,13 @@ import type { Prevendita } from './prevendite';
 import { rigaAcquistoPrevendita, acquistaPrevenditaConCredito } from './prevenditeAcquisto';
 import { caricaDatiFatturaCliente } from './datiFatturaCliente';
 
+/** 29/09/2026: book-tour riconosce il cliente dal token, non dallo userId nel corpo. */
+async function intestazioneAccesso(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const FUNCTIONS_BASE =
   (import.meta as { env?: Record<string, string> }).env?.VITE_FUNCTIONS_BASE ??
   (typeof window !== 'undefined' && window.location.hostname === 'localhost'
@@ -249,7 +256,7 @@ export async function preparaArticoloCarta(
         const d = articolo.dati as Dati;
         const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(await intestazioneAccesso()) },
           body: JSON.stringify({ ...d, userId, nexiOrderId: ordine, carrelloOrderId: ordinePadre }),
         });
         const dati = await res.json();
@@ -402,7 +409,7 @@ export async function pagaArticoloACredito(
         const d = articolo.dati as Dati;
         const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/book-tour`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(await intestazioneAccesso()) },
           body: JSON.stringify({ ...d, userId, paymentMethod: 'credit_wallet' }),
         });
         const dati = await res.json();

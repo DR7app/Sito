@@ -33,6 +33,32 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL |
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const PAGATI = ['paid', 'succeeded', 'completed']
+
+/** Il numero d'ordine compare solo su questa prenotazione (nessun'altra riga lo usa)? */
+async function ordineSoloDiQuesta(sb: any, ordine: string, bookingId: string): Promise<boolean> {
+  const controlli: Array<[string, (q: any) => any]> = [
+    ['bookings', (q) => q.eq('nexi_order_id', ordine).neq('id', bookingId)],
+    ['bookings', (q) => q.eq('booking_details->>nexi_order_id', ordine).neq('id', bookingId)],
+    ['credit_wallet_purchases', (q) => q.eq('nexi_order_id', ordine)],
+    ['membership_purchases', (q) => q.eq('nexi_order_id', ordine)],
+    ['dr7_club_subscriptions', (q) => q.eq('nexi_order_id', ordine)],
+    ['prevendite_clienti', (q) => q.eq('nexi_order_id', ordine)],
+  ]
+  for (const [tabella, filtro] of controlli) {
+    const { data, error } = await filtro(sb.from(tabella).select('id')).limit(1)
+    if (error || (data && data.length > 0)) return false
+  }
+  return true
+}
+
+/** Email dell'account e della sua scheda cliente, in minuscolo. */
+async function emailDelCliente(sb: any, userId: string, emailAccount?: string | null): Promise<Set<string>> {
+  const { data: schede } = await sb.from('customers_extended').select('email').eq('user_id', userId)
+  return new Set(
+    [emailAccount, ...((schede || []).map((r: { email?: string }) => r.email))]
+      .filter(Boolean).map((e) => String(e).toLowerCase().trim())
+  )
+}
 const r2 = (n: number) => Math.round(n * 100) / 100
 
 export const handler: Handler = async (event) => {
@@ -120,30 +146,43 @@ export const handler: Handler = async (event) => {
     if (!annullata) return risposta(409, { error: 'Prenotazione gia\' annullata' })
 
     // ── Quanto e' stato davvero incassato ─────────────────────────────────
-    const pagata = PAGATI.includes(String(booking.payment_status || '').toLowerCase())
+    const statoPagamento = String(booking.payment_status || '').toLowerCase()
+    const pagata = PAGATI.includes(statoPagamento)
+    // Acconto: qualcosa e' stato pagato, ma non il totale. Niente automatico,
+    // decide l'ufficio (prima: nessun rimborso e nessun avviso all'ufficio).
+    const parziale = ['partial', 'parziale'].includes(statoPagamento)
     const totaleEur = r2(Number(booking.price_total || 0) / 100)
     let incassatoEur = 0
     let prova: string | null = null
 
     if (pagata && regola.refundPercent > 0) {
+      // Solo i movimenti DEL CLIENTE sul SUO wallet, e ogni rimborso gia' fatto
+      // si toglie (storno del trigger e rimborsi di cancellazione). Prima si
+      // contavano anche gli addebiti di altri account sulla stessa prenotazione.
       const { data: movimenti } = await sb
         .from('credit_transactions')
         .select('transaction_type, reference_type, amount')
         .eq('reference_id', booking.id)
+        .eq('user_id', userId)
       const dalWallet = (movimenti || []).reduce((acc: number, m: { transaction_type: string; reference_type: string | null; amount: number }) => {
         if (m.transaction_type === 'debit') return acc + Number(m.amount || 0)
-        if (m.reference_type === 'booking_refund') return acc - Number(m.amount || 0)
+        if (['booking_refund', 'refund', 'booking_cancellation_refund'].includes(String(m.reference_type))) return acc - Number(m.amount || 0)
         return acc
       }, 0)
       if (dalWallet > 0.009) {
         incassatoEur = r2(dalWallet)
         prova = 'wallet'
       } else {
-        const ordine = booking.nexi_order_id || bd.nexi_order_id
-        if (ordine) {
+        const ordine = String(booking.nexi_order_id || bd.nexi_order_id || '')
+        // L'ordine Nexi vale come prova solo se: e' di questa prenotazione e
+        // di nessun'altra riga, e su Nexi e' intestato a questo cliente. La
+        // prenotazione la scrive il browser: senza questi controlli ci si
+        // poteva mettere il numero di un ordine pagato da qualcun altro.
+        if (/^[A-Za-z0-9]{6,50}$/.test(ordine) && await ordineSoloDiQuesta(sb, ordine, booking.id)) {
           try {
             const esito = await leggiOrdineNexi(ordine)
-            if (esito.paid && esito.importoCents > 0) {
+            const emailValide = await emailDelCliente(sb, userId, userData?.user?.email)
+            if (esito.paid && esito.importoCents > 0 && emailValide.has(esito.clienteOrdine)) {
               incassatoEur = r2(esito.importoCents / 100)
               prova = 'nexi'
             }
@@ -162,7 +201,7 @@ export const handler: Handler = async (event) => {
 
     // Pagata ma senza prova d'incasso automatica, oppure regola "su carta":
     // la decide l'ufficio.
-    const manuale = pagata && regola.refundPercent > 0 && (regola.refundMethod === 'card' || !prova)
+    const manuale = (pagata || parziale) && regola.refundPercent > 0 && (regola.refundMethod === 'card' || !prova || parziale)
     if (manuale) {
       const importoIndicativo = rimborsoEur > 0 ? rimborsoEur : r2((totaleEur * regola.refundPercent) / 100)
       await sb
@@ -177,7 +216,9 @@ export const handler: Handler = async (event) => {
               status: 'pending',
               note: regola.refundMethod === 'card'
                 ? 'Cancellazione cliente — admin deve processare rimborso su carta via Nexi terminal'
-                : 'Cancellazione cliente — incasso non verificabile in automatico: controllare il pagamento e rimborsare a mano',
+                : parziale
+                  ? 'Cancellazione cliente — prenotazione con acconto: controllare quanto incassato e rimborsare a mano'
+                  : 'Cancellazione cliente — incasso non verificabile in automatico: controllare il pagamento e rimborsare a mano',
             },
           },
         })

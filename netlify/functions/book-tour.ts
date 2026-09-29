@@ -28,7 +28,7 @@ export const handler = async (event: any) => {
   if (fermaPrenotazioni) return { statusCode: 503, headers: corsHeaders, body: JSON.stringify({ error: fermaPrenotazioni, code: 'prenotazioni_online_off' }) };
 
   try {
-    const { departureId, seatIds, customer, userId, paymentMethod, durationPriceCents, durationLabel, nexiOrderId: ordineDalCarrello, carrelloOrderId } = JSON.parse(event.body || '{}');
+    const { departureId, seatIds, customer, userId: userIdDalCorpo, paymentMethod, durationPriceCents, durationLabel, nexiOrderId: ordineDalCarrello, carrelloOrderId } = JSON.parse(event.body || '{}');
     if (!departureId || !Array.isArray(seatIds) || seatIds.length === 0 || !customer?.name) {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Dati mancanti (partenza, posti o cliente).' }) };
     }
@@ -36,9 +36,21 @@ export const handler = async (event: any) => {
     // legato all'account). Tutto il flusso (validazione posti + addebito + posto
     // venduto) avviene server-side con service role, atomico, anti-oversell.
     const isWallet = paymentMethod === 'credit_wallet';
-    if (isWallet && !userId) {
+    // 29/09/2026: l'account lo dice il TOKEN, non il corpo della richiesta.
+    // Prima bastava scrivere lo userId di un altro cliente per pagare col suo
+    // wallet. Col wallet il token e' obbligatorio; con la carta (nessun credito
+    // in gioco) si accetta ancora lo userId del corpo finche' tutte le pagine
+    // aperte non mandano il token.
+    const jwt = String(event.headers.authorization || event.headers.Authorization || '').replace(/^Bearer\s+/i, '');
+    let utenteToken: string | null = null;
+    if (jwt) {
+      const { data: tokenData } = await supabase.auth.getUser(jwt);
+      utenteToken = tokenData?.user?.id || null;
+    }
+    if (isWallet && !utenteToken) {
       return { statusCode: 401, headers: corsHeaders, body: JSON.stringify({ error: 'Devi effettuare il login per pagare con Credit Wallet.' }) };
     }
+    const userId: string | null = utenteToken || (isWallet ? null : (typeof userIdDalCorpo === 'string' && userIdDalCorpo ? userIdDalCorpo : null));
 
     // Partenza + tour (catalogo)
     const { data: dep, error: depErr } = await supabase
@@ -153,26 +165,18 @@ export const handler = async (event: any) => {
         created_at: new Date().toISOString(),
       }).select('id').single();
       if (bErr || !booking) {
+        // DR7WL = credito insufficiente, deciso dal trigger del wallet.
+        if (bErr && (bErr as { code?: string }).code === 'DR7WL') {
+          return { statusCode: 402, headers: corsHeaders, body: JSON.stringify({ error: bErr.message }) };
+        }
         return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Errore creazione prenotazione: ' + (bErr?.message || '') }) };
       }
-      // --- FLUSSO WALLET: addebita PRIMA, poi marca i posti venduti ---
-      // 1) Addebito atomico (RPC deduct_credits lavora in EURO, FOR UPDATE: niente
-      //    double-spend). reference_id = bookingId (UUID).
+      // --- FLUSSO WALLET ---
+      // 29/09/2026: l'addebito lo fa il database all'inserimento qui sopra
+      // (trg_dr7_wallet_sync_prenotazione: 'succeeded' + 'credit_wallet').
+      // Qui si chiamava ANCHE deduct_credits: il cliente pagava il tour due
+      // volte. Se il credito non bastava, l'inserimento stesso e' fallito.
       const totalEuros = totalCents / 100;
-      const { data: dedData, error: dedErr } = await supabase.rpc('deduct_credits', {
-        p_user_id: userId,
-        p_amount: totalEuros,
-        p_description: `Tour ${tour?.name || ''} — ${seats.length} posto/i (${seatLabels})`,
-        p_reference_id: booking.id,
-        p_transaction_type: 'tour_booking',
-      });
-      const dedResult = (dedData && (dedData[0] || dedData)) || null;
-      if (dedErr || !dedResult?.success) {
-        // Addebito fallito: nessun credito tolto -> elimina la prenotazione, niente posti.
-        await supabase.from('bookings').delete().eq('id', booking.id);
-        const msg = dedErr?.message || dedResult?.error_message || 'Credito insufficiente';
-        return { statusCode: 402, headers: corsHeaders, body: JSON.stringify({ error: msg }) };
-      }
 
       // 2) Posti -> 'sold' (pagamento gia' avvenuto) SOLO se ancora available (anti race).
       const { data: soldSeats, error: soldErr } = await supabase
@@ -233,7 +237,10 @@ export const handler = async (event: any) => {
           bookingId: booking.id,
           paid: true,
           paymentMethod: 'credit_wallet',
-          newBalance: dedResult?.new_balance ?? null,
+          newBalance: await (async () => {
+            const { data: saldoRow } = await supabase.from('user_credit_balance').select('balance').eq('user_id', userId).maybeSingle();
+            return saldoRow ? Number(saldoRow.balance) : null;
+          })(),
           amountCents: totalCents,
           amountEuros: totalEuros,
           description: `${tour?.name || 'Tour'} — ${seats.length} posto/i (${seatLabels})`,

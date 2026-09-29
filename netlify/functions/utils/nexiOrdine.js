@@ -53,7 +53,10 @@ async function leggiOrdineNexi(orderId) {
     ? Number(stato.capturedAmount || 0) || Number(stato.authorizedAmount || 0) || Number(opPagata && opPagata.operationAmount) || 0
     : 0;
 
-  return { paid, esito: esito || null, importoCents, reason: paid ? null : 'not_authorized' };
+  // A chi appartiene l'ordine: create-nexi-payment ci mette l'email del cliente.
+  const clienteOrdine = String((data.order && data.order.customerId) || '').toLowerCase();
+
+  return { paid, esito: esito || null, importoCents, clienteOrdine, reason: paid ? null : 'not_authorized' };
 }
 
 module.exports = { leggiOrdineNexi, isPagato };

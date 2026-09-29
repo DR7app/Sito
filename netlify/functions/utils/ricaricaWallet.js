@@ -44,6 +44,25 @@ async function pacchettiDalCms(supabase) {
     .filter(p => p.id && p.rechargeAmount > 0);
 }
 
+/** Dove altro compare questo numero d'ordine? null = da nessuna parte. */
+async function ordineGiaUsato(supabase, ordineId, purchaseId) {
+  const controlli = [
+    ['credit_wallet_purchases', (q) => q.eq('nexi_order_id', ordineId).neq('id', purchaseId)],
+    ['bookings', (q) => q.eq('nexi_order_id', ordineId)],
+    ['bookings', (q) => q.eq('booking_details->>nexi_order_id', ordineId)],
+    ['membership_purchases', (q) => q.eq('nexi_order_id', ordineId)],
+    ['dr7_club_subscriptions', (q) => q.eq('nexi_order_id', ordineId)],
+    ['prevendite_clienti', (q) => q.eq('nexi_order_id', ordineId)],
+    ['ordini_carrello', (q) => q.eq('nexi_order_id', ordineId)],
+  ];
+  for (const [tabella, filtro] of controlli) {
+    const { data, error } = await filtro(supabase.from(tabella).select('id')).limit(1);
+    if (error) throw new Error(`controllo ordine su ${tabella} fallito: ${error.message}`);
+    if (data && data.length > 0) return tabella;
+  }
+  return null;
+}
+
 /** Calcola principale e bonus spettanti. Pura, testabile. */
 function calcolaAccredito(purchase, pacchetti, pagatoEur) {
   const ricaricaScelta = r2(purchase.recharge_amount || purchase.received_amount);
@@ -81,10 +100,36 @@ async function finalizzaRicarica(supabase, purchase, { importoCents } = {}) {
   const giaChiusa = ['succeeded', 'completed', 'paid'].includes(String(purchase.payment_status || '').toLowerCase());
   if (giaChiusa) return { vinta: false, gia: true };
 
+  // 29/09/2026 (revisione indipendente) — un ordine Nexi pagato vale per UNA
+  // sola ricarica, e solo per chi l'ha pagato. Prima il cliente poteva
+  // scrivere nella propria riga 'pending' il numero di un ordine gia' pagato
+  // (suo, gia' accreditato, o di un altro cliente) e farsi accreditare di nuovo.
+  const ordineId = String(purchase.nexi_order_id || '');
+  if (!/^[A-Za-z0-9]{6,50}$/.test(ordineId)) {
+    return { vinta: false, gia: false, nonPagata: true, reason: 'ordine_non_valido' };
+  }
+  const usato = await ordineGiaUsato(supabase, ordineId, purchase.id);
+  if (usato) {
+    console.warn(`[ricaricaWallet] ordine ${ordineId} gia' usato da ${usato}: ricarica ${purchase.id} rifiutata`);
+    return { vinta: false, gia: false, nonPagata: true, reason: 'ordine_gia_usato' };
+  }
+
   let cents = Number(importoCents || 0);
   if (!(cents > 0)) {
-    const ordine = await leggiOrdineNexi(purchase.nexi_order_id);
+    const ordine = await leggiOrdineNexi(ordineId);
     if (!ordine.paid) return { vinta: false, gia: false, nonPagata: true, reason: ordine.reason };
+    // L'email dell'ordine (quella scritta nel modulo di ricarica) deve essere
+    // quella dell'account o quella della sua scheda cliente.
+    const { data: account } = await supabase.auth.admin.getUserById(purchase.user_id);
+    const { data: scheda } = await supabase.from('customers_extended').select('email').eq('user_id', purchase.user_id);
+    const emailValide = new Set(
+      [account && account.user && account.user.email, ...((scheda || []).map((r) => r.email))]
+        .filter(Boolean).map((e) => String(e).toLowerCase().trim())
+    );
+    if (!ordine.clienteOrdine || !emailValide.has(ordine.clienteOrdine)) {
+      console.warn(`[ricaricaWallet] ordine ${ordineId} di "${ordine.clienteOrdine}", ricarica di un altro account: rifiutata`);
+      return { vinta: false, gia: false, nonPagata: true, reason: 'ordine_di_un_altro_cliente' };
+    }
     cents = ordine.importoCents;
   }
   const pagatoEur = r2(cents / 100);

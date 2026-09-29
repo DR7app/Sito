@@ -923,7 +923,11 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
         let esitoRicarica;
         try {
           esitoRicarica = await finalizzaRicarica(supabase, purchase, {
-            importoCents: (rawParams.datiCarta && rawParams.datiCarta.importo_cent) || Number(rawParams.importo) || 0,
+            // HPP: importo verificato su Nexi (datiCarta). Vecchio XPay: `importo`
+            // del corpo, firmato dal MAC. Altrimenti 0 = lo chiede a Nexi.
+            importoCents: rawParams.datiCarta
+              ? Number(rawParams.datiCarta.importo_cent || 0)
+              : (rawParams.mac ? Number(rawParams.importo || 0) : 0),
           });
         } catch (ricaricaErr) {
           console.error('Error finalizing wallet purchase:', ricaricaErr);
@@ -1501,7 +1505,11 @@ exports.handler = async (event) => {
     console.log('Content-Type:', event.headers['content-type']);
     console.log('Raw body (first 500 chars):', (event.body || '').substring(0, 500));
 
-    const { orderId, isSuccess, authCode, errorMessage, isHPP, rawParams } = parseCallback(event);
+    // 29/09/2026: `let`, non `const`: sotto l'esito viene sostituito da quello
+    // verificato su Nexi. Con `const` la riassegnazione lanciava un TypeError e
+    // il webhook rispondeva 500 proprio quando callback e Nexi non coincidevano.
+    // eslint-disable-next-line prefer-const
+    let { orderId, isSuccess, authCode, errorMessage, isHPP, rawParams } = parseCallback(event);
 
     console.log('Parsed callback:', { orderId, isSuccess, authCode, errorMessage, isHPP });
     console.log('Raw params:', JSON.stringify(rawParams, null, 2));
@@ -1577,13 +1585,15 @@ exports.handler = async (event) => {
             && ['AUTHORIZATION', 'CAPTURE'].includes(String(o.operationType || '').toUpperCase()));
           if (op) verifiedResult = op.operationResult;
         }
-        if (verifiedResult) {
-          const verifiedSuccess = riuscito(verifiedResult);
-          if (verifiedSuccess !== isSuccess) {
-            console.warn(`Callback claimed ${isSuccess ? 'success' : 'failure'} but Nexi API says ${verifiedSuccess ? 'success' : 'failure'} — using verified result`);
-            isSuccess = verifiedSuccess;
-          }
+        // 29/09/2026 — FAIL-CLOSED. Conta SOLO quello che dice Nexi. Prima, se
+        // Nexi non riportava alcun esito (ordine creato e mai tentato), restava
+        // l'esito dichiarato dal corpo della richiesta: un POST falso con
+        // operationResult=EXECUTED faceva accreditare una ricarica mai pagata.
+        const verifiedSuccess = riuscito(verifiedResult);
+        if (verifiedSuccess !== isSuccess) {
+          console.warn(`Callback claimed ${isSuccess ? 'success' : 'failure'} but Nexi API says ${verifiedResult || 'nessun esito'} — using verified result`);
         }
+        isSuccess = verifiedSuccess;
 
         // 14/09/2026 — dati della carta usata, per la scheda cliente.
         // Servono al gestionale (tab Nexi + "Porta le carte nelle schede")
@@ -1599,7 +1609,10 @@ exports.handler = async (event) => {
             nome: verifyData.customerInfo?.cardHolderName || '',
             masked_pan: opPagata?.paymentInstrumentInfo || opPagata?.cardNumber || '',
             circuit: opPagata?.paymentCircuit || '',
-            importo_cent: Number(verifyData.order?.amount || opPagata?.operationAmount || 0) || 0,
+            // Incassato davvero (non l'importo "richiesto" dell'ordine).
+            importo_cent: verifiedSuccess
+              ? (Number(verifyData.orderStatus?.capturedAmount || 0) || Number(verifyData.orderStatus?.authorizedAmount || 0) || Number(opPagata?.operationAmount || 0) || 0)
+              : 0,
             descrizione: verifyData.order?.description || '',
           };
         } catch (cardErr) {
@@ -1672,7 +1685,25 @@ exports.handler = async (event) => {
       for (const articolo of articoli) {
         if (!articolo || !articolo.ordine) continue;
         try {
-          const esito = await elaboraOrdine(supabase, articolo.ordine, isSuccess, authCode, errorMessage, rawParams);
+          // 29/09/2026: Nexi incassa l'ordine PADRE (tutto il carrello). Una
+          // ricarica dentro il carrello deve vedere la SUA quota, non il
+          // totale: altrimenti "incassato != prezzo del pacchetto" e il bonus
+          // non veniva accreditato. La quota e' la ricarica stessa se il
+          // carrello e' stato pagato per intero, altrimenti al massimo
+          // quanto Nexi ha incassato.
+          let parametri = rawParams;
+          if (articolo.tipo === 'wallet' && rawParams.datiCarta) {
+            const incassatoCarrello = Number(rawParams.datiCarta.importo_cent || 0);
+            const totaleCarrello = Number(ordineCarrello.totale_cents || 0);
+            const { data: rigaRicarica } = await supabase
+              .from('credit_wallet_purchases').select('recharge_amount').eq('nexi_order_id', articolo.ordine).maybeSingle();
+            const ricaricaCents = Math.round(Number((rigaRicarica && rigaRicarica.recharge_amount) || 0) * 100);
+            const quota = totaleCarrello > 0 && incassatoCarrello >= totaleCarrello
+              ? ricaricaCents
+              : Math.min(ricaricaCents, incassatoCarrello);
+            parametri = { ...rawParams, datiCarta: { ...rawParams.datiCarta, importo_cent: quota } };
+          }
+          const esito = await elaboraOrdine(supabase, articolo.ordine, isSuccess, authCode, errorMessage, parametri);
           console.log(`[nexi-callback] articolo ${articolo.ordine} (${articolo.tipo}) ->`, esito && esito.statusCode);
         } catch (erroreArticolo) {
           // Un articolo che va storto non deve fermare gli altri: il cliente

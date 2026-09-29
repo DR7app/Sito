@@ -50,7 +50,6 @@ async function ordineGiaUsato(supabase, ordineId, purchaseId) {
     ['credit_wallet_purchases', (q) => q.eq('nexi_order_id', ordineId).neq('id', purchaseId)],
     ['bookings', (q) => q.eq('nexi_order_id', ordineId)],
     ['bookings', (q) => q.eq('booking_details->>nexi_order_id', ordineId)],
-    ['membership_purchases', (q) => q.eq('nexi_order_id', ordineId)],
     ['dr7_club_subscriptions', (q) => q.eq('nexi_order_id', ordineId)],
     ['prevendite_clienti', (q) => q.eq('nexi_order_id', ordineId)],
     ['ordini_carrello', (q) => q.eq('nexi_order_id', ordineId)],
@@ -187,4 +186,4 @@ async function finalizzaRicarica(supabase, purchase, { importoCents } = {}) {
   return { vinta: true, gia: false, principale, bonus, nota, purchase: vinta };
 }
 
-module.exports = { finalizzaRicarica, calcolaAccredito, pacchettiDalCms };
+module.exports = { finalizzaRicarica, calcolaAccredito, pacchettiDalCms, ordineGiaUsato };

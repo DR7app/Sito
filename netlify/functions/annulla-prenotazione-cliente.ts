@@ -40,7 +40,6 @@ async function ordineSoloDiQuesta(sb: any, ordine: string, bookingId: string): P
     ['bookings', (q) => q.eq('nexi_order_id', ordine).neq('id', bookingId)],
     ['bookings', (q) => q.eq('booking_details->>nexi_order_id', ordine).neq('id', bookingId)],
     ['credit_wallet_purchases', (q) => q.eq('nexi_order_id', ordine)],
-    ['membership_purchases', (q) => q.eq('nexi_order_id', ordine)],
     ['dr7_club_subscriptions', (q) => q.eq('nexi_order_id', ordine)],
     ['prevendite_clienti', (q) => q.eq('nexi_order_id', ordine)],
   ]

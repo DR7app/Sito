@@ -13,7 +13,7 @@ import { seatListLabel } from '../utils/seatPlan';
 import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate, orariLavaggioPronti, riassuntoSettimana } from '../utils/lavaggioHours';
 import CalendarioLavaggio from '../components/ui/CalendarioLavaggio';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
-import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
+import { getUserCreditBalance, hasSufficientBalance } from '../utils/creditWallet';
 import { dataRoma } from '../utils/oraRoma';
 import { normalizePlate } from '../utils/lookupTarga';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
@@ -1395,25 +1395,12 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
           return;
         }
 
-        // Deduct credits
-        const serviceName = hasCartItems
-          ? cartItems.map(i => serviceNameWithSeats(i, lang)).join(', ')
-          : (lang === 'it' ? selectedService?.name : selectedService?.nameEn);
-        const deductResult = await deductCredits(
-          user.id,
-          totalAmount,
-          `Lavaggio ${serviceName}`,
-          undefined,
-          'car_wash_booking'
-        );
-
-        if (!deductResult.success) {
-          clearTimeout(safetyTimer);
-          setPaymentError(deductResult.error || 'Failed to deduct credits');
-          isSubmittingRef.current = false;
-          setIsProcessing(false);
-          return;
-        }
+        // 29/09/2026: niente addebito da qui. Lo fa il database quando la
+        // prenotazione viene salvata (trg_dr7_wallet_sync_prenotazione):
+        // addebito e prenotazione riescono o falliscono insieme, e se il
+        // credito non basta il salvataggio viene rifiutato. Prima si
+        // addebitava dal browser e, se l'inserimento falliva, si
+        // "rimborsava" con add_credits dal browser.
 
         // Create booking data for credit payment
         bookingDataWithPayment = {
@@ -1422,7 +1409,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
           payment_method: 'credit_wallet'
         };
 
-        // Create booking in database — if this fails, we MUST refund the credits
+        // Create booking in database (the DB trigger charges the wallet on insert)
         const { data, error } = await supabase
           .from('bookings')
           .insert(bookingDataWithPayment)
@@ -1431,21 +1418,6 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
 
         if (error) {
           console.error('Database error:', error);
-          // CRITICAL: Refund credits since booking failed but credits were already deducted
-          console.error('Booking insert failed after credit deduction — refunding credits...');
-          try {
-            await addCredits(
-              user.id,
-              totalAmount,
-              `Rimborso automatico: errore prenotazione lavaggio`,
-              undefined,
-              'refund'
-            );
-            console.log('Credits refunded successfully after booking failure');
-          } catch (refundError) {
-            console.error('CRITICAL: Failed to refund credits after booking error!', refundError);
-            // User will need to contact support — at least we log it
-          }
           throw error;
         }
 

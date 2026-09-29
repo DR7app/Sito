@@ -20,7 +20,7 @@
  *                database scala il saldo e la attiva subito)
  */
 import { supabase } from '../supabaseClient';
-import { deductCredits, addCredits, hasSufficientBalance } from './creditWallet';
+import { hasSufficientBalance } from './creditWallet';
 import { checkVehicleAvailability } from './bookingValidation';
 import type { ArticoloCarrello } from './carrello';
 import { testoFisso } from './testiSito';
@@ -350,7 +350,6 @@ export async function pagaArticoloACredito(
   articolo: ArticoloCarrello,
   userId: string,
 ): Promise<EsitoArticolo> {
-  const euro = (articolo.prezzoCents || 0) / 100;
   try {
     switch (articolo.tipo) {
       case 'noleggio': {
@@ -385,26 +384,16 @@ export async function pagaArticoloACredito(
 
       case 'lavaggio':
       case 'meccanica': {
-        const addebito = await deductCredits(
-          userId,
-          euro,
-          `${articolo.tipo === 'lavaggio' ? 'Lavaggio' : 'Servizio Meccanico'} ${articolo.titolo}`,
-          undefined,
-          articolo.tipo === 'lavaggio' ? 'car_wash_booking' : 'mechanical_service_booking',
-        );
-        if (!addebito.success) return { ok: false, errore: addebito.error || 'Credito insufficiente.' };
-
+        // 29/09/2026: l'addebito lo fa il database salvando la prenotazione
+        // (trg_dr7_wallet_sync_prenotazione), insieme o per niente. Prima si
+        // addebitava da qui e, se l'inserimento falliva, si rimborsava con
+        // add_credits dal browser.
         const booking = datiPrenotazione(articolo);
         booking.status = booking.status || 'pending';
         booking.payment_status = 'succeeded';
         booking.payment_method = 'credit_wallet';
         const { data, error } = await supabase.from('bookings').insert(booking).select().single();
-        if (error) {
-          // Credito gia' tolto e prenotazione fallita: si restituisce subito.
-          await addCredits(userId, euro, 'Rimborso automatico: errore prenotazione dal carrello', undefined, 'refund')
-            .catch(e => console.error('[carrello] CRITICO: rimborso fallito', e));
-          return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
-        }
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
         avvisaPrenotazionePagata(data, false);
         return { ok: true, bookingId: data.id };
       }

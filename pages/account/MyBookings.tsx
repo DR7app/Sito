@@ -7,67 +7,11 @@ import { Link } from 'react-router-dom';
 import { getMembershipTierName } from '../../utils/membershipDiscounts';
 import { useCentralinaProOverlay } from '../../hooks/useCentralinaProConfig';
 import { useCancellationRules, pickRule } from '../../hooks/useCancellationPolicy';
-import { addCredits, deductCredits, getUserCreditBalance } from '../../utils/creditWallet';
+import { detectDr7Flex } from '../../utils/regoleAnnullamento';
+import { deductCredits, getUserCreditBalance } from '../../utils/creditWallet';
 import { PICKUP_LOCATIONS as DEFAULT_PICKUP_LOCATIONS, RETURN_LOCATIONS as DEFAULT_RETURN_LOCATIONS } from '../../constants';
 import { getPickupLocations, getReturnLocations } from '../../utils/getLocations';
 import { dataRoma, isoRoma } from '../../utils/oraRoma';
-
-/**
- * Detect DR7 Flex on a booking — supports BOTH the legacy boolean shape
- * (booking_details.dr7_flex / dr7Flex / extras.dr7_flex) AND the new
- * Experience Services shape (booking_details.experience_services as a
- * map of {serviceId: quantity}). When DR7 Flex was migrated into the
- * extras catalog (May 2026), the legacy boolean stopped being set;
- * customers who added DR7 Flex via "Aggiungi" weren't recognized as
- * Flex by canCancel(), so they couldn't cancel within the standard
- * 5-day window even though they had paid for the premium policy.
- *
- * Matches any service id containing both "dr7" and "flex", or any id
- * matching exactly common variants. Case-insensitive.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function detectDr7Flex(bd: any, expNameById?: Record<string, string>): boolean {
-  if (!bd) return false;
-  // Legacy boolean shapes
-  if (bd.dr7Flex === true || bd.dr7Flex === 'true') return true;
-  if (bd.dr7_flex === true || bd.dr7_flex === 'true') return true;
-  if (bd.extras?.dr7_flex === true || bd.extras?.dr7_flex === 'true') return true;
-  // Riconosce il Flex per ID o per NOME (dal catalogo Experience di Centralina).
-  // Le prenotazioni vecchie salvano solo {experienceId: qty} con un id Centralina
-  // che NON contiene "dr7flex": senza il nome non venivano riconosciute (es.
-  // Massimo, RS3) e il pulsante Cancella non compariva.
-  const matchesFlex = (s: string): boolean => {
-    const k = String(s || '').toLowerCase().trim();
-    if (!k) return false;
-    return k.includes('dr7 flex') || k.includes('dr7flex') || k.includes('dr7-flex') || (k.includes('dr7') && k.includes('flex')) || k.includes('flex');
-  };
-  // Costo flex registrato (campo dedicato) -> DR7 Flex attivo.
-  if (typeof bd.flex_cost === 'number' && bd.flex_cost > 0) return true;
-  if (bd.flex === true || bd.flex === 'true') return true;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const checkMap = (m: any): boolean => {
-    if (!m || typeof m !== 'object') return false;
-    for (const [id, qty] of Object.entries(m)) {
-      const active = (typeof qty === 'number' && qty > 0) || qty === true || (typeof qty === 'string' && qty !== '0' && qty !== '' && qty !== 'false');
-      if (!active) continue;
-      if (matchesFlex(id) || matchesFlex(expNameById?.[id] || '')) return true;
-    }
-    return false;
-  };
-  if (checkMap(bd.experience_services)) return true;
-  if (checkMap(bd.selectedExperiences)) return true;
-  if (checkMap(bd.experiences)) return true;
-  // Ultima rete: QUALSIASI campo top-level con "flex" nel nome e valore vero
-  // (boolean true / numero > 0 / oggetto-mappa che contiene un flex).
-  for (const [k, v] of Object.entries(bd)) {
-    const key = String(k).toLowerCase();
-    if (!key.includes('flex')) continue;
-    if (v === true || v === 'true') return true;
-    if (typeof v === 'number' && v > 0) return true;
-    if (v && typeof v === 'object' && checkMap(v)) return true;
-  }
-  return false;
-}
 
 interface Booking {
   id: string;
@@ -784,14 +728,25 @@ const MyBookings = () => {
     setCancelError(null);
     setCancelSuccess(null);
     try {
-      const policy = getCancelPolicy(booking);
-
-      // Update booking status to cancelled
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', booking.id);
-      if (error) throw error;
+      // 29/09/2026 — annullamento e rimborso li decide il SERVER
+      // (annulla-prenotazione-cliente): regola della Centralina, titolare
+      // della prenotazione, e rimborso solo su quanto e' stato davvero
+      // incassato. Prima lo faceva questa pagina, con add_credits sul 90% di
+      // price_total anche per prenotazioni mai pagate.
+      const { data: sessione } = await supabase.auth.getSession();
+      const annRes = await fetch('/.netlify/functions/annulla-prenotazione-cliente', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessione?.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ bookingId: booking.id }),
+      });
+      const esito: { ok?: boolean; error?: string; rimborso?: 'wallet' | 'manuale' | 'nessuno'; refundPercent?: number; refundMethod?: 'wallet' | 'card' } =
+        await annRes.json().catch(() => ({}));
+      if (!annRes.ok || !esito?.ok) {
+        throw new Error(esito?.error || t({ it: 'Errore durante la cancellazione', en: 'Error while cancelling' }));
+      }
 
       // Delete the linked cauzione row(s) via server-side Netlify function
       // (service_role bypasses RLS). The function only acts when the
@@ -811,51 +766,6 @@ const MyBookings = () => {
         }
       } catch (cauzErr) {
         console.warn('[MyBookings] cauzione release failed:', cauzErr);
-      }
-
-      // Refund processing depends on the matched rule's refundMethod:
-      //   - 'wallet' (default + DR7 Flex/Elite): auto-credited via add_credits RPC
-      //   - 'card':   admin processes manually via Nexi terminal — we log a
-      //               pending refund task (no auto-credit)
-      if (policy.refundPercent > 0 && booking.price_total > 0) {
-        const refundEuros = Math.round((booking.price_total * policy.refundPercent) / 100) / 100;
-        const itemLabel = booking.service_name
-          || (booking as { vehicle_name?: string }).vehicle_name
-          || 'Prenotazione';
-
-        if (policy.refundMethod === 'card') {
-          // Card refund: don't credit wallet. Log a pending task on the booking
-          // so admin sees it in the cancellation queue and processes via Nexi.
-          try {
-            await supabase
-              .from('bookings')
-              .update({
-                booking_details: {
-                  ...(booking.booking_details || {}),
-                  pending_card_refund: {
-                    amount_eur: refundEuros,
-                    refund_pct: policy.refundPercent,
-                    requested_at: new Date().toISOString(),
-                    status: 'pending',
-                    note: 'Cancellazione cliente — admin deve processare rimborso su carta via Nexi terminal',
-                  },
-                },
-              })
-              .eq('id', booking.id);
-            console.log(`[MyBookings] card refund pending: €${refundEuros} for booking ${booking.id}`);
-          } catch (cardRefundErr) {
-            console.error('[MyBookings] card refund pending update failed:', cardRefundErr);
-          }
-        } else {
-          // Wallet refund: auto-credit
-          const description = policy.hasFlex
-            ? `Rimborso DR7 Flex (${policy.refundPercent}%) — ${itemLabel}`
-            : `Rimborso cancellazione (${policy.refundPercent}%) — ${itemLabel}`;
-          const result = await addCredits(user!.id, refundEuros, description, booking.id, 'refund');
-          if (!result.success) {
-            console.error('[MyBookings] refund credit failed:', result.error);
-          }
-        }
       }
 
       // Send "Prenotazione Annullata da sito" from Messaggi di Sistema Pro.
@@ -884,11 +794,13 @@ const MyBookings = () => {
       // Update local state
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'cancelled' } : b));
       setCancelSuccess(
-        policy.refundPercent > 0
-          ? policy.refundMethod === 'card'
-            ? `${t({ it: 'Prenotazione cancellata. DR7 processerà il rimborso del', en: 'Booking cancelled. DR7 will process the refund of' })} ${policy.refundPercent}% ${t({ it: 'sulla tua carta entro 7 giorni lavorativi.', en: 'to your card within 7 working days.' })}`
-            : `${t({ it: 'Prenotazione cancellata. Rimborso del', en: 'Booking cancelled. Refund of' })} ${policy.refundPercent}% ${t({ it: 'accreditato sul tuo DR7 Wallet.', en: 'credited to your DR7 Wallet.' })}`
-          : t({ it: 'Prenotazione cancellata.', en: 'Booking cancelled.' })
+        esito.rimborso === 'wallet'
+          ? `${t({ it: 'Prenotazione cancellata. Rimborso del', en: 'Booking cancelled. Refund of' })} ${esito.refundPercent}% ${t({ it: 'accreditato sul tuo DR7 Wallet.', en: 'credited to your DR7 Wallet.' })}`
+          : esito.rimborso === 'manuale'
+            ? esito.refundMethod === 'card'
+              ? `${t({ it: 'Prenotazione cancellata. DR7 processerà il rimborso del', en: 'Booking cancelled. DR7 will process the refund of' })} ${esito.refundPercent}% ${t({ it: 'sulla tua carta entro 7 giorni lavorativi.', en: 'to your card within 7 working days.' })}`
+              : t({ it: 'Prenotazione cancellata. DR7 verificherà il pagamento e ti contatterà per il rimborso.', en: 'Booking cancelled. DR7 will check the payment and contact you about the refund.' })
+            : t({ it: 'Prenotazione cancellata.', en: 'Booking cancelled.' })
       );
     } catch (err: any) {
       setCancelError(err.message || t({ it: 'Errore durante la cancellazione', en: 'Error while cancelling' }));

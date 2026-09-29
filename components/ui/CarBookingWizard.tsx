@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { calculateMultiDayPrice, calculateIncludedKmFromConfig } from '../../utils/multiDayPricing';
 import { invalidateVehicleCache } from '../../hooks/useVehicles';
-import { addCredits } from '../../utils/creditWallet';
 import { useAuth } from '../../hooks/useAuth';
 import { useCarrello } from '../../hooks/useCarrello';
 import { useBooking } from '../../hooks/useBooking';
@@ -4248,8 +4247,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             status: 'active', price: clubPrice,
             started_at: new Date().toISOString(), expires_at: expiresAt.toISOString(),
           });
-          const { addCredits } = await import('../../utils/creditWallet');
-          await addCredits(user.id, 10, 'DR7 Club — Bonus iscrizione €10', data.id, 'club_signup_bonus');
+          // 29/09/2026: il bonus lo accredita il server (una volta per account,
+          // solo con DR7 Club attivo), non piu' add_credits dal browser.
+          const { data: sessioneClub } = await supabase.auth.getSession();
+          await fetch('/.netlify/functions/wallet-bonus-club', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessioneClub?.session?.access_token || ''}` },
+            body: '{}',
+          });
           console.log(`[DR7 Club] Activated after Nexi payment for ${user.email}`);
         } catch (clubErr) {
           console.error('[DR7 Club] Activation error (non-blocking):', clubErr);
@@ -4966,8 +4971,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 started_at: new Date().toISOString(), expires_at: expiresAt.toISOString(),
               });
               // Signup bonus €10
-              const { addCredits } = await import('../../utils/creditWallet');
-              await addCredits(user.id, 10, 'DR7 Club — Bonus iscrizione €10', data.booking_id, 'club_signup_bonus');
+              // 29/09/2026: il bonus lo accredita il server (una volta per account,
+              // solo con DR7 Club attivo), non piu' add_credits dal browser.
+              const { data: sessioneClub2 } = await supabase.auth.getSession();
+              await fetch('/.netlify/functions/wallet-bonus-club', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessioneClub2?.session?.access_token || ''}` },
+                body: '{}',
+              });
               // Send Nexi payment link for the Club fee
               await fetch('https://platform.dr7ai.com/.netlify/functions/nexi-pay-by-link', {
                 method: 'POST',

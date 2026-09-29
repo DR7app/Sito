@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const { getClubCashbackPct } = require('./utils/dr7ClubCashback');
+const { finalizzaRicarica } = require('./utils/ricaricaWallet');
 
 /**
  * Sends the "Ingresso DR7 Club" template (from Messaggi di Sistema Pro)
@@ -890,7 +891,7 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
     }
 
     if (purchases && purchases.length > 0) {
-      const purchase = purchases[0];
+      let purchase = purchases[0];
       console.log('Found credit wallet purchase:', purchase.id);
 
       // Skip if already completed (avoid double-crediting)
@@ -914,21 +915,20 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
       }
 
       if (isSuccess) {
-        // Atomically update purchase status - only succeeds if not already 'succeeded'
+        // 29/09/2026 — stato, importi e accredito in UNA funzione condivisa
+        // con la pagina di esito (utils/ricaricaWallet.js): si accredita quello
+        // che Nexi ha incassato davvero, il bonus solo se il pacchetto torna.
+        // Prima si accreditava la riga cosi' com'era, scritta dal browser.
         const walletContractId = rawParams.contractId || rawParams.contract_id || null;
-
-        // Critical update — keep minimal so a missing optional column can never
-        // block the rest of the flow (credits, fattura, referral bonus).
-        const { data: updatedPurchase, error: upErr } = await supabase
-          .from('credit_wallet_purchases')
-          .update({
-            payment_status: 'succeeded',
-            payment_completed_at: new Date().toISOString()
-          })
-          .eq('id', purchase.id)
-          .neq('payment_status', 'succeeded')
-          .select()
-          .single();
+        let esitoRicarica;
+        try {
+          esitoRicarica = await finalizzaRicarica(supabase, purchase, {
+            importoCents: (rawParams.datiCarta && rawParams.datiCarta.importo_cent) || Number(rawParams.importo) || 0,
+          });
+        } catch (ricaricaErr) {
+          console.error('Error finalizing wallet purchase:', ricaricaErr);
+          return { statusCode: 500, body: 'Error finalizing purchase' };
+        }
 
         // Best-effort tokenization write (depends on migration 20260424020000).
         // Non-fatal: failure here must not stop credits/fattura/referral.
@@ -946,56 +946,19 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
           }
         }
 
-        // If no row returned, another callback already processed it
-        if (!updatedPurchase) {
+        if (esitoRicarica.nonPagata) {
+          console.warn('[nexi-callback] ricarica non confermata da Nexi:', esitoRicarica.reason);
+          return { statusCode: 200, body: 'OK' };
+        }
+
+        // If the page already closed it, the rest has been triggered there
+        if (!esitoRicarica.vinta) {
           console.log('Purchase already processed by another callback, skipping');
           return { statusCode: 200, body: 'OK' };
         }
 
-        if (upErr) {
-          console.error('Error updating purchase:', upErr);
-          return { statusCode: 500, body: 'Error updating purchase' };
-        }
-
-        // Add credits via atomic RPC (prevents race conditions and double-crediting)
-        // 2026-07-13 FIX: prima l'INTERO received_amount (ricarica + bonus
-        // pacchetto) veniva accreditato come 'wallet_purchase' = PRINCIPALE, quindi
-        // il bonus finiva nel principale e maturava interessi (bug Runchina).
-        // Ora SPLIT: importo pagato con carta = principale; bonus pacchetto =
-        // 'wallet_package_bonus' (escluso dagli interessi, come cashback/omaggi).
-        if (purchase.user_id && purchase.received_amount) {
-          const rechargeEur = parseFloat(purchase.recharge_amount || purchase.received_amount);
-          const receivedEur = parseFloat(purchase.received_amount);
-          const bonusEur = Math.round((receivedEur - rechargeEur) * 100) / 100;
-
-          const creditWallet = async (amount, description, refType) => {
-            if (!(amount > 0)) return;
-            const { error: rpcError } = await supabase.rpc('add_credits', {
-              p_user_id: purchase.user_id,
-              p_amount: amount,
-              p_description: description,
-              p_reference_id: purchase.id,
-              p_reference_type: refType,
-            });
-            if (!rpcError) { console.log(`Credits via RPC: €${amount} (${refType}) user ${purchase.user_id}`); return; }
-            console.error('add_credits RPC failed, fallback:', rpcError);
-            try {
-              const { data: balanceRow } = await supabase.from('user_credit_balance').select('balance').eq('user_id', purchase.user_id).single();
-              const currentBalance = balanceRow?.balance ? parseFloat(balanceRow.balance) : 0;
-              const newBalance = Math.round((currentBalance + amount) * 100) / 100;
-              await supabase.from('user_credit_balance').upsert({ user_id: purchase.user_id, balance: newBalance, last_updated: new Date().toISOString() }, { onConflict: 'user_id' });
-              await supabase.from('credit_transactions').insert({ user_id: purchase.user_id, transaction_type: 'credit', amount, balance_after: newBalance, description, reference_id: purchase.id, reference_type: refType });
-              console.log(`Credits via fallback: €${amount} (${refType}) new balance €${newBalance}`);
-            } catch (fallbackErr) { console.error('Fallback credit insert failed:', fallbackErr); }
-          };
-
-          // PRINCIPALE = importo pagato con carta.
-          await creditWallet(rechargeEur, `Ricarica ${purchase.package_name} (€${rechargeEur.toFixed(2)})`, 'wallet_purchase');
-          // BONUS pacchetto = omaggio → NON principale (niente interessi).
-          if (bonusEur > 0) {
-            await creditWallet(bonusEur, `Bonus ricarica ${purchase.bonus_percentage}% (€${bonusEur.toFixed(2)})`, 'wallet_package_bonus');
-          }
-        }
+        // Da qui in poi (cashback, referral, fattura) gli importi veri.
+        purchase = esitoRicarica.purchase || purchase;
 
         // DR7 Club cashback on wallet recharge paid by card — same rule as
         // booking payments: gated by active club + tier-based % from

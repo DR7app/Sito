@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { getMechanicalServices, type MechanicalServiceItem } from '../utils/siteCopy';
-import { getUserCreditBalance, deductCredits, addCredits, hasSufficientBalance } from '../utils/creditWallet';
+import { getUserCreditBalance, hasSufficientBalance } from '../utils/creditWallet';
 import { useCarrello } from '../hooks/useCarrello';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
 import { useContactInfo } from '../hooks/useContactInfo';
@@ -511,22 +511,12 @@ const MechanicalBookingPage: React.FC = () => {
           return;
         }
 
-        // Deduct credits
-        const deductResult = await deductCredits(
-          user.id,
-          totalAmount,
-          `Servizio Meccanico ${lang === 'it' ? selectedService?.name : selectedService?.nameEn}`,
-          undefined,
-          'mechanical_service_booking'
-        );
-
-        if (!deductResult.success) {
-          clearTimeout(safetyTimer);
-          setPaymentError(deductResult.error || 'Failed to deduct credits');
-          isSubmittingRef.current = false;
-          setIsProcessing(false);
-          return;
-        }
+        // 29/09/2026: niente addebito da qui. Lo fa il database quando la
+        // prenotazione viene salvata (trg_dr7_wallet_sync_prenotazione):
+        // addebito e prenotazione riescono o falliscono insieme, e se il
+        // credito non basta il salvataggio viene rifiutato. Prima si
+        // addebitava dal browser e, se l'inserimento falliva, si
+        // "rimborsava" con add_credits dal browser.
 
         // Create booking data for credit payment
         bookingDataWithPayment = {
@@ -617,22 +607,6 @@ const MechanicalBookingPage: React.FC = () => {
 
       if (error) {
         console.error('Database error:', error);
-        // CRITICAL: Refund credits if booking insert failed (credits already deducted)
-        if (paymentMethod === 'credit' && user?.id) {
-          console.error('Booking insert failed after credit deduction — refunding credits...');
-          try {
-            await addCredits(
-              user.id,
-              discountedPrice,
-              `Rimborso automatico: errore prenotazione servizio meccanico`,
-              undefined,
-              'refund'
-            );
-            console.log('Credits refunded successfully after booking failure');
-          } catch (refundError) {
-            console.error('CRITICAL: Failed to refund credits after booking error!', refundError);
-          }
-        }
         throw error;
       }
 

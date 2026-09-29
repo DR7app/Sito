@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { addCredits } from '../utils/creditWallet';
 import { useCarrello } from '../hooks/useCarrello';
 import { useTranslation } from '../hooks/useTranslation';
 import { getPaymentSuccessCopy, type PaymentSuccessCopy, getMessageTemplateBody } from '../utils/siteCopy';
@@ -628,70 +627,37 @@ const PaymentSuccessPage: React.FC = () => {
                         return;
                     }
 
-                    // Crediti: aggiungi SOLO se non gia' processato (race col
-                    // callback). add_credits e' comunque idempotente per reference_id.
-                    const alreadyDone = purchase.payment_status === 'completed' || purchase.payment_status === 'succeeded' || purchase.payment_status === 'paid';
-                    if (!alreadyDone) {
-                        const { data: updatedPurchase, error: upErr } = await supabase
-                            .from('credit_wallet_purchases')
-                            .update({
-                                payment_status: 'succeeded',
-                                payment_completed_at: new Date().toISOString()
-                            })
-                            .eq('id', purchase.id)
-                            .neq('payment_status', 'succeeded')
-                            .select()
-                            .single();
-
-                        if (upErr) {
-                            console.error('Error updating purchase:', upErr);
-                            setUpdateError(s('err_purchase_update_it', 'err_purchase_update_en'));
-                        } else if (updatedPurchase) {
-                            // Abbiamo vinto la race -> accredita.
-                            // 2026-08-08 FIX: qui veniva accreditato l'INTERO
-                            // received_amount (ricarica + bonus pacchetto) come
-                            // un'unica riga 'wallet_purchase' = credito reale.
-                            // Il bonus del pacchetto finiva quindi nel capitale
-                            // (maturando interessi) e spariva dal conteggio bonus.
-                            // Il webhook nexi-callback fa lo SPLIT dal 2026-07-13:
-                            // qui replichiamo lo stesso split, altrimenti il modo
-                            // in cui la ricarica viene registrata dipende da chi
-                            // vince la race (browser o webhook).
-                            const rechargeEur = parseFloat(String(purchase.recharge_amount ?? purchase.received_amount));
-                            const receivedEur = parseFloat(String(purchase.received_amount));
-                            const bonusEur = Math.round((receivedEur - rechargeEur) * 100) / 100;
-
-                            // PRINCIPALE = importo pagato con carta.
-                            const result = await addCredits(
-                                purchase.user_id,
-                                rechargeEur,
-                                `Ricarica ${purchase.package_name} (€${rechargeEur.toFixed(2)})`,
-                                purchase.id,
-                                'wallet_purchase'
-                            );
-                            if (result.success) {
-                                console.log(`Credits added: €${rechargeEur} (new balance: €${result.newBalance})`);
-                            } else {
-                                console.error('Error adding credits:', result.error);
-                                setUpdateError(s('err_credit_add_it', 'err_credit_add_en'));
-                            }
-
-                            // BONUS pacchetto = omaggio -> NON capitale, niente interessi.
-                            if (bonusEur > 0) {
-                                const bonusRes = await addCredits(
-                                    purchase.user_id,
-                                    bonusEur,
-                                    `Bonus ricarica ${purchase.bonus_percentage}% (€${bonusEur.toFixed(2)})`,
-                                    purchase.id,
-                                    'wallet_package_bonus'
-                                );
-                                if (!bonusRes.success) {
-                                    console.error('Error adding package bonus:', bonusRes.error);
-                                }
-                            }
-                        } else {
-                            console.log('Purchase credits already processed by callback');
+                    // 29/09/2026 — la chiusura della ricarica (stato + accredito)
+                    // la fa il SERVER: prima era questa pagina a scrivere la riga
+                    // e a chiamare add_credits, e dalla console del browser si
+                    // poteva fare lo stesso con qualunque importo. Il server
+                    // chiede a Nexi quanto e' stato incassato e usa la stessa
+                    // funzione del webhook (utils/ricaricaWallet.js).
+                    let ricarica = purchase;
+                    try {
+                        const { data: sessione } = await supabase.auth.getSession();
+                        const finRes = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/wallet-ricarica-finalizza`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${sessione?.session?.access_token || ''}`,
+                            },
+                            body: JSON.stringify({ orderId }),
+                        });
+                        const fin = await finRes.json().catch(() => ({}));
+                        if (!finRes.ok || !fin?.ok) {
+                            console.error('Error finalizing wallet purchase:', fin);
+                            setUpdateError(s('err_credit_add_it', 'err_credit_add_en'));
+                        } else if (fin.purchase) {
+                            ricarica = fin.purchase;
+                            setWalletInfo({
+                                packageName: ricarica.package_name,
+                                receivedAmount: ricarica.received_amount
+                            });
                         }
+                    } catch (finErr) {
+                        console.error('Error finalizing wallet purchase:', finErr);
+                        setUpdateError(s('err_credit_add_it', 'err_credit_add_en'));
                     }
 
                     // AVVISO WHATSAPP della ricarica: stessa ragione della
@@ -722,11 +688,11 @@ const PaymentSuccessPage: React.FC = () => {
                             purchaseId: purchase.id,
                             includeIVA: true,
                             purchaseData: {
-                                userId: purchase.user_id,
-                                packageName: purchase.package_name,
-                                amount: purchase.recharge_amount,
-                                receivedAmount: purchase.received_amount,
-                                bonusPercentage: purchase.bonus_percentage,
+                                userId: ricarica.user_id,
+                                packageName: ricarica.package_name,
+                                amount: ricarica.recharge_amount,
+                                receivedAmount: ricarica.received_amount,
+                                bonusPercentage: ricarica.bonus_percentage,
                             },
                         }),
                     }).then(r => console.log('[PaymentSuccess] wallet fattura trigger:', r.status))

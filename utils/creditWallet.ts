@@ -41,41 +41,12 @@ export async function getUserCreditBalance(userId: string): Promise<number> {
   }
 }
 
-/**
- * Add credits to user's balance
- */
-export async function addCredits(
-  userId: string,
-  amount: number,
-  description: string,
-  referenceId?: string,
-  referenceType?: string
-): Promise<{ success: boolean; newBalance: number; error?: string }> {
-  const { data, error } = await supabase.rpc('add_credits', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_description: description,
-    p_reference_id: referenceId || null,
-    p_reference_type: referenceType || 'purchase'
-  });
-
-  // 2026-09-29: niente piu' strada di riserva che scriveva saldo e movimento
-  // dal browser in due passi. add_credits falliva sempre con una prenotazione
-  // (testo in colonna uuid) e la riserva accreditava senza nessun controllo:
-  // cosi' e' passato un rimborso di 704,62 EUR su una prenotazione mai pagata.
-  // Se la RPC fallisce, l'accredito non avviene.
-  if (error) {
-    console.error('Error in addCredits RPC:', error);
-    return { success: false, newBalance: 0, error: error.message };
-  }
-
-  const result = data?.[0] || data;
-  return {
-    success: result?.success ?? false,
-    newBalance: result?.new_balance ?? 0,
-    error: result?.error_message || undefined
-  };
-}
+// 29/09/2026: addCredits non esiste piu' nel sito. Accreditare credito dal
+// browser voleva dire poterlo fare da chiunque (la RPC add_credits era
+// aperta): ora accredita solo il server — ricariche
+// (wallet-ricarica-finalizza), rimborsi (annulla-prenotazione-cliente),
+// bonus DR7 Club (wallet-bonus-club). Il database rifiuta add_credits dal
+// browser.
 
 /**
  * Deduct credits from user's balance (atomic via RPC to prevent double-spending)

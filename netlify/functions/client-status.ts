@@ -31,7 +31,9 @@ interface SchedaStatus {
   id: string
   user_id: string | null
   status: string | null
-  status_cliente: string | null
+  // 01/10/2026: `status_cliente` non esiste in customers_extended; resta
+  // opzionale solo per compatibilita' con i flussi vecchi dell'admin.
+  status_cliente?: string | null
 }
 
 /**
@@ -82,13 +84,16 @@ const handler: Handler = async (event) => {
     // cioe' proprio il caso in cui lo status andrebbe trovato.
     const perAccount = await supabase
       .from('customers_extended')
-      .select('id, user_id, status, status_cliente')
+      // 01/10/2026: si legge solo `status` (blacklist/member/elite/vip):
+      // chiedere anche `status_cliente`, che non esiste, faceva fallire la
+      // query e il cliente risultava sempre 'standard'.
+      .select('id, user_id, status')
       .eq('user_id', user.id)
 
     const perEmail = email
       ? await supabase
           .from('customers_extended')
-          .select('id, user_id, status, status_cliente')
+          .select('id, user_id, status')
           .ilike('email', email)
       : { data: [] as SchedaStatus[] }
 

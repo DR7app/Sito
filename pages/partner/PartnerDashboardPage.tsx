@@ -3,7 +3,11 @@ import { motion } from 'framer-motion';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuth } from '../../hooks/useAuth';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+// 01/10/2026: icone usate dalle FeatureCard, prima non importate (ReferenceError).
 import {
+    CalendarIcon,
+    ZapIcon,
+    FileTextIcon,
 } from '../../components/icons/Icons';
 import type { RentalItem } from '../../types';
 import { Button } from '../../components/ui/Button';

@@ -152,7 +152,10 @@ export async function checkGroupedVehicleAvailability(
     // Fetch reservations for these IDs
     const { data: reservations } = await supabase
       .from('reservations')
-      .select('start_at, end_at, vehicle_id, vehicle_name')
+      // 01/10/2026: `vehicle_name` non esiste in reservations e faceva fallire
+      // la query: le prenotazioni dell'admin venivano ignorate. Il nome si
+      // ricava dall'elenco veicoli.
+      .select('start_at, end_at, vehicle_id')
       .in('vehicle_id', ids)
       .not('status', 'in', '(cancelled,annullata,completed,completata,expired)');
 
@@ -208,7 +211,7 @@ export async function checkGroupedVehicleAvailability(
             // Should generally not happen for admin reservations, but treat as generic if ID missing
             genericConflictCount++;
           }
-          relevantConflicts.push({ pickup_date: r.start_at, dropoff_date: r.end_at, vehicle_name: r.vehicle_name || 'Reservation' });
+          relevantConflicts.push({ pickup_date: r.start_at, dropoff_date: r.end_at, vehicle_name: vehicles.find(v => v.id === r.vehicle_id)?.name || 'Reservation' });
         }
       }
     }

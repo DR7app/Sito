@@ -191,7 +191,9 @@ exports.handler = async event => {
     if (purchase.user_id) {
       const { data } = await supabase
         .from('customers_extended')
-        .select('nome, cognome, full_name')
+        // 01/10/2026: `full_name` non esiste in customers_extended e faceva
+        // fallire la query (nome vuoto nel template): solo nome e cognome.
+        .select('nome, cognome')
         .eq('user_id', purchase.user_id)
         .maybeSingle();
       cliente = data;
@@ -223,7 +225,6 @@ exports.handler = async event => {
     }
 
     const nomeCompleto = [cliente && cliente.nome, cliente && cliente.cognome].filter(Boolean).join(' ').trim()
-      || (cliente && cliente.full_name)
       || purchase.customer_name
       || 'Cliente';
     const nome = String(nomeCompleto).split(' ')[0] || 'Cliente';

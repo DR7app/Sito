@@ -140,16 +140,48 @@ const MyBookings = () => {
     }).format(cents / 100);
   };
 
+  // Stati salvati in inglese nel database: al cliente si mostrano sempre tradotti.
+  const STATUS_LABELS: Record<string, { it: string; en: string }> = {
+    pending: { it: 'In attesa', en: 'Pending' },
+    confirmed: { it: 'Confermata', en: 'Confirmed' },
+    active: { it: 'In corso', en: 'Active' },
+    completed: { it: 'Completata', en: 'Completed' },
+    completata: { it: 'Completata', en: 'Completed' },
+    cancelled: { it: 'Annullata', en: 'Cancelled' },
+    annullata: { it: 'Annullata', en: 'Cancelled' },
+  };
+  const PAYMENT_LABELS: Record<string, { it: string; en: string }> = {
+    pending: { it: 'In attesa', en: 'Pending' },
+    unpaid: { it: 'Da pagare', en: 'Unpaid' },
+    partial: { it: 'Acconto', en: 'Deposit paid' },
+    parziale: { it: 'Acconto', en: 'Deposit paid' },
+    failed: { it: 'Non riuscito', en: 'Failed' },
+    refunded: { it: 'Rimborsato', en: 'Refunded' },
+    cancelled: { it: 'Annullato', en: 'Cancelled' },
+  };
+  const capitalize = (v: string) => v ? v.charAt(0).toUpperCase() + v.slice(1) : '-';
+  const statusLabel = (status: string) => {
+    const l = STATUS_LABELS[String(status || '').toLowerCase()];
+    return l ? t(l) : capitalize(status);
+  };
+  const paymentStatusLabel = (paymentStatus: string) => {
+    const l = PAYMENT_LABELS[String(paymentStatus || '').toLowerCase()];
+    return l ? t(l) : capitalize(paymentStatus);
+  };
+
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
       pending: 'bg-yellow-500/20 text-yellow-400',
       confirmed: 'bg-green-500/20 text-green-400',
+      active: 'bg-green-500/20 text-green-400',
       completed: 'bg-blue-500/20 text-blue-400',
+      completata: 'bg-blue-500/20 text-blue-400',
       cancelled: 'bg-red-500/20 text-red-400',
+      annullata: 'bg-red-500/20 text-red-400',
     };
     return (
       <span className={`px-2.5 py-1 text-xs font-semibold ${statusColors[status] || 'bg-gray-500/20 text-gray-400'}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {statusLabel(status)}
       </span>
     );
   };
@@ -165,7 +197,7 @@ const MyBookings = () => {
     };
     return (
       <span className={`px-2.5 py-1 text-xs font-semibold ${colors[paymentStatus] || 'bg-gray-500/20 text-gray-400'}`}>
-        {isPaid ? t({ it: 'Pagato', en: 'Paid' }) : paymentStatus === 'pending' ? t({ it: 'In attesa', en: 'Pending' }) : paymentStatus}
+        {isPaid ? t({ it: 'Pagato', en: 'Paid' }) : paymentStatusLabel(paymentStatus)}
       </span>
     );
   };

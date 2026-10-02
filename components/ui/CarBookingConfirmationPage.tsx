@@ -106,8 +106,8 @@ const CarBookingConfirmationPage: React.FC = () => {
               {booking.payment_method === 'agency' && (
                 <p className="text-sm text-yellow-400 mt-2">{t({ it: "Da pagare in sede", en: "To be paid on site" })}</p>
               )}
-              <div className="mt-6 space-y-4">
-                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
+              <div className="mt-6 space-y-6">
+                <div>
                   <h3 className="text-xl font-bold mb-4">{t({ it: "COSA PORTARE AL RITIRO:", en: "WHAT TO BRING AT PICK-UP:" })}</h3>
                   <ul className="space-y-2 text-gray-300">
                     <li>{t({ it: "Carta d'identità o passaporto valido", en: "Valid ID card or passport" })}</li>
@@ -116,7 +116,7 @@ const CarBookingConfirmationPage: React.FC = () => {
                     <li>{t({ it: 'Codice prenotazione:', en: 'Booking code:' })} <span className="font-mono">{`DR7-${booking.id.substring(0, 8).toUpperCase()}`}</span></li>
                   </ul>
                 </div>
-                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
+                <div>
                   <h3 className="text-xl font-bold mb-4">{t({ it: "INDIRIZZO RITIRO:", en: "PICK-UP ADDRESS:" })}</h3>
                   <p className="text-gray-300">{getPickupAddress()}</p>
                   <h3 className="text-xl font-bold mt-6 mb-4">{t({ it: "CONTATTI:", en: "CONTACTS:" })}</h3>

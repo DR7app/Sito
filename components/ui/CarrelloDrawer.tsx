@@ -32,7 +32,7 @@ function paginaConfigurazione(articolo: ArticoloCarrello): string | null {
 
 const CarrelloDrawer: React.FC = () => {
   const {
-    articoli, aperto, chiudi, rimuovi,
+    articoli, aperto, chiudi, rimuovi, svuota,
     articoliSelezionati, totaleSelezionatiCents, selezionato, commutaSelezione,
   } = useCarrello();
   const { t, lang } = useTranslation();
@@ -43,6 +43,11 @@ const CarrelloDrawer: React.FC = () => {
   // non cambiavano niente. Ora arrivano da li', con i testi di prima come
   // ripiego se la configurazione non arriva.
   const testi = useTestiCarrello();
+
+  // 02/10/2026: "Svuota carrello" c'era solo nel riepilogo del checkout.
+  // Qui chiede conferma: un tocco per sbaglio non deve cancellare tutto.
+  const [confermaSvuota, setConfermaSvuota] = React.useState(false);
+  React.useEffect(() => { if (!aperto) setConfermaSvuota(false); }, [aperto]);
 
   const vaiAlPagamento = () => {
     chiudi();
@@ -182,6 +187,30 @@ const CarrelloDrawer: React.FC = () => {
                 >
                   {t({ it: 'Continua', en: 'Continue shopping' })}
                 </button>
+                {confermaSvuota ? (
+                  <div className="mt-4 flex items-center justify-center gap-4 text-xs uppercase tracking-[0.18em]">
+                    <span className="text-gray-400">{t({ it: 'Svuotare il carrello?', en: 'Empty the cart?' })}</span>
+                    <button
+                      onClick={() => { setConfermaSvuota(false); void svuota(); }}
+                      className="text-red-500 hover:text-red-400 font-bold"
+                    >
+                      {t({ it: 'Si', en: 'Yes' })}
+                    </button>
+                    <button
+                      onClick={() => setConfermaSvuota(false)}
+                      className="text-gray-300 hover:text-white"
+                    >
+                      {t({ it: 'No', en: 'No' })}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfermaSvuota(true)}
+                    className="w-full mt-4 text-gray-500 hover:text-red-400 text-xs uppercase tracking-[0.2em] transition-colors"
+                  >
+                    {t({ it: 'Svuota carrello', en: 'Empty cart' })}
+                  </button>
+                )}
               </div>
             )}
           </motion.aside>

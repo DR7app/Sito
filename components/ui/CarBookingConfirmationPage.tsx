@@ -85,7 +85,7 @@ const CarBookingConfirmationPage: React.FC = () => {
             <div>
               <p className="font-semibold">{booking.vehicle_name}</p>
               {booking.vehicle_image_url && (
-                <img src={booking.vehicle_image_url} alt={booking.vehicle_name} className="rounded-lg mt-2 w-full h-40 object-cover" />
+                <img src={booking.vehicle_image_url} alt={booking.vehicle_name} className="rounded-lg mt-2 w-full max-w-xs aspect-[9/16] object-cover" />
               )}
             </div>
             <div>

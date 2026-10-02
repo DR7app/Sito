@@ -411,7 +411,7 @@ const CheckoutPage: React.FC = () => {
                   className="mt-1 h-4 w-4 accent-white shrink-0"
                 />
                 {articolo.immagine && (
-                  <img src={articolo.immagine} alt="" className="w-24 h-20 object-cover border border-gray-800 shrink-0" />
+                  <img src={articolo.immagine} alt="" className="w-24 h-auto self-start border border-gray-800 shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] uppercase tracking-[0.22em] text-dr7-gold">

@@ -126,7 +126,7 @@ const CarrelloDrawer: React.FC = () => {
                           <img
                             src={articolo.immagine}
                             alt=""
-                            className="w-20 h-16 object-cover border border-gray-800 shrink-0"
+                            className="w-20 h-auto self-start border border-gray-800 shrink-0"
                           />
                         )}
                         <div className="flex-1 min-w-0">

@@ -387,20 +387,29 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase
+        // 2026-10-05: i blocchi si salvano nella riga del business aperto in
+        // Centralina Pro (business_lavaggio). Leggendo solo `main` i giorni
+        // SOLD OUT impostati dal Lavaggio non venivano mai applicati. Come
+        // utils/lavaggioHours.ts: prima business_lavaggio, poi main.
+        const { data: righe } = await supabase
           .from('centralina_pro_config')
-          .select('config')
-          .eq('id', 'main')
-          .maybeSingle();
+          .select('id, config')
+          .in('id', ['business_lavaggio', 'main']);
         if (cancelled) return;
-        const cfg = (data?.config || {}) as Record<string, unknown>;
+        const cfgDi = (id: string) => ((righe || []).find((r: { id: string }) => r.id === id)?.config || null) as Record<string, unknown> | null;
+        const cfgLav = cfgDi('business_lavaggio');
+        const cfgMain = cfgDi('main');
+        const cfg = (cfgMain || {}) as Record<string, unknown>;
         const servizi = (cfg.servizi || {}) as Record<string, unknown>;
         const pf = (servizi.prime_flex || {}) as Record<string, unknown>;
         const raw = typeof pf.price === 'number' ? pf.price : Number(pf.price);
         if (Number.isFinite(raw) && raw >= 0) setPrimeFlexPrice(raw);
-        const autom = (cfg.automations || {}) as Record<string, unknown>;
+        const rangesDi = (c: Record<string, unknown> | null) => {
+          const a = (c?.automations || {}) as Record<string, unknown>;
+          return Array.isArray(a.carwash_block_ranges) ? a.carwash_block_ranges : null;
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ranges = Array.isArray(autom.carwash_block_ranges) ? (autom.carwash_block_ranges as any[]) : [];
+        const ranges = (rangesDi(cfgLav) ?? rangesDi(cfgMain) ?? []) as any[];
         setBlockRanges(ranges.filter(r => r && r.from && r.to).map(r => ({ from: String(r.from), to: String(r.to), message: r.message ? String(r.message) : undefined })));
       } catch (e) {
         console.warn('[CarWashBookingPage] Prime Flex price fetch failed, using fallback 4.90:', e);

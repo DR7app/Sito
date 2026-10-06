@@ -582,7 +582,8 @@ const InvestitoriPage: React.FC = () => {
             <motion.div {...fadeUp} className={`grid gap-10 px-6 py-14 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:px-12 ${copy.ir_privati_img ? '' : 'container mx-auto'}`}>
               <div>
                 <Eyebrow>{tx('ir_privati_eyebrow')}</Eyebrow>
-                {tx('ir_privati_titolo') && <Titolo className="mt-4">{tx('ir_privati_titolo')}</Titolo>}
+                {/* 06/10/2026 (direzione): titolo ("N investitori") della stessa misura dei numeri chiave (es. "€6M"). */}
+                {tx('ir_privati_titolo') && <h2 className="mt-4 font-serif text-[1rem] font-normal leading-none text-white md:text-[1.1rem]">{tx('ir_privati_titolo')}</h2>}
                 {tx('ir_privati_testo') && <div className="mt-5"><Paragrafi testo={tx('ir_privati_testo')} /></div>}
                 <div className={`mt-8 grid grid-cols-1 border border-white/[0.1] ${stat.length === 1 ? '' : stat.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                   {stat.map(n => (

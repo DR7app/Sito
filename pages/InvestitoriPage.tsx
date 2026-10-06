@@ -153,17 +153,14 @@ const Grafico: React.FC<{ barre: IrBarra[]; lang: string; ricaviLabel: string; u
 const ICONA_METRICA: Record<string, string> = {
   contratti: 'documento', clienti: 'clienti', fatturato: 'ricavi', parco: 'auto',
   patrimonio: 'patrimonio', capitale: 'capitale', recensioni: 'round', brand: 'utile', azienda: 'patrimonio',
+  'inv-totale': 'clienti', 'inv-capitale': 'capitale',
 };
 
-// 06/10/2026 (direzione): sotto "Patrimonio netto" il totale investitori e il
-// capitale investito, letti dal gestionale (sito_numeri_pubblici): crescono
-// da soli a ogni nuovo investitore o versamento.
-const SchedaNumero: React.FC<{ m: HomeMetric; lang: string; sotto?: string[] }> = ({ m, lang, sotto }) => (
+const SchedaNumero: React.FC<{ m: HomeMetric; lang: string }> = ({ m, lang }) => (
   <div className="border-t border-white/[0.08] pt-5">
     <Icona nome={ICONA_METRICA[m.id] || 'round'} />
     <p className="mt-4 font-serif text-[1rem] leading-none text-white md:text-[1.1rem]">{m.value}</p>
     <p className="mt-2 text-[12px] text-white/80">{bilingual(m, 'label', lang)}</p>
-    {sotto?.map(r => <p key={r} className="mt-1 text-[11px] text-white/55">{r}</p>)}
   </div>
 );
 
@@ -469,10 +466,17 @@ const InvestitoriPage: React.FC = () => {
     .filter((m): m is HomeMetric => m.value !== null);
   const nInv = numeriPiattaforma?.totaleInvestitori;
   const capInv = numeriPiattaforma?.capitaleInvestito;
-  const righeInvestitori = [
-    nInv ? (lang === 'en' ? `${nInv} ${nInv === 1 ? 'investor' : 'investors'} in total` : `${nInv} ${nInv === 1 ? 'investitore' : 'investitori'} in totale`) : '',
-    capInv ? (lang === 'en' ? `€${Math.round(capInv).toLocaleString('en-US')} invested by private investors` : `€${Math.round(capInv).toLocaleString('it-IT')} investiti dai privati`) : '',
-  ].filter(Boolean);
+  // 06/10/2026 (direzione): totale investitori e capitale investito, letti dal
+  // gestionale (sito_numeri_pubblici), come schede grandi subito dopo
+  // "Patrimonio netto" — stesse dimensioni degli altri numeri, non righe piccole.
+  const schedeInvestitori: HomeMetric[] = [
+    ...(nInv ? [{ id: 'inv-totale', value: String(nInv), label_it: nInv === 1 ? 'Investitore' : 'Investitori', label_en: nInv === 1 ? 'Investor' : 'Investors' }] : []),
+    ...(capInv ? [{ id: 'inv-capitale', value: `€${Math.round(capInv).toLocaleString(lang === 'en' ? 'en-US' : 'it-IT')}`, label_it: 'Investiti dai privati', label_en: 'Invested by private investors' }] : []),
+  ];
+  const iPatrimonio = numeri.findIndex(m => m.id === 'patrimonio');
+  const numeriConInvestitori = iPatrimonio >= 0
+    ? [...numeri.slice(0, iPatrimonio + 1), ...schedeInvestitori, ...numeri.slice(iPatrimonio + 1)]
+    : [...numeri, ...schedeInvestitori];
   const barre = (copy.ir_crescita || []).filter(b => b.anno);
   const azionisti = copy.ir_azionisti || [];
   const stat = copy.ir_privati_stat || [];
@@ -511,7 +515,7 @@ const InvestitoriPage: React.FC = () => {
               {tx('ir_numeri_testo') && <p className="text-[13px] leading-relaxed text-white/60">{tx('ir_numeri_testo')}</p>}
             </motion.div>
             <motion.div {...fadeUp} className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
-              {numeri.map(m => <SchedaNumero key={m.id} m={m} lang={lang} sotto={m.id === 'patrimonio' ? righeInvestitori : undefined} />)}
+              {numeriConInvestitori.map(m => <SchedaNumero key={m.id} m={m} lang={lang} />)}
             </motion.div>
           </div>
         </Sezione>

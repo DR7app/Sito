@@ -25,6 +25,11 @@ export interface NumeriPiattaforma {
   clientiServiti: number;
   fatturato: number;
   valoreFlotta: number;
+  // 06/10/2026: pagina /investitori, sotto "Patrimonio netto". Due totali dal
+  // gestionale (Amministrazione > Investitori), mai nomi ne' importi singoli.
+  // null = numero non disponibile: la riga non si mostra.
+  totaleInvestitori: number | null;
+  capitaleInvestito: number | null;
 }
 
 let richiesta: Promise<NumeriPiattaforma | null> | null = null;
@@ -37,7 +42,9 @@ function leggiNumeri(): Promise<NumeriPiattaforma | null> {
       const d = (data || {}) as Record<string, unknown>;
       const n = (v: unknown) => (typeof v === 'number' ? v : Number(v));
       const numeri = { contrattiFirmati: n(d.contratti_firmati), clientiServiti: n(d.clienti_serviti), fatturato: n(d.fatturato), valoreFlotta: n(d.valore_flotta ?? 0) };
-      return Object.values(numeri).every(Number.isFinite) ? numeri : null;
+      if (!Object.values(numeri).every(Number.isFinite)) return null;
+      const facoltativo = (v: unknown) => (v == null || !Number.isFinite(n(v)) ? null : n(v));
+      return { ...numeri, totaleInvestitori: facoltativo(d.totale_investitori), capitaleInvestito: facoltativo(d.capitale_investito) };
     })().catch((err) => {
       console.error('[useNumeriPiattaforma] numeri non disponibili:', err);
       richiesta = null;

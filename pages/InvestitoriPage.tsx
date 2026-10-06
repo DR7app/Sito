@@ -155,11 +155,15 @@ const ICONA_METRICA: Record<string, string> = {
   patrimonio: 'patrimonio', capitale: 'capitale', recensioni: 'round', brand: 'utile', azienda: 'patrimonio',
 };
 
-const SchedaNumero: React.FC<{ m: HomeMetric; lang: string }> = ({ m, lang }) => (
+// 06/10/2026 (direzione): sotto "Patrimonio netto" il totale investitori e il
+// capitale investito, letti dal gestionale (sito_numeri_pubblici): crescono
+// da soli a ogni nuovo investitore o versamento.
+const SchedaNumero: React.FC<{ m: HomeMetric; lang: string; sotto?: string[] }> = ({ m, lang, sotto }) => (
   <div className="border-t border-white/[0.08] pt-5">
     <Icona nome={ICONA_METRICA[m.id] || 'round'} />
     <p className="mt-4 font-serif text-[1rem] leading-none text-white md:text-[1.1rem]">{m.value}</p>
     <p className="mt-2 text-[12px] text-white/80">{bilingual(m, 'label', lang)}</p>
+    {sotto?.map(r => <p key={r} className="mt-1 text-[11px] text-white/55">{r}</p>)}
   </div>
 );
 
@@ -463,6 +467,12 @@ const InvestitoriPage: React.FC = () => {
   const numeri = metriche
     .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma)?.replace(/\s*\+$/, '') ?? null }))
     .filter((m): m is HomeMetric => m.value !== null);
+  const nInv = numeriPiattaforma?.totaleInvestitori;
+  const capInv = numeriPiattaforma?.capitaleInvestito;
+  const righeInvestitori = [
+    nInv ? (lang === 'en' ? `${nInv} ${nInv === 1 ? 'investor' : 'investors'} in total` : `${nInv} ${nInv === 1 ? 'investitore' : 'investitori'} in totale`) : '',
+    capInv ? (lang === 'en' ? `€${Math.round(capInv).toLocaleString('en-US')} invested by private investors` : `€${Math.round(capInv).toLocaleString('it-IT')} investiti dai privati`) : '',
+  ].filter(Boolean);
   const barre = (copy.ir_crescita || []).filter(b => b.anno);
   const azionisti = copy.ir_azionisti || [];
   const stat = copy.ir_privati_stat || [];
@@ -501,7 +511,7 @@ const InvestitoriPage: React.FC = () => {
               {tx('ir_numeri_testo') && <p className="text-[13px] leading-relaxed text-white/60">{tx('ir_numeri_testo')}</p>}
             </motion.div>
             <motion.div {...fadeUp} className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
-              {numeri.map(m => <SchedaNumero key={m.id} m={m} lang={lang} />)}
+              {numeri.map(m => <SchedaNumero key={m.id} m={m} lang={lang} sotto={m.id === 'patrimonio' ? righeInvestitori : undefined} />)}
             </motion.div>
           </div>
         </Sezione>

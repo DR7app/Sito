@@ -60,7 +60,12 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 .select('plate, brand, model, description, year, fuel, version, body_type')
                 .eq('plate', plate)
                 .maybeSingle();
-            if (cached && ((cached as any).brand || (cached as any).model)) {
+            // Solo righe COMPLETE: 61 righe vecchie dell'admin hanno solo marca/modello
+            // (senza anno ne' descrizione). Per quelle si rifa' la chiamata live una
+            // volta e l'upsert qui sotto completa la riga per tutti.
+            const completa = !!cached && !!((cached as any).brand || (cached as any).model)
+                && !!((cached as any).year || (cached as any).description);
+            if (cached && completa) {
                 const c = cached as { brand: string | null; model: string | null; description: string | null; year: string | null; fuel: string | null; version: string | null; body_type: string | null };
                 sbCache.rpc('increment_plate_lookup_count', { p_plate: plate })
                     .then(({ error }) => { if (error) console.warn('[lookupTarga] increment RPC failed:', error.message) }, () => {/* swallow */});

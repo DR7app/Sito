@@ -47,6 +47,42 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         };
     }
 
+    // 2026-10-08: cache condivisa con l'admin (vehicle_plate_cache). Ogni chiamata
+    // OpenAPI e' a pagamento: una targa gia' cercata (dal sito O dall'admin) si
+    // serve dal database, senza costo e senza toccare il rate limit. Il cliente
+    // riceve la stessa identica risposta. Fail-open: un errore qui fa solo la
+    // chiamata live come prima.
+    if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+        try {
+            const sbCache = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+            const { data: cached } = await sbCache
+                .from('vehicle_plate_cache')
+                .select('plate, brand, model, description, year, fuel, version, body_type')
+                .eq('plate', plate)
+                .maybeSingle();
+            if (cached && ((cached as any).brand || (cached as any).model)) {
+                const c = cached as { brand: string | null; model: string | null; description: string | null; year: string | null; fuel: string | null; version: string | null; body_type: string | null };
+                sbCache.rpc('increment_plate_lookup_count', { p_plate: plate })
+                    .then(({ error }) => { if (error) console.warn('[lookupTarga] increment RPC failed:', error.message) }, () => {/* swallow */});
+                console.log('[lookupTarga] Cache HIT:', plate);
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({
+                        plate,
+                        carMake: c.brand || '',
+                        carModel: c.model || '',
+                        description: c.description || '',
+                        version: c.version || c.description || '',
+                        bodyType: c.body_type || '',
+                        registrationYear: c.year || '',
+                        fuelType: c.fuel || '',
+                    }),
+                };
+            }
+        } catch (e: any) { console.warn('[lookupTarga] cache read failed (live lookup):', e?.message); }
+    }
+
     // 2026-07-18: risolvi il token PRIMA dal config condiviso
     // (centralina_pro_config.config.openapi_automotive_token) e POI da env.
     // Cosi' si aggiorna il token con una sola SQL, senza toccare Netlify, e vale
@@ -163,6 +199,32 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         const bodyType = json.data.BodyType || json.data.CarBodyType || json.data.Bodywork
             || json.data.VehicleType || json.data.Body || '';
         const version = json.data.Version || json.data.Setup || json.data.Trim || Description || '';
+
+        // 2026-10-08: salva in cache (stessa tabella dell'admin). AWAIT obbligatorio:
+        // su Netlify, dopo il return, una scrittura pendente viene persa e la stessa
+        // targa si ripaga alla ricerca successiva. Un errore qui non blocca il cliente.
+        if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+            try {
+                const str = (v: unknown): string | null => (v == null || v === '' ? null : String(v));
+                const sbSave = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+                const { error: cacheErr } = await sbSave.from('vehicle_plate_cache').upsert({
+                    plate,
+                    brand: str(carMake),
+                    model: str(carModel),
+                    make_model: [carMake, carModel].filter(Boolean).join(' ') || null,
+                    description: str(Description),
+                    year: str(RegistrationYear),
+                    fuel: str(FuelType),
+                    power_cv: str(json.data.PowerCV),
+                    displacement: str(json.data.EngineSize),
+                    doors: str(json.data.NumberOfDoors),
+                    version: str(version),
+                    body_type: str(bodyType),
+                    source: 'openapi',
+                }, { onConflict: 'plate' });
+                if (cacheErr) console.error('[lookupTarga] Cache save failed:', cacheErr.message);
+            } catch (e: any) { console.error('[lookupTarga] Cache save failed:', e?.message); }
+        }
 
         return {
             statusCode: 200,

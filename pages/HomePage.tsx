@@ -170,8 +170,10 @@ const HomePage: React.FC = () => {
   // piu'. Adesso il valore che contiene `{reviewCount}` prende il numero
   // vero di Google; finche' non si sa, quella metrica non si mostra (non si
   // stampa una cifra vecchia solo per riempire la griglia).
+  // 08/10/2026 (direzione): niente "+" finale neanche qui, cifre esatte come
+  // sulla pagina Investitori: stessi numeri, stessa scrittura.
   const metrics = copy.metrics
-    .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma) }))
+    .map((m) => ({ ...m, value: risolviNumeriPiattaforma(risolviReviewCount(m.value, reviewCount), numeriPiattaforma)?.replace(/\s*\+$/, '') ?? null }))
     .filter((m): m is typeof copy.metrics[number] => m.value !== null);
 
   return (

@@ -173,17 +173,19 @@ export const Metric: React.FC<{
 }> = ({ value, label, delay = 0, run, lang = 'it' }) => (
   <Reveal delay={delay} className="text-center md:text-left">
     {run === undefined ? (
-      <div className="t-h2" style={{ lineHeight: 1, fontSize: 'clamp(1.4rem, 2.2vw, 1.9rem)' }}>{value}</div>
+      <div className="font-display text-[1rem] md:text-[1.1rem]" style={{ lineHeight: 1 }}>{value}</div>
     ) : (
       <CountUp
         text={value}
         run={run}
         lang={lang}
-        className="t-h2"
-        style={{ lineHeight: 1, fontSize: 'clamp(1.4rem, 2.2vw, 1.9rem)' }}
+        className="font-display text-[1rem] md:text-[1.1rem]"
+        style={{ lineHeight: 1 }}
       />
     )}
-    <div className="t-eyebrow mt-4">{label}</div>
+    {/* 08/10/2026 (direzione): stessa misura della pagina Investitori,
+        numero 1-1.1rem ed etichetta 12px in chiaro, non piu' monumentale. */}
+    <div className="mt-2 font-ui text-[12px]" style={{ color: 'var(--fg-dim)' }}>{label}</div>
   </Reveal>
 );
 

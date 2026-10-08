@@ -226,7 +226,8 @@ const HomePage: React.FC = () => {
                     fondo. Sul telefono resta una colonna sola, e non e' pigrizia:
                     "€2,5M+" scritto nel corpo monumentale non ha uno spazio dove
                     andare a capo e in mezza schermata uscirebbe dal bordo. */}
-                <Grid cols={metrics.length % 3 === 0 ? 3 : 4} gap="lg">
+                {/* 08/10/2026: stessa griglia della pagina Investitori (5 colonne). */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
                   {metrics.map((m, i) => (
                     <Metric
                       key={m.id}
@@ -237,7 +238,7 @@ const HomePage: React.FC = () => {
                       lang={lang}
                     />
                   ))}
-                </Grid>
+                </div>
               </div>
             </div>
           </Shell>

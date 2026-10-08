@@ -15,6 +15,11 @@ import { supabase } from '../supabaseClient';
  * somma dei valori scritti veicolo per veicolo nella tab Veicoli. Segnaposto
  * `{valoreFlotta}`; finche' nessun veicolo ha un valore la metrica non si mostra.
  *
+ * 08/10/2026 — `{totaleInvestitori}` e `{capitaleRaccolto}`: numero di
+ * investitori e somma dei versamenti (Amministrazione > Investitori). Stanno
+ * nella lista "Numeri" della Home come gli altri, cosi' Home e /investitori
+ * mostrano le stesse cifre e l'etichetta si cambia da Admin > Sito > Home.
+ *
  * Ogni testo li chiede con un segnaposto: `{contrattiFirmati}`,
  * `{clientiServiti}`, `{fatturatoGenerato}`. Finche' il numero non arriva la
  * metrica non si mostra: meglio un dato in meno che un dato inventato.
@@ -25,7 +30,7 @@ export interface NumeriPiattaforma {
   clientiServiti: number;
   fatturato: number;
   valoreFlotta: number;
-  // 06/10/2026: pagina /investitori, sotto "Patrimonio netto". Due totali dal
+  // 06/10/2026: segnaposti {totaleInvestitori} e {capitaleRaccolto}. Due totali dal
   // gestionale (Amministrazione > Investitori), mai nomi ne' importi singoli.
   // null = numero non disponibile: la riga non si mostra.
   totaleInvestitori: number | null;
@@ -72,10 +77,14 @@ const cifra = (v: number) => new Intl.NumberFormat('it-IT', { maximumFractionDig
  */
 export function risolviNumeriPiattaforma(testo: string | null, numeri: NumeriPiattaforma | null): string | null {
   if (testo === null) return null;
-  if (!/\{(contrattiFirmati|clientiServiti|fatturatoGenerato|valoreFlotta)\}/.test(testo)) return testo;
+  if (!/\{(contrattiFirmati|clientiServiti|fatturatoGenerato|valoreFlotta|totaleInvestitori|capitaleRaccolto)\}/.test(testo)) return testo;
   if (!numeri) return null;
   if (testo.includes('{valoreFlotta}') && !(numeri.valoreFlotta > 0)) return null;
+  if (testo.includes('{totaleInvestitori}') && !(numeri.totaleInvestitori && numeri.totaleInvestitori > 0)) return null;
+  if (testo.includes('{capitaleRaccolto}') && !(numeri.capitaleInvestito && numeri.capitaleInvestito > 0)) return null;
   return testo
+    .split('{totaleInvestitori}').join(cifra(numeri.totaleInvestitori ?? 0))
+    .split('{capitaleRaccolto}').join(`€${cifra(numeri.capitaleInvestito ?? 0)}`)
     .split('{contrattiFirmati}').join(cifra(numeri.contrattiFirmati))
     .split('{clientiServiti}').join(cifra(numeri.clientiServiti))
     .split('{fatturatoGenerato}').join(`€${cifra(numeri.fatturato)}`)

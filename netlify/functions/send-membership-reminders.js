@@ -142,7 +142,7 @@ exports.handler = async (event) => {
           `DR7 Team`;
 
         try {
-          const greenApiUrl = `https://api.green-api.com/waInstance${greenInstanceId}/sendMessage/${greenToken}`;
+          const greenApiUrl = `https://api.greenapi.com/waInstance${greenInstanceId}/sendMessage/${greenToken}`;
           const waResponse = await fetch(greenApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -221,7 +221,7 @@ exports.handler = async (event) => {
           `Link rinnovo: ${renewalLink}`;
 
         try {
-          const greenApiUrl = `https://api.green-api.com/waInstance${greenInstanceId}/sendMessage/${greenToken}`;
+          const greenApiUrl = `https://api.greenapi.com/waInstance${greenInstanceId}/sendMessage/${greenToken}`;
           await fetch(greenApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

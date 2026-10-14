@@ -7,10 +7,9 @@
  * e' che a pagare e' un ordine solo, quello padre, e che nexi-callback
  * ritrova i figli passando da `ordini_carrello`.
  *
- *  noleggio   -> riga in `bookings` (pending/unpaid, blocca il mezzo) +
- *                copia in `pending_nexi_bookings`
- *  lavaggio   -> `pending_nexi_bookings` (la prenotazione nasce a pagamento
- *  meccanica     avvenuto, come oggi)
+ *  noleggio   -> `pending_nexi_bookings` (la prenotazione nasce a pagamento
+ *  lavaggio      avvenuto; il noleggio prima passa i controlli del database
+ *  meccanica     a vuoto con verifica_prenotazione_sito)
  *  tour       -> book-tour, che valida i posti e prepara il pending
  *  wallet     -> `credit_wallet_purchases`
  *  club       -> `dr7_club_subscriptions`
@@ -220,8 +219,10 @@ export async function preparaArticoloCarta(
         const prenotazione = datiPrenotazione(articolo);
         const libero = await disponibilitaNoleggio(prenotazione);
         if (libero) return libero;
-        // Il noleggio blocca il mezzo subito, come fa oggi il wizard: la riga
-        // nasce pending/unpaid e diventa confermata a pagamento avvenuto.
+        // 14/10/2026: niente riga in `bookings` prima del pagamento, come il
+        // wizard. La prenotazione la crea nexi-callback dal pending a
+        // pagamento avvenuto. I controlli del database (sospese, promo, mezzo
+        // occupato) girano prima, a vuoto.
         const booking = conOrdine(prenotazione, ordine, ordinePadre);
         booking.status = 'pending';
         booking.payment_status = 'unpaid';
@@ -230,14 +231,16 @@ export async function preparaArticoloCarta(
         (booking.booking_details as Dati).payment_link_created_at = new Date().toISOString();
         (booking.booking_details as Dati).payment_link_expires_at = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-        const { data, error } = await supabase.from('bookings').insert(booking).select('id').single();
-        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
+        const { data: erroreVerifica, error: erroreRpc } = await supabase
+          .rpc('verifica_prenotazione_sito', { p_booking: booking });
+        if (erroreRpc) return { ok: false, errore: erroreRpc.message };
+        if (erroreVerifica) return { ok: false, errore: testoPrenotazioniSospese(erroreVerifica) || String(erroreVerifica) };
 
-        await supabase.from('pending_nexi_bookings').insert({
-          nexi_order_id: ordine,
-          booking_data: { ...booking, booking_id: data.id },
-        });
-        return { ok: true, bookingId: data.id };
+        const { error } = await supabase
+          .from('pending_nexi_bookings')
+          .insert({ nexi_order_id: ordine, booking_data: booking });
+        if (error) return { ok: false, errore: testoPrenotazioniSospese(error) || error.message };
+        return { ok: true };
       }
 
       case 'lavaggio':

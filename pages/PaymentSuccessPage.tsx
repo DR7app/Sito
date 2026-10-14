@@ -509,12 +509,22 @@ const PaymentSuccessPage: React.FC = () => {
                     // creato il booking lo recuperiamo, altrimenti arriva a breve.
                     const pendingSvc = String(pending.booking_data?.service_type || '').toLowerCase();
                     const isPendingTour = pendingSvc === 'heli_rental' || pendingSvc === 'boat_rental' || pendingSvc === 'stay_rental';
-                    if (isPendingTour) {
+                    // 14/10/2026: anche il NOLEGGIO nasce solo in nexi-callback
+                    // (prima del pagamento non esiste piu' nessuna riga). Se la
+                    // creassimo qui, il callback la troverebbe "gia' pagata" e
+                    // salterebbe contratto, firma e fattura.
+                    const isPendingNoleggio = !pendingSvc || pendingSvc === 'rental' || pendingSvc === 'car_rental';
+                    if (isPendingTour || isPendingNoleggio) {
                         setPurchaseType('booking');
-                        const { data: tourBk } = await supabase
-                            .from('bookings').select('*').eq('nexi_order_id', orderId).limit(1);
-                        if (tourBk && tourBk.length > 0) {
-                            const url = await buildBookingWhatsAppUrl(tourBk[0], contact.whatsapp_url);
+                        let creato: any = null;
+                        for (let tentativo = 0; tentativo < 6 && !creato; tentativo++) {
+                            const { data: bk } = await supabase
+                                .from('bookings').select('*').eq('nexi_order_id', orderId).limit(1);
+                            if (bk && bk.length > 0) creato = bk[0];
+                            else await new Promise(r => setTimeout(r, 2000));
+                        }
+                        if (creato) {
+                            const url = await buildBookingWhatsAppUrl(creato, contact.whatsapp_url);
                             if (url) setWhatsappUrl(url);
                         }
                         setUpdating(false);

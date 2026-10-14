@@ -546,6 +546,33 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
 
         if (insertError) {
           console.error('Error creating booking from pending:', insertError);
+          // 14/10/2026: il noleggio dal sito non scrive piu' nulla in
+          // `bookings` prima del pagamento. Se nel frattempo il mezzo e'
+          // stato preso, qui il cliente ha GIA' pagato ma la prenotazione non
+          // nasce: lo staff deve saperlo subito (rimborso o altro mezzo).
+          // Il pending resta, cosi' i retry di Nexi possono riprovare.
+          if (!pending.booking_data?.booking_details?.alert_insert_fallito) {
+            try {
+              const bd = pending.booking_data || {};
+              const testo = `*PAGATO MA PRENOTAZIONE NON CREATA*\n\n`
+                + `*Ordine Nexi:* ${orderId}\n`
+                + `*Cliente:* ${bd.customer_name || '-'} ${bd.customer_phone || ''}\n`
+                + `*Servizio:* ${bd.vehicle_name || bd.service_name || '-'}\n`
+                + `*Date:* ${bd.pickup_date || bd.appointment_date || '-'} -> ${bd.dropoff_date || '-'}\n`
+                + `*Importo:* EUR ${((Number(bd.price_total) || 0) / 100).toFixed(2)}\n`
+                + `*Errore:* ${insertError.message}`;
+              await fetch(`${process.env.URL || 'https://dr7.app'}/.netlify/functions/send-whatsapp-notification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customMessage: testo }),
+              });
+              await supabase.from('pending_nexi_bookings')
+                .update({ booking_data: { ...bd, booking_details: { ...(bd.booking_details || {}), alert_insert_fallito: new Date().toISOString() } } })
+                .eq('id', pending.id);
+            } catch (alertErr) {
+              console.error('[nexi-callback] Avviso staff fallito:', alertErr);
+            }
+          }
           return { statusCode: 500, body: 'Error creating booking' };
         }
 

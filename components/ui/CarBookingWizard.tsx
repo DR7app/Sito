@@ -5386,8 +5386,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         }
 
         // Normal Nexi flow: amount > 0
-        // 3. Insert booking immediately into bookings table as pending/unpaid
-        //    This blocks the calendar slot so no one else can book the same car
+        // 14/10/2026: una prenotazione dal sito esiste SOLO se pagata (Nexi o
+        // Credit Wallet). Prima qui si scriveva la riga in `bookings` come
+        // "unpaid" per bloccare il mezzo: chi abbandonava il pagamento
+        // lasciava una prenotazione da pagare per un'ora, con Lavaggio
+        // Rientro e cauzione creati dai trigger (Roberto Piras, 14/10).
+        // Ora la prenotazione sta solo in pending_nexi_bookings e la crea
+        // nexi-callback quando Nexi conferma il pagamento.
         bookingData.status = 'pending';
         bookingData.payment_status = 'unpaid';
         bookingData.vehicle_image_url = item.image;
@@ -5402,35 +5407,32 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           payment_link_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         };
 
-        const { data: insertedPendingBooking, error: bookingInsertError } = await supabase
-          .from('bookings')
-          .insert(bookingData)
-          .select()
-          .single();
-
-        if (bookingInsertError) {
-          console.error("Booking INSERT failed:", bookingInsertError);
-          throw new Error(`${t({ it: 'Errore salvataggio prenotazione:', en: 'Error saving the booking:' })} ${bookingInsertError.message}`);
+        // I controlli del database (prenotazioni sospese, promozione valida,
+        // mezzo gia' occupato) devono dire di no PRIMA del pagamento: prova
+        // a vuoto, il database annulla sempre e non resta nessuna riga.
+        const { data: erroreVerifica, error: verificaRpcError } = await supabase
+          .rpc('verifica_prenotazione_sito', { p_booking: bookingData });
+        if (verificaRpcError) {
+          console.error("Booking check failed:", verificaRpcError);
+          throw new Error(`${t({ it: 'Errore salvataggio prenotazione:', en: 'Error saving the booking:' })} ${verificaRpcError.message}`);
+        }
+        if (erroreVerifica) {
+          console.error("Booking rejected by database:", erroreVerifica);
+          if (String(erroreVerifica).includes('CONFLICT_DOUBLE_BOOKING')) {
+            throw new Error(t({ it: 'Il veicolo non e piu disponibile nelle date scelte. Scegli altre date o un altro veicolo.', en: 'The vehicle is no longer available for the selected dates. Choose other dates or another vehicle.' }));
+          }
+          throw new Error(testoPrenotazioniSospese(erroreVerifica) || `${t({ it: 'Errore salvataggio prenotazione:', en: 'Error saving the booking:' })} ${erroreVerifica}`);
         }
 
-        console.log("Pending booking created in bookings table:", insertedPendingBooking.id);
-
-        // Also store in pending_nexi_bookings as backup for PaymentSuccessPage fallback
-        // 21/09/2026: c'era un `.catch()` attaccato alla query. Il builder di
-        // Supabase e' un thenable, non una Promise: `.catch` non esiste e
-        // l'intera prenotazione moriva QUI, dopo essere gia' stata scritta —
-        // "insert(...).catch is not a function". Il backup non deve poter far
-        // fallire nulla: si prova, e se non riesce si annota e si prosegue.
-        try {
-          const { error: erroreBackup } = await supabase
-            .from('pending_nexi_bookings')
-            .insert({
-              nexi_order_id: nexiOrderId,
-              booking_data: { ...bookingData, booking_id: insertedPendingBooking.id }
-            });
-          if (erroreBackup) console.warn('pending_nexi_bookings backup insert failed:', erroreBackup);
-        } catch (e) {
-          console.warn('pending_nexi_bookings backup insert failed:', e);
+        // Unico posto dove la prenotazione esiste prima del pagamento: senza
+        // questa riga nexi-callback non saprebbe cosa creare, quindi se non
+        // si scrive non si va a pagare.
+        const { error: erroreAttesa } = await supabase
+          .from('pending_nexi_bookings')
+          .insert({ nexi_order_id: nexiOrderId, booking_data: bookingData });
+        if (erroreAttesa) {
+          console.error("pending_nexi_bookings INSERT failed:", erroreAttesa);
+          throw new Error(`${t({ it: 'Errore salvataggio prenotazione:', en: 'Error saving the booking:' })} ${erroreAttesa.message}`);
         }
 
         // 4. Validate amount before calling Nexi

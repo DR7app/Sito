@@ -137,6 +137,11 @@ const CarrelloDrawer: React.FC = () => {
                           {articolo.sottotitolo && (
                             <p className="text-gray-400 text-xs mt-1 whitespace-pre-line">{articolo.sottotitolo}</p>
                           )}
+                          {articolo.tipo === 'prevendita' && (
+                            <p className="text-red-400 text-xs mt-2">
+                              {t({ it: 'Solo carta: Credit Wallet e codice sconto non disponibili.', en: 'Card only: Credit Wallet and discount codes not available.' })}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex justify-between items-center mt-3">

@@ -10,11 +10,10 @@ import type { DatiFatturaCliente } from './datiFatturaCliente';
  * Nexi; a pagamento avvenuto la attiva `prevendite-finalizza` (chiamata dal
  * callback Nexi, anche per gli ordini figli del carrello).
  *
- * Credit Wallet: una sola funzione del database,
- * `prevendita_acquista_con_credito`, scala il saldo e attiva il pacchetto
- * nella stessa transazione, leggendo il prezzo dal catalogo. Finche' la
- * migrazione 20260926_prevendite_wallet_carrello non e' applicata, wallet e
- * carrello per le prevendite restano nascosti (vedi walletCarrelloPrevendite).
+ * Credit Wallet e codice sconto: NON disponibili per le prevendite dal
+ * 19/10/2026 (solo carta). Finche' la migrazione
+ * 20260926_prevendite_wallet_carrello non e' applicata, il carrello per le
+ * prevendite resta nascosto (vedi walletCarrelloPrevendite).
  */
 
 /** Riga in pending per il pagamento con carta. Le condizioni sono quelle di OGGI. */
@@ -67,35 +66,4 @@ export function walletCarrelloPrevendite(): Promise<boolean> {
       .catch(() => false);
   }
   return capacita;
-}
-
-export interface EsitoAcquistoCredito {
-  ok: boolean;
-  errore?: string;
-  prevenditaClienteId?: string;
-}
-
-/** Acquisto col Credit Wallet: saldo libero, prezzo dal catalogo, tutto nel database. */
-export async function acquistaPrevenditaConCredito(
-  prevenditaId: string,
-  dati: Partial<DatiFatturaCliente>,
-): Promise<EsitoAcquistoCredito> {
-  const { data, error } = await supabase.rpc('prevendita_acquista_con_credito', {
-    p_prevendita_id: prevenditaId,
-    p_dati: {
-      email: dati.email || '',
-      nome: dati.fullName || '',
-      telefono: dati.phone || '',
-      codice_fiscale: dati.codiceFiscale || '',
-      indirizzo: dati.indirizzo || '',
-      numero_civico: dati.numeroCivico || '',
-      citta: dati.cittaResidenza || '',
-      cap: dati.codicePostale || '',
-      provincia: dati.provinciaResidenza || '',
-    },
-  });
-  if (error) return { ok: false, errore: error.message };
-  const esito = (data || {}) as { ok?: boolean; errore?: string; prevendita_cliente_id?: string };
-  if (!esito.ok) return { ok: false, errore: esito.errore || 'Acquisto non riuscito.' };
-  return { ok: true, prevenditaClienteId: esito.prevendita_cliente_id };
 }

@@ -9,6 +9,7 @@ import { getUserCreditBalance } from '../utils/creditWallet';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import {
   carrelloPagabileACredito,
+  carrelloConPrevendita,
   etichettaTipo,
   euro,
   nuovoOrdineCarrello,
@@ -100,6 +101,7 @@ const CheckoutPage: React.FC = () => {
   // Paga solo quello che ha la spunta: il resto resta nel carrello per dopo.
   const totaleCents = totaleSelezionatiCents;
   const pagabileACredito = useMemo(() => carrelloPagabileACredito(articoliSelezionati), [articoliSelezionati]);
+  const conPrevendita = useMemo(() => carrelloConPrevendita(articoliSelezionati), [articoliSelezionati]);
 
   useEffect(() => {
     const perTipo: Partial<Record<string, BusinessSito>> = { noleggio: 'terra', lavaggio: 'lavaggio', meccanica: 'lavaggio', tour: 'aria' };
@@ -542,6 +544,17 @@ const CheckoutPage: React.FC = () => {
             </h2>
             {/* 20/09/2026: due schede al posto dei due bottoni piatti — stessa
                 scelta, stessi stati, solo piu' leggibile. */}
+            {conPrevendita && (
+              <div className="border border-red-500/50 bg-red-500/10 text-red-300 text-sm p-4 mb-4">
+                <p className="font-bold uppercase tracking-[0.14em] text-xs text-red-400 mb-1">
+                  {t({ it: 'Prevendita nel carrello', en: 'Pre-sale in your cart' })}
+                </p>
+                {t({
+                  it: 'Credit Wallet e codice sconto non sono disponibili per le prevendite: tutto l\'ordine si paga con carta. Per usare il wallet sugli altri servizi, togli la spunta alla prevendita e pagala a parte.',
+                  en: 'Credit Wallet and discount codes are not available for pre-sales: the whole order is paid by card. To use your wallet on the other services, untick the pre-sale and pay for it separately.',
+                })}
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => setMetodo('nexi')}
@@ -572,14 +585,16 @@ const CheckoutPage: React.FC = () => {
                 </span>
                 <svg className={`w-8 h-8 mb-auto ${metodo === 'credit' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /><circle cx="17" cy="13" r="1" /></svg>
                 <span className={`block text-base font-bold mt-4 ${metodo === 'credit' ? 'text-white' : 'text-gray-300'}`}>{t({ it: 'Credit Wallet', en: 'Credit Wallet' })}</span>
-                <span className="block text-xs text-gray-500 mt-1">
-                  {saldo != null
+                <span className={`block text-xs mt-1 ${conPrevendita ? 'text-red-400' : 'text-gray-500'}`}>
+                  {conPrevendita
+                    ? t({ it: 'Non disponibile con una prevendita', en: 'Not available with a pre-sale' })
+                    : saldo != null
                     ? `${t({ it: 'Disponibile', en: 'Available' })}: €${saldo.toFixed(2)}`
                     : t({ it: 'Usa il tuo credito DR7', en: 'Use your DR7 credit' })}
                 </span>
               </button>
             </div>
-            {!pagabileACredito && (
+            {!pagabileACredito && !conPrevendita && (
               <p className="text-gray-500 text-xs mt-3">
                 {t({
                   it: 'Abbonamenti e ricariche del Credit Wallet si pagano solo con carta: con uno di questi nel carrello, tutto l\'ordine va a carta.',

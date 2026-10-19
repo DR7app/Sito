@@ -20,7 +20,6 @@ import {
 import {
   rigaAcquistoPrevendita,
   walletCarrelloPrevendite,
-  acquistaPrevenditaConCredito,
 } from '../utils/prevenditeAcquisto';
 import {
   getCatalogoPrevendite,
@@ -47,7 +46,8 @@ import {
  *  - le promozioni (prezzo al giorno speciale, posti limitati) compaiono qui
  *    sopra le prevendite; "Prenota" apre il wizard con il veicolo della promo
  *    e il suo prezzo (cauzione, assicurazione e km come sempre);
- *  - una prevendita si paga anche col Credit Wallet e si mette nel carrello,
+ *  - una prevendita si mette nel carrello (dal 19/10/2026 SOLO carta: niente
+ *    Credit Wallet ne' codice sconto),
  *    quando la migrazione 20260926_prevendite_wallet_carrello e' applicata
  *    (walletCarrelloPrevendite); prima, solo carta come sempre.
  */
@@ -161,27 +161,6 @@ const PrevenditePage: React.FC = () => {
           en: 'We could not start the payment. Please try again or contact us.',
         }),
       );
-      setInPagamento(false);
-    }
-  }
-
-  /** Credit Wallet: il database scala il saldo libero e attiva il pacchetto. */
-  async function acquistaConCredito(p: Prevendita) {
-    setErrore(null);
-    if (!user?.id) {
-      navigate('/signin', { state: { from: { pathname: `${location.pathname}?prevendita=${p.id}` } } });
-      return;
-    }
-    setInPagamento(true);
-    try {
-      const dati = await caricaDatiFatturaCliente(user.id);
-      const esito = await acquistaPrevenditaConCredito(p.id, dati);
-      if (!esito.ok) {
-        setErrore(esito.errore || t({ it: 'Acquisto non riuscito.', en: 'Purchase failed.' }));
-        return;
-      }
-      navigate('/account/prevendite');
-    } finally {
       setInPagamento(false);
     }
   }
@@ -591,25 +570,21 @@ const PrevenditePage: React.FC = () => {
               </div>
 
               {walletCarrello && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => void acquistaConCredito(scelta)}
-                    disabled={inPagamento}
-                    className="border border-white/40 text-white py-3 font-semibold text-xs tracking-wider hover:bg-white/10 transition-colors disabled:opacity-50"
-                  >
-                    {user
-                      ? t({ it: 'PAGA CON CREDIT WALLET', en: 'PAY WITH CREDIT WALLET' })
-                      : t({ it: 'ACCEDI E PAGA COL WALLET', en: 'SIGN IN AND PAY WITH WALLET' })}
-                  </button>
-                  <button
-                    onClick={() => void prevenditaAlCarrello(scelta)}
-                    disabled={inPagamento}
-                    className="border border-gray-700 text-gray-300 py-3 font-semibold text-xs tracking-wider hover:bg-gray-900 transition-colors disabled:opacity-50"
-                  >
-                    {t({ it: 'AGGIUNGI AL CARRELLO', en: 'ADD TO CART' })}
-                  </button>
-                </div>
+                <button
+                  onClick={() => void prevenditaAlCarrello(scelta)}
+                  disabled={inPagamento}
+                  className="w-full border border-gray-700 text-gray-300 py-3 font-semibold text-xs tracking-wider hover:bg-gray-900 transition-colors disabled:opacity-50"
+                >
+                  {t({ it: 'AGGIUNGI AL CARRELLO', en: 'ADD TO CART' })}
+                </button>
               )}
+
+              <p className="text-xs text-red-400 text-center">
+                {t({
+                  it: 'Le prevendite si pagano solo con carta: Credit Wallet e codice sconto non sono disponibili.',
+                  en: 'Pre-sales are card only: Credit Wallet and discount codes are not available.',
+                })}
+              </p>
 
               <p className="text-xs text-gray-600 text-center">
                 {t({

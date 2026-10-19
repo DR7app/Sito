@@ -15,8 +15,7 @@
  *  club       -> `dr7_club_subscriptions`
  *  membership -> `membership_purchases`
  *  prevendita -> `prevendite_clienti` (carta: pending, la attiva il callback
- *                Nexi con prevendite-finalizza; wallet: una funzione del
- *                database scala il saldo e la attiva subito)
+ *                Nexi con prevendite-finalizza; solo carta, niente wallet)
  */
 import { supabase } from '../supabaseClient';
 import { hasSufficientBalance } from './creditWallet';
@@ -26,7 +25,7 @@ import { testoFisso } from './testiSito';
 // Rifiuto del database quando il System Control sospende le prenotazioni.
 import { testoPrenotazioniSospese } from './statoServizi';
 import type { Prevendita } from './prevendite';
-import { rigaAcquistoPrevendita, acquistaPrevenditaConCredito } from './prevenditeAcquisto';
+import { rigaAcquistoPrevendita } from './prevenditeAcquisto';
 import { caricaDatiFatturaCliente } from './datiFatturaCliente';
 
 /** 29/09/2026: book-tour riconosce il cliente dal token, non dallo userId nel corpo. */
@@ -420,15 +419,7 @@ export async function pagaArticoloACredito(
         return { ok: true, bookingId: dati.bookingId };
       }
 
-      case 'prevendita': {
-        // Prezzo, posti e saldo li controlla il database, in una transazione.
-        const p = (articolo.dati as { prevendita?: Prevendita }).prevendita;
-        if (!p?.id) return { ok: false, errore: 'Prevendita non valida.' };
-        const dati = await caricaDatiFatturaCliente(userId);
-        const esito = await acquistaPrevenditaConCredito(p.id, dati);
-        if (!esito.ok) return { ok: false, errore: esito.errore };
-        return { ok: true };
-      }
+      // Prevendita: solo carta (19/10/2026), finisce nel default.
 
       default:
         return { ok: false, errore: testoFisso({ it: 'Questo articolo si paga solo con carta.', en: 'This item can only be paid by card.' }) };

@@ -47,9 +47,16 @@ export const SCADENZA_CARRELLO_MS = 24 * 60 * 60 * 1000;
  *
  * La ricarica del wallet non puo' pagarsi col wallet, e Club e Membership
  * sono a sola carta (regola di sempre: l'abbonamento non si paga a credito).
+ * Dal 19/10/2026 anche la prevendita e' a sola carta: niente Credit Wallet e
+ * niente codice sconto (e' gia' un prezzo scontato).
  * Se nel carrello c'e' uno di questi, l'intero ordine va a carta.
  */
-export const TIPI_PAGABILI_A_CREDITO: TipoArticolo[] = ['noleggio', 'lavaggio', 'meccanica', 'tour', 'prevendita'];
+export const TIPI_PAGABILI_A_CREDITO: TipoArticolo[] = ['noleggio', 'lavaggio', 'meccanica', 'tour'];
+
+/** C'e' una prevendita: Credit Wallet e codice sconto non disponibili. */
+export function carrelloConPrevendita(articoli: ArticoloCarrello[]): boolean {
+  return articoli.some(a => a.tipo === 'prevendita');
+}
 
 export function carrelloPagabileACredito(articoli: ArticoloCarrello[]): boolean {
   return articoli.length > 0 && articoli.every(a => TIPI_PAGABILI_A_CREDITO.includes(a.tipo));

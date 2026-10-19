@@ -2672,7 +2672,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     const calculatedRecentLicenseFee = 0;
 
     // --- LAVAGGIO (pulizia finale) — price from Centralina Pro (servizi.lavaggio.fee)
-    const calculatedLavaggioFee = tierPricingForCalc.lavaggio;
+    let calculatedLavaggioFee = tierPricingForCalc.lavaggio;
 
     // --- KM PACKAGE ---
     let calculatedKmPackageCost = 0;
@@ -2791,13 +2791,16 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // --- PREVENDITA: cio' che il cliente ha gia' pagato vale zero ---------
     // Il noleggio e' gia' pagato col pacchetto; i km inclusi diventano quelli
     // della prevendita (piu' gli eventuali pacchetti km comprati adesso);
-    // l'assicurazione cade a zero solo se il pacchetto la comprende. Tutto il
+    // l'assicurazione cade a zero solo se il pacchetto la comprende; il
+    // lavaggio (pulizia finale) e' sempre incluso (19/10/2026). Tutto il
     // resto — extra, secondo conducente, consegna, upgrade — si paga normalmente.
     const prevenditaAttiva = prevenditaScelta;
     let prevenditaCopertura = 0;
     if (prevenditaAttiva) {
       prevenditaCopertura += calculatedRentalCost;
       calculatedRentalCost = 0;
+      prevenditaCopertura += calculatedLavaggioFee;
+      calculatedLavaggioFee = 0;
       if (prevenditaAttiva.assicurazione_inclusa) {
         // Compresa e' UNA assicurazione precisa, quella scritta nel pacchetto.
         // Se il cliente sceglie quella, non paga niente; se ne sceglie una piu'
@@ -6647,8 +6650,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 <div className={`flex items-center p-3 rounded-md border ${'bg-gray-800/50 border-gray-700'}`}>
                   <input type="checkbox" checked disabled className="h-4 w-4" />
                   <span className="ml-3 text-white">{t({ it: "Pulizia finale", en: "Final cleaning" })}</span>
-                  <span className={`ml-auto font-semibold ${'text-white'}`}>
-                    {`€${tierPricing.lavaggio.toFixed(2)}`}
+                  <span className={`ml-auto font-semibold ${prevenditaScelta ? 'text-green-400' : 'text-white'}`}>
+                    {prevenditaScelta
+                      ? t({ it: 'Incluso nella prevendita', en: 'Included in pre-sale' })
+                      : `€${tierPricing.lavaggio.toFixed(2)}`}
                   </span>
                 </div>
                 )}

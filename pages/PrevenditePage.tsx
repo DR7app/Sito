@@ -258,6 +258,9 @@ const PrevenditePage: React.FC = () => {
         {p.assicurazione_inclusa || t({ it: 'Non inclusa', en: 'Not included' })}
       </dd>
 
+      <dt className="text-gray-500">{t({ it: 'Lavaggio', en: 'Car wash' })}</dt>
+      <dd className="text-white text-right font-medium">{t({ it: 'Incluso', en: 'Included' })}</dd>
+
       {p.max_utilizzi_mese != null && (
         <>
           <dt className="text-gray-500">{t({ it: 'Massimo al mese', en: 'Max per month' })}</dt>

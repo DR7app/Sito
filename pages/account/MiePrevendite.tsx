@@ -129,7 +129,7 @@ const MiePrevendite: React.FC = () => {
           <article key={pc.id} className="border border-gray-800 rounded-xl overflow-hidden bg-gray-950">
             <div className="sm:flex">
               {pc.foto_url && (
-                <img src={pc.foto_url} alt={pc.nome} className="w-full sm:w-48 h-40 sm:h-auto object-cover" />
+                <img src={pc.foto_url} alt={pc.nome} className="w-full sm:w-48 h-56 sm:h-auto object-contain bg-black" />
               )}
               <div className="p-6 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-3">

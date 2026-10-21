@@ -3,8 +3,12 @@ import React, { useRef, useState } from 'react';
 /**
  * Carosello di foto (23/09/2026, Prevendite): frecce, pallini e scorrimento
  * col dito. Con una sola foto e' una foto e basta, senza controlli.
+ *
+ * 21/10/2026 `intera`: la foto si vede TUTTA, qualunque formato (le prevendite
+ * hanno foto verticali 9:16 che in una fascia orizzontale restavano tagliate:
+ * insegna e meta' auto fuori). Il vuoto ai lati lo riempie la stessa foto sfocata.
  */
-const CaroselloFoto: React.FC<{ foto: string[]; alt: string; className?: string }> = ({ foto, alt, className = 'h-56' }) => {
+const CaroselloFoto: React.FC<{ foto: string[]; alt: string; className?: string; intera?: boolean }> = ({ foto, alt, className = 'h-56', intera = false }) => {
   const [indice, setIndice] = useState(0);
   const inizioTocco = useRef<number | null>(null);
   const n = foto.length;
@@ -24,7 +28,12 @@ const CaroselloFoto: React.FC<{ foto: string[]; alt: string; className?: string 
       }}
     >
       <div className="flex h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${indice * 100}%)` }}>
-        {foto.map((url, i) => (
+        {foto.map((url, i) => intera ? (
+          <div key={url + i} className="relative w-full h-full flex-shrink-0 overflow-hidden bg-black">
+            <img src={url} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50" loading={i === 0 ? 'eager' : 'lazy'} draggable={false} />
+            <img src={url} alt={`${alt} ${i + 1}`} className="relative w-full h-full object-contain" loading={i === 0 ? 'eager' : 'lazy'} draggable={false} />
+          </div>
+        ) : (
           <img key={url + i} src={url} alt={`${alt} ${i + 1}`} className="w-full h-full object-cover flex-shrink-0" loading={i === 0 ? 'eager' : 'lazy'} draggable={false} />
         ))}
       </div>

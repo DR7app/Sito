@@ -433,7 +433,7 @@ const PrevenditePage: React.FC = () => {
                   key={p.id}
                   className="border border-gray-800 rounded-2xl overflow-hidden bg-gray-950 flex flex-col hover:border-gray-600 transition-colors"
                 >
-                  <CaroselloFoto foto={fotoPrevendita(p)} alt={p.nome} className="h-56" />
+                  <CaroselloFoto foto={fotoPrevendita(p)} alt={p.nome} className="aspect-[4/5]" intera />
 
                   <div className="p-6 flex-1 flex flex-col gap-4">
                     <div>
@@ -511,7 +511,7 @@ const PrevenditePage: React.FC = () => {
             onClick={e => e.stopPropagation()}
           >
             {fotoPrevendita(scelta).length > 0 && (
-              <CaroselloFoto foto={fotoPrevendita(scelta)} alt={scelta.nome} className="h-52 sm:rounded-t-2xl" />
+              <CaroselloFoto foto={fotoPrevendita(scelta)} alt={scelta.nome} className="aspect-square sm:rounded-t-2xl" intera />
             )}
             <div className="p-6 space-y-5">
               <div>

@@ -63,6 +63,7 @@ import MiePrevendite from './pages/account/MiePrevendite';
 import AutoBookingPopup from './components/ui/AutoBookingPopup';
 import HeliTourPopup from './components/ui/HeliTourPopup';
 import { useAuth } from './hooks/useAuth';
+import { tracciaPagina } from './utils/tracciaVisite';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { DR7AIFloatingButton } from './components/ui/DR7AIChat';
 import { getAspettoCopy, DEFAULT_ASPETTO, type AspettoCopy } from './utils/siteCopy';
@@ -249,6 +250,13 @@ const AnimatedRoutes = () => {
       });
     }
   }, [location.pathname, location.search]);
+
+  // 21/10/2026: storico accessi + pagine visitate per il Report Sito
+  // (regole di consenso in utils/tracciaVisite.ts).
+  const { user: utenteTraccia } = useAuth();
+  React.useEffect(() => {
+    void tracciaPagina(location.pathname, utenteTraccia?.id || null);
+  }, [location.pathname, utenteTraccia?.id]);
 
   // Carica le categorie dalle Centralina Pro (admin-editabili).
   // Ogni categoria genera automaticamente una route /<id> che apre la

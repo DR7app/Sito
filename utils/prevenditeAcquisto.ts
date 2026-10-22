@@ -10,10 +10,12 @@ import type { DatiFatturaCliente } from './datiFatturaCliente';
  * Nexi; a pagamento avvenuto la attiva `prevendite-finalizza` (chiamata dal
  * callback Nexi, anche per gli ordini figli del carrello).
  *
- * Credit Wallet e codice sconto: NON disponibili per le prevendite dal
- * 19/10/2026 (solo carta). Finche' la migrazione
- * 20260926_prevendite_wallet_carrello non e' applicata, il carrello per le
- * prevendite resta nascosto (vedi walletCarrelloPrevendite).
+ * Credit Wallet e codice sconto (22/10/2026): accesi o spenti da Centralina
+ * Pro > Automazioni; il sito li chiede a prevendite_opzioni_pagamento() e il
+ * database li fa rispettare. Senza la migrazione
+ * 20261022_prevendite_wallet_codice_sconto restano spenti (solo carta, come
+ * dal 19/10). Il prezzo di una riga del sito lo ricalcola il database
+ * (catalogo − codice): il browser non lo decide.
  */
 
 /** Riga in pending per il pagamento con carta. Le condizioni sono quelle di OGGI. */
@@ -22,8 +24,11 @@ export function rigaAcquistoPrevendita(
   utente: { id: string; email?: string | null; fullName?: string | null },
   dati: Partial<DatiFatturaCliente>,
   nexiOrderId: string,
+  codiceSconto?: string | null,
 ): Record<string, unknown> {
   return {
+    // La colonna esiste solo dopo la migrazione: si manda solo con un codice.
+    ...(codiceSconto ? { codice_sconto: codiceSconto } : {}),
     prevendita_id: p.id,
     user_id: utente.id,
     customer_email: dati.email || utente.email || '',
@@ -66,4 +71,76 @@ export function walletCarrelloPrevendite(): Promise<boolean> {
       .catch(() => false);
   }
   return capacita;
+}
+
+export interface OpzioniPagamentoPrevendite {
+  wallet: boolean;
+  codiceSconto: boolean;
+}
+
+let opzioni: Promise<OpzioniPagamentoPrevendite> | null = null;
+
+/** Interruttori di Centralina Pro. Senza migrazione o nel dubbio: spenti. */
+export function opzioniPagamentoPrevendite(): Promise<OpzioniPagamentoPrevendite> {
+  if (!opzioni) {
+    opzioni = Promise.resolve(supabase.rpc('prevendite_opzioni_pagamento'))
+      .then(({ data, error }) => {
+        if (error || !data) return { wallet: false, codiceSconto: false };
+        const o = data as { wallet?: boolean; codice_sconto?: boolean };
+        return { wallet: o.wallet === true, codiceSconto: o.codice_sconto === true };
+      })
+      .catch(() => ({ wallet: false, codiceSconto: false }));
+  }
+  return opzioni;
+}
+
+export interface EsitoSconto {
+  ok: boolean;
+  errore?: string;
+  codice?: string;
+  sconto?: number;
+  prezzoFinale?: number;
+  descrizione?: string;
+}
+
+/** Valida il codice nel database e restituisce il prezzo finale. */
+export async function calcolaScontoPrevendita(prevenditaId: string, codice: string): Promise<EsitoSconto> {
+  const { data, error } = await supabase.rpc('prevendita_calcola_sconto', { p_prevendita_id: prevenditaId, p_codice: codice });
+  if (error) return { ok: false, errore: 'Codice non verificabile in questo momento.' };
+  const r = (data || {}) as { ok?: boolean; errore?: string; codice?: string; sconto?: number; prezzo_finale?: number; descrizione?: string };
+  if (!r.ok) return { ok: false, errore: r.errore || 'Codice non valido.' };
+  return { ok: true, codice: r.codice, sconto: Number(r.sconto), prezzoFinale: Number(r.prezzo_finale), descrizione: r.descrizione };
+}
+
+export interface EsitoAcquistoCredito {
+  ok: boolean;
+  errore?: string;
+  prevenditaClienteId?: string;
+}
+
+/** Acquisto col Credit Wallet: saldo libero, prezzo dal catalogo (meno il codice), tutto nel database. */
+export async function acquistaPrevenditaConCredito(
+  prevenditaId: string,
+  dati: Partial<DatiFatturaCliente>,
+  codiceSconto?: string | null,
+): Promise<EsitoAcquistoCredito> {
+  const { data, error } = await supabase.rpc('prevendita_acquista_con_credito', {
+    p_prevendita_id: prevenditaId,
+    p_dati: {
+      email: dati.email || '',
+      nome: dati.fullName || '',
+      telefono: dati.phone || '',
+      codice_fiscale: dati.codiceFiscale || '',
+      indirizzo: dati.indirizzo || '',
+      numero_civico: dati.numeroCivico || '',
+      citta: dati.cittaResidenza || '',
+      cap: dati.codicePostale || '',
+      provincia: dati.provinciaResidenza || '',
+      codice_sconto: codiceSconto || '',
+    },
+  });
+  if (error) return { ok: false, errore: error.message };
+  const esito = (data || {}) as { ok?: boolean; errore?: string; prevendita_cliente_id?: string };
+  if (!esito.ok) return { ok: false, errore: esito.errore || 'Acquisto non riuscito.' };
+  return { ok: true, prevenditaClienteId: esito.prevendita_cliente_id };
 }

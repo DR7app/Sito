@@ -20,6 +20,11 @@ import {
 import {
   rigaAcquistoPrevendita,
   walletCarrelloPrevendite,
+  opzioniPagamentoPrevendite,
+  calcolaScontoPrevendita,
+  acquistaPrevenditaConCredito,
+  type OpzioniPagamentoPrevendite,
+  type EsitoSconto,
 } from '../utils/prevenditeAcquisto';
 import {
   getCatalogoPrevendite,
@@ -46,8 +51,8 @@ import {
  *  - le promozioni (prezzo al giorno speciale, posti limitati) compaiono qui
  *    sopra le prevendite; "Prenota" apre il wizard con il veicolo della promo
  *    e il suo prezzo (cauzione, assicurazione e km come sempre);
- *  - una prevendita si mette nel carrello (dal 19/10/2026 SOLO carta: niente
- *    Credit Wallet ne' codice sconto),
+ *  - una prevendita si mette nel carrello; Credit Wallet e codice sconto
+ *    seguono gli interruttori di Centralina Pro (22/10/2026),
  *    quando la migrazione 20260926_prevendite_wallet_carrello e' applicata
  *    (walletCarrelloPrevendite); prima, solo carta come sempre.
  */
@@ -72,23 +77,71 @@ const PrevenditePage: React.FC = () => {
   const [promoScelta, setPromoScelta] = useState<Promozione | null>(null);
   const [promoErrore, setPromoErrore] = useState<string | null>(null);
   const [walletCarrello, setWalletCarrello] = useState(false);
+  // 22/10/2026: wallet e codice sconto, accesi/spenti da Centralina Pro.
+  const [opzioniPag, setOpzioniPag] = useState<OpzioniPagamentoPrevendite>({ wallet: false, codiceSconto: false });
+  const [codiceInput, setCodiceInput] = useState('');
+  const [sconto, setSconto] = useState<EsitoSconto | null>(null);
+  const [scontoErrore, setScontoErrore] = useState<string | null>(null);
+  const [scontoVerifica, setScontoVerifica] = useState(false);
   const { aggiungi } = useCarrello();
   const { openCarWizard, setInitialSearchDates } = useBooking();
   const { vehicles: tuttiVeicoli } = useVehicles(undefined);
 
   useEffect(() => {
     let annullato = false;
-    Promise.all([getCatalogoPrevendite(), getImpostazioniPrevendite(), getCatalogoPromozioni(), walletCarrelloPrevendite()])
-      .then(([c, i, promo, wc]) => {
+    Promise.all([getCatalogoPrevendite(), getImpostazioniPrevendite(), getCatalogoPromozioni(), walletCarrelloPrevendite(), opzioniPagamentoPrevendite()])
+      .then(([c, i, promo, wc, op]) => {
         if (annullato) return;
         setCatalogo(c);
         setImpostazioni(i);
         setPromozioni(promo);
         setWalletCarrello(wc);
+        setOpzioniPag(op);
         setCaricamento(false);
       });
     return () => { annullato = true; };
   }, []);
+
+  // Cambiando prevendita il codice applicato non la segue.
+  useEffect(() => { setCodiceInput(''); setSconto(null); setScontoErrore(null); }, [scelta?.id]);
+
+  async function applicaCodice(p: Prevendita) {
+    setScontoErrore(null);
+    if (!user?.id) {
+      navigate('/signin', { state: { from: { pathname: `${location.pathname}?prevendita=${p.id}` } } });
+      return;
+    }
+    if (!codiceInput.trim()) { setScontoErrore(t({ it: 'Inserisci un codice sconto.', en: 'Enter a discount code.' })); return; }
+    setScontoVerifica(true);
+    try {
+      const esito = await calcolaScontoPrevendita(p.id, codiceInput);
+      if (esito.ok) setSconto(esito);
+      else { setSconto(null); setScontoErrore(esito.errore || null); }
+    } finally {
+      setScontoVerifica(false);
+    }
+  }
+
+  /** Credit Wallet: il database scala il saldo libero e attiva il pacchetto (prezzo meno il codice). */
+  async function acquistaConCredito(p: Prevendita) {
+    setErrore(null);
+    if (!user?.id) {
+      navigate('/signin', { state: { from: { pathname: `${location.pathname}?prevendita=${p.id}` } } });
+      return;
+    }
+    setInPagamento(true);
+    try {
+      const dati = await caricaDatiFatturaCliente(user.id);
+      const esito = await acquistaPrevenditaConCredito(p.id, dati, sconto?.codice);
+      if (!esito.ok) {
+        setErrore(esito.errore || t({ it: 'Acquisto non riuscito.', en: 'Purchase failed.' }));
+        return;
+      }
+      navigate('/account/prevendite');
+    } finally {
+      setInPagamento(false);
+    }
+  }
 
   /** Pacchetti ancora comprabili: la disponibilita' limitata e' una promessa. */
   const disponibili = useMemo(
@@ -124,7 +177,7 @@ const PrevenditePage: React.FC = () => {
       // cambia il catalogo, chi ha pagato tiene quello che ha comprato.
       const { data: riga, error: erroreRiga } = await supabase
         .from('prevendite_clienti')
-        .insert(rigaAcquistoPrevendita(p, { id: user.id, email: user.email, fullName: user.fullName }, dati, nexiOrderId))
+        .insert(rigaAcquistoPrevendita(p, { id: user.id, email: user.email, fullName: user.fullName }, dati, nexiOrderId, sconto?.codice))
         .select()
         .single();
 
@@ -136,7 +189,8 @@ const PrevenditePage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: nexiOrderId,
-          amount: Math.round(p.prezzo * 100),
+          // Il prezzo lo ha scritto il database (catalogo − codice sconto).
+          amount: Math.round(Number(riga.prezzo_pagato ?? p.prezzo) * 100),
           currency: 'EUR',
           description: `Prevendita DR7 - ${p.nome}`,
           customerEmail: dati.email || user.email || '',
@@ -520,8 +574,10 @@ const PrevenditePage: React.FC = () => {
               </div>
 
               <div className="flex items-end gap-3">
-                <span className="text-3xl font-bold text-white">{euro(scelta.prezzo)}</span>
-                {scelta.prezzo_listino && scelta.prezzo_listino > scelta.prezzo && (
+                <span className="text-3xl font-bold text-white">{euro(sconto?.ok && sconto.prezzoFinale != null ? sconto.prezzoFinale : scelta.prezzo)}</span>
+                {sconto?.ok ? (
+                  <span className="text-base text-gray-600 line-through mb-1">{euro(scelta.prezzo)}</span>
+                ) : scelta.prezzo_listino && scelta.prezzo_listino > scelta.prezzo && (
                   <span className="text-base text-gray-600 line-through mb-1">{euro(scelta.prezzo_listino)}</span>
                 )}
               </div>
@@ -544,6 +600,40 @@ const PrevenditePage: React.FC = () => {
                     {t({ it: 'Altre condizioni', en: 'Other conditions' })}
                   </p>
                   <p className="text-sm text-gray-400 whitespace-pre-wrap">{scelta.regole_extra}</p>
+                </div>
+              )}
+
+              {opzioniPag.codiceSconto && (
+                <div className="border-t border-gray-800 pt-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{t({ it: 'Codice sconto', en: 'Discount code' })}</p>
+                  {sconto?.ok ? (
+                    <div className="flex items-center justify-between gap-3 border border-green-800 bg-green-950/30 rounded-lg px-3 py-2 text-sm">
+                      <span className="text-green-300">
+                        {sconto.codice} · -{euro(sconto.sconto || 0)}{sconto.descrizione && sconto.descrizione.endsWith('%') ? ` (${sconto.descrizione})` : ''}
+                      </span>
+                      <button onClick={() => { setSconto(null); setCodiceInput(''); }} disabled={inPagamento} className="text-xs text-gray-400 hover:text-white underline">
+                        {t({ it: 'Rimuovi', en: 'Remove' })}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        value={codiceInput}
+                        onChange={e => { setCodiceInput(e.target.value.toUpperCase()); setScontoErrore(null); }}
+                        onKeyDown={e => { if (e.key === 'Enter') void applicaCodice(scelta); }}
+                        placeholder={t({ it: 'Inserisci il codice', en: 'Enter the code' })}
+                        className="flex-1 bg-black border border-gray-700 px-3 py-2.5 text-sm text-white uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-white"
+                      />
+                      <button
+                        onClick={() => void applicaCodice(scelta)}
+                        disabled={scontoVerifica || inPagamento}
+                        className="px-4 border border-white/40 text-white text-xs font-semibold tracking-wider hover:bg-white/10 disabled:opacity-50"
+                      >
+                        {scontoVerifica ? '...' : t({ it: 'APPLICA', en: 'APPLY' })}
+                      </button>
+                    </div>
+                  )}
+                  {scontoErrore && <p className="text-xs text-red-400 mt-2">{scontoErrore}</p>}
                 </div>
               )}
 
@@ -573,21 +663,37 @@ const PrevenditePage: React.FC = () => {
               </div>
 
               {walletCarrello && (
-                <button
-                  onClick={() => void prevenditaAlCarrello(scelta)}
-                  disabled={inPagamento}
-                  className="w-full border border-gray-700 text-gray-300 py-3 font-semibold text-xs tracking-wider hover:bg-gray-900 transition-colors disabled:opacity-50"
-                >
-                  {t({ it: 'AGGIUNGI AL CARRELLO', en: 'ADD TO CART' })}
-                </button>
+                <div className={`grid grid-cols-1 ${opzioniPag.wallet ? 'sm:grid-cols-2' : ''} gap-3`}>
+                  {opzioniPag.wallet && (
+                    <button
+                      onClick={() => void acquistaConCredito(scelta)}
+                      disabled={inPagamento}
+                      className="border border-white/40 text-white py-3 font-semibold text-xs tracking-wider hover:bg-white/10 transition-colors disabled:opacity-50"
+                    >
+                      {user
+                        ? t({ it: 'PAGA CON CREDIT WALLET', en: 'PAY WITH CREDIT WALLET' })
+                        : t({ it: 'ACCEDI E PAGA COL WALLET', en: 'SIGN IN AND PAY WITH WALLET' })}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => void prevenditaAlCarrello(scelta)}
+                    disabled={inPagamento}
+                    className="border border-gray-700 text-gray-300 py-3 font-semibold text-xs tracking-wider hover:bg-gray-900 transition-colors disabled:opacity-50"
+                  >
+                    {t({ it: 'AGGIUNGI AL CARRELLO', en: 'ADD TO CART' })}
+                  </button>
+                </div>
               )}
 
-              <p className="text-xs text-red-400 text-center">
-                {t({
-                  it: 'Le prevendite si pagano solo con carta: Credit Wallet e codice sconto non sono disponibili.',
-                  en: 'Pre-sales are card only: Credit Wallet and discount codes are not available.',
-                })}
-              </p>
+              {(!opzioniPag.wallet || !opzioniPag.codiceSconto) && (
+                <p className="text-xs text-red-400 text-center">
+                  {!opzioniPag.wallet && !opzioniPag.codiceSconto
+                    ? t({ it: 'Le prevendite si pagano solo con carta: Credit Wallet e codice sconto non sono disponibili.', en: 'Pre-sales are card only: Credit Wallet and discount codes are not available.' })
+                    : !opzioniPag.wallet
+                      ? t({ it: 'Il Credit Wallet non e\' disponibile per le prevendite.', en: 'Credit Wallet is not available for pre-sales.' })
+                      : t({ it: 'I codici sconto non sono disponibili per le prevendite.', en: 'Discount codes are not available for pre-sales.' })}
+                </p>
+              )}
 
               <p className="text-xs text-gray-600 text-center">
                 {t({

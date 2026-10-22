@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useCarrello } from '../../hooks/useCarrello';
 import { useTranslation } from '../../hooks/useTranslation';
 import { etichettaTipo, euro, type ArticoloCarrello } from '../../utils/carrello';
 import { useTestiCarrello } from '../../hooks/useTestiCarrello';
+import { opzioniPagamentoPrevendite, type OpzioniPagamentoPrevendite } from '../../utils/prevenditeAcquisto';
 
 /**
  * Il carrello, aperto dal pulsante CARRELLO in alto a destra.
@@ -36,6 +37,8 @@ const CarrelloDrawer: React.FC = () => {
     articoliSelezionati, totaleSelezionatiCents, selezionato, commutaSelezione,
   } = useCarrello();
   const { t, lang } = useTranslation();
+  const [opzioniPrevendite, setOpzioniPrevendite] = useState<OpzioniPagamentoPrevendite>({ wallet: false, codiceSconto: false });
+  useEffect(() => { void opzioniPagamentoPrevendite().then(setOpzioniPrevendite); }, []);
   const navigate = useNavigate();
 
   // 15/09/2026 — titolo, carrello vuoto e pulsante di pagamento stavano scritti
@@ -137,9 +140,9 @@ const CarrelloDrawer: React.FC = () => {
                           {articolo.sottotitolo && (
                             <p className="text-gray-400 text-xs mt-1 whitespace-pre-line">{articolo.sottotitolo}</p>
                           )}
-                          {articolo.tipo === 'prevendita' && (
+                          {articolo.tipo === 'prevendita' && !opzioniPrevendite.wallet && (
                             <p className="text-red-400 text-xs mt-2">
-                              {t({ it: 'Solo carta: Credit Wallet e codice sconto non disponibili.', en: 'Card only: Credit Wallet and discount codes not available.' })}
+                              {t({ it: 'Solo carta: Credit Wallet non disponibile.', en: 'Card only: Credit Wallet not available.' })}
                             </p>
                           )}
                         </div>

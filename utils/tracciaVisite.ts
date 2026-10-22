@@ -6,9 +6,10 @@ import { supabase } from '../supabaseClient';
  * Prima il report leggeva solo l'ULTIMO accesso di ogni account: un cliente
  * collegato ieri e oggi compariva una volta. Qui ogni visita e' una riga.
  *
- * Regole (GDPR, decise dalla direzione):
- *  - cliente collegato: la visita si registra sempre (storico accessi);
- *  - pagine visitate: SOLO con consenso ai cookie (dr7-cookie-consent=true);
+ * Regole (decise dalla direzione il 21-22/10/2026):
+ *  - cliente collegato: visita e pagine si registrano SEMPRE, anche senza
+ *    consenso ai cookie (va scritto nell'informativa privacy);
+ *  - anonimo: visita e pagine solo con consenso (dr7-cookie-consent=true);
  *  - anonimo senza consenso: niente di niente.
  * Una visita finisce dopo 30 minuti senza attivita'. Si registra solo il
  * percorso della pagina, mai la query (puo' contenere token e codici).
@@ -92,7 +93,7 @@ export async function tracciaPagina(percorso: string, userId: string | null): Pr
       });
       if (funzioneMancante(error)) { disattivato = true; return; }
     }
-    if (consenso) {
+    if (consenso || userId) {
       const { error } = await supabase.rpc('sito_registra_pagina', { p_visita: visita, p_percorso: percorso });
       if (funzioneMancante(error)) disattivato = true;
     }

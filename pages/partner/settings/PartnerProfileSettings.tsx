@@ -1,3 +1,4 @@
+import PhoneInput, { eventoTelefono } from '../../../components/ui/PhoneInput';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -82,7 +83,7 @@ const PartnerProfileSettings = () => {
                         <div className="space-y-4">
                             <div><label htmlFor="fullName" className="block text-sm font-medium text-gray-300">{t('Full_Name')}</label><input type="text" name="fullName" id="fullName" value={formData.fullName} onChange={handleChange} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white"/></div>
                             <div><label htmlFor="email" className="block text-sm font-medium text-gray-300">{t('Email_Address')}</label><input type="email" name="email" id="email" value={formData.email} readOnly className="mt-1 block w-full bg-gray-800/50 border-gray-700 rounded-md text-gray-400 cursor-not-allowed"/></div>
-                            <div><label htmlFor="phone" className="block text-sm font-medium text-gray-300">{t('Phone_Number')}</label><input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md text-white"/></div>
+                            <div><label htmlFor="phone" className="block text-sm font-medium text-gray-300">{t('Phone_Number')}</label><div className="mt-1"><PhoneInput value={formData.phone} onChange={v => handleChange(eventoTelefono('phone', v))} /></div></div>
                         </div>
                     </div>
                 </div>

@@ -1,3 +1,4 @@
+import PhoneInput, { eventoTelefono } from './PhoneInput';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { tipoDaEtichetta } from '../../utils/tipoCategoria';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -5664,7 +5665,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               <div><label className="text-sm text-gray-400">{t({ it: "Nome *", en: "First name *" })}</label><input type="text" name={`${prefix}firstName`} value={(driverData as any).firstName} onChange={handleChange} readOnly={letto((driverData as any).firstName)} aria-readonly={letto((driverData as any).firstName)} autoComplete="given-name" className={classeCampo(letto((driverData as any).firstName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}firstName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}firstName`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Cognome *", en: "Last name *" })}</label><input type="text" name={`${prefix}lastName`} value={(driverData as any).lastName} onChange={handleChange} readOnly={letto((driverData as any).lastName)} aria-readonly={letto((driverData as any).lastName)} autoComplete="family-name" className={classeCampo(letto((driverData as any).lastName))} style={{ colorScheme: 'dark' }} />{errors[`${prefix}lastName`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}lastName`]}</p>}</div>
               <div><label className="text-sm text-gray-400">{t({ it: "Email *", en: "Email *" })}</label><input type="email" name={`${prefix}email`} value={(driverData as any).email} onChange={handleChange} autoComplete="email" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}email`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}email`]}</p>}</div>
-              <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><input type="tel" name={`${prefix}phone`} value={(driverData as any).phone} onChange={handleChange} autoComplete="tel" className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2.5 mt-1 text-white text-sm min-h-[44px]" style={{ colorScheme: 'dark' }} />{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
+              <div><label className="text-sm text-gray-400">{t({ it: "Telefono *", en: "Phone *" })}</label><div className="mt-1"><PhoneInput value={(driverData as any).phone || ''} onChange={v => handleChange(eventoTelefono(`${prefix}phone`, v))} /></div>{errors[`${prefix}phone`] && <p className="text-xs text-red-400 mt-1">{errors[`${prefix}phone`]}</p>}</div>
               {/* Codice fiscale, sesso e nascita: uguali per tutti e due i
                   conducenti. Prima erano riservati al primo, e il codice
                   fiscale del secondo lo ricopiava l'ufficio a mano sul
@@ -6953,7 +6954,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs text-gray-400 mb-1 block">{t({ it: "Telefono *", en: "Phone *" })}</label>
-                              <input type="tel" value={vehicleDepositOwner.telefono} onChange={e => setVehicleDepositOwner(p => ({ ...p, telefono: e.target.value }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm" placeholder="+39 333 1234567" />
+                              <PhoneInput value={vehicleDepositOwner.telefono} onChange={v => setVehicleDepositOwner(p => ({ ...p, telefono: v }))} />
                             </div>
                             <div>
                               <label className="text-xs text-gray-400 mb-1 block">{t({ it: 'Email', en: 'Email' })}</label>

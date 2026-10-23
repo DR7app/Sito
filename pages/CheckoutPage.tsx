@@ -1,3 +1,4 @@
+import PhoneInput from '../components/ui/PhoneInput';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -466,7 +467,7 @@ const CheckoutPage: React.FC = () => {
               </div>
               <div>
                 <label className={etichetta}>{t({ it: 'Telefono', en: 'Phone' })}</label>
-                <input type="tel" className={campo} value={cliente.phone} onChange={e => scrivi('phone', e.target.value)} />
+                <PhoneInput value={cliente.phone} onChange={v => scrivi('phone', v)} />
                 {erroriCampi.phone && <p className="text-xs text-red-400 mt-1">{erroriCampi.phone}</p>}
               </div>
             </div>

@@ -1,3 +1,4 @@
+import PhoneInput, { eventoTelefono } from './PhoneInput';
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useContactInfo } from "../../hooks/useContactInfo";
@@ -279,13 +280,9 @@ const HelicopterBookingForm: React.FC = () => {
             </div>
             <div>
               <label className="block mb-1 text-sm font-medium">{t({ it: "Telefono / WhatsApp *", en: "Phone / WhatsApp *" })}</label>
-              <input
-                type="text"
-                name="phone"
+              <PhoneInput
                 value={formData.phone}
-                onChange={handleChange}
-                className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:border-white"
-                placeholder="+39 ..."
+                onChange={(v) => handleChange(eventoTelefono('phone', v))}
               />
               {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
             </div>

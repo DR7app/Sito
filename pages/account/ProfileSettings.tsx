@@ -1,3 +1,4 @@
+import PhoneInput, { eventoTelefono } from '../../components/ui/PhoneInput';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -761,7 +762,7 @@ const ProfileSettings = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="phone" className="block text-sm font-medium text-gray-300">{t('Phone_Number')}</label>
-                                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md shadow-sm text-white focus:ring-white focus:border-white" />
+                                        <div className="mt-1"><PhoneInput value={formData.phone} onChange={v => handleChange(eventoTelefono('phone', v))} /></div>
                                     </div>
                                 </div>
                             </div>
@@ -779,7 +780,7 @@ const ProfileSettings = () => {
                             </div>
                             <div>
                                 <label htmlFor="phone" className="block text-sm font-medium text-gray-300">{t('Phone_Number')}</label>
-                                <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className="mt-1 block w-full bg-gray-800 border-gray-700 rounded-md shadow-sm text-white focus:ring-white focus:border-white" />
+                                <div className="mt-1"><PhoneInput value={formData.phone} onChange={v => handleChange(eventoTelefono('phone', v))} /></div>
                             </div>
                         </div>
                     )}

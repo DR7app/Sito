@@ -1,3 +1,4 @@
+import PhoneInput from '../components/ui/PhoneInput';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -467,13 +468,10 @@ const AviationQuoteRequestPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   {tx('field_phone_label_it', 'field_phone_label_en')}
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   required
                   value={formData.customer_phone}
-                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-white focus:ring-1 focus:ring-white"
-                  placeholder={tx('field_phone_placeholder_it', 'field_phone_placeholder_en')}
+                  onChange={(v) => setFormData(prev => ({ ...prev, customer_phone: v }))}
                 />
               </div>
             </div>

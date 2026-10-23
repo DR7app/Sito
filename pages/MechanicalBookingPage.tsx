@@ -1,3 +1,4 @@
+import PhoneInput, { eventoTelefono } from '../components/ui/PhoneInput';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
@@ -234,7 +235,8 @@ const MechanicalBookingPage: React.FC = () => {
   };
 
   const validateItalianPhone = (phone: string): boolean => {
-    const phoneRegex = /^(\+39|0039)?[\s]?[0-9]{9,13}$/;
+    // 23/10/2026: anche numeri esteri (il campo ha la bandiera del paese).
+    const phoneRegex = /^(\+|00)?[0-9]{8,15}$/;
     return phoneRegex.test(phone.replace(/\s/g, ''));
   };
 
@@ -829,13 +831,9 @@ const MechanicalBookingPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     {t({ it: 'Telefono', en: 'Phone' })} *
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
+                  <PhoneInput
                     value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+39 320 1234567"
-                    className="w-full bg-gray-800 border-gray-700 rounded-md p-3 text-white"
+                    onChange={(v) => handleChange(eventoTelefono('phone', v))}
                   />
                   {errors.phone && <p className="text-xs text-red-400 mt-1">{errors.phone}</p>}
                 </div>

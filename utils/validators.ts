@@ -83,7 +83,9 @@ export const validateItalianPhone = (phone: string): boolean => {
   const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
 
   // Check various Italian phone formats
-  const phoneRegex = /^(\+39)?[0-9]{6,13}$/;
+  // 23/10/2026: il campo telefono ha la bandiera e manda "+<prefisso><numero>":
+  // un numero estero (+33, +41...) e' valido quanto uno italiano.
+  const phoneRegex = /^\+?[0-9]{6,15}$/;
 
   return phoneRegex.test(cleanPhone);
 };

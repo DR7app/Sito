@@ -12,10 +12,19 @@ interface PhoneInputProps {
 
 const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = '', required, placeholder }) => {
   const { t } = useTranslation();
+  // 23/10/2026: forme storiche salvate nei profili: "0039...", "39347..."
+  // (senza +), "+39 347 ...". Tutte lette come numero col suo prefisso.
+  const normalizza = (v: string): string => {
+    let c = (v || '').replace(/[^\d+]/g, '');
+    if (c.startsWith('00')) c = '+' + c.slice(2);
+    else if (!c.startsWith('+') && /^393\d{8,9}$/.test(c)) c = '+' + c;
+    return c;
+  };
+
   // Parse initial value to extract country code
   const getInitialCountry = (): PhoneCountry => {
     if (!value) return PHONE_COUNTRIES[0]; // Italia
-    const clean = value.replace(/\s/g, '');
+    const clean = normalizza(value);
     // Try to match longest dial code first
     const sorted = [...PHONE_COUNTRIES].sort((a, b) => b.dial.length - a.dial.length);
     for (const c of sorted) {
@@ -27,7 +36,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
 
   const getInitialNumber = (): string => {
     if (!value) return '';
-    const clean = value.replace(/\s/g, '');
+    const clean = normalizza(value);
     const country = getInitialCountry();
     const dialClean = country.dial.replace('-', '');
     if (clean.startsWith(dialClean)) return clean.slice(dialClean.length);
@@ -37,6 +46,19 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
 
   const [selectedCountry, setSelectedCountry] = useState<PhoneCountry>(getInitialCountry);
   const [phoneNumber, setPhoneNumber] = useState(getInitialNumber);
+
+  // 23/10/2026: usato in tutti i moduli (prenotazione, checkout, profilo...).
+  // Il numero arriva spesso DOPO il primo render (profilo caricato, dati
+  // della prenotazione): senza questo il campo restava vuoto mentre il
+  // modulo aveva gia' il numero.
+  const composto = (c: PhoneCountry, n: string) => (n ? `${c.dial.replace('-', '')}${n}` : '');
+  useEffect(() => {
+    if ((value || '') === composto(selectedCountry, phoneNumber)) return;
+    if (normalizza(value || '') === composto(selectedCountry, phoneNumber)) return;
+    setSelectedCountry(getInitialCountry());
+    setPhoneNumber(getInitialNumber());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,15 +87,14 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearch('');
-    const full = `${country.dial.replace('-', '')}${phoneNumber}`;
-    onChange(full);
+    onChange(composto(country, phoneNumber));
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const num = e.target.value.replace(/[^0-9]/g, '');
     setPhoneNumber(num);
-    const full = `${selectedCountry.dial.replace('-', '')}${num}`;
-    onChange(full);
+    // Campo vuoto = '' (non "+39"): altrimenti un "obbligatorio" risulta compilato.
+    onChange(composto(selectedCountry, num));
   };
 
   const filteredCountries = search
@@ -91,7 +112,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
         <button
           type="button"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 border-r-0 px-3 py-3 text-white hover:bg-gray-700 transition-colors flex-shrink-0"
+          className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 border-r-0 rounded-l-md px-3 py-3 text-white hover:bg-gray-700 transition-colors flex-shrink-0"
         >
           <span className="text-lg leading-none">{selectedCountry.flag}</span>
           <span className="text-sm text-gray-400">{selectedCountry.dial}</span>
@@ -153,5 +174,12 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, className = ''
     </div>
   );
 };
+
+/**
+ * 23/10/2026: per i moduli che aggiornano lo stato con un handleChange(e)
+ * generico (legge e.target.name / value): il numero completo come evento.
+ */
+export const eventoTelefono = (name: string, value: string) =>
+  ({ target: { name, value, type: 'tel' } } as unknown as React.ChangeEvent<HTMLInputElement>);
 
 export default PhoneInput;

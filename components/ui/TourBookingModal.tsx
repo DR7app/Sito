@@ -1,3 +1,4 @@
+import PhoneInput from './PhoneInput';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
@@ -476,12 +477,12 @@ export default function TourBookingModal({ item, waHref, onClose, selectedDurati
                         {t({ it: 'Prenoti come', en: 'Booking as' })} <span className="text-white">{cust.name || cust.email}</span>{cust.name && cust.email ? ` · ${cust.email}` : ''}
                       </div>
                     )}
-                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Telefono (WhatsApp)", en: "Phone (WhatsApp)" })} value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
+                    <PhoneInput placeholder={t({ it: "Telefono (WhatsApp)", en: "Phone (WhatsApp)" })} value={cust.phone} onChange={v => setCust(c => ({ ...c, phone: v }))} />
                   </>
                 ) : (
                   <>
                     <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Nome e cognome", en: "Full name" })} value={cust.name} onChange={e => setCust({ ...cust, name: e.target.value })} />
-                    <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Telefono (WhatsApp)", en: "Phone (WhatsApp)" })} value={cust.phone} onChange={e => setCust({ ...cust, phone: e.target.value })} />
+                    <PhoneInput placeholder={t({ it: "Telefono (WhatsApp)", en: "Phone (WhatsApp)" })} value={cust.phone} onChange={v => setCust(c => ({ ...c, phone: v }))} />
                     <input className="w-full px-3 py-2 bg-white/5 border border-gray-700 rounded-lg text-white placeholder:text-gray-500" placeholder={t({ it: "Email (opzionale)", en: "Email (optional)" })} value={cust.email} onChange={e => setCust({ ...cust, email: e.target.value })} />
                   </>
                 )}

@@ -1,3 +1,4 @@
+import PhoneInput from '../components/ui/PhoneInput';
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import CalcolaCFButton from '../components/ui/CalcolaCFButton'
@@ -520,7 +521,10 @@ export default function RegistrazioneClientePage() {
                         <section>
                             <SectionTitle index="4" title={r('section_4_contatti_it', 'section_4_contatti_en').replace(/^4\.\s*/, '')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Field label={r('field_telefono_it', 'field_telefono_en')} type="tel" value={form.telefono} onChange={v => update('telefono', v)} required placeholder={copy?.field_telefono_placeholder || ''} />
+                                <label className="block">
+                                    <span className="text-xs font-semibold text-white/80 tracking-wide uppercase">{r('field_telefono_it', 'field_telefono_en')} *</span>
+                                    <div className="mt-2"><PhoneInput value={form.telefono} onChange={v => update('telefono', v)} required placeholder={copy?.field_telefono_placeholder || undefined} /></div>
+                                </label>
                                 <Field label={r('field_email_it', 'field_email_en')} type="email" value={form.email} onChange={v => update('email', v)} required placeholder={copy?.field_email_placeholder || ''} />
                             </div>
                         </section>

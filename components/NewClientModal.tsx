@@ -1,3 +1,4 @@
+import PhoneInput from './ui/PhoneInput';
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { countries } from '../utils/countries'
@@ -120,7 +121,8 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
 
   const validateItalianPhone = (phone: string): boolean => {
     // Italian phone: +39 or 0039 or direct, 9-13 digits
-    const phoneRegex = /^(\+39|0039)?[\s]?[0-9]{9,13}$/
+    // 23/10/2026: anche numeri esteri (il campo ha la bandiera del paese).
+    const phoneRegex = /^(\+|00)?[0-9]{8,15}$/
     return phoneRegex.test(phone.replace(/\s/g, ''))
   }
 
@@ -990,12 +992,9 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                 <label className="block text-sm font-medium text-white mb-1">
                   {t({ it: "Telefono *", en: "Phone *" })}
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white"
-                  placeholder="+39 320 1234567"
+                  onChange={(v) => setFormData(prev => ({ ...prev, telefono: v }))}
                 />
                 {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
               </div>

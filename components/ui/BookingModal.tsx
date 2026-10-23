@@ -1,3 +1,4 @@
+import PhoneInput from './PhoneInput';
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import DatePicker from 'react-datepicker';
@@ -358,14 +359,9 @@ const BookingModal: React.FC = () => {
 
                       <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-300">{t('Phone_Number')}</label>
-                        <input
-                          type="tel"
-                          id="phone"
-                          value={phone}
-                          onChange={e => setPhone(e.target.value)}
-                          required
-                          className="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md shadow-sm text-white focus:ring-white focus:border-white"
-                        />
+                        <div className="mt-1">
+                          <PhoneInput value={phone} onChange={setPhone} required />
+                        </div>
                       </div>
                     </div>
                   </div>

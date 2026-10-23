@@ -1,3 +1,4 @@
+import PhoneInput, { eventoTelefono } from './ui/PhoneInput';
 import { useState } from 'react'
 import CalcolaCFButton from './ui/CalcolaCFButton'
 import AddressAutocomplete from './ui/AddressAutocomplete'
@@ -566,14 +567,9 @@ export default function DynamicCustomerForm({ onSubmit, isAdminMode = false }: D
                 <label className="form-label" htmlFor="telefono">
                   {t({ it: "Telefono", en: "Phone" })}
                 </label>
-                <input
-                  type="tel"
-                  id="telefono"
-                  name="telefono"
-                  className="form-input"
+                <PhoneInput
                   value={formData.telefono}
-                  onChange={handleChange}
-                  placeholder="+39 123 456 7890"
+                  onChange={(v) => handleChange(eventoTelefono('telefono', v))}
                 />
               </div>
 

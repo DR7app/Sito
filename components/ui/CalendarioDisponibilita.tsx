@@ -546,9 +546,20 @@ const CalendarioDisponibilita: React.FC<Props> = ({ item, categoryContext, onClo
                         onChange={(e) => {
                           const ora = e.target.value;
                           setRitiroOra(ora);
-                          // Cambiare l'orario di ritiro non riporta la
-                          // riconsegna a "da scegliere": si riallinea la
-                          // proposta, che resta lo stesso giorno.
+                          // Il giorno di riconsegna scelto dal cliente resta
+                          // quello: si riallinea solo l'orario. Prima ogni
+                          // cambio d'ora riportava la riconsegna al giorno
+                          // del ritiro (18/12 diventava 14/12).
+                          if (riconsegnaYmd && !riconsegnaProposta) {
+                            const slot = slotRiconsegnaValidiPer(riconsegnaYmd, ritiroYmd, ora);
+                            if (slot.length > 0) {
+                              setRiconsegnaOra(oraRiconsegnaAutomatica(ora, slot, riconsegnaYmd === ritiroYmd) || slot[0]);
+                              return;
+                            }
+                          }
+                          // Riconsegna ancora quella proposta (o il giorno
+                          // scelto non regge il nuovo orario): si riallinea
+                          // la proposta, che resta lo stesso giorno.
                           const proposta = riconsegnaPredefinita(ritiroYmd, ora);
                           setRiconsegnaYmd(proposta?.ymd || '');
                           setRiconsegnaOra(proposta?.ora || '');

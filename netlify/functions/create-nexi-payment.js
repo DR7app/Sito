@@ -6,6 +6,22 @@ const { funzioneFerma } = require('./utils/systemControl.js');
  * Netlify Function to create Nexi XPay payment using API method
  * Uses /orders/hpp endpoint with X-API-KEY authentication
  */
+// Nexi rifiuta order.customerId oltre 27 caratteri ("order.customerId is not
+// valid", GW0001): con un'email lunga il cliente vedeva "Failed to create
+// payment" e non poteva pagare. L'email entra in customerId solo se ci sta;
+// altrimenti va in customerInfo.cardHolderEmail, che nexi-callback legge per
+// portare la carta nella scheda cliente.
+const NEXI_CUSTOMER_ID_MAX = 27;
+
+function datiClienteNexi(customerEmail, customerName) {
+  const email = String(customerEmail || '').trim();
+  if (email && email.length <= NEXI_CUSTOMER_ID_MAX) return { customerId: email };
+  if (!email) return { customerId: 'guest' };
+  const customerInfo = { cardHolderEmail: email };
+  if (customerName) customerInfo.cardHolderName = String(customerName).trim();
+  return { customerId: 'guest', customerInfo };
+}
+
 exports.handler = async (event) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': getCorsOrigin(event.headers['origin']),
@@ -126,7 +142,7 @@ exports.handler = async (event) => {
           orderId: sanitizedOrderId,
           amount: amount.toString(),
           currency: currency,
-          customerId: customerEmail || 'guest',
+          ...datiClienteNexi(customerEmail, customerName),
           description: description || 'Membership renewal',
         },
         card: {
@@ -193,7 +209,7 @@ exports.handler = async (event) => {
         orderId: sanitizedOrderId,
         amount: amount.toString(),
         currency: currency,
-        customerId: customerEmail || 'guest',
+        ...datiClienteNexi(customerEmail, customerName),
         description: description || 'Payment',
       },
       paymentSession: {

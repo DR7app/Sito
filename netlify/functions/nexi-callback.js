@@ -1632,7 +1632,10 @@ exports.handler = async (event) => {
             ? verifyData.operations.find(o => o && riuscito(o.operationResult)) || verifyData.operations[0]
             : null;
           rawParams.datiCarta = {
-            email: verifyData.order?.customerId || verifyData.customerInfo?.cardHolderEmail || '',
+            // 'guest' quando l'email non entrava nei 27 caratteri di
+            // customerId: allora sta in customerInfo.cardHolderEmail.
+            email: (String(verifyData.order?.customerId || '').includes('@') ? verifyData.order.customerId : '')
+              || verifyData.order?.customerInfo?.cardHolderEmail || verifyData.customerInfo?.cardHolderEmail || '',
             nome: verifyData.customerInfo?.cardHolderName || '',
             masked_pan: opPagata?.paymentInstrumentInfo || opPagata?.cardNumber || '',
             circuit: opPagata?.paymentCircuit || '',

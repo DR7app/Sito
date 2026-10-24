@@ -124,13 +124,21 @@ export const handler: Handler = async (event) => {
       .limit(1)
     const isElite = !!(club && club[0] && (!club[0].expires_at || new Date(club[0].expires_at).getTime() > Date.now()))
 
-    const regola = pickRule(regole, {
+    const regolaCentralina = pickRule(regole, {
       daysUntilPickup,
       serviceType: isCarWash ? 'carwash' : 'rental',
       hasDr7Flex: detectDr7Flex(bd, expNameById),
       hasPrimeFlex: bd.prime_flex === true || bd.prime_flex === 'true',
       isElite,
     })
+    // 24/10/2026: una prenotazione mai pagata (neanche un acconto) si annulla
+    // sempre prima del ritiro: non c'e' niente da rimborsare, quindi la soglia
+    // dei giorni non serve. Prima a 3 giorni dal ritiro il tasto spariva.
+    const statoPag = String(booking.payment_status || '').toLowerCase()
+    const maiPagata = !PAGATI.includes(statoPag) && !['partial', 'parziale'].includes(statoPag)
+    const regola = regolaCentralina ?? (maiPagata
+      ? { id: 'non_pagata', label: 'Prenotazione non pagata', appliesTo: 'all' as const, requiresService: 'none' as const, minDaysNotice: 0, refundPercent: 0, refundMethod: 'wallet' as const, isActive: true }
+      : null)
     if (!regola) return risposta(409, { error: 'Cancellazione non disponibile per questa prenotazione.' })
 
     // ── Annullamento (una volta sola) ────────────────────────────────────

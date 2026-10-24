@@ -251,7 +251,9 @@ const MyBookings = () => {
       };
     }
 
-    if (rule && !isPaid) {
+    // Mai pagata (neanche un acconto): annullabile fino al ritiro anche sotto
+    // la soglia dei giorni, non c'e' niente da rimborsare.
+    if (!isPaid && !isAcconto) {
       return {
         canCancel: true,
         hasFlex: false,

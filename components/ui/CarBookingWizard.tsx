@@ -7278,9 +7278,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         customer: { firstName: formData.firstName, lastName: formData.lastName, email: formData.email, phone: formData.phone },
                       },
                     };
-                    const { error } = await supabase.from('bookings').insert(bookingData);
+                    // L'id si sceglie qui: rileggere la riga appena inserita
+                    // dipenderebbe dalle regole di lettura su bookings.
+                    const richiestaId = crypto.randomUUID();
+                    const { error } = await supabase.from('bookings').insert({ ...bookingData, id: richiestaId });
                     if (error) throw error;
                     if (user?.id) void salvaSchedaCliente();
+
+                    // La richiesta la approva Valerio: il riepilogo va a lui.
+                    void fetch('/.netlify/functions/avvisa-richiesta-no-cauzione', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ bookingId: richiestaId }),
+                    }).catch(() => {});
 
                     // Send WhatsApp to admin
                     const msg = `*RICHIESTA NO CAUZIONE DAL SITO*\n\n`

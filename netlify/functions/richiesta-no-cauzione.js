@@ -88,7 +88,21 @@ exports.handler = async event => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Richiesta non inviata, riprova piu\' tardi.' }) };
     }
 
-    const nome = testo(body.nome) || email;
+    // Dal popup la richiesta parte prima dei dati del conducente: nome e
+    // telefono si prendono dalla scheda cliente se il form e' ancora vuoto.
+    let nome = testo(body.nome);
+    let telefonoCliente = testo(body.telefono);
+    if (!nome || !telefonoCliente) {
+      const { data: scheda } = await supabase
+        .from('customers_extended')
+        .select('nome, cognome, telefono')
+        .eq('user_id', utente.id)
+        .limit(1);
+      const s = (scheda && scheda[0]) || {};
+      if (!nome) nome = testo([s.nome, s.cognome].filter(Boolean).join(' '));
+      if (!telefonoCliente) telefonoCliente = testo(s.telefono);
+    }
+    if (!nome) nome = email;
     const riepilogo = `${testo(body.veicolo) || 'Veicolo'} · ${testo(body.ritiro)} → ${testo(body.riconsegna)}`;
 
     let codice = '';
@@ -117,7 +131,7 @@ exports.handler = async event => {
     const messaggio = `*RICHIESTA NO CAUZIONE DAL SITO*\n\n`
       + `*Cliente:* ${nome}\n`
       + `*Email:* ${email}\n`
-      + `*Tel:* ${testo(body.telefono) || 'N/A'}\n`
+      + `*Tel:* ${telefonoCliente || 'N/A'}\n`
       + `*Veicolo:* ${testo(body.veicolo) || 'N/A'}\n`
       + `*Periodo:* ${testo(body.ritiro)} → ${testo(body.riconsegna)}\n`
       + `*Totale:* €${Number(body.totale || 0).toFixed(2)}\n`

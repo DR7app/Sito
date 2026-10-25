@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { segnaUsato: segnaUsatoNoCauzione } = require('./utils/codiceNoCauzione.js');
 const { createClient } = require('@supabase/supabase-js');
 const { getClubCashbackPct } = require('./utils/dr7ClubCashback.js');
 const { finalizzaRicarica } = require('./utils/ricaricaWallet.js');
@@ -583,6 +584,15 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
           .eq('id', pending.id);
 
         console.log(`Booking ${newBooking.id} created from pending after successful payment`);
+
+        // Codice "No Cauzione" di Valerio: vale una prenotazione, si consuma qui.
+        if (newBooking.booking_details && newBooking.booking_details.no_cauzione_codice) {
+          try {
+            await segnaUsatoNoCauzione(supabase, newBooking.booking_details.no_cauzione_codice, newBooking.id, newBooking.customer_name);
+          } catch (ncErr) {
+            console.error('[nexi-callback] codice No Cauzione non consumato:', ncErr);
+          }
+        }
 
         // ─── TOUR (Noleggio Aria/Mare/Soggiorni) ───────────────────────────
         // Flusso "nessun record finche' non paga": la prenotazione tour nasce

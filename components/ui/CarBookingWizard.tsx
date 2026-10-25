@@ -442,6 +442,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [noCauzioneRequested, setNoCauzioneRequested] = useState(false);
   const [noCauzioneSending, setNoCauzioneSending] = useState(false);
   const [noCauzioneSaved, setNoCauzioneSaved] = useState(false);
+  // Codice "No Cauzione" di Valerio, verificato: con questo si prenota e si
+  // paga normalmente senza cauzione, come i clienti fedeli.
+  const [noCauzioneCodice, setNoCauzioneCodice] = useState('');
+  const [codiceNcInput, setCodiceNcInput] = useState('');
+  const [codiceNcErrore, setCodiceNcErrore] = useState<string | null>(null);
+  const [codiceNcVerifica, setCodiceNcVerifica] = useState(false);
   const [showVehicleDepositPopup, setShowVehicleDepositPopup] = useState(false);
   const [vehicleDepositLibretto, setVehicleDepositLibretto] = useState<File | null>(null);
   const [vehicleDepositLibrettoVerso, setVehicleDepositLibrettoVerso] = useState<File | null>(null);
@@ -4407,6 +4413,34 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     setDiscountCodeError(null);
   };
 
+  // Codice No Cauzione ricevuto da Valerio: verificato dal server, legato
+  // all'account. Valido -> si sceglie No Cauzione e si paga normalmente.
+  const verificaCodiceNoCauzione = async () => {
+    const codice = codiceNcInput.trim();
+    if (!codice) { setCodiceNcErrore(t({ it: 'Inserisci il codice.', en: 'Enter the code.' })); return; }
+    setCodiceNcVerifica(true);
+    setCodiceNcErrore(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { setCodiceNcErrore(t({ it: 'Accedi al tuo account per usare il codice.', en: 'Sign in to use the code.' })); return; }
+      const res = await fetch('/.netlify/functions/verifica-codice-no-cauzione', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ codice, action: 'verifica' }),
+      });
+      const esito = await res.json().catch(() => ({}));
+      if (!esito.ok) { setCodiceNcErrore(esito.errore || t({ it: 'Codice non valido.', en: 'Invalid code.' })); return; }
+      setNoCauzioneCodice(esito.codice || codice.toUpperCase());
+      setNoCauzioneRequested(false);
+      setFormData(prev => ({ ...prev, depositOption: 'no_deposit' }));
+      setShowNoCauzionePopup(false);
+    } catch {
+      setCodiceNcErrore(t({ it: 'Codice non verificabile in questo momento.', en: 'Code cannot be checked right now.' }));
+    } finally {
+      setCodiceNcVerifica(false);
+    }
+  };
+
   // Mark discount code as used after successful booking
   const markDiscountCodeAsUsed = async (bookingId: string) => {
     if (!appliedDiscount?.code) return;
@@ -4816,6 +4850,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               isPremium: isPremiumVehicle(item.name)
             },
             depositOption: formData.depositOption,
+            ...(noCauzioneCodice && formData.depositOption === 'no_deposit' ? { no_cauzione_codice: noCauzioneCodice } : {}),
             noDepositSurcharge: noDepositSurcharge,
             driver_tier: driverTier,
             insurance_cost: insuranceCost,
@@ -5218,6 +5253,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               isPremium: isPremiumVehicle(item.name)
             },
             depositOption: formData.depositOption,
+            ...(noCauzioneCodice && formData.depositOption === 'no_deposit' ? { no_cauzione_codice: noCauzioneCodice } : {}),
             noDepositSurcharge: noDepositSurcharge,
             driver_tier: driverTier,
             insurance_cost: insuranceCost,
@@ -5331,6 +5367,18 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ booking: insertedBooking }),
           }).catch(e => console.error('WhatsApp error', e));
+
+          // Codice No Cauzione: vale una prenotazione.
+          if (noCauzioneCodice && formData.depositOption === 'no_deposit') {
+            void (async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              await fetch('/.netlify/functions/verifica-codice-no-cauzione', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+                body: JSON.stringify({ codice: noCauzioneCodice, action: 'usa', bookingId: insertedBooking.id }),
+              }).catch(() => {});
+            })();
+          }
 
           // Mark discount code as used
           if (appliedDiscount) {
@@ -6716,8 +6764,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                             : 'border-gray-600 hover:border-gray-500 cursor-pointer'}`}
                         onClick={() => {
                           if (opt.id === 'no_deposit') {
-                            // Elite/Member: no approval needed, select directly
-                            if (isLoyalCustomer) {
+                            // Elite/Member, o codice di Valerio gia' verificato: si sceglie e basta
+                            if (isLoyalCustomer || noCauzioneCodice) {
                               setFormData(prev => ({ ...prev, depositOption: 'no_deposit' }));
                               return;
                             }
@@ -6757,6 +6805,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     );
                   })}
                 </div>}
+                {noCauzioneCodice && formData.depositOption === 'no_deposit' && (
+                  <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <p className="text-green-400 text-sm font-medium">{t({ it: "Codice No Cauzione attivo", en: "No-Deposit code active" })} ({noCauzioneCodice}). {t({ it: "Puoi completare la prenotazione senza cauzione.", en: "You can complete the booking with no deposit." })}</p>
+                  </div>
+                )}
                 {noCauzioneRequested && formData.depositOption === 'no_deposit' && (
                   <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                     <p className="text-green-400 text-sm font-medium">{t({ it: "Richiesta No Cauzione inviata! Sarai contattato per conferma.", en: "No-Deposit request sent. We will contact you to confirm." })}</p>
@@ -6781,6 +6834,28 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                     <p className="text-gray-300 text-xs leading-relaxed">
                       {t({ it: "Il pagamento con carta prepagata comporta l'obbligo di cauzione secondo modalità standard. Senza cauzione, il veicolo non verrà consegnato. Procedendo, il cliente accetta integralmente tale condizione.", en: "Paying with a prepaid card requires a deposit under the standard terms. Without a deposit, the vehicle will not be handed over. By proceeding, the customer fully accepts this condition." })}
                     </p>
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-white text-sm font-semibold mb-2">{t({ it: "Hai già il codice No Cauzione?", en: "Already have a No-Deposit code?" })}</p>
+                    <div className="flex gap-2">
+                      <input
+                        value={codiceNcInput}
+                        onChange={e => { setCodiceNcInput(e.target.value.toUpperCase()); setCodiceNcErrore(null); }}
+                        onKeyDown={e => { if (e.key === 'Enter') void verificaCodiceNoCauzione(); }}
+                        placeholder="NC-XXXX-XXXX"
+                        className="flex-1 min-w-0 bg-black border border-gray-600 px-3 py-2 text-white text-sm uppercase tracking-wider outline-none focus:border-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void verificaCodiceNoCauzione()}
+                        disabled={codiceNcVerifica}
+                        className="px-4 py-2 border border-white text-white text-sm font-bold hover:bg-white hover:text-black transition-colors disabled:opacity-50"
+                      >
+                        {codiceNcVerifica ? '...' : t({ it: 'USA CODICE', en: 'USE CODE' })}
+                      </button>
+                    </div>
+                    {codiceNcErrore && <p className="text-xs text-red-400 mt-2">{codiceNcErrore}</p>}
+                    <p className="text-gray-500 text-xs mt-2">{t({ it: "Non hai un codice? Invia la richiesta: se approvata, il team DR7 ti manda il codice su WhatsApp.", en: "No code yet? Send the request: if approved, the DR7 team sends you the code on WhatsApp." })}</p>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -7132,7 +7207,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       }
       case 2:
         // No Cauzione flow: save as preventivo (except Elite/Member who pay directly)
-        if (formData.depositOption === 'no_deposit' && !isLoyalCustomer) {
+        if (formData.depositOption === 'no_deposit' && !isLoyalCustomer && !noCauzioneCodice) {
           if (noCauzioneSaved) {
             return (
               <div className="space-y-6 text-center py-8">
@@ -7143,7 +7218,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
                 <h2 className="text-2xl font-bold text-white">{t({ it: "Richiesta Inviata!", en: "Request sent." })}</h2>
                 <p className="text-gray-400 max-w-md mx-auto">
-                  {t({ it: "La tua richiesta per la formula senza cauzione è stata registrata. Il team DR7 la contatterà via WhatsApp con l'esito e, in caso di approvazione, il link di pagamento.", en: "Your request for the no-deposit option has been registered. The DR7 team will contact you on WhatsApp with the outcome and, if approved, the payment link." })}
+                  {t({ it: "La tua richiesta per la formula senza cauzione è stata inviata. Il team DR7 ti risponderà su WhatsApp: se approvata, riceverai un codice. Torna sul veicolo, scegli \"No Cauzione\", inserisci il codice e prenota.", en: "Your request for the no-deposit option has been sent. The DR7 team will reply on WhatsApp: if approved, you will receive a code. Come back to the vehicle, choose \"No Deposit\", enter the code and book." })}
                 </p>
                 <button
                   type="button"
@@ -7165,7 +7240,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">{t({ it: "Riepilogo Preventivo", en: "Quote Summary" })}</h3>
                 <p className="text-gray-400 text-sm mb-6">
-                  {t({ it: "Cliccando \"Salva Preventivo\" la tua richiesta verrà inviata al team DR7 per approvazione. Riceverai un messaggio WhatsApp con l'esito.", en: "By clicking \"Save Quote\" your request will be sent to the DR7 team for approval. You will receive a WhatsApp message with the outcome." })}
+                  {t({ it: "Cliccando \"Invia richiesta\" la richiesta va al team DR7. Se approvata, riceverai su WhatsApp un codice per prenotare senza cauzione.", en: "By clicking \"Send request\" your request goes to the DR7 team. If approved, you will receive a code on WhatsApp to book with no deposit." })}
                 </p>
               </div>
 
@@ -7229,83 +7304,37 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 onClick={async () => {
                   setNoCauzioneSending(true);
                   try {
-                    // Build booking data same as normal flow but with pending status
                     const pDate = formData.pickupDate || new Date().toISOString().split('T')[0];
                     const rDate = formData.returnDate || pDate;
                     const pTime = formData.pickupTime || '10:30';
                     const rTime = formData.returnTime || '09:00';
-                    const pickupDateTime = new Date(`${pDate}T${pTime}:00`);
-                    const dropoffDateTime = new Date(`${rDate}T${rTime}:00`);
-                    if (isNaN(pickupDateTime.getTime()) || isNaN(dropoffDateTime.getTime())) {
-                      throw new Error(t({ it: "Date o orari non validi. Torna allo step 1 e seleziona date e orari.", en: "Invalid dates or times. Go back to step 1 and select dates and times." }));
+                    const giorno = (ymd: string) => ymd.split('-').reverse().join('/');
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session?.access_token) {
+                      throw new Error(t({ it: "Accedi al tuo account per inviare la richiesta.", en: "Sign in to send the request." }));
                     }
-                    const bookingData = {
-                      service_type: 'car_rental',
-                      customer_name: `${formData.firstName} ${formData.lastName}`,
-                      customer_email: formData.email,
-                      customer_phone: formData.phone,
-                      vehicle_name: item.name,
-                      vehicle_id: formData.selectedVehicleId || null,
-                      vehicle_plate: null,
-                      pickup_date: pickupDateTime.toISOString(),
-                      dropoff_date: dropoffDateTime.toISOString(),
-                      pickup_location: formData.pickupLocation,
-                      dropoff_location: formData.returnLocation,
-                      // 21/09/2026: questo ramo non mandava delivery_fee, che a
-                      // database e' NOT NULL senza default: la richiesta "No
-                      // Cauzione" non si salvava mai.
-                      delivery_fee: deliveryFee || 0,
-                      delivery_address: formData.deliveryAddress || null,
-                      price_total: Math.round(grandTotal * 100),
-                      currency: 'EUR',
-                      status: 'pending',
-                      payment_status: 'pending',
-                      payment_method: 'Nexi Pay by Link',
-                      // insurance_option stored in booking_details.insuranceOption (not a top-level column)
-                      booked_at: new Date().toISOString(),
-                      user_id: user?.id || null,
-                      booking_details: {
-                        ...dettagliPrevendita,
-            ...dettagliPromo,
-                        no_cauzione_request: true,
-                        depositOption: 'no_deposit',
-                        noDepositSurcharge: noDepositSurcharge,
-                        driver_tier: driverTier,
-                        insurance_cost: insuranceCost,
-                        km_cost: kmPackageCost,
-                        lavaggio_fee: lavaggioFee,
-                        rental_cost: rentalCost,
-                        customer: { firstName: formData.firstName, lastName: formData.lastName, email: formData.email, phone: formData.phone },
-                      },
-                    };
-                    // L'id si sceglie qui: rileggere la riga appena inserita
-                    // dipenderebbe dalle regole di lettura su bookings.
-                    const richiestaId = crypto.randomUUID();
-                    const { error } = await supabase.from('bookings').insert({ ...bookingData, id: richiestaId });
-                    if (error) throw error;
-                    if (user?.id) void salvaSchedaCliente();
-
-                    // La richiesta la approva Valerio: il riepilogo va a lui.
-                    void fetch('/.netlify/functions/avvisa-richiesta-no-cauzione', {
+                    // 25/10/2026: la richiesta non crea piu' una prenotazione
+                    // 'pending' (si annullava da sola dopo un'ora). Nasce un
+                    // codice che va solo a Valerio: se approva lo gira al
+                    // cliente, che lo inserisce qui e prenota normalmente.
+                    const res = await fetch('/.netlify/functions/richiesta-no-cauzione', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ bookingId: richiestaId }),
-                    }).catch(() => {});
-
-                    // Send WhatsApp to admin
-                    const msg = `*RICHIESTA NO CAUZIONE DAL SITO*\n\n`
-                      + `*Cliente:* ${formData.firstName} ${formData.lastName}\n`
-                      + `*Email:* ${formData.email}\n`
-                      + `*Tel:* ${formData.phone}\n`
-                      + `*Veicolo:* ${item?.name || 'N/A'}\n`
-                      + `*Date:* ${formData.pickupDate} → ${formData.returnDate}\n`
-                      + `*Totale:* €${grandTotal.toFixed(2)}\n`
-                      + `*Supplemento No Cauzione:* €${ACTIVE_NO_DEPOSIT_SURCHARGE}/giorno`;
-                    await fetch('/.netlify/functions/send-whatsapp-notification', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ customMessage: msg }),
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+                      body: JSON.stringify({
+                        nome: `${formData.firstName} ${formData.lastName}`.trim(),
+                        telefono: formData.phone,
+                        veicolo: item?.name || '',
+                        ritiro: `${giorno(pDate)} ${pTime}`,
+                        riconsegna: `${giorno(rDate)} ${rTime}`,
+                        totale: grandTotal,
+                        supplementoGiorno: ACTIVE_NO_DEPOSIT_SURCHARGE,
+                      }),
                     });
+                    const esitoRichiesta = await res.json().catch(() => ({}));
+                    if (!res.ok || !esitoRichiesta.ok) {
+                      throw new Error(esitoRichiesta.error || t({ it: "Richiesta non inviata, riprova più tardi.", en: "Request not sent, please try again later." }));
+                    }
+                    if (user?.id) void salvaSchedaCliente();
 
                     // Send confirmation to customer
                     const customerPhone = formData.phone?.replace(/[\s\-\+()]/g, '') || '';
@@ -7314,8 +7343,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                       // riscrive da Sito > Testi. Parte uguale nelle due lingue
                       // (com'era: sempre in italiano); {nome} lo riempie il form.
                       const customerMsg = t({
-                        it: "Gentile {nome},\n\nabbiamo ricevuto la sua richiesta per la formula senza cauzione relativa alla prenotazione appena effettuata.\n\nIl nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\nRiceverà a breve un aggiornamento con l'esito e, in caso di approvazione, il link di pagamento per completare la prenotazione.\n\nRestiamo a disposizione.\n\nCordiali saluti,\nDR7",
-                        en: "Gentile {nome},\n\nabbiamo ricevuto la sua richiesta per la formula senza cauzione relativa alla prenotazione appena effettuata.\n\nIl nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\nRiceverà a breve un aggiornamento con l'esito e, in caso di approvazione, il link di pagamento per completare la prenotazione.\n\nRestiamo a disposizione.\n\nCordiali saluti,\nDR7",
+                        it: "Gentile {nome},\n\nabbiamo ricevuto la sua richiesta per la formula senza cauzione.\n\nIl nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\nRiceverà a breve un aggiornamento con l'esito e, in caso di approvazione, un codice da inserire sul sito nella scelta \"No Cauzione\" per completare la prenotazione.\n\nRestiamo a disposizione.\n\nCordiali saluti,\nDR7",
+                        en: "Gentile {nome},\n\nabbiamo ricevuto la sua richiesta per la formula senza cauzione.\n\nIl nostro team sta effettuando una verifica rapida per confermarne l'idoneità.\n\nRiceverà a breve un aggiornamento con l'esito e, in caso di approvazione, un codice da inserire sul sito nella scelta \"No Cauzione\" per completare la prenotazione.\n\nRestiamo a disposizione.\n\nCordiali saluti,\nDR7",
                       }).split('{nome}').join(formData.firstName || '');
                       await fetch('/.netlify/functions/send-whatsapp-notification', {
                         method: 'POST',
@@ -7333,7 +7362,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 }}
                 className="w-full py-4 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
-                {noCauzioneSending ? t({ it: 'Salvataggio...', en: 'Saving...' }) : t({ it: 'SALVA PREVENTIVO', en: 'SAVE QUOTE' })}
+                {noCauzioneSending ? t({ it: 'Invio...', en: 'Sending...' }) : t({ it: 'INVIA RICHIESTA', en: 'SEND REQUEST' })}
               </button>
               {paymentError && <p className="text-red-400 text-sm text-center">{paymentError}</p>}
             </div>

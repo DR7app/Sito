@@ -54,7 +54,16 @@ async function leggiOrdineNexi(orderId) {
     : 0;
 
   // A chi appartiene l'ordine: create-nexi-payment ci mette l'email del cliente.
-  const clienteOrdine = String((data.order && data.order.customerId) || '').toLowerCase();
+  // GET /orders/{id} restituisce l'ordine dentro orderStatus.order, non in
+  // data.order: leggendo solo data.order l'email era sempre vuota e ogni
+  // ricarica chiusa dalla pagina di esito veniva rifiutata come "di un altro
+  // cliente". Email oltre 27 caratteri: customerId e' 'guest' e l'email sta
+  // in customerInfo.cardHolderEmail.
+  const ordine = stato.order || data.order || {};
+  const idCliente = String(ordine.customerId || '');
+  const clienteOrdine = (idCliente.includes('@')
+    ? idCliente
+    : String((ordine.customerInfo && ordine.customerInfo.cardHolderEmail) || '')).toLowerCase().trim();
 
   return { paid, esito: esito || null, importoCents, clienteOrdine, reason: paid ? null : 'not_authorized' };
 }

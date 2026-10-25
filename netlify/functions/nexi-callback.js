@@ -1634,8 +1634,12 @@ exports.handler = async (event) => {
           rawParams.datiCarta = {
             // 'guest' quando l'email non entrava nei 27 caratteri di
             // customerId: allora sta in customerInfo.cardHolderEmail.
-            email: (String(verifyData.order?.customerId || '').includes('@') ? verifyData.order.customerId : '')
-              || verifyData.order?.customerInfo?.cardHolderEmail || verifyData.customerInfo?.cardHolderEmail || '',
+            // L'ordine sta in orderStatus.order (data.order e' vuoto).
+            email: (() => {
+              const o = verifyData.orderStatus?.order || verifyData.order || {};
+              const id = String(o.customerId || '');
+              return id.includes('@') ? id : (o.customerInfo?.cardHolderEmail || verifyData.customerInfo?.cardHolderEmail || '');
+            })(),
             nome: verifyData.customerInfo?.cardHolderName || '',
             masked_pan: opPagata?.paymentInstrumentInfo || opPagata?.cardNumber || '',
             circuit: opPagata?.paymentCircuit || '',

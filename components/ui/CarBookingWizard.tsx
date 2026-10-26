@@ -411,6 +411,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   }, []);
 
   const [step, setStep] = useState(1);
+  // 26/10/2026 (direzione): a ogni cambio di passo si riparte dall'inizio
+  // della pagina. Il wizard scorre dentro il proprio overlay, che restava
+  // fermo in fondo dove si era cliccato "Continua".
+  const contenitoreWizardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    contenitoreWizardRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [step]);
 
   // ─── PREVENDITE (14/09/2026) ────────────────────────────────────────────
   // Se il cliente ha gia' pagato un pacchetto di utilizzi valido per questa
@@ -8545,7 +8553,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   return (
     <>
       {/* Full-screen modal overlay */}
-      <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/95">
+      <div ref={contenitoreWizardRef} className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/95">
         <div className="min-h-dvh px-2 sm:px-4 py-4 sm:py-8">
           <div className="max-w-6xl mx-auto">
             {!statoServizi.prenotazioni.attiva && (

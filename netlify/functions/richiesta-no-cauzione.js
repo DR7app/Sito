@@ -24,7 +24,6 @@ const supabase = createClient(
 );
 
 const EMAIL_APPROVA = 'valerio@dr7.app';
-const MAX_RICHIESTE_GIORNO = 5;
 
 const headers = {
   'Content-Type': 'application/json',
@@ -70,17 +69,8 @@ exports.handler = async event => {
 
     const body = JSON.parse(event.body || '{}');
 
-    // Freno agli abusi: ogni richiesta manda un WhatsApp a Valerio.
-    const daIeri = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await supabase
-      .from('discount_codes')
-      .select('id', { count: 'exact', head: true })
-      .eq('customer_email', email)
-      .contains('scope', [SCOPE])
-      .gte('created_at', daIeri);
-    if ((count || 0) >= MAX_RICHIESTE_GIORNO) {
-      return { statusCode: 429, headers, body: JSON.stringify({ error: 'Hai gia\' inviato diverse richieste oggi: il team DR7 ti rispondera\' a breve.' }) };
-    }
+    // 26/10/2026 (direzione): nessun limite di richieste al giorno. Il tetto di
+    // 5 in 24 ore (aggiunto il 25/10 senza richiesta) bloccava l'invio in silenzio.
 
     const telefonoValerio = await numeroValerio();
     if (telefonoValerio.length < 8) {

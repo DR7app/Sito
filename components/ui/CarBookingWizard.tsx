@@ -3790,6 +3790,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         if (!mandatoryRcaDeposit && !formData.depositOption) {
           newErrors.depositOption = t({ it: "Seleziona un'opzione per la cauzione.", en: "Select a deposit option." });
         }
+        // 26/10/2026 (direzione): senza cauzione si va avanti SOLO col codice
+        // di Valerio verificato (o da Elite/Member). Prima bastava chiudere il
+        // popup per proseguire con "Nessuna cauzione" scelta.
+        if (formData.depositOption === 'no_deposit' && !isLoyalCustomer && !noCauzioneCodice) {
+          newErrors.depositOption = t({ it: "Per proseguire senza cauzione inserisci il codice No Cauzione ricevuto dal team DR7.", en: "To continue with no deposit, enter the No-Deposit code you received from the DR7 team." });
+        }
       }
     }
     if (step === 2) {
@@ -4732,6 +4738,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       return;
     }
     console.log("handleSubmit called", { paymentMethod: formData.paymentMethod, step, userId: user?.id });
+    // 26/10/2026: nessuna prenotazione senza cauzione senza codice verificato,
+    // da qualunque passo si arrivi al pagamento.
+    if (formData.depositOption === 'no_deposit' && !isLoyalCustomer && !noCauzioneCodice) {
+      setPaymentError(t({ it: "Per prenotare senza cauzione serve il codice No Cauzione ricevuto dal team DR7.", en: "To book with no deposit you need the No-Deposit code from the DR7 team." }));
+      setShowNoCauzionePopup(true);
+      return;
+    }
     if (!validateStep() || !item) return;
 
     // Ref-based guard: prevents double-tap/double-click even if state hasn't updated yet
@@ -6902,7 +6915,11 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                         {t({ it: "RIMANI IN CHAT", en: "STAY IN CHAT" })}
                       </button>
                       <button
-                        onClick={() => { setConfermaUscitaNoCauzione(false); setShowNoCauzionePopup(false); }}
+                        onClick={() => {
+                          setConfermaUscitaNoCauzione(false); setShowNoCauzionePopup(false);
+                          // Uscita senza codice: "Nessuna cauzione" non resta scelta.
+                          if (!isLoyalCustomer && !noCauzioneCodice) setFormData(prev => ({ ...prev, depositOption: prev.depositOption === 'no_deposit' ? '' : prev.depositOption }));
+                        }}
                         className="w-full py-2 text-gray-400 text-sm underline hover:text-white transition-colors"
                       >
                         {t({ it: "Esci comunque", en: "Leave anyway" })}

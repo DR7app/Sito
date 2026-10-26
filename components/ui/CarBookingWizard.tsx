@@ -439,9 +439,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [isSavingPreventivo, setIsSavingPreventivo] = useState(false);
   const [preventivoSaved, setPreventivoSaved] = useState(false);
   const [showNoCauzionePopup, setShowNoCauzionePopup] = useState(false);
-  // 26/10/2026: richiesta inviata e codice non ancora inserito = chi chiude il
-  // popup rischia di perdere il codice che Valerio sta per mandare. Prima di
-  // uscire si chiede conferma (RIMANI IN CHAT / Esci comunque).
+  // 26/10/2026 (direzione): chi chiude il popup No Cauzione senza aver inserito
+  // un codice (Annulla o clic fuori) rischia di perdere il codice esclusivo.
+  // Prima di uscire si chiede sempre conferma (RIMANI IN CHAT / Esci comunque).
   const [confermaUscitaNoCauzione, setConfermaUscitaNoCauzione] = useState(false);
   const [noCauzioneRequested, setNoCauzioneRequested] = useState(false);
   const [noCauzioneSending, setNoCauzioneSending] = useState(false);
@@ -6888,7 +6888,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* No Cauzione Request Popup */}
             {showNoCauzionePopup && (
-              <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (noCauzioneSaved && !noCauzioneCodice) setConfermaUscitaNoCauzione(true); else setShowNoCauzionePopup(false); }}>
+              <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (!noCauzioneCodice) setConfermaUscitaNoCauzione(true); else setShowNoCauzionePopup(false); }}>
                 <div className="relative bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
                   {confermaUscitaNoCauzione && (
                     <div className="absolute inset-0 z-10 bg-gray-900/95 rounded-t-2xl sm:rounded-2xl p-6 flex flex-col justify-center text-center">
@@ -6949,7 +6949,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   </div>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => { if (noCauzioneSaved && !noCauzioneCodice) setConfermaUscitaNoCauzione(true); else setShowNoCauzionePopup(false); }}
+                      onClick={() => { if (!noCauzioneCodice) setConfermaUscitaNoCauzione(true); else setShowNoCauzionePopup(false); }}
                       className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                     >
                       {t({ it: "Annulla", en: "Cancel" })}

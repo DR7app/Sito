@@ -439,6 +439,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   const [isSavingPreventivo, setIsSavingPreventivo] = useState(false);
   const [preventivoSaved, setPreventivoSaved] = useState(false);
   const [showNoCauzionePopup, setShowNoCauzionePopup] = useState(false);
+  // 26/10/2026: richiesta inviata e codice non ancora inserito = chi chiude il
+  // popup rischia di perdere il codice che Valerio sta per mandare. Prima di
+  // uscire si chiede conferma (RIMANI IN CHAT / Esci comunque).
+  const [confermaUscitaNoCauzione, setConfermaUscitaNoCauzione] = useState(false);
   const [noCauzioneRequested, setNoCauzioneRequested] = useState(false);
   const [noCauzioneSending, setNoCauzioneSending] = useState(false);
   const [noCauzioneSaved, setNoCauzioneSaved] = useState(false);
@@ -6884,8 +6888,27 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
             {/* No Cauzione Request Popup */}
             {showNoCauzionePopup && (
-              <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowNoCauzionePopup(false)}>
-                <div className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
+              <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (noCauzioneSaved && !noCauzioneCodice) setConfermaUscitaNoCauzione(true); else setShowNoCauzionePopup(false); }}>
+                <div className="relative bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-md w-full max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
+                  {confermaUscitaNoCauzione && (
+                    <div className="absolute inset-0 z-10 bg-gray-900/95 rounded-t-2xl sm:rounded-2xl p-6 flex flex-col justify-center text-center">
+                      <p className="text-red-400 text-lg font-bold mb-3">{t({ it: "ATTENZIONE!", en: "WARNING!" })}</p>
+                      <p className="text-white text-sm leading-relaxed mb-3">{t({ it: "Chiudendo questa schermata potresti perdere il codice esclusivo per noleggiare senza cauzione!", en: "If you close this screen you may lose your exclusive code to rent with no deposit!" })}</p>
+                      <p className="text-gray-300 text-sm mb-6">{t({ it: "Il team DR7 sta per risponderti.", en: "The DR7 team is about to reply." })}</p>
+                      <button
+                        onClick={() => setConfermaUscitaNoCauzione(false)}
+                        className="w-full py-3 bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors mb-3"
+                      >
+                        {t({ it: "RIMANI IN CHAT", en: "STAY IN CHAT" })}
+                      </button>
+                      <button
+                        onClick={() => { setConfermaUscitaNoCauzione(false); setShowNoCauzionePopup(false); }}
+                        className="w-full py-2 text-gray-400 text-sm underline hover:text-white transition-colors"
+                      >
+                        {t({ it: "Esci comunque", en: "Leave anyway" })}
+                      </button>
+                    </div>
+                  )}
                   <h3 className="text-lg font-bold text-white mb-3">{t({ it: "Richiesta No Cauzione", en: "No-Deposit Request" })}</h3>
                   <p className="text-gray-400 text-sm mb-4">
                     {t({ it: "L'opzione \"Nessuna Cauzione\" richiede l'approvazione del team DR7. Invieremo la tua richiesta e sarai contattato per conferma.", en: "The \"No Deposit\" option requires approval from the DR7 team. We will send your request and contact you to confirm." })}
@@ -6926,7 +6949,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                   </div>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setShowNoCauzionePopup(false)}
+                      onClick={() => { if (noCauzioneSaved && !noCauzioneCodice) setConfermaUscitaNoCauzione(true); else setShowNoCauzionePopup(false); }}
                       className="flex-1 py-3 border border-gray-600 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
                     >
                       {t({ it: "Annulla", en: "Cancel" })}

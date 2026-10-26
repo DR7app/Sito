@@ -136,19 +136,22 @@ exports.handler = async event => {
       + `*Periodo:* ${testo(body.ritiro)} → ${testo(body.riconsegna)}\n`
       + `*Totale:* €${Number(body.totale || 0).toFixed(2)}\n`
       + `*Supplemento No Cauzione:* €${Number(body.supplementoGiorno || 0).toFixed(2)}/giorno\n\n`
-      + `*CODICE:* ${codice}\n\n`
-      + `Se approvi, copia il codice al cliente: lo inserisce sul sito nella scelta "No Cauzione" e prenota pagando normalmente. Vale solo per il suo account, una prenotazione, ${VALIDITA_GIORNI} giorni.`;
+      + `Se approvi, inoltra al cliente il CODICE del messaggio seguente: lo inserisce sul sito nella scelta "No Cauzione" e prenota pagando normalmente. Vale solo per il suo account, una prenotazione, ${VALIDITA_GIORNI} giorni.`;
 
     const baseUrl = process.env.URL || 'https://dr7.app';
-    const res = await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customPhone: telefonoValerio, customMessage: messaggio, skipHeader: true }),
-    });
-    const esito = await res.json().catch(() => ({}));
-    if (!res.ok || esito.success === false) {
-      console.error('[richiesta-no-cauzione] WhatsApp a Valerio non partito:', esito);
-      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Richiesta non inviata, riprova piu\' tardi.' }) };
+    // 26/10/2026: il codice parte in un messaggio a parte, da solo, cosi'
+    // Valerio lo copia e lo inoltra al cliente senza ritagliarlo dal riepilogo.
+    for (const [cosa, testoWa] of [['riepilogo', messaggio], ['codice', codice]]) {
+      const res = await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customPhone: telefonoValerio, customMessage: testoWa, skipHeader: true }),
+      });
+      const esito = await res.json().catch(() => ({}));
+      if (!res.ok || esito.success === false) {
+        console.error(`[richiesta-no-cauzione] WhatsApp a Valerio (${cosa}) non partito:`, esito);
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Richiesta non inviata, riprova piu\' tardi.' }) };
+      }
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   } catch (err) {

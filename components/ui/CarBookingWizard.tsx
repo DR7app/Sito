@@ -4442,6 +4442,32 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       // 'pending' (si annullava da sola dopo un'ora). Nasce un
       // codice che va solo a Valerio: se approva lo gira al
       // cliente, che lo inserisce qui e prenota normalmente.
+      // 26/10/2026 (direzione): Valerio deve vedere cosa ha scelto il cliente
+      // (assicurazione, pacchetti km, lavaggio, servizi), come nel riepilogo.
+      const dettagli: string[] = [];
+      const nomeAssicurazione = (() => { const opts = getInsuranceForVehicle(vehicleType, (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2'); return opts.find(o => o.id === formData.insuranceOption)?.name || ''; })();
+      if (nomeAssicurazione || insuranceCost > 0) dettagli.push(`Assicurazione: ${nomeAssicurazione || formData.insuranceOption || '—'}${insuranceCost > 0 ? ` (${formatPrice(insuranceCost)})` : ''}`);
+      if (formData.kmPackageType === 'unlimited' && kmPackageCost > 0) {
+        dettagli.push(`Km illimitati (${formatPrice(kmPackageCost)})`);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawCat = String((item as any)?.category ?? '').toLowerCase().trim();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pacchetti = resolvePacchetti(rawCat, (configOverlay as any)?.pacchettiByCategory)
+          .map(pkg => ({ pkg, qty: formData.kmPackages?.[pkg.id] || 0 }))
+          .filter(x => x.qty > 0);
+        const kmPacchetti = pacchetti.reduce((tot, x) => tot + x.pkg.km * x.qty, 0);
+        const kmBase = Math.max(0, includedKm - kmPacchetti);
+        dettagli.push(`Chilometri: ${kmBase >= 9999 ? 'illimitati inclusi' : `${kmBase} km inclusi`}`);
+        for (const { pkg, qty } of pacchetti) dettagli.push(`Pacchetto ${qty > 1 ? `${pkg.label} x ${qty} (${pkg.km * qty} km)` : `${pkg.label} (${pkg.km} km)`}: ${formatPrice(pkg.price * qty)}`);
+      }
+      if (lavaggioFee > 0) dettagli.push(`Lavaggio: ${formatPrice(lavaggioFee)}`);
+      for (const [svcId, qty] of Object.entries(formData.selectedExperiences || {})) {
+        if (!qty || qty <= 0) continue;
+        const svc = (ACTIVE_EXPERIENCE_SERVICES as Array<{ id: string; name?: string }>).find(x => x.id === svcId);
+        dettagli.push(`Servizio: ${svc?.name || svcId}${qty > 1 ? ` x ${qty}` : ''}`);
+      }
+      if (formData.addSecondDriver) dettagli.push('Secondo guidatore');
       const res = await fetch('/.netlify/functions/richiesta-no-cauzione', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -4453,6 +4479,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           riconsegna: `${giorno(rDate)} ${rTime}`,
           totale: grandTotal,
           supplementoGiorno: ACTIVE_NO_DEPOSIT_SURCHARGE,
+          dettagli,
         }),
       });
       const esitoRichiesta = await res.json().catch(() => ({}));

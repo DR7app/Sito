@@ -124,6 +124,8 @@ exports.handler = async event => {
       + `*Tel:* ${telefonoCliente || 'N/A'}\n`
       + `*Veicolo:* ${testo(body.veicolo) || 'N/A'}\n`
       + `*Periodo:* ${testo(body.ritiro)} → ${testo(body.riconsegna)}\n`
+      // 26/10/2026: scelte del cliente (assicurazione, pacchetti km, servizi).
+      + (Array.isArray(body.dettagli) ? body.dettagli.slice(0, 20).map(r => `• ${testo(r)}\n`).join('') : '')
       + `*Totale:* €${Number(body.totale || 0).toFixed(2)}\n`
       + `*Supplemento No Cauzione:* €${Number(body.supplementoGiorno || 0).toFixed(2)}/giorno\n\n`
       + `Se approvi, inoltra al cliente il CODICE del messaggio seguente: lo inserisce sul sito nella scelta "No Cauzione" e prenota pagando normalmente. Vale solo per il suo account, una prenotazione, ${VALIDITA_GIORNI} giorni.`;

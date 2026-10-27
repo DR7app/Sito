@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../supabaseClient';
 import { caricaDatiFatturaCliente } from '../utils/datiFatturaCliente';
 import { getMechanicalServices, type MechanicalServiceItem } from '../utils/siteCopy';
-import { getUserCreditBalance, hasSufficientBalance } from '../utils/creditWallet';
+import { getSaldoSpendibile, hasSufficientBalance } from '../utils/creditWallet';
 import { useCarrello } from '../hooks/useCarrello';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
 import { useContactInfo } from '../hooks/useContactInfo';
@@ -211,7 +211,8 @@ const MechanicalBookingPage: React.FC = () => {
       if (user?.id) {
         setIsLoadingBalance(true);
         try {
-          const balance = await getUserCreditBalance(user.id);
+          // Saldo + credito vincolato valido sulla meccanica (sta col lavaggio).
+          const balance = await getSaldoSpendibile(user.id, 'mechanical');
           setCreditBalance(balance);
         } catch (error) {
           console.error('Error fetching credit balance:', error);
@@ -504,7 +505,7 @@ const MechanicalBookingPage: React.FC = () => {
         const totalAmount = discountedPrice;
 
         // Check sufficient balance
-        const hasBalance = await hasSufficientBalance(user.id, totalAmount);
+        const hasBalance = await hasSufficientBalance(user.id, totalAmount, 'mechanical');
         if (!hasBalance) {
           clearTimeout(safetyTimer);
           setPaymentError(t({ it: 'Credito insufficiente', en: 'Insufficient credit' }));

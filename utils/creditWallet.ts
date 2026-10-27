@@ -167,6 +167,33 @@ export function vincolatoSpendibileSu(lotti: CreditoVincolato[], servizio: strin
 }
 
 /**
+ * Quanto il cliente puo' spendere su un servizio: saldo libero piu' il
+ * vincolato valido li'. 27/10/2026: le schermate di pagamento leggevano solo
+ * il saldo libero, e chi aveva ricevuto un bonus vincolato vedeva 50 EUR in
+ * meno di quelli che il gestionale gli mostrava.
+ */
+export async function getSaldoSpendibile(userId: string, servizio?: string | null): Promise<number> {
+  const [balance, lotti] = await Promise.all([
+    getUserCreditBalance(userId),
+    getCreditiVincolati(userId),
+  ]);
+  return balance + vincolatoSpendibileSu(lotti, servizio);
+}
+
+/** Nome del servizio di un lotto, come lo legge il cliente. */
+export function nomeServizioWallet(servizio: string, lingua: 'it' | 'en' = 'it'): string {
+  const nomi: Record<string, [string, string]> = {
+    rental: ['Noleggio Terra', 'Car rental'],
+    boat_rental: ['Noleggio Mare', 'Boat rental'],
+    heli_rental: ['Noleggio Aria', 'Helicopter'],
+    stay_rental: ['Soggiorni', 'Stays'],
+    car_wash: ['Lavaggio & Meccanica', 'Wash & mechanics'],
+  };
+  const n = nomi[businessDelServizio(servizio)];
+  return n ? n[lingua === 'en' ? 1 : 0] : servizio;
+}
+
+/**
  * Check if user has sufficient balance for a purchase
  *
  * 16/09/2026: il credito vincolato valido per quel servizio conta. Senza,

@@ -34,7 +34,7 @@ import {
   isUrbanVehicle
 } from '../../data/kmPricingData';
 import { checkVehicleAvailability, checkVehiclePartialUnavailability, checkGroupedVehicleAvailability, safeDate, getLateReturnGraceMinutes } from '../../utils/bookingValidation';
-import { getUserCreditBalance, deductCredits, hasSufficientBalance } from '../../utils/creditWallet';
+import { getSaldoSpendibile, deductCredits, hasSufficientBalance } from '../../utils/creditWallet';
 import { calculateDiscountedPrice, getMembershipTierName } from '../../utils/membershipDiscounts';
 import { CLUB_PLANS, getClubPlans, getClubTiers } from '../../utils/dr7club';
 import { getDr7ClubPlanCopy } from '../../utils/siteCopy';
@@ -1513,7 +1513,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (user?.id) {
         setIsLoadingBalance(true);
         try {
-          const balance = await getUserCreditBalance(user.id);
+          // Saldo + credito vincolato valido sul noleggio: book_with_credits
+          // lo spende per primo, quindi va mostrato.
+          const balance = await getSaldoSpendibile(user.id, 'car_rental');
           setCreditBalance(balance);
         } catch (error) {
           // Enhanced error logging with full diagnostics
@@ -4853,7 +4855,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     // Check sufficient balance only for credit wallet payments
     // Note: DR7 Club subscription is NOT included in grandTotal — it's charged separately
     if (normalizedPaymentMethod === 'credit') {
-      const hasBalance = await hasSufficientBalance(user.id, grandTotal);
+      const hasBalance = await hasSufficientBalance(user.id, grandTotal, 'car_rental');
       if (!hasBalance) {
         clearTimeout(safetyTimer);
         setPaymentError(`${t({ it: 'Credito insufficiente. Saldo attuale:', en: 'Insufficient credit. Current balance:' })} €${creditBalance.toFixed(2)}, ${t({ it: 'Richiesto:', en: 'Required:' })} €${grandTotal.toFixed(2)}`);

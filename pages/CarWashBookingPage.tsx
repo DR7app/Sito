@@ -13,7 +13,7 @@ import { seatListLabel } from '../utils/seatPlan';
 import { generateLavaggioSlotsForDate, canFitWithinWindowsForDate, orariLavaggioPronti, riassuntoSettimana } from '../utils/lavaggioHours';
 import CalendarioLavaggio from '../components/ui/CalendarioLavaggio';
 import { useCarWashAvailability } from '../hooks/useRealtimeBookings';
-import { getUserCreditBalance, hasSufficientBalance } from '../utils/creditWallet';
+import { getSaldoSpendibile, hasSufficientBalance } from '../utils/creditWallet';
 import { dataRoma } from '../utils/oraRoma';
 import { normalizePlate } from '../utils/lookupTarga';
 import { useTestiCarrello } from '../hooks/useTestiCarrello';
@@ -649,7 +649,8 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
       if (user?.id) {
         setIsLoadingBalance(true);
         try {
-          const balance = await getUserCreditBalance(user.id);
+          // Saldo + credito vincolato valido sul lavaggio.
+          const balance = await getSaldoSpendibile(user.id, 'car_wash');
           setCreditBalance(balance);
         } catch (error) {
           console.error('Error fetching credit balance:', error);
@@ -1395,7 +1396,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
         const totalAmount = calculateTotal();
 
         // Check sufficient balance
-        const hasBalance = await hasSufficientBalance(user.id, totalAmount);
+        const hasBalance = await hasSufficientBalance(user.id, totalAmount, 'car_wash');
         if (!hasBalance) {
           clearTimeout(safetyTimer);
           setPaymentError(t({ it: 'Credito insufficiente', en: 'Insufficient credit' }));

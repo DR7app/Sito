@@ -2,7 +2,7 @@ import PhoneInput, { eventoTelefono } from '../../components/ui/PhoneInput';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
-import { getUserCreditBalance, getCreditTransactions } from '../../utils/creditWallet';
+import { getUserCreditBalance, getCreditTransactions, getCreditiVincolati, nomeServizioWallet, type CreditoVincolato } from '../../utils/creditWallet';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import type { CreditTransaction } from '../../utils/creditWallet';
@@ -108,6 +108,11 @@ const ProfileSettings = () => {
     const [bonusTotal, setBonusTotal] = useState<number>(0);
     const [bonusBreakdown, setBonusBreakdown] = useState<Array<{ source: string; amount: number; count: number }>>([]);
     const [showBonusBreakdown, setShowBonusBreakdown] = useState(false);
+    // Credito vincolato (bonus a scadenza su certi servizi): non sta nel saldo,
+    // ma e' del cliente e deve vederlo. Prima qui mancava e il gestionale
+    // mostrava 50 EUR in piu' di quelli che il cliente vedeva.
+    const [crediti, setCrediti] = useState<CreditoVincolato[]>([]);
+    const [showVincolati, setShowVincolati] = useState(false);
     const [recentTransactions, setRecentTransactions] = useState<CreditTransaction[]>([]);
     const [allTransactions, setAllTransactions] = useState<CreditTransaction[] | null>(null);
     const [showAllTransactions, setShowAllTransactions] = useState(false);
@@ -139,9 +144,13 @@ const ProfileSettings = () => {
             setIsLoadingProfile(true);
             try {
                 // Fetch Credits
-                const balance = await getUserCreditBalance(user.id);
-                const transactions = await getCreditTransactions(user.id, 5);
+                const [balance, transactions, lotti] = await Promise.all([
+                    getUserCreditBalance(user.id),
+                    getCreditTransactions(user.id, 5),
+                    getCreditiVincolati(user.id),
+                ]);
                 setCreditBalance(balance);
+                setCrediti(lotti);
                 setRecentTransactions(transactions);
 
                 // 2026-08-08: la classificazione credito reale / bonus vive in
@@ -440,6 +449,8 @@ const ProfileSettings = () => {
         }
     };
 
+    const vincolatoTotale = crediti.reduce((somma, l) => somma + l.residuo, 0);
+
     return (
         <div className="space-y-6">
             {/* Credit Wallet Card */}
@@ -492,9 +503,46 @@ const ProfileSettings = () => {
                                             </div>
                                         )}
                                     </div>
+                                    {crediti.length > 0 && (
+                                        <div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowVincolati(v => !v)}
+                                                className="flex items-baseline gap-3 group"
+                                            >
+                                                <span className="text-sm text-gray-400 w-40 text-left flex items-center gap-1">
+                                                    {t({ it: 'Credito vincolato', en: 'Restricted credit' })}
+                                                    <span className={`text-emerald-400 transition-transform inline-block ${showVincolati ? 'rotate-90' : ''}`}>›</span>
+                                                </span>
+                                                <span className="text-xl font-semibold text-emerald-400 group-hover:text-emerald-300">€{vincolatoTotale.toFixed(2)}</span>
+                                            </button>
+                                            {showVincolati && (
+                                                <div className="ml-3 mt-2 pl-3 border-l-2 border-emerald-500/30 space-y-1.5">
+                                                    {crediti.map(l => (
+                                                        <div key={l.id} className="flex items-baseline justify-between gap-4 text-xs">
+                                                            <span className="text-gray-400">
+                                                                {!l.servizi || l.servizi.length === 0
+                                                                    ? t({ it: 'Tutti i servizi', en: 'All services' })
+                                                                    : l.servizi.map(x => t({ it: nomeServizioWallet(x, 'it'), en: nomeServizioWallet(x, 'en') })).join(' · ')}
+                                                                {l.scadenza && (
+                                                                    <span className="text-gray-600 ml-1">
+                                                                        {t({ it: 'fino al', en: 'until' })} {new Date(l.scadenza).toLocaleDateString('it-IT')}
+                                                                    </span>
+                                                                )}
+                                                            </span>
+                                                            <span className="font-medium text-emerald-300">€{l.residuo.toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                    <p className="text-[11px] text-gray-500 pt-1">
+                                                        {t({ it: 'Si usa da solo, prima del saldo, quando prenoti il servizio indicato.', en: 'Used automatically, before your balance, when you book the service shown.' })}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="border-t border-gray-700 pt-2 flex items-baseline gap-3">
                                         <p className="text-sm text-gray-400 w-40">{t({ it: "Saldo Disponibile", en: "Available Balance" })}</p>
-                                        <p className="text-4xl font-bold text-white">€{creditBalance.toFixed(2)}</p>
+                                        <p className="text-4xl font-bold text-white">€{(creditBalance + vincolatoTotale).toFixed(2)}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">

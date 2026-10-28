@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useBooking } from '../../hooks/useBooking';
+import { useVehicles } from '../../hooks/useVehicles';
+import { restringiGruppoAPromo } from '../../utils/promozioniCalcolo';
 import {
   getMiePrevendite,
   getMovimentiPrevendita,
   statoPrevendita,
   utilizziResidui,
+  valePerVeicolo,
   type PrevenditaCliente,
   type MovimentoPrevendita,
 } from '../../utils/prevendite';
@@ -32,6 +36,42 @@ const MiePrevendite: React.FC = () => {
   const [caricamento, setCaricamento] = useState(true);
   const [aperto, setAperto] = useState<string | null>(null);
   const [movimenti, setMovimenti] = useState<Record<string, MovimentoPrevendita[]>>({});
+  const { openCarWizard, setInitialSearchDates } = useBooking();
+  const { vehicles: tuttiVeicoli } = useVehicles(undefined);
+  const [sceltaAuto, setSceltaAuto] = useState<string | null>(null);
+  const [erroreUso, setErroreUso] = useState<Record<string, string>>({});
+
+  // Le auto del sito su cui vale il pacchetto: un gruppo per modello, ristretto
+  // alle sole targhe del pacchetto quando il gestionale le ha indicate.
+  function autoDelPacchetto(pc: PrevenditaCliente) {
+    const ids = pc.veicoli.map(v => v.id).filter(Boolean);
+    const gruppi: (typeof tuttiVeicoli)[number][] = [];
+    for (const g of tuttiVeicoli) {
+      const idsGruppo = g.vehicleIds && g.vehicleIds.length ? g.vehicleIds : [String(g.id).replace('car-', '')];
+      if (!valePerVeicolo(pc, idsGruppo, g.name)) continue;
+      gruppi.push(restringiGruppoAPromo(g, ids) || g);
+    }
+    return gruppi;
+  }
+
+  // "Usufruisci adesso": apre il wizard sull'auto con la prevendita gia'
+  // scelta. Il wizard la ricontrolla comunque (date, utilizzi, scadenza).
+  function usufruisci(pc: PrevenditaCliente, gruppo?: (typeof tuttiVeicoli)[number]) {
+    const gruppi = gruppo ? [gruppo] : autoDelPacchetto(pc);
+    if (gruppi.length === 0) {
+      setErroreUso(prev => ({
+        ...prev,
+        [pc.id]: t({ it: 'L’auto di questa prevendita non e’ prenotabile online in questo momento. Scrivici su WhatsApp.', en: 'The car of this pre-sale cannot be booked online right now. Contact us on WhatsApp.' }),
+      }));
+      return;
+    }
+    if (gruppi.length > 1) { setSceltaAuto(sceltaAuto === pc.id ? null : pc.id); return; }
+    const g = gruppi[0];
+    setSceltaAuto(null);
+    setInitialSearchDates(null);
+    const cat = String(g.category || '').toLowerCase();
+    openCarWizard({ ...g, _prevenditaId: pc.id } as typeof g, cat === 'urban' || cat === 'urban-cars' ? 'urban-cars' : 'cars');
+  }
 
   useEffect(() => {
     let annullato = false;
@@ -234,12 +274,41 @@ const MiePrevendite: React.FC = () => {
                 )}
 
                 {stato === 'attiva' && residui > 0 && (
-                  <p className="text-xs text-gray-600 mt-5">
-                    {t({
-                      it: 'Quando prenoti una di queste auto ti verra’ chiesto se vuoi usare la prevendita: noleggio e km inclusi sono gia’ pagati, paghi solo gli extra.',
-                      en: 'When you book one of these cars you will be asked whether to use the pre-sale: rental and included km are already paid, you only pay extras.',
-                    })}
-                  </p>
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      onClick={() => usufruisci(pc)}
+                      className="w-full sm:w-auto bg-white text-black px-8 py-3 font-bold text-sm tracking-wider hover:bg-gray-200 transition-colors"
+                    >
+                      {t({ it: 'USUFRUISCI ADESSO', en: 'USE IT NOW' })}
+                    </button>
+                    {sceltaAuto === pc.id && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-sm text-gray-400">{t({ it: 'Scegli l’auto:', en: 'Choose the car:' })}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {autoDelPacchetto(pc).map(g => (
+                            <button
+                              key={String(g.id)}
+                              type="button"
+                              onClick={() => usufruisci(pc, g)}
+                              className="px-4 py-2 rounded-full text-sm border border-gray-700 text-white hover:border-white transition-colors"
+                            >
+                              {g.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {erroreUso[pc.id] && (
+                      <p className="text-sm text-red-400 mt-3">{erroreUso[pc.id]}</p>
+                    )}
+                    <p className="text-xs text-gray-600 mt-3">
+                      {t({
+                        it: 'Scegli le date: noleggio e km inclusi sono gia’ pagati, paghi solo gli extra.',
+                        en: 'Pick your dates: rental and included km are already paid, you only pay extras.',
+                      })}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

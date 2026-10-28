@@ -2507,6 +2507,17 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     return () => { annullato = true; };
   }, [user?.id, user?.email, vehicleIdsPrevendita, item?.name]);
 
+  // Arrivo da "Usufruisci adesso" (Le mie prevendite): la prevendita e' gia'
+  // scelta, niente domanda "Come vuoi prenotare?".
+  useEffect(() => {
+    const pid = (item as any)?._prevenditaId;
+    if (!pid || modalitaDecisa) return;
+    const pc = prevenditeDisponibili.find(p => p.id === pid);
+    if (!pc) return;
+    setPrevenditaScelta(pc);
+    setModalitaDecisa(true);
+  }, [item, prevenditeDisponibili, modalitaDecisa]);
+
   // Vincoli: li decide il database. Ogni volta che cambiano le date (o la
   // prevendita scelta) si richiede il verdetto e lo si mostra subito, prima
   // che il cliente arrivi al pagamento.

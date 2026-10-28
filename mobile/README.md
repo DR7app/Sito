@@ -1,82 +1,85 @@
 # DR7 — App iOS e Android
 
-App nativa per App Store e Google Play costruita con [Capacitor 8](https://capacitorjs.com).
-L'app carica il sito live **https://dr7.app** dentro un guscio nativo: prenotazioni,
-pagamenti Nexi/Stripe, account e collegamento al gestionale restano quelli del sito.
-Ogni deploy su Netlify è visibile subito anche nell'app, senza ripubblicarla.
+L'app è la sezione **`/app` del sito** (codice in `pages/app/`), aperta dentro un
+guscio nativo Capacitor 8 (questa cartella). Non ha dati propri: legge e scrive
+sullo stesso gestionale del sito.
 
-Questa cartella è separata dal sito: la build Netlify (`vite build` dalla root) non la usa.
+| Cosa cambi nel gestionale | Dove cambia |
+|---|---|
+| Aggiungi, togli o nascondi un'auto | Sito e app, subito (tabella `vehicles`, aggiornamento in tempo reale) |
+| Cambi un prezzo in Centralina Pro | Sito e app |
+| Modifichi i testi o i filmati della home (Sito > Home) | Sito e app |
+| Confermi, sposti o annulli una prenotazione | "Viaggi" nell'app, in tempo reale |
+
+Ogni deploy del sito su Netlify aggiorna anche l'app: non serve ripubblicarla
+sugli store, salvo modifiche alla parte nativa (questa cartella).
 
 | | |
 |---|---|
 | Nome | DR7 |
 | ID app (iOS bundle / Android package) | `app.dr7.mobile` |
-| Versione | 1.0 |
+| Indirizzo aperto dall'app | `https://dr7.app/app` |
 
-## Cosa fa l'app oltre al sito
+## Sezioni dell'app
 
-- **Icona e splash** nero/oro dal logo DR7 (`assets/` → generati con `npm run assets`).
-- **Schermata offline** brandizzata (`www/offline.html`) con tasto Riprova e numero di assistenza;
-  torna al sito da sola quando la connessione rientra.
-- **Navigazione intelligente** (plugin `DR7Navigation`, iOS in `ios/App/App/SceneDelegate.swift`,
-  Android in `android/app/src/main/java/app/dr7/mobile/DR7NavigationPlugin.java`):
-  - restano **dentro l'app**: sito DR7, Supabase, Nexi, Stripe e i redirect automatici
-    della verifica 3D Secure delle banche, così il cliente non esce mai a metà pagamento;
-  - si aprono **nelle app di sistema**: Instagram, TikTok, Facebook, WhatsApp, YouTube,
-    mappe, telefono, email, App Store/Play Store e il login Google;
-  - iOS: anche i link esterni toccati dal cliente (es. articoli stampa) vanno in Safari;
-    Android: restano nell'app e si torna col tasto indietro.
-- **Swipe indietro** dal bordo dello schermo su iPhone.
-- **Barra di stato** nera con testo chiaro; spazio per la tacca gestito dall'app
-  (il sito non usa `safe-area-inset`).
-- **User agent** con suffisso `DR7App/1.0`, così il sito può riconoscere quando gira nell'app.
-- **Notifiche push**: plugin installato e permessi pronti; vedi "Da completare".
+- **Home** — filmato, testi ed Esperienze della home del sito; il prossimo noleggio
+  del cliente; "Quando ti serve?" con date rapide che passano al wizard di prenotazione.
+- **Terra** — la flotta del sito con le locandine intere, categorie di Centralina Pro,
+  prezzo "Da € … /giorno"; scheda auto con calendario disponibilità.
+- **Prenotazione** — lo stesso `CarBookingWizard` del sito: prezzi, assicurazioni,
+  consegna, pagamento Nexi, contratto.
+- **Concierge** — la DR7 AI del sito a tutta pagina, più WhatsApp e telefono.
+- **Viaggi** — le prenotazioni del cliente; modifica e annullamento con la pagina del sito.
+- **Account** — Wallet, profilo, documenti, notifiche, DR7 Club, prevendite e il menu
+  del sito (Terra, Mare, Aria, Soggiorni, Lavaggio & Meccanica…).
 
-## Compilare
+Dentro l'app, ogni link del sito verso una pagina che ha una versione app (es. `/flotta`)
+resta nella cornice dell'app (`APP_EQUIVALENTS` in `pages/app/appEnv.ts`).
 
-Requisiti: Node 20+, per iOS un Mac con Xcode 16+, per Android Android Studio.
+## Notifiche push
+
+Funzionano così: l'app registra il telefono (`app_push_tokens`), il server invia.
+iPhone direttamente ad Apple (APNs), Android tramite Firebase. Suono: `dr7_chime`.
+
+- **Automatica:** "Prenotazione confermata" parte insieme all'email di conferma
+  (`send-booking-confirmation`).
+- **Dal gestionale:** `POST /.netlify/functions/app-push-send` con header
+  `x-dr7-push-key` e corpo `{ "title", "body", "url": "/app/prevendite", "all": true }`
+  oppure `"user_ids": [...]`. Ogni invio resta in `app_push_log`.
+
+### Da fare una volta
+
+1. **Database** — eseguire `supabase/migrations/20261028120000_app_push_tokens.sql`.
+2. **Apple** — nell'account Apple Developer creare una chiave APNs (Keys → +, "Apple Push
+   Notifications service"), scaricare il file `.p8`.
+3. **Firebase** — creare il progetto, aggiungere l'app Android `app.dr7.mobile`,
+   scaricare `google-services.json` in `android/app/`; poi Impostazioni progetto →
+   Account di servizio → Genera nuova chiave privata (file JSON).
+4. **Netlify** (variabili d'ambiente del sito):
+   `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID=app.dr7.mobile`,
+   `APNS_PRODUCTION=true`, `FIREBASE_SERVICE_ACCOUNT` (il JSON), `APP_PUSH_ADMIN_KEY`
+   (una chiave lunga a caso, da dare al gestionale).
+
+Finché le chiavi mancano l'app funziona lo stesso: le notifiche semplicemente non partono.
+
+## Compilare e pubblicare
+
+Requisiti: Node 20+, Mac con Xcode 16+ per iOS, Android Studio per Android.
 
 ```bash
 cd mobile
 npm install
-npx cap sync          # dopo ogni modifica a capacitor.config.ts o ai plugin
-npm run ios           # apre Xcode
-npm run android       # apre Android Studio
+npx cap sync
+npm run ios       # Xcode: Team DR7 S.p.A. → Product → Archive → App Store Connect
+npm run android   # Android Studio: Build → Generate Signed App Bundle (.aab)
 ```
 
-**iOS (Xcode)** — target *App* → *Signing & Capabilities*: scegli il Team di DR7 S.p.A.,
-aggiungi la capability **Push Notifications**. Poi *Product → Archive → Distribute App → App Store Connect*.
+Il permesso notifiche iOS (`App.entitlements`) e il suono sono già nel progetto.
+Conservare al sicuro la keystore Android: serve per ogni aggiornamento.
 
-**Android (Android Studio)** — *Build → Generate Signed App Bundle* (`.aab`), crea e
-**conserva al sicuro** la keystore: senza quella non si possono pubblicare aggiornamenti.
-Carica l'`.aab` su Google Play Console.
+## Prima dell'invio agli store
 
-Senza Mac si può usare un servizio di build in cloud (es. Ionic Appflow, Codemagic).
-
-## Account necessari (intestati a DR7 S.p.A.)
-
-- **Apple Developer Program** — 99 $/anno, come organizzazione: richiede il numero **D-U-N-S**.
-- **Google Play Console** — 25 $ una tantum, come organizzazione.
-
-## Da completare prima della pubblicazione
-
-1. **Login con Google.** Google blocca il login dentro le app: oggi il tasto apre il browser
-   e il cliente resta lì dopo l'accesso. Serve una piccola modifica al sito (login Google con
-   ritorno all'app tramite link `app.dr7.mobile://`). Il login con email e password funziona già.
-2. **Accedi con Apple.** Se nell'app c'è "Accedi con Google", Apple richiede anche
-   "Accedi con Apple" (linea guida 4.8). In alternativa si nasconde il login Google quando
-   lo user agent contiene `DR7App`.
-3. **Notifiche push.** Servono: progetto Firebase (file `google-services.json` in
-   `android/app/` e chiave APNs caricata su Firebase), una piccola aggiunta al sito che
-   chiede il permesso e salva il token del dispositivo su Supabase quando gira nell'app,
-   e una Netlify function che invia le notifiche (conferme prenotazione, promo).
-4. **Pagamenti su dispositivo reale.** Provare un pagamento Nexi completo (anche con 3D Secure)
-   e uno Stripe su iPhone e Android prima dell'invio agli store.
-5. **Schede store.** Screenshot (iPhone 6,9" e 6,5", Android), descrizione, link alla privacy
-   policy e compilazione della sezione privacy/dati raccolti.
-
-## Revisione Apple
-
-Apple può rifiutare app che sono solo un sito impacchettato (linea guida 4.2). Le funzioni
-native sopra aiutano; le notifiche push (punto 3) sono l'argomento più forte da avere
-attivo al momento dell'invio.
+- Pagamento Nexi completo con 3D Secure da iPhone e da Android.
+- Se un giorno si aggiunge "Accedi con Google", Apple chiede anche "Accedi con Apple"
+  (linea guida 4.8); oggi il sito usa solo email e password.
+- Schede store: screenshot, descrizione, privacy policy (`/privacy`), dati raccolti.

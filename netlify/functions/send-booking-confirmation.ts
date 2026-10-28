@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { createCalendarEvent, formatCarRentalEvent, formatCarWashEvent } from './utils/googleCalendar';
 import { getInsuranceNameById } from './utils/centralinaProLookups';
 import { funzioneFerma, businessDaServiceType } from './utils/systemControl';
+import { sendAppPush } from './utils/appPush';
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   console.log('📧 [send-booking-confirmation] Function invoked');
@@ -255,6 +256,27 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       console.error('Error message:', calendarError.message);
       console.error('Error stack:', calendarError.stack);
       // Don't fail the entire request if calendar creation fails
+    }
+
+    // App DR7: la stessa conferma arriva come notifica sul telefono del
+    // cliente, se ha l'app. Se le chiavi push non sono configurate non succede
+    // niente e l'email resta l'unico avviso, come prima.
+    try {
+      const userId = booking.user_id || booking.booking_details?.user_id || null;
+      if (userId) {
+        const what = booking.vehicle_name || booking.service_name || 'DR7';
+        const when = booking.pickup_date || booking.appointment_date;
+        const quando = when
+          ? new Date(when).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })
+          : '';
+        await sendAppPush({ userIds: [userId] }, {
+          title: 'Prenotazione confermata',
+          body: quando ? `${what} · ${quando}` : what,
+          url: '/app/viaggi',
+        });
+      }
+    } catch (pushError) {
+      console.error('[send-booking-confirmation] push non inviata', pushError);
     }
 
     return {

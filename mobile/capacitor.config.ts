@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 /**
  * DR7 — app iOS/Android.
  *
- * L'app carica il sito live (https://dr7.app) dentro un guscio nativo:
+ * L'app apre https://dr7.app/app, la sezione app del sito (pages/app/):
  * prenotazioni, pagamenti (Nexi/Stripe), account e gestionale restano quelli
  * del sito, e ogni deploy su Netlify è subito visibile anche nell'app.
  *
@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
   webDir: 'www',
 
   server: {
-    url: 'https://dr7.app',
+    url: 'https://dr7.app/app',
     // Schermata locale mostrata se il sito non si carica (offline).
     errorPath: 'offline.html',
     // Pagine del sito e dei pagamenti restano dentro l'app.

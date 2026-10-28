@@ -6,23 +6,23 @@
   <meta name="theme-color" content="#000000">
   <title>DR7</title>
   <style>
-    :root { --gold: #C8A24A; --gold-soft: #CDB07E; --ink: #000; --mist: rgba(255,255,255,.62); }
+    :root { --gold: #f8f5ee; --gold-soft: #f8f5ee; --ink: #000; --mist: #a19c92; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; background: var(--ink); color: #fff; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Roboto, sans-serif;
+      font-family: "Jost", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Roboto, sans-serif; font-weight: 300;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: max(24px, env(safe-area-inset-top)) 28px max(24px, env(safe-area-inset-bottom));
       text-align: center; -webkit-font-smoothing: antialiased;
     }
     img { width: 168px; height: auto; margin-bottom: 40px; }
     .rule { width: 40px; height: 1px; background: var(--gold); margin: 0 auto 28px; opacity: .8; }
-    h1 { font-weight: 300; font-size: 22px; letter-spacing: .02em; margin-bottom: 12px; }
+    h1 { font-family: "Bodoni Moda", Georgia, serif; font-weight: 400; font-size: 26px; letter-spacing: .02em; margin-bottom: 12px; }
     p { color: var(--mist); font-size: 15px; line-height: 1.55; max-width: 300px; margin: 0 auto; }
     button {
       margin-top: 40px; appearance: none; border: 1px solid var(--gold); background: transparent;
       color: var(--gold-soft); font: inherit; font-size: 13px; letter-spacing: .18em; text-transform: uppercase;
-      padding: 15px 34px; border-radius: 999px; cursor: pointer;
+      padding: 15px 34px; border-radius: 2px; cursor: pointer; font-weight: 500;
     }
     button:active { background: rgba(200,162,74,.12); }
     .contact { margin-top: 28px; font-size: 13px; color: var(--mist); }
@@ -30,7 +30,7 @@
   </style>
 </head>
 <body>
-  <img src="logo.png" alt="DR7">
+  <img src="logo.png" alt="DR7" style="filter:brightness(0) invert(1)">
   <div class="rule"></div>
   <h1>Nessuna connessione</h1>
   <p>Controlla la rete e riprova. Le tue prenotazioni sono al sicuro.</p>
@@ -38,7 +38,7 @@
   <div class="contact">Assistenza: <a href="tel:+393457905205" id="tel">chiama DR7</a></div>
   <script>
     var SITE = 'https://dr7.app';
-    function retry() { window.location.href = SITE; }
+    function retry() { window.location.href = SITE + "/app"; }
     document.getElementById('retry').addEventListener('click', retry);
     // Torna al sito da solo appena la connessione rientra.
     window.addEventListener('online', retry);

@@ -104,6 +104,8 @@ import PaymentPage from './pages/PaymentPage';
 import FirmaPage from './pages/FirmaPage';
 import CheckoutPage from './pages/CheckoutPage';
 import CarrelloDrawer from './components/ui/CarrelloDrawer';
+import AppShell from './pages/app/AppShell';
+import { isNativeApp, APP_EQUIVALENTS } from './pages/app/appEnv';
 
 
 
@@ -129,6 +131,20 @@ const AuthRedirector: React.FC = () => {
     }
   }, [user, authEvent, navigate, location.pathname]);
 
+  return null;
+};
+
+// App DR7 (iOS/Android): dentro l'app installata, una pagina del sito che ha
+// una versione app (es. /flotta -> /app/terra) si apre nella cornice dell'app.
+// Nel browser non fa niente: il sito resta com'e'.
+const AppRedirector: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    const to = APP_EQUIVALENTS[location.pathname.replace(/\/+$/, '') || '/'];
+    if (to) navigate(to + location.search + location.hash, { replace: true, state: location.state });
+  }, [location.pathname, location.search, location.hash, location.state, navigate]);
   return null;
 };
 
@@ -545,7 +561,8 @@ const App = () => {
                 <ScrollToTop />
                 <Routes>
                   <Route path="/firma/:token" element={<FirmaPage />} />
-                  <Route path="*" element={<><AuthRedirector /><MainContent /></>} />
+                  <Route path="/app/*" element={<><AuthRedirector /><AppShell /></>} />
+                  <Route path="*" element={<><AuthRedirector /><AppRedirector /><MainContent /></>} />
                 </Routes>
               </BrowserRouter>
             </VerificationProvider>

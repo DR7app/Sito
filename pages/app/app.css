@@ -1,0 +1,111 @@
+/*
+ * App DR7 — solo la cornice dell'app (barra in alto, barra in basso, fogli).
+ * Colori, caratteri, bottoni e filetti sono quelli del sito
+ * (styles/index.css): qui non si ridefinisce nessun token del sistema.
+ */
+
+.dr7app {
+  --app-tab: 4.25rem;
+  --app-top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--c-obsidian);
+  color: var(--c-ivory);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+.dr7app .app-gutter {
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+.dr7app .app-main {
+  padding-bottom: calc(var(--app-tab) + env(safe-area-inset-bottom, 0px) + 2.5rem);
+}
+.dr7app .app-main.with-top { padding-top: var(--app-top); }
+
+/* Barra in alto: come l'header del sito, MENU · logo · ACCOUNT */
+.app-top {
+  position: fixed; inset: 0 0 auto; z-index: 40;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.875rem) max(1.25rem, env(safe-area-inset-right, 0px)) 0.875rem max(1.25rem, env(safe-area-inset-left, 0px));
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  transition: background-color var(--mo-standard) var(--ease-out), border-color var(--mo-standard) var(--ease-out);
+  border-bottom: 1px solid transparent;
+}
+.app-top.solid { background: rgba(0, 0, 0, 0.92); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-color: var(--line); }
+.app-top .app-logo { height: 1.375rem; width: auto; }
+.app-top .end { justify-self: end; }
+.app-top .back { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 9999px; }
+
+/* Barra in basso */
+.app-tabs {
+  position: fixed; inset: auto 0 0; z-index: 40;
+  height: calc(var(--app-tab) + env(safe-area-inset-bottom, 0px));
+  padding: 0 max(0.375rem, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(0.375rem, env(safe-area-inset-left, 0px));
+  display: flex; background: rgba(0, 0, 0, 0.94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+}
+.app-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4375rem;
+  font-family: var(--f-ui); font-size: 0.5625rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(248, 245, 238, 0.45); transition: color var(--mo-fast) var(--ease-out);
+}
+.app-tab.active { color: var(--c-ivory); }
+.app-tab svg { width: 1.3125rem; height: 1.3125rem; }
+
+/* Apertura */
+.app-hero { position: relative; height: min(84vh, 44rem); min-height: 32rem; display: flex; align-items: flex-end; overflow: hidden; }
+.app-hero .scene { position: absolute; inset: 0; }
+.app-hero .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 28%, rgba(0,0,0,.55) 66%, #000 100%); pointer-events: none; }
+.app-hero .in { position: relative; z-index: 2; padding-bottom: 2.25rem; width: 100%; }
+
+/* Riquadri */
+.app-frame { border: 1px solid var(--line); background: #000; }
+.app-panel { border: 1px solid var(--line-strong); background: var(--c-graphite); }
+.app-row { display: flex; align-items: center; gap: 0.875rem; width: 100%; padding: 1.0625rem 0; border-bottom: 1px solid var(--line); text-align: left; }
+.app-row .grow { flex: 1; min-width: 0; }
+.app-pill { font-family: var(--f-meta); font-size: 0.5625rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 0.375rem 0.5625rem; border: 1px solid var(--line-strong); white-space: nowrap; }
+.app-pill.solid { background: var(--c-ivory); color: #000; border-color: var(--c-ivory); }
+
+/* Scelte rapide */
+.app-chips { display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: none; margin: 0 -1.25rem; padding: 0 1.25rem; }
+.app-chips::-webkit-scrollbar { display: none; }
+.app-chip {
+  flex: none; padding: 0.75rem 1rem; border: 1px solid var(--line-strong); border-radius: 2px;
+  font-family: var(--f-ui); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--c-mineral); transition: all var(--mo-fast) var(--ease-out);
+}
+.app-chip.active { background: var(--c-ivory); border-color: var(--c-ivory); color: #000; }
+
+/* Carosello locandine (sempre intere) */
+.app-rail { display: flex; gap: 0.875rem; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -1.25rem; padding: 0 1.25rem 0.25rem; scrollbar-width: none; }
+.app-rail::-webkit-scrollbar { display: none; }
+.app-rail > * { flex: none; width: 62%; scroll-snap-align: start; }
+
+.app-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem 0.875rem; }
+
+/* Barra di prenotazione in fondo alla scheda auto */
+.app-cta {
+  position: fixed; inset: auto 0 0; z-index: 45;
+  padding: 1rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(1rem + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, rgba(0,0,0,0), #000 32%);
+  display: flex; align-items: flex-end; gap: 1rem;
+}
+
+/* Chat concierge */
+.app-msg { max-width: 86%; padding: 0.8125rem 0.9375rem; font-size: 0.90625rem; line-height: 1.5; white-space: pre-line; }
+.app-msg.me { align-self: flex-end; background: var(--c-ivory); color: #000; }
+.app-msg.dr7 { align-self: flex-start; border: 1px solid var(--line); }
+.app-compose {
+  position: fixed; inset: auto 0 calc(var(--app-tab) + env(safe-area-inset-bottom, 0px)); z-index: 39;
+  padding: 0.75rem max(1.25rem, env(safe-area-inset-right, 0px)) 0.75rem max(1.25rem, env(safe-area-inset-left, 0px));
+  background: #000; border-top: 1px solid var(--line); display: flex; gap: 0.625rem;
+}
+.app-compose input { flex: 1; min-width: 0; background: transparent; border: 0; border-bottom: 1px solid var(--line-strong); color: var(--c-ivory); font: inherit; font-size: 1rem; padding: 0.5rem 0; outline: none; }
+
+/* Pagine del sito riusate dentro l'app: tolgono lo spazio del vecchio header */
+.app-embed > * { --site-header-offset: 0px; }
+.app-embed .pt-24, .app-embed .pt-28, .app-embed .pt-32 { padding-top: 1.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dr7app * { animation: none !important; transition: none !important; }
+}

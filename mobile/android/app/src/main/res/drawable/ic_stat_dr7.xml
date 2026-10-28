@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icona monocromatica delle notifiche: le lettere DR7 a tratto, come il logo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M2,8.5 L5.2,8.5 A3.5,3.5 0 0 1 5.2,15.5 L2,15.5" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M10,15.5 L10,8.5 L13.2,8.5 A1.75,1.75 0 0 1 13.2,12 L10.8,12 L14,15.5" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M16.5,8.5 L22,8.5 L18.5,15.5" />
+</vector>

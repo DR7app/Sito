@@ -427,7 +427,19 @@ export async function getAnnualSpend(userId: string, email?: string | null): Pro
   // la supera, la barra AVANZA col valore reale. Prima qui si ritornava
   // l'override secco -> la barra restava bloccata (es. Runchina fermo a
   // €3155.20 nonostante ~7k di ricariche).
-  const computed = bookingEur + rechargeEur
+  // 28/10/2026: rettifiche manuali della direzione (dr7_club_rettifiche_spesa),
+  // valide 12 mesi. Lettura fallita o tabella assente = nessuna rettifica.
+  let rettificaEur = 0
+  try {
+    const { data: rett, error: rettErr } = await supabase
+      .from('dr7_club_rettifiche_spesa')
+      .select('importo')
+      .eq('user_id', userId)
+      .gte('created_at', cutoffIso)
+    if (!rettErr) rettificaEur = (rett || []).reduce((s, r) => s + (Number((r as { importo: number | string }).importo) || 0), 0)
+  } catch { /* nessuna rettifica */ }
+
+  const computed = Math.max(0, bookingEur + rechargeEur + rettificaEur)
   const override = TIER_SPEND_OVERRIDES[userId]
   if (typeof override === 'number') {
     return Math.max(override, computed)

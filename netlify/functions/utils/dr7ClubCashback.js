@@ -168,6 +168,22 @@ async function hasActiveClub(supabase, userId) {
   return !!data;
 }
 
+// 28/10/2026: rettifiche manuali della direzione (dr7_club_rettifiche_spesa),
+// valide 12 mesi. Errore o tabella assente = nessuna rettifica.
+async function getRettificaSpesaEur(supabase, userId, sinceIso) {
+  try {
+    const { data, error } = await supabase
+      .from('dr7_club_rettifiche_spesa')
+      .select('importo')
+      .eq('user_id', userId)
+      .gte('created_at', sinceIso);
+    if (error) return 0;
+    return (data || []).reduce((s, r) => s + (Number(r.importo) || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
 async function getAnnualSpendEur(supabase, userId) {
   if (!userId) return 0;
   const since = new Date();
@@ -204,8 +220,9 @@ async function getAnnualSpendEur(supabase, userId) {
   }
 
   totalEur += await getRechargeSpendEur(supabase, userId, sinceIso);
+  totalEur += await getRettificaSpesaEur(supabase, userId, sinceIso);
 
-  const computed = Math.round(totalEur * 100) / 100;
+  const computed = Math.max(0, Math.round(totalEur * 100) / 100);
   const override = TIER_SPEND_OVERRIDES[userId];
   // L'override è un PAVIMENTO (mai una sostituzione): il cliente non scende
   // sotto la cifra congelata pre-fix, ma se la spesa reale la supera vince

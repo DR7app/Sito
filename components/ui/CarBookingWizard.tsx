@@ -3749,9 +3749,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
               newErrors.returnTime = t({ it: "Il sabato, la riconsegna in aeroporto deve essere entro le 11:00.", en: "On Saturdays, airport drop-off must be by 11:00." });
             }
           } else {
-            // Office Saturday: 09:00–15:00 single window (no afternoon return)
-            if (returnTimeInMinutes < 9 * 60 || returnTimeInMinutes > 15 * 60) {
-              newErrors.returnTime = t({ it: "Il sabato, la riconsegna in ufficio è dalle 09:00 alle 15:00.", en: "On Saturdays, office drop-off is from 09:00 to 15:00." });
+            // 28/10/2026: orari dell'ufficio da Centralina Pro > Orari, come il
+            // calendario. Qui c'era 09:00-15:00 scritto a mano: il calendario
+            // proponeva le 17:30 di sabato e questo passo le rifiutava.
+            const orariUfficio = getReturnTimesForDateString(formData.returnDate);
+            if (orariUfficio.length > 0 && !orariUfficio.includes(formData.returnTime)) {
+              newErrors.returnTime = t({ it: `Il sabato, la riconsegna in ufficio è dalle ${orariUfficio[0]} alle ${orariUfficio[orariUfficio.length - 1]}.`, en: `On Saturdays, office drop-off is from ${orariUfficio[0]} to ${orariUfficio[orariUfficio.length - 1]}.` });
             }
           }
         }

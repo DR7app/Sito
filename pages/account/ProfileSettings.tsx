@@ -660,7 +660,12 @@ const ProfileSettings = () => {
             </div>
 
             {/* Fidelity Card — 1 € speso al lavaggio auto = 1 punto.
-                A 250 punti scatta automaticamente un buono di €25 valido 15 giorni. */}
+                A 250 punti scatta automaticamente un buono di €25 valido 15 giorni.
+                04/11/2026: i punti li calcola il database dalle prenotazioni
+                lavaggio pagate (sito e negozio, migrazione DR7-AI
+                20261104_punti_lavaggio_credito_wallet.sql) e li scrive su ogni
+                scheda dell'account; il premio arriva come credito wallet
+                vincolato al lavaggio. Qui si legge soltanto. */}
             {(() => {
                 const FIDELITY_MAX = 250
                 const points = Math.min(Number(extendedProfile?.fidelity_points || 0), FIDELITY_MAX)
@@ -675,7 +680,7 @@ const ProfileSettings = () => {
                                 </span>
                                 <div>
                                     <p className="text-white font-bold">{t({ it: "Programma Fedeltà Lavaggio", en: "Car Wash Loyalty Programme" })}</p>
-                                    <p className="text-gray-400 text-xs">{t({ it: "1 € speso al lavaggio = 1 punto · A 250 punti ricevi un buono di €25", en: "€1 spent on a wash = 1 point · At 250 points you get a €25 voucher" })}</p>
+                                    <p className="text-gray-400 text-xs">{t({ it: "1 € speso al lavaggio = 1 punto · A 250 punti ricevi €25 di credito lavaggio nel Credit Wallet", en: "€1 spent on a wash = 1 point · At 250 points you get €25 of car wash credit in your Credit Wallet" })}</p>
                                 </div>
                             </div>
                             <div className="text-right">

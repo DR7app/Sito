@@ -14,6 +14,9 @@ import { getCarWashCopy, type CarWashCopy } from '../utils/siteCopy';
 import { useContactInfo } from '../hooks/useContactInfo';
 import { linkWhatsApp, riempiSegnaposto } from '../utils/whatsapp';
 import { useFilmato } from '../hooks/useFilmato';
+import { supabase } from '../supabaseClient';
+import { resolveFlottaCategories, categoryAliases } from '../utils/flottaConfig';
+import { categoriaPerEsperienza, modelliDellaCategoria, type CategoriaFlotta, type VeicoloFlotta } from '../utils/esperienzaFlotta';
 // Prenotazione in finestra: gli stessi identici passi della pagina
 // /car-wash-booking (data e ora, DR7 Flex, codice sconto, PRENOTA ORA e
 // Aggiungi al carrello), aperti sopra il catalogo invece che altrove.
@@ -213,6 +216,32 @@ const CarWashServicesPage: React.FC = () => {
   const liveMoto = dbServices.filter(s => s.category === 'moto');
   const liveExperience = dbServices.filter(s => s.category === 'experience');
   const liveTech = dbServices.filter(s => s.category === 'tech');
+
+  // 04/11/2026 — sulle schede di "Vivi l'attesa in grande stile" si leggono i
+  // modelli in flotta per quella categoria: categorie da Centralina Pro,
+  // veicoli dalla tabella `vehicles`. Tolto un veicolo dalla flotta, sparisce
+  // anche da qui. Si carica solo quando si arriva a quel passo.
+  const [flottaEsperienze, setFlottaEsperienze] = useState<{ categorie: CategoriaFlotta[]; veicoli: VeicoloFlotta[] } | null>(null);
+  const servonoModelli = showUpsell && upsellStep === 2;
+  useEffect(() => {
+    if (!servonoModelli || flottaEsperienze) return;
+    let cancelled = false;
+    (async () => {
+      const [res, { data, error }] = await Promise.all([
+        resolveFlottaCategories(),
+        supabase.from('vehicles').select('display_name, category, status, metadata').neq('status', 'retired').order('display_name', { ascending: true }),
+      ]);
+      if (cancelled) return;
+      if (error) console.error('[CarWashServicesPage] flotta esperienze non letta:', error);
+      setFlottaEsperienze({ categorie: res.allCategories, veicoli: (data || []) as VeicoloFlotta[] });
+    })();
+    return () => { cancelled = true; };
+  }, [servonoModelli, flottaEsperienze]);
+  const modelliEsperienza = (s: WashService): string[] => {
+    if (!flottaEsperienze) return [];
+    const c = categoriaPerEsperienza(s, flottaEsperienze.categorie);
+    return c ? modelliDellaCategoria(flottaEsperienze.veicoli, categoryAliases(c.id)) : [];
+  };
 
   // Combined cards pair URBAN+MAXI services that share the same suffix
   // (e.g. urban-exterior + maxi-exterior). If either side is missing in DB,
@@ -456,7 +485,14 @@ const CarWashServicesPage: React.FC = () => {
     });
     // Open upsell overlay at step 1
     setUpsellSelectedService(service);
-    setUpsellAddedExtras(new Set());
+    // Le schede partono da quello che e' GIA' nel carrello (tornando dal
+    // riepilogo con "Modifica servizi"): con la lista vuota la scheda
+    // sembrava non scelta e un tocco aggiungeva una seconda riga uguale.
+    setUpsellAddedExtras(new Set(
+      cart
+        .filter(item => liveExtra.some(e => e.id === item.service.id) || liveExperience.some(e => e.id === item.service.id))
+        .map(item => item.selectedOption ? `${item.service.id}:${item.selectedOption.label}` : item.service.id),
+    ));
     setUpsellStep(1);
     setShowUpsell(true);
   };
@@ -1236,7 +1272,7 @@ const CarWashServicesPage: React.FC = () => {
                               onClick={() => handleUpsellToggleExtra(extra)}
                               className={`px-3 py-1.5 font-semibold text-xs transition-all duration-300 ${
                                 isAdded
-                                  ? 'bg-green-600 text-white hover:bg-red-500'
+                                  ? 'bg-green-600 text-white [@media(hover:hover)]:hover:bg-red-500'
                                   : 'bg-white text-black hover:bg-gray-200'
                               }`}
                             >
@@ -1278,6 +1314,11 @@ const CarWashServicesPage: React.FC = () => {
                           etichettaCaratteristiche={etichettaCaratteristiche}
                           etichettaRisultato={etichettaRisultato}
                         >
+                          {modelliEsperienza(exp).length > 0 && (
+                            <p className="text-[11px] text-gray-400 text-center mb-2">
+                              {t({ it: 'Disponibili', en: 'Available' })}: {modelliEsperienza(exp).join(', ')}
+                            </p>
+                          )}
                           <div className="flex gap-1.5 justify-center flex-wrap">
                             {exp.priceOptions?.map((option) => {
                               const isSelected = addedOptionLabel === option.label;
@@ -1287,7 +1328,7 @@ const CarWashServicesPage: React.FC = () => {
                                   onClick={() => handleUpsellToggleExtra(exp, option)}
                                   className={`px-3 py-1.5 font-semibold text-xs transition-all duration-300 ${
                                     isSelected
-                                      ? 'bg-green-600 text-white hover:bg-red-500'
+                                      ? 'bg-green-600 text-white [@media(hover:hover)]:hover:bg-red-500'
                                       : 'border border-white/40 text-white hover:bg-white hover:text-black'
                                   }`}
                                 >

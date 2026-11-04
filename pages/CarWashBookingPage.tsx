@@ -20,6 +20,8 @@ import { useTestiCarrello } from '../hooks/useTestiCarrello';
 import { useStatoServizi } from '../hooks/useStatoServizi';
 import AvvisoServizioSospeso from '../components/ui/AvvisoServizioSospeso';
 import { testoPrenotazioniSospese } from '../utils/statoServizi';
+import { resolveFlottaCategories } from '../utils/flottaConfig';
+import { categoriaPerEsperienza, type CategoriaFlotta } from '../utils/esperienzaFlotta';
 
 interface CartItem {
   serviceId: string;
@@ -211,12 +213,27 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     available: boolean
     reason: string | null
   }
+  // 04/11/2026 — ogni scheda di "Vivi l'attesa in grande stile" (servizi
+  // `experience` del Catalogo Lavaggio) mostra SOLO i veicoli della sua
+  // categoria di Centralina Pro, abbinata per etichetta (vedi
+  // utils/esperienzaFlotta.ts). Prima: solo supercar/exotic e con un
+  // filtro `%supercar%` che tirava dentro anche Ducato e Vito.
+  const [categorieFlotta, setCategorieFlotta] = useState<CategoriaFlotta[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    resolveFlottaCategories().then((res) => {
+      if (!cancelled) setCategorieFlotta(res.allCategories);
+    });
+    return () => { cancelled = true };
+  }, []);
   const experienceItem = cartItems.find(item =>
-    item.serviceId === 'extra-supercar' || item.serviceId === 'extra-icon',
+    washServices.some(s => s.id === item.serviceId && s.category === 'experience'),
   );
-  const experienceTier: 'supercar' | 'hypercar' | null = experienceItem
-    ? (experienceItem.serviceId === 'extra-icon' ? 'hypercar' : 'supercar')
+  const experienceCategory: CategoriaFlotta | null = experienceItem
+    ? categoriaPerEsperienza(washServices.find(s => s.id === experienceItem.serviceId), categorieFlotta)
     : null;
+  // Id della categoria flotta: salvato anche in booking_details (campo `tier`).
+  const experienceTier: string | null = experienceCategory?.id ?? null;
   // Parse "1 ora" / "2 ore" / "4+ ore" → minutes (default 60).
   const experienceDurationMin = (() => {
     if (!experienceItem?.option) return 0;
@@ -246,7 +263,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     }
     let cancelled = false;
     setFleetLoading(true);
-    const url = `/.netlify/functions/get-supercar-experience-fleet?tier=${experienceTier}&start=${encodeURIComponent(experienceWindow.start.toISOString())}&end=${encodeURIComponent(experienceWindow.end.toISOString())}`;
+    const url = `/.netlify/functions/get-supercar-experience-fleet?category=${encodeURIComponent(experienceTier)}&start=${encodeURIComponent(experienceWindow.start.toISOString())}&end=${encodeURIComponent(experienceWindow.end.toISOString())}`;
     fetch(url)
       .then((r) => r.json())
       .then((json) => {
@@ -1139,9 +1156,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     if (experienceTier && experienceItem && hasAvailableCar && !chosenSupercar) {
       setErrors(prev => ({
         ...prev,
-        chosenSupercar: experienceTier === 'hypercar'
-          ? t({ it: 'Seleziona la hypercar per completare la prenotazione.', en: 'Pick the hypercar to complete the booking.' })
-          : t({ it: 'Seleziona la supercar per completare la prenotazione.', en: 'Pick the supercar to complete the booking.' }),
+        chosenSupercar: t({ it: 'Seleziona il veicolo per completare la prenotazione.', en: 'Pick the vehicle to complete the booking.' }),
       }));
       // Scroll the picker into view
       const picker = document.querySelector('[data-supercar-picker]');
@@ -1847,9 +1862,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
             {experienceTier && experienceItem && experienceItem.option && (
               <div className="bg-gray-900/50 border border-yellow-500/40 rounded-lg p-8" data-supercar-picker>
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  {experienceTier === 'hypercar'
-                    ? (t({ it: 'Scegli la tua hypercar', en: 'Choose your hypercar' }))
-                    : (t({ it: 'Scegli la tua supercar', en: 'Choose your supercar' }))}
+                  {t({ it: 'Scegli il tuo veicolo', en: 'Choose your vehicle' })} · {experienceItem.serviceName}
                 </h2>
                 <p className="text-sm text-gray-400 mb-6">
                   {t({ it: 'Durata', en: 'Duration' })} {experienceItem.option}. {t({ it: 'Seleziona il veicolo: verrà bloccato per la finestra del tuo appuntamento.', en: 'Pick the vehicle: it will be blocked for your appointment window.' })}
@@ -1864,9 +1877,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                 ) : supercarFleet.length === 0 ? (
                   <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm text-amber-300 space-y-1">
                     <p>
-                      {experienceTier === 'hypercar'
-                        ? t({ it: 'Nessuna hypercar configurata in flotta al momento.', en: 'No hypercar configured in the fleet right now.' })
-                        : t({ it: 'Nessuna supercar configurata in flotta al momento.', en: 'No supercar configured in the fleet right now.' })}
+                      {t({ it: 'Nessun veicolo di questa categoria disponibile in flotta al momento.', en: 'No vehicle of this category available in the fleet right now.' })}
                     </p>
                     <p className="text-xs text-amber-300/80">
                       {t({ it: 'Puoi comunque prenotare l\'esperienza: il nostro team ti contatterà per assegnarti il veicolo.', en: 'You can still book the experience: our team will contact you to assign the vehicle.' })}

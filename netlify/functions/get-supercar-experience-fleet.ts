@@ -1,25 +1,34 @@
 /**
  * GET /api/get-supercar-experience-fleet
- *   ?tier=supercar|hypercar
+ *   ?category=<id categoria di Centralina Pro>
  *   &start=ISO timestamp
  *   &end=ISO timestamp
  *
- * Returns the list of vehicles in the requested tier with per-vehicle
+ * Returns the vehicles of ONE fleet category with per-vehicle
  * availability for the [start, end] window. Drives the website's
- * Supercar / Icon Experience picker on CarWashBookingPage.
+ * "Vivi l'attesa in grande stile" vehicle picker on CarWashBookingPage.
  *
- * Tier mapping:
- *   - supercar  → category ILIKE %supercar% OR equals exotic (any case)
- *   - hypercar  → category ILIKE %hyper%   OR equals icon/icons (any case)
+ * Category: the website resolves which Centralina Pro category matches
+ * the chosen card (utils/esperienzaFlotta.ts, by LABEL) and passes its
+ * id here. Only that id (plus historic aliases, supercars<->exotic) is
+ * read: until 04/11/2026 this used `category ILIKE %supercar%`, which also
+ * pulled `supercar_elit` (= "Ducato Maxi": Ducato, Vito).
  *
  * Availability:
  *   A vehicle is BUSY if any non-cancelled bookings row references it
  *   (vehicle_id OR vehicle_plate match) and overlaps the requested
  *   window. We exclude cancelled/annullata/completed/expired statuses.
+ *   Like every rental check, the buffer is added only AFTER an existing
+ *   booking (the car must be prepared before the next customer).
+ *   Vehicles whose status is not usable (same rule as the rental site,
+ *   utils/esperienzaFlotta.ts veicoloUtilizzabile) are left out.
  */
 import { Handler } from '@netlify/functions'
 import { createClient } from '@supabase/supabase-js'
 import { getCorsOrigin } from './utils/cors'
+import { getRentalBufferMs } from './utils/loadAutomations'
+import { categoryAliases } from '../../utils/flottaRules'
+import { veicoloUtilizzabile } from '../../utils/esperienzaFlotta'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -46,10 +55,6 @@ interface BookingRow {
 
 const EXCLUDED_STATUSES = new Set(['cancelled', 'annullata', 'completed', 'completata', 'expired'])
 
-function isExperienceTier(value: unknown): value is 'supercar' | 'hypercar' {
-    return value === 'supercar' || value === 'hypercar'
-}
-
 export const handler: Handler = async (event) => {
     const headers = {
         'Access-Control-Allow-Origin': getCorsOrigin(event.headers['origin']),
@@ -65,12 +70,12 @@ export const handler: Handler = async (event) => {
     }
 
     const params = event.queryStringParameters || {}
-    const tier = params.tier
+    const category = (params.category || '').trim()
     const startIso = params.start
     const endIso = params.end
 
-    if (!isExperienceTier(tier)) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: 'tier must be "supercar" or "hypercar"' }) }
+    if (!category) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'category is required' }) }
     }
     if (!startIso || !endIso) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'start and end (ISO) are required' }) }
@@ -86,15 +91,11 @@ export const handler: Handler = async (event) => {
         auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // 1) Fetch fleet for the requested tier.
-    const filter = tier === 'hypercar'
-        ? 'category.ilike.%hyper%,category.eq.icon,category.eq.Icon,category.eq.ICON,category.eq.icons,category.eq.Icons'
-        : 'category.ilike.%supercar%,category.eq.exotic,category.eq.Exotic,category.eq.EXOTIC'
-
+    // 1) Fetch fleet for the requested category (exact id + aliases).
     const { data: fleetData, error: fleetErr } = await supabase
         .from('vehicles')
         .select('id, display_name, plate, daily_rate, category, status, metadata')
-        .or(filter)
+        .in('category', categoryAliases(category))
         .neq('status', 'retired')
         .order('display_name', { ascending: true })
 
@@ -103,13 +104,14 @@ export const handler: Handler = async (event) => {
         return { statusCode: 500, headers, body: JSON.stringify({ error: fleetErr.message }) }
     }
 
-    const fleet: VehicleRow[] = (fleetData || []) as VehicleRow[]
+    // Fermi (manutenzione, non disponibili): non si offrono, come sul noleggio.
+    const fleet: VehicleRow[] = ((fleetData || []) as VehicleRow[]).filter((v) => veicoloUtilizzabile(v))
 
     if (fleet.length === 0) {
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ tier, fleet: [], total: 0, available: 0 }),
+            body: JSON.stringify({ category, fleet: [], total: 0, available: 0 }),
         }
     }
 
@@ -134,12 +136,13 @@ export const handler: Handler = async (event) => {
     // 3) Per-vehicle availability check. A vehicle is busy if any
     //    non-excluded booking with the same id or plate has dates that
     //    overlap [start, end].
+    const BUFFER_TIME_MS = await getRentalBufferMs()
     const overlaps = (b: BookingRow): boolean => {
         if (!b.pickup_date || !b.dropoff_date) return false
         const bStart = new Date(b.pickup_date).getTime()
         const bEnd = new Date(b.dropoff_date).getTime()
         if (isNaN(bStart) || isNaN(bEnd)) return false
-        return bStart < end.getTime() && bEnd > start.getTime()
+        return bStart < end.getTime() && bEnd + BUFFER_TIME_MS > start.getTime()
     }
 
     const result = fleet.map((v) => {
@@ -168,7 +171,7 @@ export const handler: Handler = async (event) => {
         statusCode: 200,
         headers,
         body: JSON.stringify({
-            tier,
+            category,
             fleet: result,
             total: result.length,
             available: result.filter((r) => r.available).length,

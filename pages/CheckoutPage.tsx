@@ -1,5 +1,5 @@
 import PhoneInput from '../components/ui/PhoneInput';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
@@ -82,6 +82,9 @@ const CheckoutPage: React.FC = () => {
   const [metodo, setMetodo] = useState<'nexi' | 'credit'>('nexi');
   const [saldo, setSaldo] = useState<number | null>(null);
   const [inCorso, setInCorso] = useState(false);
+  // 04/11/2026 — blocco sincrono contro il doppio tocco su "Paga": `inCorso`
+  // e' uno stato e il secondo tocco nello stesso render lo legge ancora false.
+  const pagamentoInCorso = useRef(false);
   const [errore, setErrore] = useState<string | null>(null);
   // Interruttore System Control: prenotazioni dal sito sospese per uno dei
   // business nel carrello (abbonamenti e ricariche non sono prenotazioni).
@@ -297,10 +300,11 @@ const CheckoutPage: React.FC = () => {
   };
 
   const paga = async () => {
-    if (inCorso) return;
+    if (inCorso || pagamentoInCorso.current) return;
     setErrore(null);
     if (prenotazioniSospese) { setErrore(prenotazioniSospese); return; }
     if (!validaCliente()) { setPasso('cliente'); return; }
+    pagamentoInCorso.current = true;
     setInCorso(true);
     try {
       // Anagrafica e dati fattura (letti dal profilo) entrano negli articoli
@@ -313,6 +317,7 @@ const CheckoutPage: React.FC = () => {
       setErrore(testoPrenotazioniSospese(e) || (e as Error).message);
       setInCorso(false);
       setAvanzamento('');
+      pagamentoInCorso.current = false;
     }
   };
 

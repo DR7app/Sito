@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
@@ -23,6 +23,7 @@ import {
   opzioniPagamentoPrevendite,
   calcolaScontoPrevendita,
   acquistaPrevenditaConCredito,
+  nuovaChiaveAcquisto,
   type OpzioniPagamentoPrevendite,
   type EsitoSconto,
 } from '../utils/prevenditeAcquisto';
@@ -105,6 +106,14 @@ const PrevenditePage: React.FC = () => {
   // Cambiando prevendita il codice applicato non la segue.
   useEffect(() => { setCodiceInput(''); setSconto(null); setScontoErrore(null); }, [scelta?.id]);
 
+  // 04/11/2026 — doppio tocco = un acquisto solo. `inPagamento` e' uno stato:
+  // il secondo tocco, nello stesso render, lo legge ancora a false e passa.
+  // Il ref si alza subito. La chiave d'acquisto vale per la scheda aperta: se
+  // anche due chiamate arrivassero al database, la seconda ritrova la prima.
+  const acquistoInCorso = useRef(false);
+  const chiaveAcquisto = useRef<string>(nuovaChiaveAcquisto());
+  useEffect(() => { chiaveAcquisto.current = nuovaChiaveAcquisto(); }, [scelta?.id]);
+
   async function applicaCodice(p: Prevendita) {
     setScontoErrore(null);
     if (!user?.id) {
@@ -129,16 +138,21 @@ const PrevenditePage: React.FC = () => {
       navigate('/signin', { state: { from: { pathname: `${location.pathname}?prevendita=${p.id}` } } });
       return;
     }
+    if (acquistoInCorso.current) return;
+    acquistoInCorso.current = true;
     setInPagamento(true);
     try {
       const dati = await caricaDatiFatturaCliente(user.id);
-      const esito = await acquistaPrevenditaConCredito(p.id, dati, sconto?.codice);
+      const esito = await acquistaPrevenditaConCredito(p.id, dati, sconto?.codice, chiaveAcquisto.current);
       if (!esito.ok) {
         setErrore(esito.errore || t({ it: 'Acquisto non riuscito.', en: 'Purchase failed.' }));
         return;
       }
+      // Acquisto fatto: un eventuale acquisto successivo e' un'altra intenzione.
+      chiaveAcquisto.current = nuovaChiaveAcquisto();
       navigate('/account/prevendite');
     } finally {
+      acquistoInCorso.current = false;
       setInPagamento(false);
     }
   }
@@ -163,6 +177,8 @@ const PrevenditePage: React.FC = () => {
       return;
     }
 
+    if (acquistoInCorso.current) return;
+    acquistoInCorso.current = true;
     setInPagamento(true);
     try {
       const dati = await caricaDatiFatturaCliente(user.id);
@@ -201,7 +217,7 @@ const PrevenditePage: React.FC = () => {
       const esito = await risposta.json();
       if (!risposta.ok) {
         // Pagamenti sospesi dal System Control: il messaggio va mostrato cosi' com'e'.
-        if (esito.code === 'pagamenti_online_off') { setErrore(esito.error); setInPagamento(false); return; }
+        if (esito.code === 'pagamenti_online_off') { setErrore(esito.error); setInPagamento(false); acquistoInCorso.current = false; return; }
         throw new Error(esito.error || 'Pagamento non avviato');
       }
 
@@ -216,6 +232,7 @@ const PrevenditePage: React.FC = () => {
         }),
       );
       setInPagamento(false);
+      acquistoInCorso.current = false;
     }
   }
 

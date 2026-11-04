@@ -72,6 +72,13 @@ export const handler: Handler = async (event) => {
     }
 
     const riga = righe[0]
+    // 04/11/2026: con entrambi, la riga deve essere proprio quella dell'ordine.
+    // Un ordine pagato non deve poter attivare un'altra riga (un tentativo
+    // abbandonato dello stesso cliente, per esempio).
+    if (prevenditaClienteId && orderId && riga.nexi_order_id && riga.nexi_order_id !== orderId) {
+      console.warn('[prevendite-finalizza] ordine e riga non corrispondono:', orderId, riga.id)
+      return { statusCode: 409, body: JSON.stringify({ error: 'Ordine e prevendita non corrispondono' }) }
+    }
     const eraGiaPagata = ['paid', 'completed', 'succeeded'].includes(riga.payment_status)
 
     // Nessuna attivazione senza incasso: o la chiamata arriva dal callback

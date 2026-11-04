@@ -118,11 +118,26 @@ export interface EsitoAcquistoCredito {
   prevenditaClienteId?: string;
 }
 
+/**
+ * Chiave di un'intenzione d'acquisto (04/11/2026). La stessa chiave mandata
+ * due volte (doppio tocco, nuovo tentativo dopo un errore di rete) restituisce
+ * la riga gia' creata invece di scalare il wallet di nuovo: lo decide il
+ * database (migrazione 20261104_prevendite_acquisto_idempotente). Prima della
+ * migrazione la chiave viaggia dentro p_dati e viene semplicemente ignorata.
+ */
+export function nuovaChiaveAcquisto(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch { /* browser vecchio */ }
+  return `pv-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 /** Acquisto col Credit Wallet: saldo libero, prezzo dal catalogo (meno il codice), tutto nel database. */
 export async function acquistaPrevenditaConCredito(
   prevenditaId: string,
   dati: Partial<DatiFatturaCliente>,
   codiceSconto?: string | null,
+  chiaveAcquisto?: string | null,
 ): Promise<EsitoAcquistoCredito> {
   const { data, error } = await supabase.rpc('prevendita_acquista_con_credito', {
     p_prevendita_id: prevenditaId,
@@ -137,6 +152,7 @@ export async function acquistaPrevenditaConCredito(
       cap: dati.codicePostale || '',
       provincia: dati.provinciaResidenza || '',
       codice_sconto: codiceSconto || '',
+      chiave_acquisto: chiaveAcquisto || '',
     },
   });
   if (error) return { ok: false, errore: error.message };

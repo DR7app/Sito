@@ -426,7 +426,9 @@ export async function pagaArticoloACredito(
         const p = (articolo.dati as { prevendita?: Prevendita }).prevendita;
         if (!p?.id) return { ok: false, errore: 'Prevendita non valida.' };
         const dati = await caricaDatiFatturaCliente(userId);
-        const esito = await acquistaPrevenditaConCredito(p.id, dati);
+        // La chiave e' l'articolo del carrello: ripagarlo dopo un errore
+        // (o con un doppio invio) ritrova l'acquisto gia' fatto, non lo ripete.
+        const esito = await acquistaPrevenditaConCredito(p.id, dati, null, `carrello:${articolo.id}`);
         if (!esito.ok) return { ok: false, errore: esito.errore };
         return { ok: true };
       }

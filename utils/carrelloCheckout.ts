@@ -246,6 +246,10 @@ export async function preparaArticoloCarta(
       case 'lavaggio':
       case 'meccanica': {
         const booking = conOrdine(datiPrenotazione(articolo), ordine, ordinePadre);
+        // 05/11/2026: articolo messo nel carrello prima dell'accesso = niente
+        // user_id, e il lavaggio pagato non dava i punti Fidelity. Chi paga
+        // ora e' il cliente: si aggancia il suo account se ne manca uno.
+        if (!booking.user_id && userId) booking.user_id = userId;
         booking.payment_status = 'pending';
         booking.payment_method = 'nexi';
         const { error } = await supabase
@@ -399,6 +403,9 @@ export async function pagaArticoloACredito(
         // addebitava da qui e, se l'inserimento falliva, si rimborsava con
         // add_credits dal browser.
         const booking = datiPrenotazione(articolo);
+        // 05/11/2026: come col pagamento a carta, l'account di chi paga se
+        // l'articolo e' stato messo nel carrello prima dell'accesso.
+        if (!booking.user_id && userId) booking.user_id = userId;
         booking.status = booking.status || 'pending';
         booking.payment_status = 'succeeded';
         booking.payment_method = 'credit_wallet';

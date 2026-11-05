@@ -78,7 +78,8 @@ const OLD_TO_PRO: Record<string, string> = {
   birthday_message: 'pro_marketing_compleanno',
   wallet_bonus_credit: 'pro_richiesta_documenti',
 
-  // Fidelity Card — voucher message fired when a Prime Wash customer hits 250 punti.
+  // Fidelity Card — voucher message fired when a Prime Wash customer hits the
+  // points threshold set in Centralina Pro > Fidelity Lavaggio.
   // Body lives in `pro_fidelity_voucher` (Messaggi di Sistema Pro), so admin
   // can edit the wording without redeploying.
   fidelity_voucher_whatsapp: 'pro_fidelity_voucher',

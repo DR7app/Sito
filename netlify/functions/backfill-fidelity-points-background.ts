@@ -10,7 +10,7 @@ import { createClient } from "@supabase/supabase-js"
  * (user_id o email) e senza award — gli altri (~walk-in senza account) non
  * possono ricevere punti. Per ciascuno richiama /award-fidelity-points
  * (idempotente: blocca i doppioni via fidelity_point_awards.booking_id UNIQUE),
- * in ordine cronologico, così il cumulo 1€=1punto + voucher €25 a 250 è corretto.
+ * in ordine cronologico, così il cumulo dei punti e i premi (regole da Centralina Pro) sono corretti.
  *
  * Trigger: GET https://<sito>/.netlify/functions/backfill-fidelity-points-background?confirm=BACKFILL-FIDELITY-2026
  * Verifica dopo ~1 min ri-eseguendo la query di stima (i candidati devono andare a ~0).

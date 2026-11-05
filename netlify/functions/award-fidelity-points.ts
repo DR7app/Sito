@@ -6,8 +6,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 /**
- * Punti Fidelity del lavaggio — 1 EUR = 1 punto, a 250 punti buono da 25 EUR
- * e la linea riparte dal surplus (240 + 100 = 340 -> buono + 90 punti).
+ * Punti Fidelity del lavaggio — X EUR = 1 punto, a N punti un premio e la
+ * linea riparte dal surplus. Dal 06/11/2026 X, N, importo, validita' e tipo di
+ * premio si decidono in admin > Centralina Pro > Fidelity Lavaggio (migrazione
+ * DR7-AI 20261106_fidelity_lavaggio_da_centralina.sql).
  *
  * 12/10/2026: la regola non vive piu' qui. La applica il database
  * (dr7_punti_lavaggio_accredita, trigger trg_dr7_punti_lavaggio su bookings,

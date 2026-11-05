@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import type { CreditTransaction } from '../../utils/creditWallet';
 import { splitWalletBalance } from '../../utils/walletCredit';
+import { loadCentralinaConfigOnce } from '../../utils/siteCopy';
+import { fidelityLavaggioDaConfig, FIDELITY_LAVAGGIO_DEFAULT, euroFidelity, riempiFidelity, type FidelityLavaggioConfig } from '../../utils/fidelityLavaggioRules';
 import CalcolaCFButton from '../../components/ui/CalcolaCFButton';
 import { datiPatenteScheda, luogoNascitaScheda } from '../../utils/datiPatenteScheda';
 import {
@@ -58,8 +60,8 @@ interface CustomerExtended {
     status_cliente?: string | null;
     metadata?: any;
     // Fidelity Card — accumulates points from car wash bookings.
-    // 1 € spent = 1 punto. At 250 punti the system auto-issues a €25 voucher
-    // and the line resets to 0/250 (overflow rolls forward).
+    // Rules (EUR per point, threshold, reward, validity) come from admin >
+    // Centralina Pro > Fidelity Lavaggio; the database computes the points.
     fidelity_points?: number;
     fidelity_lifetime_points?: number;
 }
@@ -72,8 +74,19 @@ const sanitizeDate = (dateString: string | undefined | null): string | null => {
 
 const ProfileSettings = () => {
     const { user, updateUser } = useAuth();
-    const { t } = useTranslation();
+    const { t, lang } = useTranslation();
     const navigate = useNavigate();
+
+    // 06/11/2026: regole della Fidelity Card da Centralina Pro (riga 'main',
+    // lettura condivisa e in cache). Lettura fallita = regole di sempre.
+    const [fidelityCfg, setFidelityCfg] = useState<FidelityLavaggioConfig>(FIDELITY_LAVAGGIO_DEFAULT);
+    useEffect(() => {
+        let vivo = true;
+        loadCentralinaConfigOnce()
+            .then(({ config, ok }) => { if (vivo && ok) setFidelityCfg(fidelityLavaggioDaConfig(config)); })
+            .catch(() => { /* restano i default */ });
+        return () => { vivo = false; };
+    }, []);
 
     const [formData, setFormData] = useState({
         // Basic
@@ -659,18 +672,27 @@ const ProfileSettings = () => {
                 </div>
             </div>
 
-            {/* Fidelity Card — 1 € speso al lavaggio auto = 1 punto.
-                A 250 punti scatta automaticamente un buono di €25 valido 15 giorni.
-                04/11/2026: i punti li calcola il database dalle prenotazioni
-                lavaggio pagate (sito e negozio, migrazione DR7-AI
-                20261104_punti_lavaggio_credito_wallet.sql) e li scrive su ogni
-                scheda dell'account; il premio arriva come credito wallet
-                vincolato al lavaggio. Qui si legge soltanto. */}
-            {(() => {
-                const FIDELITY_MAX = 250
+            {/* Fidelity Card — X € spesi al lavaggio = 1 punto, a N punti un premio.
+                06/11/2026: soglia, valore del punto, importo, validita' e tipo
+                di premio vengono da Centralina Pro > Fidelity Lavaggio; con il
+                programma spento la carta non si mostra. I punti li calcola il
+                database dalle prenotazioni lavaggio pagate (sito e negozio,
+                migrazioni DR7-AI 20261104 / 20261106) e li scrive su ogni
+                scheda dell'account. Qui si legge soltanto. */}
+            {fidelityCfg.attivo && (() => {
+                const FIDELITY_MAX = fidelityCfg.soglia_punti
                 const points = Math.min(Number(extendedProfile?.fidelity_points || 0), FIDELITY_MAX)
                 const lifetime = Number(extendedProfile?.fidelity_lifetime_points || 0)
                 const pct = (points / FIDELITY_MAX) * 100
+                const valori = {
+                    euro: euroFidelity(fidelityCfg.euro_per_punto, lang === 'en' ? 'en' : 'it'),
+                    soglia: fidelityCfg.soglia_punti,
+                    importo: euroFidelity(fidelityCfg.importo_premio, lang === 'en' ? 'en' : 'it'),
+                    giorni: fidelityCfg.validita_giorni,
+                }
+                const regola = fidelityCfg.tipo_premio === 'codice_sconto'
+                    ? t({ it: "{euro} € spesi al lavaggio = 1 punto · A {soglia} punti ricevi un buono sconto lavaggio di €{importo}, valido {giorni} giorni", en: "€{euro} spent on a wash = 1 point · At {soglia} points you get a €{importo} car wash voucher, valid {giorni} days" })
+                    : t({ it: "{euro} € spesi al lavaggio = 1 punto · A {soglia} punti ricevi €{importo} di credito lavaggio nel Credit Wallet, valido {giorni} giorni", en: "€{euro} spent on a wash = 1 point · At {soglia} points you get €{importo} of car wash credit in your Credit Wallet, valid {giorni} days" })
                 return (
                     <div className="bg-gradient-to-br from-[#1a2332] to-black border border-[#2d8a7e]/40 rounded-lg overflow-hidden">
                         <div className="p-4 md:p-6 border-b border-gray-800 flex items-center justify-between gap-4">
@@ -680,7 +702,7 @@ const ProfileSettings = () => {
                                 </span>
                                 <div>
                                     <p className="text-white font-bold">{t({ it: "Programma Fedeltà Lavaggio", en: "Car Wash Loyalty Programme" })}</p>
-                                    <p className="text-gray-400 text-xs">{t({ it: "1 € speso al lavaggio = 1 punto · A 250 punti ricevi €25 di credito lavaggio nel Credit Wallet", en: "€1 spent on a wash = 1 point · At 250 points you get €25 of car wash credit in your Credit Wallet" })}</p>
+                                    <p className="text-gray-400 text-xs">{riempiFidelity(regola, valori)}</p>
                                 </div>
                             </div>
                             <div className="text-right">

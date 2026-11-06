@@ -42,16 +42,22 @@ export function leggiStatoServizi(business: BusinessSito): Promise<StatoServizi>
 // Prefissi dei messaggi con cui il database rifiuta una prenotazione:
 //  - PRENOTAZIONI_SOSPESE: il System Control le ha sospese;
 //  - PROMO_NON_VALIDA: la promozione e' scaduta, esaurita, su un altro veicolo
-//    o con un prezzo che non torna (trigger trg_01_promozione_valida).
+//    o con un prezzo che non torna (trigger trg_01_promozione_valida);
+//  - EMTN_BLOCCO (07/11/2026): l'affidabilita' EMTN del cliente e' sotto la
+//    soglia di blocco di Centralina Pro > EMTN (trigger trg_01_emtn_blocco,
+//    migrazione DR7-AI 20261107_emtn_soglie.sql). Solo il noleggio auto: il
+//    cliente puo' comunque registrarsi e caricare i documenti. Il testo non
+//    mostra mai il punteggio.
 // Il testo dopo il prefisso e' gia' scritto per il cliente.
 const PREFISSI_CLIENTE: { prefisso: string; ripiego: string }[] = [
   { prefisso: 'PRENOTAZIONI_SOSPESE:', ripiego: 'Le prenotazioni online sono momentaneamente sospese.' },
   { prefisso: 'PROMO_NON_VALIDA:', ripiego: 'La promozione non e piu valida per questa prenotazione.' },
+  { prefisso: 'EMTN_BLOCCO:', ripiego: 'Non e possibile completare la prenotazione online. Contatta DR7 e ti aiuteremo a completare il noleggio.' },
 ];
 
 /**
  * Se l'errore del database e' uno di quelli scritti per il cliente
- * (prenotazioni sospese, promozione non valida), il testo da mostrare;
+ * (prenotazioni sospese, promozione non valida, blocco EMTN), il testo da mostrare;
  * altrimenti null.
  */
 export function testoPrenotazioniSospese(err: unknown): string | null {

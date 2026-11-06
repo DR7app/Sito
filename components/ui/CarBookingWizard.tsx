@@ -4312,7 +4312,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       setIsProcessing(false);
 
     } catch (e: any) {
-      setErrors(prev => ({ ...prev, form: `${t({ it: 'Booking failed:', en: 'Booking failed:' })} ${e.message}` }));
+      // 07/11/2026: blocco EMTN / prenotazioni sospese = testo per il cliente.
+      setErrors(prev => ({ ...prev, form: testoPrenotazioniSospese(e) || `${t({ it: 'Booking failed:', en: 'Booking failed:' })} ${e.message}` }));
       setIsProcessing(false);
     }
   };

@@ -129,7 +129,9 @@ exports.handler = async (event) => {
         if (cleanPhone.startsWith('0')) {
           cleanPhone = '39' + cleanPhone.substring(1);
         }
-        if (!cleanPhone.startsWith('39') && cleanPhone.length === 10) {
+        // 10 cifre che cominciano per 3 = cellulare italiano senza prefisso,
+        // anche quando comincia per 39 (393...): vedi send-whatsapp-notification.
+        if (cleanPhone.length === 10) {
           cleanPhone = '39' + cleanPhone;
         }
 

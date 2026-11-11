@@ -201,7 +201,12 @@ const handler: Handler = async (event) => {
   // Prefisso internazionale in forma 00: 003934012... -> 3934012...
   if (targetPhone.startsWith('00')) targetPhone = targetPhone.substring(2);
   if (targetPhone.startsWith('0')) targetPhone = '39' + targetPhone.substring(1);
-  if (!targetPhone.startsWith('39') && targetPhone.length === 10) targetPhone = '39' + targetPhone;
+  // 2026-11-11: un cellulare italiano senza prefisso ha 10 cifre e comincia
+  // per 3, quindi anche per 39 (390-393...). "3935471553" veniva preso per un
+  // numero GIA' col prefisso 39 e la conferma partiva verso +39 35471553, che
+  // non esiste: il cliente non riceveva nulla. Con il prefisso un cellulare
+  // ha 11-12 cifre, mai 10.
+  if (targetPhone.length === 10) targetPhone = '39' + targetPhone;
   // Numero inutilizzabile: si esce con un motivo esplicito invece di
   // chiamare Green API con un chatId rotto e lasciare un errore generico.
   if (targetPhone.length < 8) {

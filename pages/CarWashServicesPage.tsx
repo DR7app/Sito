@@ -79,13 +79,17 @@ interface CombinedWashService {
 const SUFFISSI_COMBINATI_DI_FABBRICA = ['exterior', 'interior', 'full', 'full-n2', 'top-shine', 'vip', 'luxury'];
 
 type MainTabType = 'lavaggio' | 'meccanica';
-type LavaggioCategory = 'moto' | 'wash' | 'extra' | 'experience';
+type LavaggioCategory = 'moto' | 'furgone' | 'wash' | 'extra' | 'experience';
 type MeccanicaCategory = 'tech';
 
 // Manual wash-category override the customer can always set after a targa
 // lookup. 'urban'/'maxi' drive the combined-card price tier; 'moto' routes to
 // the Prime Moto services. This is the value persisted on the booking.
-type WashOverrideCategory = 'urban' | 'maxi' | 'moto';
+// 11/11/2026 — 'furgone': un furgone (Ford Transit, Ducato...) non e' un Maxi.
+// Senza questa voce chi aveva un furgone sceglieva Maxi e pagava il listino
+// auto. Come la moto, ha i suoi servizi nel Catalogo Lavaggio (categoria
+// `furgone`): prezzo e nome si decidono li', qui non c'e' nessuna cifra.
+type WashOverrideCategory = 'urban' | 'maxi' | 'moto' | 'furgone';
 
 /**
  * Il carrello e la targa sopravvivono alla freccia "indietro".
@@ -128,11 +132,13 @@ const WASH_OVERRIDE_OPTIONS: { id: WashOverrideCategory; label: string; selected
   { id: 'urban', label: 'URBAN', selected: 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500', idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-emerald-500' },
   { id: 'maxi',  label: 'MAXI',  selected: 'bg-amber-600/20 text-amber-400 border-2 border-amber-500',       idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-amber-500' },
   { id: 'moto',  label: 'MOTO',  selected: 'bg-sky-600/20 text-sky-400 border-2 border-sky-500',             idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-sky-500' },
+  { id: 'furgone', label: 'FURGONE', selected: 'bg-violet-600/20 text-violet-400 border-2 border-violet-500', idle: 'bg-gray-800 text-gray-300 border border-gray-600 hover:border-violet-500' },
 ];
 
 const LAVAGGIO_CATEGORIES = [
   { id: 'wash' as LavaggioCategory, name: 'LAVAGGIO', nameEn: 'CAR WASH' },
   { id: 'moto' as LavaggioCategory, name: 'MOTO EXPERIENCE', nameEn: 'MOTO EXPERIENCE' },
+  { id: 'furgone' as LavaggioCategory, name: 'FURGONE', nameEn: 'VAN' },
 ];
 
 const MECCANICA_CATEGORIES = [
@@ -214,6 +220,11 @@ const CarWashServicesPage: React.FC = () => {
   const liveMaxi = dbServices.filter(s => s.category === 'maxi');
   const liveExtra = dbServices.filter(s => s.category === 'extra');
   const liveMoto = dbServices.filter(s => s.category === 'moto');
+  // Furgone: la voce compare solo quando nel Catalogo Lavaggio c'e' almeno un
+  // servizio attivo di categoria `furgone`. Senza, il pulsante porterebbe a
+  // una pagina vuota.
+  const liveFurgone = dbServices.filter(s => s.category === 'furgone');
+  const furgoneDisponibile = liveFurgone.length > 0;
   const liveExperience = dbServices.filter(s => s.category === 'experience');
   const liveTech = dbServices.filter(s => s.category === 'tech');
 
@@ -351,11 +362,12 @@ const CarWashServicesPage: React.FC = () => {
   // and routes the customer to the Prime Moto services tab.
   const applyWashOverride = useCallback((cat: WashOverrideCategory) => {
     setWashCategory(cat);
-    setTargaManualCategory(cat === 'moto' ? null : (cat as VehicleCategory));
-    if (cat === 'moto') {
+    const listinoProprio = cat === 'moto' || cat === 'furgone';
+    setTargaManualCategory(listinoProprio ? null : (cat as VehicleCategory));
+    if (listinoProprio) {
       setDetectedCategory(null);
       setMainTab('lavaggio');
-      setLavaggioCategory('moto');
+      setLavaggioCategory(cat);
     } else {
       setDetectedCategory(cat as VehicleCategory);
       setLavaggioCategory('wash');
@@ -365,6 +377,7 @@ const CarWashServicesPage: React.FC = () => {
   const getLavaggioServices = (category: LavaggioCategory): WashService[] => {
     switch (category) {
       case 'moto': return liveMoto;
+      case 'furgone': return liveFurgone;
       case 'extra': return liveExtra;
       case 'experience': return liveExperience;
       default: return [];
@@ -575,6 +588,11 @@ const CarWashServicesPage: React.FC = () => {
       return;
     }
 
+    // Un servizio del listino Furgone nel carrello = il veicolo e' un furgone,
+    // anche se la targa lo aveva letto come Maxi: e' quello che il gestionale
+    // deve vedere sulla prenotazione.
+    const categoriaDaSalvare = cart.some(item => liveFurgone.some(f => f.id === item.service.id)) ? 'furgone' : null;
+
     setShowCart(false);
     setPrenotazioneAperta({
       cartItems: cart.map(item => ({
@@ -595,7 +613,7 @@ const CarWashServicesPage: React.FC = () => {
           registrationYear: targaResult.registrationYear,
           fuelType: targaResult.fuelType,
           // The (possibly overridden) wash category — Urban / Maxi / Moto.
-          category: washCategory || detectedCategory || targaManualCategory,
+          category: categoriaDaSalvare || washCategory || detectedCategory || targaManualCategory,
         }
       } : normalizePlate(targaInput) ? {
         // 26/09/2026: la ricerca non ha risposto e il cliente ha scelto la
@@ -605,7 +623,7 @@ const CarWashServicesPage: React.FC = () => {
           plate: normalizePlate(targaInput),
           carMake: '',
           carModel: '',
-          category: washCategory || targaManualCategory,
+          category: categoriaDaSalvare || washCategory || targaManualCategory,
         }
       } : {})
     });
@@ -630,13 +648,16 @@ const CarWashServicesPage: React.FC = () => {
     ? getLavaggioServices(lavaggioCategory)
     : getMeccanicaServices(meccanicaCategory);
 
-  const currentCategories = mainTab === 'lavaggio' ? LAVAGGIO_CATEGORIES : MECCANICA_CATEGORIES;
+  const currentCategories = mainTab === 'lavaggio'
+    ? LAVAGGIO_CATEGORIES.filter(c => c.id !== 'furgone' || furgoneDisponibile)
+    : MECCANICA_CATEGORIES;
   // Nomi delle categorie passati da t() uno per uno: cosi' il gestionale li
   // trova e li puo' riscrivere.
   const nomeCategoria = (id: LavaggioCategory | MeccanicaCategory): string => {
     switch (id) {
       case 'wash': return t({ it: 'LAVAGGIO', en: 'CAR WASH' });
       case 'moto': return t({ it: 'MOTO EXPERIENCE', en: 'MOTO EXPERIENCE' });
+      case 'furgone': return t({ it: 'FURGONE', en: 'VAN' });
       case 'tech': return t({ it: 'TECH SERVICE', en: 'TECH SERVICE' });
       default: return '';
     }
@@ -717,8 +738,8 @@ const CarWashServicesPage: React.FC = () => {
               <p className="text-gray-400 text-xs mb-2">
                 {cw('plate_manual_prompt_it', 'plate_manual_prompt_en', 'Seleziona manualmente la categoria:')}
               </p>
-              <div className="flex justify-center gap-2">
-                {WASH_OVERRIDE_OPTIONS.map((opt) => (
+              <div className="flex flex-wrap justify-center gap-2">
+                {WASH_OVERRIDE_OPTIONS.filter(opt => opt.id !== 'furgone' || furgoneDisponibile).map((opt) => (
                   <button
                     key={opt.id}
                     onClick={() => applyWashOverride(opt.id)}

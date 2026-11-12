@@ -546,6 +546,16 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
           .single();
 
         if (insertError) {
+          // 12/11/2026: la stessa chiusura puo' arrivare due volte quasi
+          // insieme (notifica di Nexi + pagina di ritorno). Se la prenotazione
+          // di quest'ordine esiste gia', l'ha creata l'altra chiamata: non e'
+          // un errore e lo staff non va allarmato.
+          const { data: giaCreata } = await supabase
+            .from('bookings').select('id').eq('nexi_order_id', orderId).limit(1);
+          if (giaCreata && giaCreata.length > 0) {
+            console.log(`[nexi-callback] prenotazione ${giaCreata[0].id} gia' creata da un'altra chiamata per ${orderId}`);
+            return { statusCode: 200, body: 'OK' };
+          }
           console.error('Error creating booking from pending:', insertError);
           // 14/10/2026: il noleggio dal sito non scrive piu' nulla in
           // `bookings` prima del pagamento. Se nel frattempo il mezzo e'

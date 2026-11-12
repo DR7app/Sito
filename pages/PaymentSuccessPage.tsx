@@ -523,6 +523,34 @@ const PaymentSuccessPage: React.FC = () => {
                             if (bk && bk.length > 0) creato = bk[0];
                             else await new Promise(r => setTimeout(r, 2000));
                         }
+                        // 12/11/2026 — Pietro Lai: pagato su Nexi alle 14:50, ma la
+                        // notifica di Nexi non ha mai chiuso l'ordine e la
+                        // prenotazione non e' nata (niente conferma, niente
+                        // fattura, niente in calendario) finche' non e' stata
+                        // rilanciata a mano. Il noleggio dipendeva SOLO da quella
+                        // notifica. Ora, se dopo l'attesa la prenotazione non c'e'
+                        // ancora, la pagina chiama nexi-callback come fa gia' il
+                        // carrello: la function ricontrolla l'incasso con Nexi per
+                        // conto suo, quindi non si fida del browser. Qui si arriva
+                        // solo dopo una verifica gia' andata a buon fine.
+                        if (!creato) {
+                            try {
+                                const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/nexi-callback`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ orderId, operationResult: 'AUTHORIZED' }),
+                                });
+                                console.log('[PaymentSuccess] chiusura ordine in attesa:', res.status);
+                            } catch (e) {
+                                console.error('[PaymentSuccess] chiusura ordine in attesa fallita:', e);
+                            }
+                            for (let tentativo = 0; tentativo < 5 && !creato; tentativo++) {
+                                const { data: bk } = await supabase
+                                    .from('bookings').select('*').eq('nexi_order_id', orderId).limit(1);
+                                if (bk && bk.length > 0) creato = bk[0];
+                                else await new Promise(r => setTimeout(r, 2000));
+                            }
+                        }
                         if (creato) {
                             const url = await buildBookingWhatsAppUrl(creato, contact.whatsapp_url);
                             if (url) setWhatsappUrl(url);

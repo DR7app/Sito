@@ -34,6 +34,29 @@ const headers = {
 
 const testo = v => String(v == null ? '' : v).replace(/[*_~`]/g, '').slice(0, 200);
 
+/**
+ * 12/11/2026: il supplemento dipende dalla fascia. Finche' i documenti non
+ * sono stati letti il sito conosce solo la fascia dichiarata dal cliente (o
+ * nessuna, e allora calcola come Fascia A): a Valerio arrivava "€50/giorno"
+ * per un cliente che dai documenti era Fascia B (75). Qui si dice da dove
+ * viene la fascia e, se non viene dai documenti, si riportano le due cifre.
+ */
+function rigaFascia(body) {
+  const fascia = body.fascia === 'A' || body.fascia === 'B' ? body.fascia : '';
+  const euro = v => `€${Number(v || 0).toFixed(2)}`;
+  const a = Number(body.supplementoFasciaA || 0);
+  const b = Number(body.supplementoFasciaB || 0);
+  const dueCifre = a > 0 && b > 0 ? ` Fascia A ${euro(a)}/giorno, Fascia B ${euro(b)}/giorno.` : '';
+  if (body.fasciaOrigine === 'documenti' && fascia) return `*Fascia:* ${fascia} (dai documenti)\n`;
+  if (body.fasciaOrigine === 'dichiarata' && fascia) {
+    return `*Fascia:* ${fascia} dichiarata dal cliente, documenti non ancora verificati.${dueCifre}\n`;
+  }
+  if (body.fasciaOrigine === 'ignota') {
+    return `*Fascia:* non ancora nota, supplemento calcolato come Fascia A.${dueCifre}\n`;
+  }
+  return '';
+}
+
 async function numeroValerio() {
   // La scheda admin; se vuota (oggi lo e'), il destinatario "Valerio" dei
   // ticket, che si gestisce dall'admin.
@@ -127,7 +150,8 @@ exports.handler = async event => {
       // 26/10/2026: scelte del cliente (assicurazione, pacchetti km, servizi).
       + (Array.isArray(body.dettagli) ? body.dettagli.slice(0, 20).map(r => `• ${testo(r)}\n`).join('') : '')
       + `*Totale:* €${Number(body.totale || 0).toFixed(2)}\n`
-      + `*Supplemento No Cauzione:* €${Number(body.supplementoGiorno || 0).toFixed(2)}/giorno\n\n`
+      + `*Supplemento No Cauzione:* €${Number(body.supplementoGiorno || 0).toFixed(2)}/giorno\n`
+      + rigaFascia(body) + `\n`
       + `Se approvi, inoltra al cliente il CODICE del messaggio seguente: lo inserisce sul sito nella scelta "No Cauzione" e prenota pagando normalmente. Vale solo per il suo account, una prenotazione, ${VALIDITA_GIORNI} giorni.`;
 
     const baseUrl = process.env.URL || 'https://dr7.app';

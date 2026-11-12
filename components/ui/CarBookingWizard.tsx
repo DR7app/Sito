@@ -896,8 +896,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   // active tier's deposit list (Fascia A or B, resident).
   // Source of truth: Centralina Pro. NO hardcoded fallbacks.
   // If Pro doesn't define no_deposit, the popup shows 0 — the admin must add the option.
-  const ACTIVE_NO_DEPOSIT_SURCHARGE = (() => {
-    const activeTier = (driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2';
+  const supplementoNoCauzionePerFascia = (activeTier: 'TIER_1' | 'TIER_2'): number => {
     const depKey = `${activeTier}_${residencySuffix}` as 'TIER_1_RESIDENT' | 'TIER_2_RESIDENT' | 'TIER_1_NON_RESIDENT' | 'TIER_2_NON_RESIDENT';
     const pools = [
       pickDepositOptions(configOverlay, vehicleType, depKey, (item as any).category),
@@ -909,7 +908,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (typeof hit?.surchargePerDay === 'number' && hit.surchargePerDay > 0) return hit.surchargePerDay;
     }
     return configOverlay?.noDepositSurchargePerDay ?? 0;
-  })();
+  };
+  const ACTIVE_NO_DEPOSIT_SURCHARGE = supplementoNoCauzionePerFascia((driverTier === 'TIER_1' || driverTier === 'TIER_2') ? driverTier : 'TIER_2');
   // €/km consegna a domicilio: prezzo PER CATEGORIA dalla Centralina Pro
   // (delivery.by_category), non più il flat. Alias supercars<->exotic.
   // Fallback al flat solo se la categoria non è configurata.
@@ -4489,8 +4489,19 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       if (lavaggioFee > 0) dettagli.push(`Lavaggio: ${formatPrice(lavaggioFee)}`);
       for (const [svcId, qty] of Object.entries(formData.selectedExperiences || {})) {
         if (!qty || qty <= 0) continue;
-        const svc = (ACTIVE_EXPERIENCE_SERVICES as Array<{ id: string; name?: string }>).find(x => x.id === svcId);
-        dettagli.push(`Servizio: ${svc?.name || svcId}${qty > 1 ? ` x ${qty}` : ''}`);
+        const svc = (ACTIVE_EXPERIENCE_SERVICES as Array<{ id: string; name?: string; unit?: string; price?: number }>).find(x => x.id === svcId);
+        // 12/11/2026 (direzione): quantita' e prezzo accanto a ogni servizio,
+        // come le altre righe. Prima "Bouquet di rose" arrivava senza dire
+        // quante rose, e nessun servizio diceva quanto costava. Stesso conto
+        // del riepilogo: i servizi a giorno si moltiplicano per i giorni.
+        const prezzoUnita = Number(svc?.price) || 0;
+        const aGiorno = svc?.unit === 'per_day';
+        const giorniServizio = Math.max(1, duration.days);
+        const costoRiga = aGiorno ? prezzoUnita * giorniServizio * qty : prezzoUnita * qty;
+        const quanti = aGiorno
+          ? `x ${qty}, ${giorniServizio} gg a ${formatPrice(prezzoUnita)}/giorno`
+          : `x ${qty}${qty > 1 ? ` a ${formatPrice(prezzoUnita)} cad.` : ''}`;
+        dettagli.push(`Servizio: ${String(svc?.name || svcId).trim()} ${quanti}: ${formatPrice(costoRiga)}`);
       }
       if (formData.addSecondDriver) dettagli.push('Secondo guidatore');
       const res = await fetch('/.netlify/functions/richiesta-no-cauzione', {
@@ -4504,6 +4515,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           riconsegna: `${giorno(rDate)} ${rTime}`,
           totale: grandTotal,
           supplementoGiorno: ACTIVE_NO_DEPOSIT_SURCHARGE,
+          // 12/11/2026: a Valerio arrivava "€50/giorno" per un cliente di
+          // Fascia B (75). Quando la fascia non viene ancora dai documenti il
+          // prezzo e' quello della fascia dichiarata, o della A se non se ne
+          // sa nulla: ora il messaggio lo dice e riporta entrambe le cifre.
+          fascia: driverTier === 'TIER_1' ? 'B' : driverTier === 'TIER_2' ? 'A' : '',
+          fasciaOrigine: driverTierInfo?.tier ? 'documenti' : fasciaDichiarata ? 'dichiarata' : 'ignota',
+          supplementoFasciaA: supplementoNoCauzionePerFascia('TIER_2'),
+          supplementoFasciaB: supplementoNoCauzionePerFascia('TIER_1'),
           dettagli,
         }),
       });
@@ -4512,6 +4531,24 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         throw new Error(esitoRichiesta.error || t({ it: "Richiesta non inviata, riprova più tardi.", en: "Request not sent, please try again later." }));
       }
       if (user?.id) void salvaSchedaCliente();
+
+      // 12/11/2026 (direzione): la richiesta deve comparire anche nel
+      // gestionale, tab Preventivi > Dal sito, dove si apre, si modifica e si
+      // accetta. Dal 25/10 partiva solo il WhatsApp. Gli avvisi li ha gia'
+      // mandati la richiesta qui sopra: il preventivo nasce in silenzio. Se
+      // manca l'assicurazione (richiesta dal popup prima delle opzioni) il
+      // gestionale lo rifiuterebbe: in quel caso resta il solo WhatsApp.
+      if (item && formData.insuranceOption && formData.pickupDate && formData.returnDate) {
+        try {
+          await fetch('/.netlify/functions/create-website-preventivo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ ...costruisciPreventivo(true), senza_avvisi: true }),
+          });
+        } catch (e) {
+          console.error('[no-cauzione] preventivo non creato (non bloccante):', e);
+        }
+      }
 
       // Send confirmation to customer
       const customerPhone = formData.phone?.replace(/[\s\-\+()]/g, '') || '';
@@ -4598,19 +4635,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     }
   };
 
-  // ── SAVE PREVENTIVO (quote) instead of booking ──
-  const handleSavePreventivo = async () => {
-    if (!user || !item || isSavingPreventivo) return;
-    // Guard: bloccare il save se nessuna assicurazione e' selezionata
-    // (cosi' non finisce nessun preventivo con "N/A" salvato). Il wizard
-    // parte senza assicurazione: la prima valida arriva dalla Centralina Pro
-    // appena si conosce la categoria del veicolo.
-    if (!formData.insuranceOption) {
-      alert(t({ it: "Seleziona un'assicurazione prima di salvare il preventivo.", en: "Select an insurance option before saving the quote." }));
-      return;
-    }
-    setIsSavingPreventivo(true);
-    try {
+  // Il preventivo cosi' come lo legge il gestionale (tab Preventivi). Lo usano
+  // "Salva preventivo" e, dal 12/11/2026, la richiesta No Cauzione.
+  const costruisciPreventivo = (richiestaNoCauzione: boolean) => {
       const pickupISO = `${formData.pickupDate}T${formData.pickupTime || '10:30'}:00`;
       const dropoffISO = `${formData.returnDate}T${formData.returnTime || '09:00'}:00`;
 
@@ -4625,7 +4652,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const opts = getInsuranceForVehicle(vType, activeTier)
         return opts.find((o: { id?: string; name?: string }) => o.id === insOptId)?.name || ''
       })()
-      const payload = {
+      return {
         vehicle_id: resolvedVehicleId,
         vehicle_name: item.name,
         vehicle_plate: (item as any).plate || '',
@@ -4708,8 +4735,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         })(),
         second_driver_daily: secondDriverFee / Math.max(duration.days, 1),
         second_driver_total: secondDriverFee,
-        no_cauzione_daily: noDepositSurcharge,
-        no_cauzione_total: noDepositSurcharge * duration.days,
+        no_cauzione_daily: richiestaNoCauzione ? ACTIVE_NO_DEPOSIT_SURCHARGE : noDepositSurcharge,
+        no_cauzione_total: richiestaNoCauzione ? ACTIVE_NO_DEPOSIT_SURCHARGE * Math.max(1, duration.days) : noDepositSurcharge * duration.days,
         lavaggio_fee: lavaggioFee,
         delivery_fee: deliveryFee || 0, // NOT NULL: mai undefined/null
         pickup_fee: pickupFee,
@@ -4722,7 +4749,10 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         customer_name: `${formData.firstName} ${formData.lastName}`.trim(),
         customer_phone: formData.phone,
         extras_detail: {
-          experience_services: formData.experienceServices,
+          // 12/11/2026: qui si leggeva `formData.experienceServices`, che non
+          // esiste: i servizi scelti (bouquet, casco...) non arrivavano mai nel
+          // preventivo del gestionale.
+          experience_services: formData.selectedExperiences,
           flex: formData.dr7Flex,
           wash_upsell: formData.washUpsellAccepted,
           // Salviamo la scelta esatta dei pacchetti km (es. Pacchetto 300 km)
@@ -4737,9 +4767,25 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           kmPackageType: formData.kmPackageType,
           kmPackages: formData.kmPackages,
         },
-        notes: noCauzioneRequested ? 'Richiesta formula senza cauzione' : '',
-        no_cauzione_request: noCauzioneRequested && formData.depositOption === 'no_deposit',
+        notes: (richiestaNoCauzione || noCauzioneRequested) ? 'Richiesta formula senza cauzione' : '',
+        no_cauzione_request: richiestaNoCauzione || (noCauzioneRequested && formData.depositOption === 'no_deposit'),
       };
+  };
+
+  // ── SAVE PREVENTIVO (quote) instead of booking ──
+  const handleSavePreventivo = async () => {
+    if (!user || !item || isSavingPreventivo) return;
+    // Guard: bloccare il save se nessuna assicurazione e' selezionata
+    // (cosi' non finisce nessun preventivo con "N/A" salvato). Il wizard
+    // parte senza assicurazione: la prima valida arriva dalla Centralina Pro
+    // appena si conosce la categoria del veicolo.
+    if (!formData.insuranceOption) {
+      alert(t({ it: "Seleziona un'assicurazione prima di salvare il preventivo.", en: "Select an insurance option before saving the quote." }));
+      return;
+    }
+    setIsSavingPreventivo(true);
+    try {
+      const payload = costruisciPreventivo(false);
 
       // 2026-05-21: in edit mode, tell the backend to UPDATE the existing
       // preventivo instead of creating a new one. replacePreventivoId is

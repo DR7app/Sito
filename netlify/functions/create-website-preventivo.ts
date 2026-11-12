@@ -208,6 +208,13 @@ const handler: Handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) }
     }
 
+    // 12/11/2026: la richiesta No Cauzione del sito manda gia' i suoi messaggi
+    // (riepilogo + codice a Valerio, conferma al cliente). Il preventivo che
+    // la accompagna nasce in silenzio, altrimenti arriverebbero doppi.
+    if (body.senza_avvisi === true) {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, preventivo: data }) }
+    }
+
     // Send WhatsApp notification to admin
     try {
       const pickupDate = new Date(body.pickup_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' })

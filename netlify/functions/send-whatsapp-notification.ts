@@ -1,6 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { renderTemplate, resolveKeyForContext } from './utils/messageTemplates';
-import { getInsuranceNameById } from './utils/centralinaProLookups';
+import { getInsuranceNameById, serviziExtraTesto } from './utils/centralinaProLookups';
 import { formatLocation } from './utils/formatLocation';
 import { funzioneFerma, businessDaServiceType } from './utils/systemControl';
 
@@ -149,6 +149,9 @@ async function buildVarsFromBooking(booking: any, isCustomerMessage: boolean): P
       km: formatKmInfo(booking),
       chilometraggio: formatKmInfo(booking),
       flex: booking.booking_details?.dr7_flex || booking.booking_details?.dr7Flex ? 'DR7 Flex' : '',
+      // 18/11/2026: servizi extra (rose, ecc.) con quantita' e prezzo.
+      servizi_extra: (await serviziExtraTesto(booking)) || '—',
+      extras: (await serviziExtraTesto(booking)) || '—',
     });
   }
   return vars;
@@ -388,6 +391,9 @@ const handler: Handler = async (event) => {
         km: formatKmInfo(booking),
         chilometraggio: formatKmInfo(booking),
         flex: booking.booking_details?.dr7_flex || booking.booking_details?.dr7Flex ? 'DR7 Flex' : '',
+      // 18/11/2026: servizi extra (rose, ecc.) con quantita' e prezzo.
+      servizi_extra: (await serviziExtraTesto(booking)) || '—',
+      extras: (await serviziExtraTesto(booking)) || '—',
       });
     }
 

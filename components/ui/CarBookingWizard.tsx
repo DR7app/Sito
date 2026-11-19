@@ -1,5 +1,5 @@
 import PhoneInput, { eventoTelefono } from './PhoneInput';
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { tipoDaEtichetta } from '../../utils/tipoCategoria';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -68,6 +68,7 @@ import { useStatoServizi } from '../../hooks/useStatoServizi';
 import AvvisoServizioSospeso from './AvvisoServizioSospeso';
 import { testoPrenotazioniSospese } from '../../utils/statoServizi';
 import { percorsoStorage } from '../../utils/nomeFileSicuro';
+import { preavvisoInsufficiente, etichettaPreavviso } from '../../utils/preavvisoServizi';
 
 // Filter out dummy/placeholder names from auth profiles (e.g. "No Name", "User", "Test")
 const DUMMY_NAMES = ['no name', 'no-name', 'noname', 'user', 'test', 'unknown', 'n/a', 'none', 'cliente'];
@@ -926,6 +927,40 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   })();
   // ACTIVE_DR7_FLEX rimosso — DR7 Flex ora è in EXPERIENCE_SERVICES.
   const ACTIVE_EXPERIENCE_SERVICES = configOverlay?.experienceServices ?? [];
+
+  // 19/11/2026: preavviso minimo (Centralina Pro) per servizi extra e
+  // consegna/ritiro a domicilio. Un cliente prenotava il ritiro fra un'ora
+  // con il bouquet di rose: non c'era il tempo di prepararlo.
+  const ACTIVE_DELIVERY_PREAVVISO_ORE = Number((configOverlay as { deliveryPreavvisoOre?: number } | null)?.deliveryPreavvisoOre) || 0;
+  const ritiroPreavvisoAt = useMemo(() => {
+    if (!formData.pickupDate || !formData.pickupTime) return null;
+    try { return createItalyDateTime(formData.pickupDate, formData.pickupTime); } catch { return null; }
+  }, [formData.pickupDate, formData.pickupTime]);
+  const riconsegnaPreavvisoAt = useMemo(() => {
+    if (!formData.returnDate || !formData.returnTime) return null;
+    try { return createItalyDateTime(formData.returnDate, formData.returnTime); } catch { return null; }
+  }, [formData.returnDate, formData.returnTime]);
+  const servizioTroppoVicino = useCallback(
+    (svc: { preavvisoOre?: number }) => preavvisoInsufficiente(svc?.preavvisoOre, ritiroPreavvisoAt),
+    [ritiroPreavvisoAt],
+  );
+  // Se il cliente cambia data/ora e un servizio gia' scelto non e' piu'
+  // prenotabile, lo si toglie: non deve arrivare al pagamento.
+  useEffect(() => {
+    const scelti = formData.selectedExperiences || {};
+    const daTogliere = Object.entries(scelti).filter(([id, q]) => {
+      if (!(Number(q) > 0)) return false;
+      const svc = ACTIVE_EXPERIENCE_SERVICES.find(x => x.id === id);
+      return !!svc && servizioTroppoVicino(svc);
+    }).map(([id]) => id);
+    if (!daTogliere.length) return;
+    setFormData(prev => {
+      const next = { ...(prev.selectedExperiences || {}) };
+      for (const id of daTogliere) next[id] = 0;
+      return { ...prev, selectedExperiences: next };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servizioTroppoVicino, ACTIVE_EXPERIENCE_SERVICES]);
 
   // DR7 FLEX (noleggio): cancellazione fino al giorno stesso del servizio, 90% in
   // DR7 Wallet, 1 spostamento gratuito. Da quando DR7 Flex è un Experience
@@ -3778,6 +3813,20 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
 
       // Availability error is shown as a warning near date inputs (line ~3966).
       // Do NOT hard-block here — the user can still see the warning and decide.
+
+      // 19/11/2026: preavviso minimo per consegna/ritiro a domicilio (Centralina Pro).
+      if (formData.pickupLocation === 'home_delivery' && preavvisoInsufficiente(ACTIVE_DELIVERY_PREAVVISO_ORE, ritiroPreavvisoAt)) {
+        newErrors.pickupLocation = t({
+          it: `La consegna a domicilio va prenotata con almeno ${etichettaPreavviso(ACTIVE_DELIVERY_PREAVVISO_ORE, 'it')} di preavviso. Scegli un ritiro in sede o un orario piu' avanti.`,
+          en: `Home delivery must be booked at least ${etichettaPreavviso(ACTIVE_DELIVERY_PREAVVISO_ORE, 'en')} in advance. Choose pick-up at our office or a later time.`,
+        });
+      }
+      if (formData.returnLocation === 'home_delivery' && preavvisoInsufficiente(ACTIVE_DELIVERY_PREAVVISO_ORE, riconsegnaPreavvisoAt)) {
+        newErrors.returnLocation = t({
+          it: `Il ritiro a domicilio va prenotato con almeno ${etichettaPreavviso(ACTIVE_DELIVERY_PREAVVISO_ORE, 'it')} di preavviso. Scegli la riconsegna in sede o un orario piu' avanti.`,
+          en: `Home collection must be booked at least ${etichettaPreavviso(ACTIVE_DELIVERY_PREAVVISO_ORE, 'en')} in advance. Choose drop-off at our office or a later time.`,
+        });
+      }
 
       // Delivery address validation
       if (formData.pickupLocation === 'home_delivery') {
@@ -7357,21 +7406,34 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
                 {experienceServices.map(svc => {
                   const qty = formData.selectedExperiences[svc.id] || 0;
                   const isSelected = qty > 0;
+                  // 19/11/2026: ritiro troppo vicino = servizio non selezionabile.
+                  const troppoVicino = servizioTroppoVicino(svc);
                   const unitLabel = svc.unit === 'per_day' ? t({ it: '/giorno', en: '/day' }) : svc.unit === 'per_hour' ? t({ it: '/ora', en: '/hour' }) : svc.unit === 'per_item' ? t({ it: '/unità', en: '/unit' }) : '';
                   return (
                     <div
                       key={svc.id}
-                      className={`p-3 rounded-md border transition-all ${isSelected
+                      className={`p-3 rounded-md border transition-all ${troppoVicino
+                        ? 'border-gray-800 opacity-60' : isSelected
                         ? 'border-white bg-white/5' : 'border-gray-700 hover:border-gray-500'}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <span className="text-white font-medium">{svc.name}</span>
                           <p className="text-xs text-gray-400 mt-0.5">{svc.description}</p>
+                          {troppoVicino && (
+                            <p className="text-xs text-red-400 mt-1">
+                              {t({
+                                it: `Disponibile solo con almeno ${etichettaPreavviso(svc.preavvisoOre, 'it')} di preavviso sul ritiro.`,
+                                en: `Available only with at least ${etichettaPreavviso(svc.preavvisoOre, 'en')} notice before pick-up.`,
+                              })}
+                            </p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 ml-4">
                           <span className="font-semibold text-white text-sm whitespace-nowrap">€{svc.price.toFixed(2)}{unitLabel}</span>
-                          {(svc.unit === 'per_item' || svc.unit === 'per_hour') ? (
+                          {troppoVicino ? (
+                            <span className="px-3 py-1 text-sm font-bold bg-gray-800 text-gray-500 cursor-not-allowed">{t({ it: 'Non disponibile', en: 'Unavailable' })}</span>
+                          ) : (svc.unit === 'per_item' || svc.unit === 'per_hour') ? (
                             <div className="flex items-center gap-1">
                               <button type="button" className="w-7 h-7 bg-gray-700 text-white font-bold hover:bg-gray-600"
                                 onClick={() => setFormData(prev => ({

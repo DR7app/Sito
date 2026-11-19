@@ -240,6 +240,8 @@ export interface ExperienceService {
   unit: 'per_day' | 'per_hour' | 'per_item' | 'flat';
   tierOnly?: DriverTier;
   description: string;
+  /** 19/11/2026: ore minime prima del ritiro (Centralina Pro). 0 = nessun limite. */
+  preavvisoOre?: number;
 }
 
 export type PaymentMode = 'full' | 'deposit_30';

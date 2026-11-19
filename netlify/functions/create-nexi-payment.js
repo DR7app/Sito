@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { getCorsOrigin } = require('./utils/cors.js');
 const { funzioneFerma } = require('./utils/systemControl.js');
+const { errorePreavvisoOrdine } = require('./utils/preavvisoServer.js');
 
 /**
  * Netlify Function to create Nexi XPay payment using API method
@@ -84,6 +85,16 @@ exports.handler = async (event) => {
         statusCode: 400,
         headers: corsHeaders,
         body: JSON.stringify({ error: 'Amount must be greater than zero' }),
+      };
+    }
+
+    // 19/11/2026: preavviso minimo per servizi extra / domicilio (Centralina Pro).
+    const errorePreavviso = await errorePreavvisoOrdine(orderId);
+    if (errorePreavviso) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: errorePreavviso, code: 'preavviso_insufficiente' }),
       };
     }
 

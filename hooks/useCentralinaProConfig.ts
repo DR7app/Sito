@@ -57,6 +57,8 @@ export interface WebsiteConfigOverlay {
   }
   noDepositSurchargePerDay: number
   deliveryPricePerKm: number
+  /** 19/11/2026: ore minime per consegna/ritiro a domicilio (Centralina Pro). */
+  deliveryPreavvisoOre: number
   experienceServices: ExperienceService[]
   dr7Flex: { enabled: boolean; dailyPrice: number; refundPercent: number; tierRestriction: string }
   depositOptions: {
@@ -199,6 +201,7 @@ export interface ProExperienceService {
   admin_only?: boolean
   tier_only?: string // fascia id
   description?: string
+  preavviso_ore?: number
 }
 
 export interface ProServiziConfig {
@@ -211,7 +214,7 @@ export interface ProServiziConfig {
     description?: string
   }
   lavaggio?: { fee?: number | ''; mandatory?: boolean }
-  delivery?: { price_per_km?: number | '' }
+  delivery?: { price_per_km?: number | ''; preavviso_ore?: number }
   second_driver?: Record<string, number | ''> // keyed by fascia id
 }
 
@@ -584,6 +587,7 @@ export function buildWebsiteConfigOverlayFromPro(snapshot: ProCentralinaSnapshot
       unit: s.unit,
       tierOnly: s.tier_only === FASCIA_A_ID ? 'TIER_2' : s.tier_only === FASCIA_B_ID ? 'TIER_1' : undefined,
       description: s.description || '',
+      preavvisoOre: Number(s.preavviso_ore) || 0,
     }))
 
   // rentalDayRates: reuse the adapter
@@ -699,6 +703,7 @@ export function buildWebsiteConfigOverlayFromPro(snapshot: ProCentralinaSnapshot
     },
     noDepositSurchargePerDay: 0, // Pro stores surcharge per deposit option, not a global
     deliveryPricePerKm: num(snapshot.servizi?.delivery?.price_per_km, 0),
+    deliveryPreavvisoOre: Number(snapshot.servizi?.delivery?.preavviso_ore) || 0,
     experienceServices,
     dr7Flex: {
       // Default true so existing tenants keep showing the option until they

@@ -112,9 +112,9 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/credit-wallet', img: mi('menu_wallet_img', '/menu-club.jpeg'), Icon: WalletIcon,
       title: mc('menu_wallet_title_it', 'menu_wallet_title_en', 'Credit Wallet', 'Credit Wallet'),
       subtitle: mc('menu_wallet_sub_it', 'menu_wallet_sub_en', 'Il tuo credito DR7 Wallet per prenotare e ricaricare', 'Your DR7 Wallet credit to book and top up') },
-    { to: '/membership', img: mi('menu_club_img', '/menu-club.jpeg'), Icon: CrownIcon,
-      title: mc('menu_club_title_it', 'menu_club_title_en', 'DR7 Club', 'DR7 Club'),
-      subtitle: mc('menu_club_sub_it', 'menu_club_sub_en', 'Accesso esclusivo, eventi riservati e vantaggi unici', 'Exclusive access, private events and unique benefits') },
+    // 23/11/2026 (direzione): tolta la casella "DR7 Club" (/membership): era un
+    // doppione di "DR7 Club Privilege", che apre la stessa pagina. La pagina
+    // /membership resta (Privilege e' un suo blocco, #privilege).
     // Non e' una pagina a se: porta al blocco Privilege dentro DR7 Club
     // (ancora #privilege). Un testo solo, in un posto solo.
     { to: '/membership#privilege', img: mi('menu_privilege_img', '/menu-club.jpeg'), Icon: CrownIcon,

@@ -29,6 +29,10 @@ import RentalAgreementPage from './pages/RentalAgreementPage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
 import CareersPage from './pages/CareersPage';
 import FranchisingPage from './pages/FranchisingPage';
+// Vetrina del gestionale DR7 AI (copia di dr7ai.com; l'area /portale resta li').
+import Dr7AiPage from './pages/Dr7AiPage';
+// Landing di DR7 Trust (copia di dr7trust.com; login e app restano li').
+import Dr7TrustPage from './pages/dr7trust/Dr7TrustPage';
 import PressPage from './pages/PressPage';
 import FAQPage from './pages/FAQPage';
 import ContactPage from './pages/ContactPage';
@@ -419,6 +423,8 @@ const AnimatedRoutes = () => {
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
         <Route path="/careers" element={<CareersPage />} />
         <Route path="/franchising" element={<FranchisingPage />} />
+        <Route path="/dr7-ai" element={<Dr7AiPage />} />
+        <Route path="/dr7-trust" element={<Dr7TrustPage />} />
         <Route path="/press" element={<PressPage />} />
         <Route path="/faq" element={<WbOppure><FAQPage /></WbOppure>} />
         <Route path="/contact" element={<WbOppure><ContactPage /></WbOppure>} />

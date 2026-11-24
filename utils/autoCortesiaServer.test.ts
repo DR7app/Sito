@@ -28,14 +28,14 @@ vi.mock('@supabase/supabase-js', () => ({
     from: (t: string) => chain(t === 'vehicles' ? veicoli : t === 'bookings' ? prenotazioni : { config }),
   }),
 }))
-vi.mock('./utils/loadAutomations', () => ({ getRentalBufferMs: async () => 90 * 60_000 }))
+vi.mock('../netlify/functions/utils/loadAutomations', () => ({ getRentalBufferMs: async () => 90 * 60_000 }))
 
 process.env.SUPABASE_URL = 'x'
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'x'
 
 describe('get-supercar-experience-fleet', () => {
   it('libera da e ore, con orari Centralina e calendario vero', async () => {
-    const { handler } = await import('./get-supercar-experience-fleet')
+    const { handler } = await import('../netlify/functions/get-supercar-experience-fleet')
     // Lavaggio alle 09:30 Roma, 3 ore richieste
     const res: any = await handler({
       httpMethod: 'GET', headers: {},

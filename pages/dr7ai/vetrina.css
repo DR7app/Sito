@@ -1,0 +1,359 @@
+/* ==========================================================================
+   DR7 AI — vetrina del gestionale dentro dr7.app (/dr7-ai)
+   --------------------------------------------------------------------------
+   Copia del foglio di dr7ai.com (~/dr7ai-sito/src/index.css) chiusa in una
+   scatola, in due sensi:
+
+   · NIENTE ESCE. Ogni regola vive sotto `.dr7ai-vetrina` e le classi hanno
+     il prefisso `vt-`: il resto di dr7.app non le vede. Le regole globali
+     dell'originale (html, body, barra di scorrimento) non sono state
+     copiate: il contenitore fa le veci di <body>.
+
+   · NIENTE ENTRA. Il sito ha classi con gli stessi nomi (.btn, .shell,
+     .t-display...) ma valori diversi: col prefisso non si toccano. Le sue
+     regole sugli ELEMENTI (h1, h2, p) invece arriverebbero: le azzera il
+     blocco "Base" qui sotto.
+
+   Specificita': ogni selettore e' `html body :where(...)` = (0,0,2). Batte
+   le regole per elemento del sito (h1, p = 0,0,1) e perde contro qualunque
+   utility Tailwind (0,1,0): lo stesso ordine dell'originale, dove queste
+   classi stavano in @layer components, sotto le utility.
+   ========================================================================== */
+
+html body :where(.dr7ai-vetrina) {
+  color-scheme: dark;
+
+  --c-obsidian: #000000;
+  --c-graphite: #0a0a0a;
+  --c-graphite-2: #141414;
+  --c-ivory: #f8f5ee;
+  --c-ivory-dim: #e8e1d6;
+  --c-mineral: #a19c92;
+  --c-mineral-dark: #67635c;
+  --c-metal: #c9bea8;
+  --c-cyan: #5fd8e6;       /* il contorno del logo: solo dove e' il marchio */
+
+  --fg: var(--c-ivory);
+  --fg-dim: var(--c-mineral);
+  --bg: var(--c-obsidian);
+  --line: rgba(248, 245, 238, 0.12);
+  --line-strong: rgba(248, 245, 238, 0.26);
+
+  --f-display: 'Bodoni Moda', 'Playfair Display', Georgia, serif;
+  --f-ui: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-meta: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --ls-display: -0.018em;
+  --ls-nav: 0.16em;
+  --ls-label: 0.2em;
+  --ls-eyebrow: 0.3em;
+
+  --sp-sm: 1rem;
+  --sp-md: 2rem;
+  --sp-lg: 4rem;
+  --sp-xl: 7rem;
+  --sp-2xl: 11rem;
+
+  --container: 90rem;
+  --measure: 62ch;
+  --gutter: 1rem;
+
+  --mo-standard: 380ms;
+  --mo-editorial: 750ms;
+  --mo-cinematic: 1200ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Quello che sull'originale stava su <body>. */
+  background: var(--c-obsidian);
+  color: var(--c-ivory);
+  font-family: var(--f-ui);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+@media (min-width: 768px) {
+  html body :where(.dr7ai-vetrina) { --gutter: 2.5rem; }
+}
+@media (min-width: 1536px) {
+  html body :where(.dr7ai-vetrina) { --gutter: 4rem; }
+}
+
+/* ---- Base: angoli vivi e titoli senza la voce del sito ------------------ */
+/* Angoli vivi solo qui dentro (l'originale lo fa con il tema Tailwind). Lo
+   style in linea della pallina dell'interruttore vince comunque. */
+html body :where(.dr7ai-vetrina, .dr7ai-vetrina *) { border-radius: 0; }
+
+/* dr7.app da' a h1-h6 e p font, interlinea e spaziatura sue: qui tornano
+   quelle di Tailwind puro, come sull'originale. */
+html body :where(.dr7ai-vetrina) :where(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-wrap: inherit;
+}
+html body :where(.dr7ai-vetrina) :where(p) { line-height: inherit; }
+
+/* Le ancore (#piattaforma, #moduli...) non finiscono sotto la barra del sito. */
+html body :where(.dr7ai-vetrina [id]) { scroll-margin-top: var(--dr7ai-sotto, 0px); }
+
+html body :where(.dr7ai-vetrina, .dr7ai-vetrina *) { -webkit-tap-highlight-color: transparent; }
+html body :where(.dr7ai-vetrina) ::selection { background: rgba(201, 190, 168, 0.28); color: var(--c-ivory); }
+html body :where(.dr7ai-vetrina) :focus-visible { outline: 1px solid var(--c-metal); outline-offset: 3px; }
+
+/* ---- Superfici ---------------------------------------------------------- */
+html body :where(.dr7ai-vetrina.vt-surface-dark, .dr7ai-vetrina .vt-surface-dark) {
+  --fg: var(--c-ivory);
+  --fg-dim: var(--c-mineral);
+  --bg: var(--c-obsidian);
+  --line: rgba(248, 245, 238, 0.12);
+  --line-strong: rgba(248, 245, 238, 0.26);
+  background: var(--bg);
+  color: var(--fg);
+}
+html body :where(.dr7ai-vetrina .vt-surface-graphite) {
+  --fg: var(--c-ivory);
+  --fg-dim: var(--c-mineral);
+  --bg: var(--c-graphite);
+  --line: rgba(248, 245, 238, 0.12);
+  --line-strong: rgba(248, 245, 238, 0.26);
+  background: var(--bg);
+  color: var(--fg);
+}
+html body :where(.dr7ai-vetrina .vt-surface-light) {
+  --fg: #14150f;
+  --fg-dim: var(--c-mineral-dark);
+  --bg: var(--c-ivory);
+  --line: rgba(20, 21, 15, 0.14);
+  --line-strong: rgba(20, 21, 15, 0.3);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Il marmo della piattaforma: velo fitto dove passa il testo (in alto a
+   sinistra), leggero dove la lastra si guarda. */
+html body :where(.dr7ai-vetrina .vt-marmo) {
+  background-image:
+    linear-gradient(to bottom right, rgba(4, 5, 6, 0.78), rgba(4, 5, 6, 0.5) 55%, rgba(4, 5, 6, 0.28)),
+    url('/dr7ai/marmo-dr7ai.webp');
+  background-size: cover;
+  background-position: center;
+}
+html body :where(.dr7ai-vetrina .vt-marmo-fitto) {
+  background-image:
+    linear-gradient(rgba(4, 5, 6, 0.6), rgba(4, 5, 6, 0.86)),
+    url('/dr7ai/marmo-dr7ai.webp');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Un pannello sopra al marmo non deve sembrare un ritaglio incollato. */
+html body :where(.dr7ai-vetrina .vt-vetro) {
+  background: rgba(10, 10, 10, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* ---- Scala tipografica -------------------------------------------------- */
+html body :where(.dr7ai-vetrina) :where(.vt-t-display-xl, .vt-t-display) { overflow-wrap: break-word; }
+
+html body :where(.dr7ai-vetrina .vt-t-display-xl) {
+  font-family: var(--f-display);
+  font-size: clamp(2.6rem, 8vw, 7rem);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+html body :where(.dr7ai-vetrina .vt-t-display) {
+  font-family: var(--f-display);
+  font-size: clamp(2.1rem, 5.2vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: var(--ls-display);
+  text-wrap: balance;
+}
+html body :where(.dr7ai-vetrina) :where(.whitespace-pre-line.vt-t-display-xl, .whitespace-pre-line.vt-t-display) { text-wrap: wrap; }
+html body :where(.dr7ai-vetrina .vt-t-h2) {
+  font-family: var(--f-display);
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+html body :where(.dr7ai-vetrina .vt-t-h3) {
+  font-family: var(--f-ui);
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+html body :where(.dr7ai-vetrina .vt-t-body-xl) {
+  font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+  font-weight: 300;
+  line-height: 1.5;
+}
+html body :where(.dr7ai-vetrina .vt-t-body-lg) {
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  font-weight: 300;
+  line-height: 1.62;
+}
+html body :where(.dr7ai-vetrina .vt-t-body) { font-size: 0.9375rem; font-weight: 300; line-height: 1.66; }
+html body :where(.dr7ai-vetrina .vt-t-small) { font-size: 0.8125rem; font-weight: 300; line-height: 1.6; }
+html body :where(.dr7ai-vetrina .vt-t-nav) {
+  font-family: var(--f-ui);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--ls-nav);
+  text-transform: uppercase;
+}
+html body :where(.dr7ai-vetrina .vt-t-eyebrow) {
+  font-family: var(--f-meta);
+  font-size: 0.625rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+html body :where(.dr7ai-vetrina .vt-t-meta) {
+  font-family: var(--f-meta);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+html body :where(.dr7ai-vetrina .vt-dim) { color: var(--fg-dim); }
+html body :where(.dr7ai-vetrina .vt-measure) { max-width: var(--measure); }
+
+/* ---- Contenitore e ritmo ------------------------------------------------ */
+html body :where(.dr7ai-vetrina .vt-shell) {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+html body :where(.dr7ai-vetrina .vt-rhythm-sm) { padding-block: var(--sp-lg); }
+html body :where(.dr7ai-vetrina .vt-rhythm) { padding-block: var(--sp-xl); }
+html body :where(.dr7ai-vetrina .vt-rhythm-lg) { padding-block: var(--sp-2xl); }
+@media (max-width: 767px) {
+  html body :where(.dr7ai-vetrina .vt-rhythm) { padding-block: 5rem; }
+  html body :where(.dr7ai-vetrina .vt-rhythm-lg) { padding-block: 6.5rem; }
+}
+
+html body :where(.dr7ai-vetrina .vt-rule) { height: 1px; width: 100%; background: var(--line); border: 0; }
+
+/* ---- Bottoni: pieno, contorno, testo. Il colore lo da' la superficie. -- */
+html body :where(.dr7ai-vetrina .vt-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.0625rem 2.25rem;
+  border: 1px solid transparent;
+  font-family: var(--f-ui);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--mo-standard) var(--ease-out),
+              color var(--mo-standard) var(--ease-out),
+              border-color var(--mo-standard) var(--ease-out);
+}
+html body :where(.dr7ai-vetrina .vt-btn-primary) { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+html body :where(.dr7ai-vetrina .vt-btn-primary:hover) { background: transparent; color: var(--fg); }
+html body :where(.dr7ai-vetrina .vt-btn-secondary) { background: transparent; border-color: var(--line-strong); color: var(--fg); }
+html body :where(.dr7ai-vetrina .vt-btn-secondary:hover) { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+html body :where(.dr7ai-vetrina .vt-btn-text) { padding: 0.25rem 0; border: 0; background: none; color: var(--fg); position: relative; }
+html body :where(.dr7ai-vetrina .vt-btn-text)::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform-origin: right;
+  transition: transform var(--mo-standard) var(--ease-out);
+}
+html body :where(.dr7ai-vetrina .vt-btn-text:hover)::after { transform: scaleX(0); }
+html body :where(.dr7ai-vetrina .vt-btn-sm) { padding: 0.8125rem 1.5rem; font-size: 0.625rem; }
+
+html body :where(.dr7ai-vetrina .vt-link-reveal) { position: relative; display: inline-block; }
+html body :where(.dr7ai-vetrina .vt-link-reveal)::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -3px;
+  height: 1px; width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--mo-standard) var(--ease-out);
+}
+html body :where(.dr7ai-vetrina .vt-link-reveal:hover)::after { transform: scaleX(1); }
+
+/* ==========================================================================
+   La firma: un filo di luce che corre lungo un filetto. Su dr7.app e'
+   metallo; qui finisce nel ciano del logo della piattaforma.
+   ========================================================================== */
+html body :where(.dr7ai-vetrina .vt-seam-line) {
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--line);
+  position: relative;
+  overflow: hidden;
+}
+html body :where(.dr7ai-vetrina .vt-seam-line)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, var(--c-metal) 40%, var(--c-cyan) 50%, var(--c-metal) 60%, transparent 100%);
+  transform: translateX(-100%);
+}
+html body :where(.dr7ai-vetrina .vt-seam-line.is-live)::after { animation: dr7ai-seamSweep 1.6s var(--ease-out) forwards; }
+@keyframes dr7ai-seamSweep {
+  0%   { transform: translateX(-140%); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateX(400%); opacity: 0; }
+}
+
+/* ==========================================================================
+   Rivelazione allo scroll. Lo stato nascosto vive dietro .reveal-ready, che
+   dr7.app accende gia' in index.tsx: se il JavaScript non parte, niente
+   resta invisibile. Il sipario ritaglia il FIGLIO.
+   ========================================================================== */
+html:where(.reveal-ready) body :where(.dr7ai-vetrina .vt-reveal) {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--mo-editorial) var(--ease-entrance),
+              transform var(--mo-editorial) var(--ease-entrance);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+html:where(.reveal-ready) body :where(.dr7ai-vetrina .vt-reveal.is-in) { opacity: 1; transform: none; }
+html:where(.reveal-ready) body :where(.dr7ai-vetrina .vt-reveal-mask) {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path var(--mo-cinematic) var(--ease-entrance);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+html:where(.reveal-ready) body :where(.dr7ai-vetrina .vt-reveal-host.is-in .vt-reveal-mask) { clip-path: inset(0 0 0 0); }
+
+/* Nastro delle integrazioni */
+@keyframes dr7ai-nastro {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+html body :where(.dr7ai-vetrina .vt-nastro) { animation: dr7ai-nastro 38s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  html body .dr7ai-vetrina .vt-reveal { opacity: 1 !important; transform: none !important; }
+  html body .dr7ai-vetrina .vt-reveal-mask { clip-path: none !important; }
+  html body :where(.dr7ai-vetrina .vt-nastro) { animation: none; }
+  .dr7ai-vetrina *, .dr7ai-vetrina *::before, .dr7ai-vetrina *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

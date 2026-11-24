@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   UserCircleIcon,
   CarIcon, AnchorIcon, PaperAirplaneIcon, HomeIcon,
-  SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon, WalletIcon, GiftIcon,
+  SparklesIcon, CrownIcon, TrendingUpIcon, CubeTransparentIcon, SendIcon, WalletIcon, GiftIcon, ShieldIcon,
 } from '../icons/Icons';
 import CercaSedi from '../ui/CercaSedi';
 import { getHeaderCopy, getAspettoCopy, DEFAULT_ASPETTO, type HeaderCopy, type AspettoCopy } from '../../utils/siteCopy';
@@ -120,6 +120,14 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     { to: '/membership#privilege', img: mi('menu_privilege_img', '/menu-club.jpeg'), Icon: CrownIcon,
       title: mc('menu_privilege_title_it', 'menu_privilege_title_en', 'DR7 Club Privilege', 'DR7 Club Privilege'),
       subtitle: mc('menu_privilege_sub_it', 'menu_privilege_sub_en', 'Il saldo idoneo del tuo Wallet matura ogni giorno', 'Your eligible Wallet balance grows every day') },
+    // DR7 AI: la vetrina del gestionale (/dr7-ai), la stessa di dr7ai.com.
+    { to: '/dr7-ai', img: mi('menu_dr7ai_img', '/dr7ai/dashboard.png'), Icon: SparklesIcon,
+      title: mc('menu_dr7ai_title_it', 'menu_dr7ai_title_en', 'DR7 AI', 'DR7 AI'),
+      subtitle: mc('menu_dr7ai_sub_it', 'menu_dr7ai_sub_en', 'Il gestionale DR7 per la tua azienda', 'The DR7 management platform for your business') },
+    // DR7 Trust: la landing della firma elettronica (/dr7-trust), la stessa di dr7trust.com.
+    { to: '/dr7-trust', img: mi('menu_dr7trust_img', '/dr7trust/dr7trust-icon.png'), Icon: ShieldIcon,
+      title: mc('menu_dr7trust_title_it', 'menu_dr7trust_title_en', 'DR7 Trust', 'DR7 Trust'),
+      subtitle: mc('menu_dr7trust_sub_it', 'menu_dr7trust_sub_en', 'Firma elettronica dei contratti, con verifica e valore legale', 'Electronic contract signing, verified and legally valid') },
     { to: '/franchising', img: mi('menu_business_img', '/menu-business.jpeg'), Icon: TrendingUpIcon,
       title: mc('menu_business_title_it', 'menu_business_title_en', 'Business', 'Business'),
       subtitle: mc('menu_business_sub_it', 'menu_business_sub_en', 'Soluzioni corporate e noleggi a lungo termine', 'Corporate solutions and long-term rentals') },

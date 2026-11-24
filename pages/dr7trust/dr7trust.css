@@ -1,0 +1,29 @@
+/* ==========================================================================
+   DR7 Trust — landing dentro dr7.app (/dr7-trust)
+   --------------------------------------------------------------------------
+   L'originale (dr7trust.com) e' Tailwind 4 puro: testo nel carattere di
+   sistema, nessuna voce editoriale. dr7.app invece mette Jost su tutto e
+   Bodoni sui titoli (regole per elemento h1/h2/p in styles/index.css).
+   Qui sotto, SOLO dentro `.dr7trust-landing`, si torna alla base di
+   Tailwind 4. Specificita' (0,0,2): batte le regole per elemento del sito
+   e perde contro qualunque utility Tailwind, come nell'originale.
+   ========================================================================== */
+
+html body :where(.dr7trust-landing) {
+  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: auto;
+  font-feature-settings: normal;
+}
+
+html body :where(.dr7trust-landing) :where(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-wrap: inherit;
+}
+html body :where(.dr7trust-landing) :where(p) { line-height: inherit; }

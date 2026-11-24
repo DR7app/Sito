@@ -58,6 +58,18 @@
   </url>
 
   <url>
+    <loc>https://dr7.app/dr7-ai</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
+    <loc>https://dr7.app/dr7-trust</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
     <loc>https://dr7.app/investitori</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>

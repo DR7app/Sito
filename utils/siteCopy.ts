@@ -1114,6 +1114,12 @@ export interface HeaderCopy {
   // dentro /membership (ancora #privilege). Il testo vive in un posto solo.
   menu_privilege_title_it?: string; menu_privilege_title_en?: string;
   menu_privilege_sub_it?: string; menu_privilege_sub_en?: string;
+  // DR7 AI: vetrina del gestionale (/dr7-ai).
+  menu_dr7ai_title_it?: string; menu_dr7ai_title_en?: string;
+  menu_dr7ai_sub_it?: string; menu_dr7ai_sub_en?: string;
+  // DR7 Trust: landing della firma elettronica (/dr7-trust).
+  menu_dr7trust_title_it?: string; menu_dr7trust_title_en?: string;
+  menu_dr7trust_sub_it?: string; menu_dr7trust_sub_en?: string;
   menu_business_title_it?: string; menu_business_title_en?: string;
   menu_business_sub_it?: string; menu_business_sub_en?: string;
   // Investitori: pagina Investor Relations (/investitori).
@@ -1136,6 +1142,8 @@ export interface HeaderCopy {
   menu_prevendite_img?: string;
   menu_club_img?: string;
   menu_privilege_img?: string;
+  menu_dr7ai_img?: string;
+  menu_dr7trust_img?: string;
   menu_business_img?: string;
   menu_investitori_img?: string;
   menu_digital_img?: string;

@@ -66,7 +66,25 @@ exports.handler = async (event) => {
     const orderTotal = body.orderTotal || body.order_total;
     // 25/11/2026: categoria reale del veicolo (id di Centralina Pro, es.
     // 'urban' = Hypercar). Serve ai codici con scope 'cat:<id>'.
-    const vehicleCategory = String(body.vehicleCategory || body.vehicle_category || '').toLowerCase().trim();
+    let vehicleCategory = String(body.vehicleCategory || body.vehicle_category || '').toLowerCase().trim();
+    // Se la pagina non manda la categoria (pagina aperta prima
+    // dell'aggiornamento, o un percorso che non la conosce), la si legge dal
+    // veicolo: prima per id, poi per nome esatto.
+    if (!vehicleCategory && (body.vehicleId || body.vehicleName)) {
+      try {
+        const id = String(body.vehicleId || '').trim();
+        let riga = null;
+        if (/^[0-9a-f-]{36}$/i.test(id)) {
+          const { data } = await supabase.from('vehicles').select('category').eq('id', id).maybeSingle();
+          riga = data;
+        }
+        if (!riga && body.vehicleName) {
+          const { data } = await supabase.from('vehicles').select('category').ilike('display_name', String(body.vehicleName).trim()).neq('status', 'retired').limit(1);
+          riga = data && data[0];
+        }
+        if (riga && riga.category) vehicleCategory = String(riga.category).toLowerCase().trim();
+      } catch { /* resta vuota */ }
+    }
 
     if (!code) {
       return createResponse(400, {

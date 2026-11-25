@@ -707,7 +707,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
             method: 'POST',
             headers,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            body: JSON.stringify({ code: initialSearchDates.discountCode, serviceType: autoServiceType, vehicleCategory: (item as any).category || '' })
+            body: JSON.stringify({ code: initialSearchDates.discountCode, serviceType: autoServiceType, vehicleCategory: (item as any).category || '', vehicleId: item.id, vehicleName: item.name })
           });
           const result = await response.json();
           if (response.ok && result.valid) {
@@ -4410,6 +4410,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           // 25/11/2026: categoria vera del veicolo per i codici 'cat:<id>'.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           vehicleCategory: (item as any).category || '',
+          vehicleId: item.id,
+          vehicleName: item.name,
           orderTotal: Math.round(finalTotalWithOnlineDiscount * 100)
         })
       });

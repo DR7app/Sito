@@ -58,6 +58,17 @@ function rigaFascia(body) {
 }
 
 async function numeroValerio() {
+  // 25/11/2026: prima il numero scelto in Centralina Pro > Cauzioni
+  // (config.no_cauzione.whatsapp). Le richieste arrivavano al numero vecchio
+  // e non c'era modo di cambiarlo dal gestionale.
+  const { data: cfg } = await supabase
+    .from('centralina_pro_config')
+    .select('config')
+    .eq('id', 'main')
+    .maybeSingle();
+  const scelto = String((cfg && cfg.config && cfg.config.no_cauzione && cfg.config.no_cauzione.whatsapp) || '').replace(/\D/g, '');
+  if (scelto.length >= 8) return scelto;
+
   // La scheda admin; se vuota (oggi lo e'), il destinatario "Valerio" dei
   // ticket, che si gestisce dall'admin.
   const { data: admin } = await supabase

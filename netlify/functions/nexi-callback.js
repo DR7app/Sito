@@ -728,6 +728,14 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
               };
               await supabase.from('bookings').update({ booking_details: nextDetails }).eq('id', newBooking.id);
               console.log(`[nexi-callback] Supercar shadow ${shadowRow.id} created for ${supExp.vehicle_name}`);
+              // 25/11/2026: contratto dell'auto di cortesia + firma al cliente.
+              try {
+                const { inviaContrattoCortesia } = require('./utils/contrattoCortesia.js');
+                const esitoContratto = await inviaContrattoCortesia(supabase, shadowRow.id);
+                console.log('[nexi-callback] contratto auto di cortesia:', esitoContratto);
+              } catch (cErr) {
+                console.error('[nexi-callback] contratto auto di cortesia non riuscito (non bloccante):', cErr);
+              }
             }
           }
         } catch (supErr) {

@@ -104,10 +104,13 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     | undefined;
   const prenotazioneDaModificare = articoloDaModificare?.dati?.booking;
 
-  const cartItems: CartItem[] = locationState?.cartItems
+  // 25/11/2026: carrello e totale come arrivano dalla pagina dei servizi.
+  // Piu' sotto `cartItems` e `cartTotal` tengono conto delle ore dell'auto di
+  // cortesia scelte DOPO l'auto (vedi oraScelta).
+  const cartItemsBase: CartItem[] = locationState?.cartItems
     || prenotazioneDaModificare?.booking_details?.cartItems
     || [];
-  const cartTotal: number = locationState?.total
+  const cartTotalBase: number = locationState?.total
     ?? (prenotazioneDaModificare ? (Number(prenotazioneDaModificare.price_total) || 0) / 100 : 0);
   const customerVehicle = locationState?.customerVehicle
     || prenotazioneDaModificare?.booking_details?.customerVehicle
@@ -119,17 +122,17 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   const selectedService = serviceId ? washServices.find(s => s.id === serviceId) : null;
 
   // Determine if we have valid booking data
-  const hasCartItems = cartItems.length > 0;
+  const hasCartItems = cartItemsBase.length > 0;
   const hasSelectedService = !!selectedService;
   const hasValidBooking = hasCartItems || hasSelectedService;
 
   // Debug logging
   useEffect(() => {
-    console.log('CarWashBookingPage - cartItems:', cartItems);
-    console.log('CarWashBookingPage - cartTotal:', cartTotal);
+    console.log('CarWashBookingPage - cartItems:', cartItemsBase);
+    console.log('CarWashBookingPage - cartTotal:', cartTotalBase);
     console.log('CarWashBookingPage - serviceId:', serviceId);
     console.log('CarWashBookingPage - selectedService:', selectedService);
-  }, [cartItems, cartTotal, serviceId, selectedService]);
+  }, [cartItemsBase, cartTotalBase, serviceId, selectedService]);
 
   // Get today's date in YYYY-MM-DD format - always get fresh current date
   const getTodayDate = () => {
@@ -229,9 +232,26 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     });
     return () => { cancelled = true };
   }, []);
-  const experienceItem = cartItems.find(item =>
+  const experienceItemBase = cartItemsBase.find(item =>
     washServices.some(s => s.id === item.serviceId && s.category === 'experience'),
   );
+  // 25/11/2026 (direzione): prima si sceglie l'auto, poi le ore. Le ore
+  // possibili sono le opzioni del servizio nel Catalogo Lavaggio, fino a
+  // quante ne ha libere l'auto scelta; il prezzo e' quello dell'opzione.
+  const experienceService = experienceItemBase ? washServices.find(s => s.id === experienceItemBase.serviceId) : undefined;
+  const opzioniOre = ((experienceService as { priceOptions?: { label: string; price: number }[] } | undefined)?.priceOptions || [])
+    .map(o => ({ label: o.label, price: Number(o.price) || 0, ore: parseInt(String(o.label).match(/(\d+)/)?.[1] || '1', 10) }))
+    .sort((a, b) => a.ore - b.ore);
+  const [oraScelta, setOraScelta] = useState<{ label: string; price: number } | null>(null);
+  const experienceItem: CartItem | undefined = experienceItemBase && oraScelta
+    ? { ...experienceItemBase, option: oraScelta.label, price: oraScelta.price }
+    : experienceItemBase;
+  const cartItems: CartItem[] = experienceItemBase && oraScelta
+    ? cartItemsBase.map(i => (i === experienceItemBase ? (experienceItem as CartItem) : i))
+    : cartItemsBase;
+  const cartTotal: number = experienceItemBase && oraScelta
+    ? Math.round((cartTotalBase + (oraScelta.price - experienceItemBase.price) * (experienceItemBase.quantity || 1)) * 100) / 100
+    : cartTotalBase;
   const experienceCategory: CategoriaFlotta | null = experienceItem
     ? categoriaPerEsperienza(washServices.find(s => s.id === experienceItem.serviceId), categorieFlotta)
     : null;
@@ -266,7 +286,11 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
     }
     let cancelled = false;
     setFleetLoading(true);
-    const url = `/.netlify/functions/get-supercar-experience-fleet?category=${encodeURIComponent(experienceTier)}&start=${encodeURIComponent(experienceWindow.start.toISOString())}&end=${encodeURIComponent(experienceWindow.end.toISOString())}`;
+    // 25/11/2026: si cerca con la durata piu' corta, cosi' ogni auto con
+    // almeno un'ora libera si puo' scegliere; le ore si scelgono dopo.
+    const oreMinime = opzioniOre[0]?.ore || 1;
+    const fineRicerca = new Date(experienceWindow.start.getTime() + oreMinime * 3_600_000);
+    const url = `/.netlify/functions/get-supercar-experience-fleet?category=${encodeURIComponent(experienceTier)}&start=${encodeURIComponent(experienceWindow.start.toISOString())}&end=${encodeURIComponent(fineRicerca.toISOString())}`;
     fetch(url)
       .then((r) => r.json())
       .then((json) => {
@@ -285,7 +309,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
         if (!cancelled) setFleetLoading(false);
       });
     return () => { cancelled = true };
-  }, [experienceTier, experienceWindow?.start.getTime(), experienceWindow?.end.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [experienceTier, experienceWindow?.start.getTime(), opzioniOre[0]?.ore]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 23/11/2026: l'auto parte quando e' libera (all'ora del lavaggio o piu'
   // tardi, se e' ancora fuori). Questa e' la finestra che si blocca.
@@ -321,10 +345,22 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
   // Reset chosen car if the experience extra is removed or duration changes
   // (the previously-picked car may now be busy for the new window).
   useEffect(() => {
-    if (!experienceTier || !experienceItem?.option) {
+    if (!experienceTier || !experienceItemBase?.option) {
       if (chosenSupercar) setChosenSupercar(null);
     }
-  }, [experienceTier, experienceItem?.option]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [experienceTier, experienceItemBase?.option]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto scelta con meno ore libere di quelle in carrello: si scende all'opzione
+  // piu' lunga che l'auto copre (mai di piu' di quanto e' libera).
+  useEffect(() => {
+    if (!chosenSupercar || opzioniOre.length === 0) return;
+    const max = chosenSupercar.ore_max ?? 0;
+    const attuali = parseInt(String(experienceItem?.option || '').match(/(\d+)/)?.[1] || '0', 10);
+    if (attuali > 0 && attuali <= max) return;
+    const ok = opzioniOre.filter(o => o.ore <= max);
+    const scelta = ok[ok.length - 1];
+    if (scelta) setOraScelta({ label: scelta.label, price: scelta.price });
+  }, [chosenSupercar?.id, chosenSupercar?.ore_max]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Insert the shadow rental row that blocks the chosen supercar for the
   // experience window. Called after the parent carwash booking row is
@@ -401,6 +437,14 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
           },
         };
         await supabase.from('bookings').update({ booking_details: nextDetails }).eq('id', carwashBooking.id);
+        // 25/11/2026: lavaggio gia' pagato (Credit Wallet) = contratto
+        // dell'auto di cortesia e firma al cliente subito. Il server controlla
+        // che sia pagato; col pagamento Nexi lo fa nexi-callback.
+        fetch('/.netlify/functions/contratto-auto-cortesia', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parentBookingId: carwashBooking.id }),
+        }).catch(e => console.warn('[CarWashBookingPage] contratto auto di cortesia non partito (non bloccante):', e));
       } catch (linkErr) {
         console.warn('[CarWashBookingPage] failed to link shadow id on parent (non-fatal):', linkErr);
       }
@@ -1899,7 +1943,7 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                   {t({ it: 'Scegli il tuo veicolo', en: 'Choose your vehicle' })} · {experienceItem.serviceName}
                 </h2>
                 <p className="text-sm text-gray-400 mb-6">
-                  {t({ it: 'Durata', en: 'Duration' })} {experienceItem.option}. {t({ it: 'Accanto a ogni auto vedi da che ora e per quante ore e\' libera. Le auto che non coprono la durata scelta non sono selezionabili.', en: 'Next to each car you see from what time and for how many hours it is free. Cars that cannot cover the chosen duration cannot be selected.' })}
+                  {t({ it: 'Scegli prima l\'auto, poi per quante ore. Accanto a ogni auto vedi da che ora e per quante ore e\' libera.', en: 'Choose the car first, then for how many hours. Next to each car you see from what time and for how many hours it is free.' })}
                 </p>
 
                 {!formData.appointmentDate || !formData.appointmentTime ? (
@@ -1943,6 +1987,28 @@ const CarWashBookingPage: React.FC<CarWashBookingPageProps> = ({
                         </option>
                       ))}
                     </select>
+                    {chosenSupercar && opzioniOre.length > 0 && (
+                      <div>
+                        <div className="text-sm text-gray-300 mb-2">{t({ it: 'Per quante ore?', en: 'For how many hours?' })}</div>
+                        <div className="flex flex-wrap gap-2">
+                          {opzioniOre.map(o => {
+                            const possibile = o.ore <= (chosenSupercar.ore_max ?? 0);
+                            const attiva = experienceItem?.option === o.label;
+                            return (
+                              <button
+                                key={o.label}
+                                type="button"
+                                disabled={!possibile}
+                                onClick={() => setOraScelta({ label: o.label, price: o.price })}
+                                className={`px-3 py-2 text-sm border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${attiva ? 'border-yellow-400 bg-yellow-400/15 text-yellow-300' : 'border-gray-700 bg-gray-800 text-white hover:border-yellow-400/60'}`}
+                              >
+                                {o.label} · €{o.price % 1 === 0 ? o.price : o.price.toFixed(2)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     {chosenSupercar && finestraAuto && (
                       <p className="text-sm text-yellow-300">
                         {t({ it: 'Auto dalle', en: 'Car from' })} {oraRomaBreve(finestraAuto.start)} {t({ it: 'alle', en: 'to' })} {oraRomaBreve(finestraAuto.end)}

@@ -64,6 +64,9 @@ exports.handler = async (event) => {
     const code = body.code;
     const serviceType = body.serviceType || body.service_type;
     const orderTotal = body.orderTotal || body.order_total;
+    // 25/11/2026: categoria reale del veicolo (id di Centralina Pro, es.
+    // 'urban' = Hypercar). Serve ai codici con scope 'cat:<id>'.
+    const vehicleCategory = String(body.vehicleCategory || body.vehicle_category || '').toLowerCase().trim();
 
     if (!code) {
       return createResponse(400, {
@@ -278,6 +281,17 @@ exports.handler = async (event) => {
         scopeArr = [discountCode.scope];
       }
     }
+    // 25/11/2026 (Massimo Runchina, Macan): le scelte "Supercar / Utilitarie /
+    // Aziendali" erano nomi vecchi che non corrispondono piu' alle categorie di
+    // Centralina Pro ("Supercar" valeva solo per Exotic Cars). Ora il codice
+    // puo' indicare le categorie vere: 'cat:<id categoria>'. Le scelte vecchie
+    // restano valide come prima.
+    const scopeCategorie = (scopeArr || []).map(x => String(x).toLowerCase().trim()).filter(x => x.startsWith('cat:')).map(x => x.slice(4));
+    const stessaCategoria = (a, b) => {
+      const alias = x => (x === 'exotic' ? 'supercars' : x);
+      return !!a && !!b && alias(a) === alias(b);
+    };
+    const categoriaOk = scopeCategorie.some(id => stessaCategoria(id, vehicleCategory));
     if (serviceType && scopeArr && scopeArr.length > 0) {
       const scope = scopeArr;
       const normalizedServiceType = serviceType.toLowerCase().replace(/\s+/g, '_');
@@ -298,6 +312,7 @@ exports.handler = async (event) => {
       // Check if scope includes 'tutti' or 'tutti_i_servizi' or the specific service
       const isValidScope = scope.some(s => {
         const normalizedScope = s.toLowerCase().replace(/\s+/g, '_');
+        if (normalizedScope.startsWith('cat:')) return categoriaOk;
         return normalizedScope === 'tutti' ||
                normalizedScope === 'tutti_i_servizi' ||
                normalizedScope === normalizedServiceType ||
@@ -312,9 +327,23 @@ exports.handler = async (event) => {
       });
 
       if (!isValidScope) {
+        // I nomi delle categorie come li vede il cliente, non gli id interni.
+        let etichette = {};
+        try {
+          const { data: cfg } = await supabase.from('centralina_pro_config').select('config').eq('id', 'main').maybeSingle();
+          for (const c of ((cfg && cfg.config && cfg.config.categories) || [])) {
+            if (c && c.id) etichette[String(c.id).toLowerCase()] = c.label || c.id;
+          }
+        } catch { /* restano gli id */ }
+        const VECCHI = { noleggio: 'Noleggio', lavaggi: 'Lavaggi', supercar: 'Supercar', utilitarie: 'Utilitarie', aziendali: 'Aziendali', tutti_i_servizi: 'Tutti i servizi' };
+        const nomi = scope.map(x => {
+          const k = String(x).toLowerCase().trim();
+          if (k.startsWith('cat:')) return etichette[k.slice(4)] || k.slice(4);
+          return VECCHI[k] || x;
+        });
         return createResponse(400, {
           error: 'Codice non valido per questo servizio',
-          message: `Questo codice è valido solo per: ${scope.join(', ')}`,
+          message: `Questo codice è valido solo per: ${nomi.join(', ')}`,
           discountCode: {
             code: discountCode.code,
             scope: discountCode.scope

@@ -706,7 +706,8 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           const response = await fetch('/.netlify/functions/validate-discount-code', {
             method: 'POST',
             headers,
-            body: JSON.stringify({ code: initialSearchDates.discountCode, serviceType: autoServiceType })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            body: JSON.stringify({ code: initialSearchDates.discountCode, serviceType: autoServiceType, vehicleCategory: (item as any).category || '' })
           });
           const result = await response.json();
           if (response.ok && result.valid) {
@@ -4406,6 +4407,9 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
           action: 'validate',
           code: discountCode.trim().toUpperCase(),
           serviceType: serviceType,
+          // 25/11/2026: categoria vera del veicolo per i codici 'cat:<id>'.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          vehicleCategory: (item as any).category || '',
           orderTotal: Math.round(finalTotalWithOnlineDiscount * 100)
         })
       });

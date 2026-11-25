@@ -119,9 +119,43 @@ export interface CreditoVincolato {
   created_at: string;
 }
 
+/**
+ * 25/11/2026: un lotto puo' valere solo per certe CATEGORIE di veicoli di
+ * Centralina Pro, scritte 'cat:<id>' come nei codici sconto (es. 'cat:urban'
+ * = Hypercar). Vale solo sul noleggio Terra. I nomi si leggono dalla
+ * Centralina, cosi' il cliente vede "Hypercar" e non l'id interno.
+ */
+let nomiCategorie: Record<string, string> = {};
+async function caricaNomiCategorie(): Promise<void> {
+  if (Object.keys(nomiCategorie).length > 0) return;
+  try {
+    const { data } = await supabase.from('centralina_pro_config').select('config').eq('id', 'main').maybeSingle();
+    const lista = ((data?.config as { categories?: { id?: string; label?: string }[] } | null)?.categories) || [];
+    const nuovi: Record<string, string> = {};
+    for (const c of lista) if (c && c.id) nuovi[String(c.id).toLowerCase()] = String(c.label || c.id);
+    if (Object.keys(nuovi).length > 0) nomiCategorie = nuovi;
+  } catch { /* restano gli id */ }
+}
+
+const stessaCategoria = (a: string, b: string) => {
+  const alias = (x: string) => (x === 'exotic' ? 'supercars' : x);
+  return !!a && !!b && alias(a) === alias(b);
+};
+
+/** Il lotto vale qui? Stessa regola di dr7_wallet_lotto_vale nel database. */
+function lottoValeQui(l: CreditoVincolato, servizio: string | null | undefined, categoria?: string | null): boolean {
+  if (!l.servizi || l.servizi.length === 0) return true;
+  const business = businessDelServizio(servizio);
+  const voci = l.servizi.map(x => String(x || '').trim().toLowerCase());
+  if (voci.some(x => !x.startsWith('cat:') && businessDelServizio(x) === business)) return true;
+  const cat = String(categoria || '').trim().toLowerCase();
+  return business === 'rental' && !!cat && voci.some(x => x.startsWith('cat:') && stessaCategoria(x.slice(4), cat));
+}
+
 /** I lotti ancora spendibili: residuo > 0 e non scaduti. */
 export async function getCreditiVincolati(userId: string): Promise<CreditoVincolato[]> {
   try {
+    await caricaNomiCategorie();
     const oggi = new Date().toISOString().slice(0, 10);
     const { data, error } = await supabase
       .from('wallet_crediti_vincolati')
@@ -159,10 +193,9 @@ export function businessDelServizio(servizio: string | null | undefined): string
   return 'rental';
 }
 
-export function vincolatoSpendibileSu(lotti: CreditoVincolato[], servizio: string | null | undefined): number {
-  const business = businessDelServizio(servizio);
+export function vincolatoSpendibileSu(lotti: CreditoVincolato[], servizio: string | null | undefined, categoria?: string | null): number {
   return lotti
-    .filter(l => !l.servizi || l.servizi.length === 0 || l.servizi.some(s => businessDelServizio(s) === business))
+    .filter(l => lottoValeQui(l, servizio, categoria))
     .reduce((somma, l) => somma + l.residuo, 0);
 }
 
@@ -172,12 +205,12 @@ export function vincolatoSpendibileSu(lotti: CreditoVincolato[], servizio: strin
  * il saldo libero, e chi aveva ricevuto un bonus vincolato vedeva 50 EUR in
  * meno di quelli che il gestionale gli mostrava.
  */
-export async function getSaldoSpendibile(userId: string, servizio?: string | null): Promise<number> {
+export async function getSaldoSpendibile(userId: string, servizio?: string | null, categoria?: string | null): Promise<number> {
   const [balance, lotti] = await Promise.all([
     getUserCreditBalance(userId),
     getCreditiVincolati(userId),
   ]);
-  return balance + vincolatoSpendibileSu(lotti, servizio);
+  return balance + vincolatoSpendibileSu(lotti, servizio, categoria);
 }
 
 /** Nome del servizio di un lotto, come lo legge il cliente. */
@@ -189,6 +222,8 @@ export function nomeServizioWallet(servizio: string, lingua: 'it' | 'en' = 'it')
     stay_rental: ['Soggiorni', 'Stays'],
     car_wash: ['Lavaggio & Meccanica', 'Wash & mechanics'],
   };
+  const v = String(servizio || '').trim().toLowerCase();
+  if (v.startsWith('cat:')) return nomiCategorie[v.slice(4)] || v.slice(4);
   const n = nomi[businessDelServizio(servizio)];
   return n ? n[lingua === 'en' ? 1 : 0] : servizio;
 }
@@ -202,11 +237,12 @@ export function nomeServizioWallet(servizio: string, lingua: 'it' | 'en' = 'it')
 export async function hasSufficientBalance(
   userId: string,
   requiredAmount: number,
-  servizio?: string | null
+  servizio?: string | null,
+  categoria?: string | null
 ): Promise<boolean> {
   const [balance, lotti] = await Promise.all([
     getUserCreditBalance(userId),
     getCreditiVincolati(userId),
   ]);
-  return balance + vincolatoSpendibileSu(lotti, servizio) >= requiredAmount;
+  return balance + vincolatoSpendibileSu(lotti, servizio, categoria) >= requiredAmount;
 }

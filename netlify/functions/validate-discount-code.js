@@ -72,7 +72,8 @@ exports.handler = async (event) => {
     // veicolo: prima per id, poi per nome esatto.
     if (!vehicleCategory && (body.vehicleId || body.vehicleName)) {
       try {
-        const id = String(body.vehicleId || '').trim();
+        // Gli id del sito sono 'car-<uuid>': si tiene solo l'uuid.
+        const id = String(body.vehicleId || '').trim().replace(/^car-/i, '');
         let riga = null;
         if (/^[0-9a-f-]{36}$/i.test(id)) {
           const { data } = await supabase.from('vehicles').select('category').eq('id', id).maybeSingle();
@@ -310,9 +311,10 @@ exports.handler = async (event) => {
       return !!a && !!b && alias(a) === alias(b);
     };
     const categoriaOk = scopeCategorie.some(id => stessaCategoria(id, vehicleCategory));
-    if (serviceType && scopeArr && scopeArr.length > 0) {
+    // Un codice limitato a categorie si controlla anche se manca serviceType.
+    if ((serviceType || scopeCategorie.length > 0) && scopeArr && scopeArr.length > 0) {
       const scope = scopeArr;
-      const normalizedServiceType = serviceType.toLowerCase().replace(/\s+/g, '_');
+      const normalizedServiceType = String(serviceType || '').toLowerCase().replace(/\s+/g, '_');
 
       // Rental service hierarchy: 'noleggio' is parent of 'supercar', 'utilitarie' and 'aziendali'
       const isRentalService = ['noleggio', 'supercar', 'utilitarie', 'urban-cars', 'corporate-fleet', 'aziendali'].includes(normalizedServiceType);

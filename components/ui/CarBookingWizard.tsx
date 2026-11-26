@@ -2350,6 +2350,12 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
         const fasciaCambiata = driverTierInfo?.tier !== classification.tier;
         setDriverTierInfo(classification);
         if (fasciaCambiata) {
+          // 26/11/2026: se il cliente e' gia' al pagamento, torna subito alle
+          // opzioni a riscegliere la cauzione (prima restava vuota in silenzio).
+          if (step >= 2) {
+            setStep(1);
+            setErrors(prev => ({ ...prev, depositOption: t({ it: "Le opzioni sono cambiate in base alla tua patente: scegli di nuovo la cauzione.", en: "The options changed based on your driving licence: choose the deposit again." }) }));
+          }
           setFormData(prev => ({
             ...prev,
             insuranceOption: '',

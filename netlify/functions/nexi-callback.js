@@ -245,6 +245,43 @@ function parseCallback(event) {
  * essere chiuso con la stessa identica logica di quando era da solo.
  */
 /**
+ * Salva la carta della ricarica wallet sulla scheda cliente
+ * (customers_extended.metadata.nexi_contract_id), dove il gestionale la legge
+ * per "Carta tokenizzata" e per gli addebiti. Non blocca mai il callback.
+ */
+async function salvaCartaRicaricaSuCliente(supabase, userId, contractId) {
+  if (!contractId || !userId) return;
+  try {
+    const { data: cust } = await supabase
+      .from('customers_extended')
+      .select('id, metadata')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!cust) {
+      console.warn('[nexi-callback] No customers_extended row for user_id:', userId);
+      return;
+    }
+    const { error: metaErr } = await supabase
+      .from('customers_extended')
+      .update({
+        metadata: {
+          ...(cust.metadata || {}),
+          nexi_contract_id: contractId,
+          nexi_contract_updated: new Date().toISOString(),
+          nexi_contract_source: 'wallet_recharge',
+        },
+      })
+      .eq('id', cust.id);
+    if (metaErr) console.error('[nexi-callback] Failed to save contractId on customer (non-blocking):', metaErr.message);
+    else console.log(`[nexi-callback] Tokenized card saved: contractId=${contractId} on customer ${cust.id}`);
+  } catch (tokErr) {
+    console.error('[nexi-callback] Token save failed (non-blocking):', tokErr);
+  }
+}
+
+/**
  * Registra la carta tokenizzata del pagamento appena riuscito.
  *
  * 14/09/2026 — ogni carta usata sul sito deve finire nella scheda cliente del
@@ -952,6 +989,11 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
       // Skip if already completed (avoid double-crediting)
       if (purchase.payment_status === 'completed' || purchase.payment_status === 'succeeded' || purchase.payment_status === 'paid') {
         console.log('Purchase already completed, skipping');
+        // 26/11/2026: quasi sempre e' la pagina del browser a chiudere la
+        // ricarica, e qui si usciva senza salvare la carta sulla scheda.
+        if (isSuccess) {
+          await salvaCartaRicaricaSuCliente(supabase, purchase.user_id, rawParams.contractId || rawParams.contract_id || null);
+        }
         // 26/08/2026 — Ma l'AVVISO al cliente deve partire lo stesso. A
         // completare la ricarica e' quasi sempre il browser (la pagina di
         // pagamento riuscito): il webhook arrivava qui, usciva, e il
@@ -1102,42 +1144,9 @@ async function elaboraOrdine(supabase, orderId, isSuccess, authCode, errorMessag
           console.error('[nexi-callback] avviso ricarica wallet fallito (non bloccante):', avvisoErr);
         }
 
-        // Save the Nexi card token (contractId) to customers_extended.metadata
-        // so the admin can re-charge the same card later for penalties, late
-        // fees, or extra wallet top-ups without the customer re-entering it.
-        // Same storage location used by admin's nexi-preauth-callback flow.
-        if (walletContractId && purchase.user_id) {
-          try {
-            const { data: cust } = await supabase
-              .from('customers_extended')
-              .select('id, metadata')
-              .eq('user_id', purchase.user_id)
-              .maybeSingle();
-
-            if (cust) {
-              const newMetadata = {
-                ...(cust.metadata || {}),
-                nexi_contract_id: walletContractId,
-                nexi_contract_updated: new Date().toISOString(),
-                nexi_contract_source: 'wallet_recharge'
-              };
-              const { error: metaErr } = await supabase
-                .from('customers_extended')
-                .update({ metadata: newMetadata })
-                .eq('id', cust.id);
-
-              if (metaErr) {
-                console.error('[nexi-callback] Failed to save contractId on customer (non-blocking):', metaErr.message);
-              } else {
-                console.log(`[nexi-callback] Tokenized card saved: contractId=${walletContractId} on customer ${cust.id}`);
-              }
-            } else {
-              console.warn('[nexi-callback] No customers_extended row for user_id:', purchase.user_id);
-            }
-          } catch (tokErr) {
-            console.error('[nexi-callback] Token save failed (non-blocking):', tokErr);
-          }
-        }
+        // Carta tokenizzata sulla scheda cliente (addebiti penali, danni,
+        // sforo). Stessa funzione del ramo "gia' completata" qui sopra.
+        await salvaCartaRicaricaSuCliente(supabase, purchase.user_id, walletContractId);
 
         // Referral bonus — €50 to referrer if this is the referee's first €100+ top-up
         if (purchase.user_id && purchase.recharge_amount) {

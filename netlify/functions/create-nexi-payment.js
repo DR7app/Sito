@@ -248,20 +248,33 @@ exports.handler = async (event) => {
     // quello che il gestionale fa sulla carta: il default e' tokenizzare, e
     // MIT_SCHEDULED resta la scelta esplicita degli abbonamenti.
     const tipoRicorrenza = recurringType || 'MIT_UNSCHEDULED';
+    // 26/11/2026 (Valerio, ricarica wallet di Lorenzo Becconi "carta non
+    // tokenizzata"): il blocco stava alla RADICE della richiesta e Nexi lo
+    // ignorava in silenzio. Nessuna carta pagata sul sito e' mai stata
+    // tokenizzata (Nexi: transactionType CIT_PAY, nessun contractId; zero
+    // righe 'sito' in nexi_transactions). Provato contro l'API di produzione
+    // il 26/11/2026:
+    //   - recurrence va DENTRO paymentSession (come i link del gestionale, che
+    //     tokenizzano: CIT_FIRST_PAY, 3DS "S");
+    //   - contractId al massimo 18 caratteri ("contractId is not valid"); gli
+    //     ordini del sito ne hanno 22, quindi si usa un id corto derivato
+    //     dall'ordine (sempre lo stesso per lo stesso ordine);
+    //   - MIT_UNSCHEDULED non accetta contractExpiryDate (PS0064); la data va
+    //     scritta AAAA-MM-GG, non AAAAMMGG (GW00402).
+    const contrattoCarta = 'C' + crypto.createHash('sha1').update(sanitizedOrderId).digest('hex').slice(0, 17);
     if (tipoRicorrenza === 'MIT_SCHEDULED') {
-      requestBody.recurrence = {
+      requestBody.paymentSession.recurrence = {
         action: 'CONTRACT_CREATION',
-        contractId: sanitizedOrderId,
+        contractId: contrattoCarta,
         contractType: 'MIT_SCHEDULED',
         contractFrequency: billingCycle === 'monthly' ? '30' : '365',
-        contractExpiryDate: new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0].replace(/-/g, ''),
+        contractExpiryDate: new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       };
     } else {
-      requestBody.recurrence = {
+      requestBody.paymentSession.recurrence = {
         action: 'CONTRACT_CREATION',
-        contractId: sanitizedOrderId,
+        contractId: contrattoCarta,
         contractType: 'MIT_UNSCHEDULED',
-        contractExpiryDate: new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0].replace(/-/g, ''),
       };
     }
 
@@ -274,7 +287,7 @@ exports.handler = async (event) => {
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
     // Call Nexi API
-    const response = await fetch(`${baseUrl}/orders/hpp`, {
+    let response = await fetch(`${baseUrl}/orders/hpp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -284,7 +297,25 @@ exports.handler = async (event) => {
       body: JSON.stringify(requestBody),
     });
 
-    const responseData = await response.json();
+    let responseData = await response.json();
+
+    // Rete di sicurezza: se Nexi rifiuta la sola tokenizzazione, il pagamento
+    // deve partire lo stesso (senza carta salvata) invece di bloccare il sito.
+    if (!response.ok && requestBody.paymentSession.recurrence
+        && JSON.stringify(responseData || {}).toLowerCase().includes('recurrence')) {
+      console.warn('[create-nexi-payment] tokenizzazione rifiutata da Nexi, riprovo senza:', JSON.stringify(responseData));
+      delete requestBody.paymentSession.recurrence;
+      response = await fetch(`${baseUrl}/orders/hpp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': nexiConfig.apiKey,
+          'Correlation-Id': crypto.randomUUID(),
+        },
+        body: JSON.stringify(requestBody),
+      });
+      responseData = await response.json();
+    }
 
     console.log('Nexi API response status:', response.status);
     console.log('Nexi API response:', JSON.stringify(responseData, null, 2));

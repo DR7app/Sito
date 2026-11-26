@@ -3667,6 +3667,26 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     return percorsi;
   };
 
+  // 26/11/2026 (video di Valerio, cliente Becconi): la cauzione manca se non
+  // e' scelta e l'RCA non ne impone una. Serve anche al pagamento: la fascia
+  // del conducente si calcola quando arriva la data della patente (scheda o
+  // rilettura del documento, anche a passo 2 gia' aperto) e il cambio di
+  // fascia azzera la cauzione. L'assicurazione si riprende da sola, la
+  // cauzione no: la prenotazione partiva pagata e senza cauzione.
+  const cauzioneDaScegliere = () => {
+    const membershipTier = getMembershipTierName(user);
+    if (membershipTier === 'gold' || membershipTier === 'platinum') return false;
+    if (formData.depositOption) return false;
+    const vTypeForDep = getVehicleType(item, categoryContext);
+    const activeTierForDep = driverTier || 'TIER_2';
+    const insOpts = getInsuranceForVehicle(vTypeForDep, activeTierForDep);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rcaOpt = insOpts.find((o: any) => isRcaOpt(o));
+    const insIsRCA = isRcaSelected(insOpts, formData.insuranceOption);
+    const mandatoryRcaDeposit = insIsRCA && (rcaOpt?.mandatoryDeposit || 0) > 0;
+    return !mandatoryRcaDeposit;
+  };
+
   const validateStep = () => {
     const newErrors: Record<string, string> = {};
     if (step === 1) {
@@ -3855,13 +3875,7 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
       const membershipTier = getMembershipTierName(user);
       const skipsCauzione = membershipTier === 'gold' || membershipTier === 'platinum';
       if (!skipsCauzione) {
-        const vTypeForDep = getVehicleType(item, categoryContext);
-        const activeTierForDep = driverTier || 'TIER_2';
-        const insOpts = getInsuranceForVehicle(vTypeForDep, activeTierForDep);
-        const rcaOpt = insOpts.find((o: any) => isRcaOpt(o));
-        const insIsRCA = isRcaSelected(insOpts, formData.insuranceOption);
-        const mandatoryRcaDeposit = insIsRCA && (rcaOpt?.mandatoryDeposit || 0) > 0;
-        if (!mandatoryRcaDeposit && !formData.depositOption) {
+        if (cauzioneDaScegliere()) {
           newErrors.depositOption = t({ it: "Seleziona un'opzione per la cauzione.", en: "Select a deposit option." });
         }
         // 26/10/2026 (direzione): senza cauzione si va avanti SOLO col codice
@@ -4896,6 +4910,14 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
     if (formData.depositOption === 'no_deposit' && !isLoyalCustomer && !noCauzioneCodice) {
       setPaymentError(t({ it: "Per prenotare senza cauzione serve il codice No Cauzione ricevuto dal team DR7.", en: "To book with no deposit you need the No-Deposit code from the DR7 team." }));
       setShowNoCauzionePopup(true);
+      return;
+    }
+    // 26/11/2026: cauzione mai scelta (o azzerata da un cambio di fascia):
+    // si torna alle opzioni, nessun pagamento parte.
+    if (cauzioneDaScegliere()) {
+      setErrors(prev => ({ ...prev, depositOption: t({ it: "Seleziona un'opzione per la cauzione.", en: "Select a deposit option." }) }));
+      setPaymentError(t({ it: "Scegli la cauzione prima di pagare: le opzioni sono state aggiornate in base alla tua patente.", en: "Choose the deposit before paying: the options were updated based on your driving licence." }));
+      setStep(1);
       return;
     }
     if (!validateStep() || !item) return;

@@ -874,12 +874,13 @@ const CarBookingWizard: React.FC<CarBookingWizardProps> = ({ item, categoryConte
   }, [configOverlay]);
 
   // Cauzione residente vs non-residente (dipende dall'indirizzo del cliente).
-  // Regola business identica all'admin (sardegnaProvince.RESIDENT_PROVINCE_CODES):
-  // residente SOLO con provincia di residenza CA o SU. Qualsiasi altra provincia
-  // o l'estero ('EE') = non residente → si applica la cauzione non-residente
-  // (più alta, solo carta) configurata in Centralina Pro. Provincia vuota/ignota
-  // = residente (default sicuro, mantiene lo status quo per chi non ha la provincia).
-  const RESIDENT_PROVINCE_CODES = ['CA', 'SU'];
+  // 26/11/2026 (direzione): residente = TUTTA la Sardegna, come la scheda
+  // prenotazione del gestionale (ReservationsTab, SARDEGNA_PROVINCES). Prima
+  // qui valevano solo CA e SU: un cliente di Nuoro vedeva la cauzione da non
+  // residente (Becconi, Macan: 8.000 invece di 4.000). Fuori Sardegna o
+  // l'estero ('EE') = non residente → cauzione non-residente di Centralina Pro.
+  // Provincia vuota/ignota = residente (default, come prima).
+  const RESIDENT_PROVINCE_CODES = ['CA', 'NU', 'OR', 'SS', 'SU', 'OG', 'OT', 'CI', 'VS'];
   const isNonResidentCustomer = (() => {
     const prov = (customerProvinciaResidenza || '').toUpperCase().trim();
     if (prov) return !RESIDENT_PROVINCE_CODES.includes(prov);

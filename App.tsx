@@ -64,6 +64,7 @@ import CookieBanner from './components/ui/CookieBanner';
 import PrevenditePopup from './components/ui/PrevenditePopup';
 import PrevenditePage from './pages/PrevenditePage';
 import MiePrevendite from './pages/account/MiePrevendite';
+import MieCauzioni from './pages/account/MieCauzioni';
 import AutoBookingPopup from './components/ui/AutoBookingPopup';
 import HeliTourPopup from './components/ui/HeliTourPopup';
 import { useAuth } from './hooks/useAuth';
@@ -392,6 +393,7 @@ const AnimatedRoutes = () => {
           <Route path="bookings" element={<MyBookings />} />
           <Route path="preventivi" element={<MyPreventivi />} />
           <Route path="prevendite" element={<MiePrevendite />} />
+          <Route path="cauzioni" element={<MieCauzioni />} />
           <Route path="referral" element={<ReferralProgram />} />
           <Route path="notifications" element={<NotificationSettings />} />
         </Route>

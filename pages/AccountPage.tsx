@@ -23,6 +23,8 @@ const AccountPage = () => {
         { path: '/account/bookings', label: t('My_Bookings') },
         { path: '/account/preventivi', label: t({ it: 'I Miei Preventivi', en: 'My Quotes' }) },
         { path: '/account/prevendite', label: t({ it: 'Le Mie Prevendite', en: 'My Pre-sales' }) },
+        // 27/11/2026 (direzione): cauzioni, giorno di sblocco e integrazione.
+        { path: '/account/cauzioni', label: t({ it: 'Le Mie Cauzioni', en: 'My Deposits' }) },
         { path: '/account/referral', label: t({ it: 'Invita un Amico', en: 'Invite a Friend' }) },
         { path: '/account/notifications', label: t('Notifications') },
     ];

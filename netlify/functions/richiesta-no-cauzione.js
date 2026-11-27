@@ -66,8 +66,11 @@ async function numeroValerio() {
     .select('config')
     .eq('id', 'main')
     .maybeSingle();
-  const scelto = String((cfg && cfg.config && cfg.config.no_cauzione && cfg.config.no_cauzione.whatsapp) || '').replace(/\D/g, '');
-  if (scelto.length >= 8) return scelto;
+  // 27/11/2026: possono essere piu' numeri (E.164 separati da virgola,
+  // ognuno col suo prefisso): la richiesta parte a tutti.
+  const scelti = String((cfg && cfg.config && cfg.config.no_cauzione && cfg.config.no_cauzione.whatsapp) || '')
+    .split(/[,;\n]/).map(n => n.replace(/\D/g, '')).filter(n => n.length >= 8);
+  if (scelti.length) return [...new Set(scelti)];
 
   // La scheda admin; se vuota (oggi lo e'), il destinatario "Valerio" dei
   // ticket, che si gestisce dall'admin.
@@ -86,7 +89,7 @@ async function numeroValerio() {
       .limit(1);
     telefono = String((destinatari && destinatari[0] && destinatari[0].whatsapp) || '').replace(/\D/g, '');
   }
-  return telefono;
+  return telefono.length >= 8 ? [telefono] : [];
 }
 
 exports.handler = async event => {
@@ -106,8 +109,8 @@ exports.handler = async event => {
     // 26/10/2026 (direzione): nessun limite di richieste al giorno. Il tetto di
     // 5 in 24 ore (aggiunto il 25/10 senza richiesta) bloccava l'invio in silenzio.
 
-    const telefonoValerio = await numeroValerio();
-    if (telefonoValerio.length < 8) {
+    const numeriValerio = await numeroValerio();
+    if (!numeriValerio.length) {
       console.error('[richiesta-no-cauzione] numero di Valerio mancante');
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Richiesta non inviata, riprova piu\' tardi.' }) };
     }
@@ -168,17 +171,27 @@ exports.handler = async event => {
     const baseUrl = process.env.URL || 'https://dr7.app';
     // 26/10/2026: il codice parte in un messaggio a parte, da solo, cosi'
     // Valerio lo copia e lo inoltra al cliente senza ritagliarlo dal riepilogo.
-    for (const [cosa, testoWa] of [['riepilogo', messaggio], ['codice', codice]]) {
-      const res = await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customPhone: telefonoValerio, customMessage: testoWa, skipHeader: true }),
-      });
-      const esito = await res.json().catch(() => ({}));
-      if (!res.ok || esito.success === false) {
-        console.error(`[richiesta-no-cauzione] WhatsApp a Valerio (${cosa}) non partito:`, esito);
-        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Richiesta non inviata, riprova piu\' tardi.' }) };
+    // 27/11/2026: a ogni numero scelto in Centralina; basta che arrivi a uno.
+    let arrivati = 0;
+    for (const telefonoValerio of numeriValerio) {
+      let ok = true;
+      for (const [cosa, testoWa] of [['riepilogo', messaggio], ['codice', codice]]) {
+        const res = await fetch(`${baseUrl}/.netlify/functions/send-whatsapp-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customPhone: telefonoValerio, customMessage: testoWa, skipHeader: true }),
+        });
+        const esito = await res.json().catch(() => ({}));
+        if (!res.ok || esito.success === false) {
+          console.error(`[richiesta-no-cauzione] WhatsApp a ${telefonoValerio} (${cosa}) non partito:`, esito);
+          ok = false;
+          break;
+        }
       }
+      if (ok) arrivati++;
+    }
+    if (!arrivati) {
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Richiesta non inviata, riprova piu\' tardi.' }) };
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   } catch (err) {

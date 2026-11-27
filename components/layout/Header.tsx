@@ -145,7 +145,11 @@ const NavigationMenu: React.FC<{ isOpen: boolean; onClose: () => void; copy: Hea
     // arrivarci. Chi non ha ancora fatto l'accesso viene mandato al modulo di
     // accesso, non a una pagina che lo rimbalzerebbe.
     { to: user ? accountLink : '/signin', img: mi('menu_account_img', '/menu-club.jpeg'), Icon: UserCircleIcon,
-      title: user ? accountLabel : t('Sign_In'),
+      // 27/11/2026 (direzione): anche questa voce si rinomina da Admin > Sito.
+      // I partner restano su "Partner Dashboard".
+      title: user
+        ? (user?.role === 'business' ? accountLabel : mc('menu_account_title_it', 'menu_account_title_en', accountLabel, accountLabel))
+        : mc('menu_signin_title_it', 'menu_signin_title_en', t('Sign_In'), t('Sign_In')),
       subtitle: '' },
   ];
 
